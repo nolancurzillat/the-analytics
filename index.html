@@ -236,6 +236,17 @@ svg{display:block;}
   display:flex; align-items:center; justify-content:space-between; gap:10px;
   font-size:12.5px; color:#7f8fae; line-height:1.4;
 }
+.tour-layer{ position:fixed; inset:0; z-index:9000; }
+.tour-layer.dim{ background:rgba(7,12,24,.62); }
+.tour-hi{ position:fixed; border-radius:12px; box-shadow:0 0 0 9999px rgba(7,12,24,.62), 0 0 0 3px #5b8cf7; pointer-events:none; transition:all .22s ease; }
+.tour-pop{ position:fixed; width:340px; max-width:calc(100vw - 32px); background:var(--card); color:var(--ink); border:1px solid var(--border-strong); border-radius:16px; padding:20px 22px 18px 22px; box-shadow:var(--shadow-lg); }
+.tour-pop.center{ left:50%; top:50%; transform:translate(-50%,-50%); width:420px; }
+.tour-pop.mob{ left:12px; right:12px; width:auto; max-width:none; }
+.tour-count{ font-size:12px; font-weight:700; letter-spacing:.08em; color:var(--blue); margin-bottom:6px; }
+.tour-pop h3{ font-family:var(--font-serif); font-size:20px; line-height:1.25; margin:0 0 8px 0; }
+.tour-pop p{ font-size:14.5px; line-height:1.6; margin:0 0 16px 0; color:var(--ink); }
+.tour-actions{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.tour-btns{ display:flex; gap:8px; }
 .side-legal{ display:flex; flex-wrap:wrap; gap:2px 12px; padding:0 20px 14px 20px; }
 .side-legal button{ background:none; border:none; padding:0; cursor:pointer; font:inherit; font-size:11.5px; color:#7f8fae; text-decoration:underline; text-underline-offset:3px; }
 .side-legal button:hover{ color:#c6d1e6; }
@@ -1092,6 +1103,9 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; font-family:
 .position-fields{ margin-top:20px; display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:22px 28px; }
 .position-fields .field-row{ grid-column:auto; }
 .position-fields input#posQuantite{ width:auto; min-width:90px; }
+.position-div{ margin-top:22px; padding-top:18px; border-top:1px dashed var(--border); }
+.position-div .div-grid{ grid-template-columns:repeat(2, minmax(0, 1fr)); max-width:640px; }
+.position-div-hint{ font-size:13.5px; line-height:1.55; color:var(--ink-soft); }
 .position-empty{ margin-top:12px; font-size:14.5px; color:var(--ink-soft); }
 
 /* Infobulles et barre de mise en forme (toujours sombres) */
@@ -1447,6 +1461,23 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; font-family:
    PORTEFEUILLE (page dédiée, classes préfixées pf-)
    ============================================================ */
 .pf-chips{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.pf-hist-legend{ display:flex; gap:18px; flex-wrap:wrap; font-size:13px; color:var(--ink-soft); margin-bottom:12px; }
+.pf-hist-legend span{ display:inline-flex; align-items:center; gap:7px; }
+.pf-hist-sw{ display:inline-block; width:20px; height:0; border-top:3px solid var(--blue); }
+.pf-hist-sw-i{ border-top:2px dashed var(--ink-soft); }
+.pf-hist{ margin-bottom:16px; }
+.pf-hist-plot{ position:relative; height:250px; margin-left:62px; margin-right:10px; touch-action:pan-y; cursor:crosshair; }
+.pf-hist-plot svg{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
+.pf-hist-grid{ stroke:var(--border); stroke-width:1; }
+.pf-hist-area{ fill:var(--blue); opacity:.10; }
+.pf-hist-v{ fill:none; stroke:var(--blue); stroke-width:2.5; stroke-linejoin:round; stroke-linecap:round; }
+.pf-hist-i{ fill:none; stroke:var(--ink-soft); stroke-width:1.75; stroke-dasharray:5 4; }
+.pf-hist-y{ position:absolute; right:100%; margin-right:8px; transform:translateY(-50%); font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); white-space:nowrap; }
+.pf-hist-dot{ position:absolute; width:11px; height:11px; margin:-5.5px 0 0 -5.5px; border-radius:50%; background:var(--blue); border:2px solid var(--card); }
+.pf-hist-cursor{ position:absolute; top:0; bottom:0; width:0; border-left:1px dashed var(--ink-soft); pointer-events:none; }
+.pf-hist-tip{ position:absolute; top:6px; display:flex; flex-direction:column; gap:3px; padding:10px 12px; border-radius:10px; background:var(--card); border:1px solid var(--border-strong); box-shadow:var(--shadow); font-size:12.5px; line-height:1.4; pointer-events:none; white-space:nowrap; z-index:2; }
+.pf-hist-tip b{ font-size:13px; }
+.pf-hist-x{ display:flex; justify-content:space-between; margin:10px 10px 0 62px; font-size:12.5px; color:var(--ink-soft); }
 .pf-chips-l{ font-size:13px; color:var(--ink-soft); margin-right:4px; }
 .pf-perf-row{
   display:flex; align-items:center; gap:12px; padding:8px 8px; margin:0 -8px; border-radius:10px; width:calc(100% + 16px);
@@ -2113,7 +2144,7 @@ const BACKUP_REMIND_MS = 7 * 24 * 3600 * 1000;
 function buildBackupPayload(){
   const settings = Object.assign({}, state.settings);
   delete settings.twelveDataApiKey;
-  return { app:'the-analytics', version:1, exportedAt:new Date().toISOString(), settings, companies:state.companies, deleted:state.deleted || {} };
+  return { app:'the-analytics', version:1, exportedAt:new Date().toISOString(), settings, companies:state.companies, deleted:state.deleted || {}, history:state.history || {} };
 }
 function backupKv(mode, fn){
   return new Promise((resolve, reject) => {
@@ -2376,6 +2407,7 @@ function mergeRemote(remote){
     const r = remoteById[c.id];
     if(!r || companyStamp(c) > companyStamp(r)) push = true;
   });
+  if(mergeHistory(remote.history).push) push = true;
   const rs = remote.settings || {};
   if(!String(state.settings.firstName || '').trim() && typeof rs.firstName === 'string' && rs.firstName.trim()){ state.settings.firstName = rs.firstName.slice(0, 30); changed = true; }
   if(Array.isArray(rs.learnRead)){
@@ -2702,9 +2734,11 @@ function bindAuth(){
 
 let state = loadState();
 if(!state.deleted || typeof state.deleted !== 'object' || Array.isArray(state.deleted)) state.deleted = {};
+if(!state.history || typeof state.history !== 'object' || Array.isArray(state.history)) state.history = {};
 state.companies.forEach(migrateCompany);
 // Préférences personnelles (ajoutées après la V1, sans effet sur les analyses existantes)
 state.settings = Object.assign({ autoLogos:true, firstName:'', defaultCurrency:'$', twelveDataApiKey:'', sortKey:'created', sortDir:'asc', learnRead:[], lastBackupAt:0, backupSnoozeUntil:0 },(state.settings && typeof state.settings === 'object') ? state.settings : {});
+if(state.settings.tourDone === undefined) state.settings.tourDone = state.companies.length > 0;
 if(['created','name','stars','updated'].indexOf(state.settings.sortKey) < 0) state.settings.sortKey = 'created';
 if(state.settings.sortDir !== 'desc') state.settings.sortDir = 'asc';
 if(state.settings.defaultCurrency !== '€') state.settings.defaultCurrency = '$';
@@ -3586,6 +3620,7 @@ function refreshAllComputed(){
   setText('computed-financier-capexRatio', capexR === null ? '—' : capexR.toFixed(1) + '%', tipCapexRatio(c));
   const dy = computeDividendYield(c);
   setText('computed-identite-politiqueDividende-yield', dy === null ? '—' : fmtNum(dy, 2) + ' %', tipDividendYield(c));
+  refreshPositionDividend();
   const secBadge = document.getElementById('div-secu-badge');
   if(secBadge){
     const sv = num((c.fields.identite.politiqueDividende || {}).securite), st = dividendSecurityTier(sv);
@@ -4379,6 +4414,31 @@ function refreshValuationSummary(){
   if(!el) return;
   el.outerHTML = buildValuationSummaryBlock(c);
 }
+// Rendement sur prix d'achat (yield on cost) = dividende annuel par action ÷ VOTRE prix d'achat ; dividendes attendus = dividende par action × quantité
+function tipYieldOnCost(c){
+  const d = c.fields.identite.politiqueDividende || {}, m = positionMetrics(c) || {};
+  return `<div class='tt-formula'>Dividende annuel par action ${n(raw(d.dividendeAction))} ÷ Votre prix d'achat ${n(raw(c.position && c.position.prixAchat))}</div>${tipRes('= ' + (m.yoc === null || m.yoc === undefined ? '—' : fmtNum(m.yoc, 2) + ' %'))}<div class='tt-desc'>Ce que le dividende rapporte par rapport à ce que vous avez réellement payé. Il monte si l'entreprise augmente son dividende.</div>`;
+}
+function tipDividendIncome(c){
+  const d = c.fields.identite.politiqueDividende || {}, m = positionMetrics(c) || {};
+  return `<div class='tt-formula'>Dividende annuel par action ${n(raw(d.dividendeAction))} × Quantité ${n(raw(c.position && c.position.quantite))}</div>${tipRes('= ' + (m.divAnnual === null || m.divAnnual === undefined ? '—' : fmtMoney(m.divAnnual, c.currency)))}<div class='tt-desc'>Estimation sur la base du dividende actuel, avant impôts, sans tenir compte d'une hausse ou d'une baisse future.</div>`;
+}
+function positionDividendHtml(c){
+  const dv = (c.fields.identite && c.fields.identite.politiqueDividende) || {};
+  if(dv.mode === 'aucun') return '';
+  if(dv.mode !== 'verse') return `<div class="position-div" id="position-div"><div class="position-div-hint">Cette entreprise verse-t-elle un dividende ? Indiquez-le dans la section Identité (Politique de dividende) pour voir ici votre rendement sur prix d'achat et vos dividendes attendus.</div></div>`;
+  const m = positionMetrics(c) || {};
+  return `<div class="position-div" id="position-div"><div class="div-grid">
+      <div class="div-cell"><span class="duo-label">Rendement sur prix d'achat</span><span class="computed" id="computed-position-yoc" data-tooltip="${tipYieldOnCost(c)}">${m.yoc === null || m.yoc === undefined ? '—' : fmtNum(m.yoc, 2) + ' %'}</span></div>
+      <div class="div-cell"><span class="duo-label">Dividendes attendus par an</span><span class="computed" id="computed-position-divincome" data-tooltip="${tipDividendIncome(c)}">${m.divAnnual === null || m.divAnnual === undefined ? '—' : fmtMoney(m.divAnnual, c.currency)}</span></div>
+    </div></div>`;
+}
+function refreshPositionDividend(){
+  const c = getActive();
+  const el = document.getElementById('position-div');
+  if(!c || !el || !c.position || !c.position.active) return;
+  el.outerHTML = positionDividendHtml(c);
+}
 function buildPositionBlock(c){
   const pos = (c.position && typeof c.position === 'object') ? c.position : { active:false, quantite:'', prixAchat:'', montantInvesti:'' };
   let inner;
@@ -4393,7 +4453,7 @@ function buildPositionBlock(c){
         <input type="text" id="posMontant" size="${Math.max(String(pos.montantInvesti||'').length,2)+1}" value="${escapeHtml(pos.montantInvesti || '')}">
         <span class="value-suffix">${escapeHtml(c.currency)}</span>
       </div></div></div>
-    </div>`;
+    </div>${positionDividendHtml(c)}`;
   } else {
     inner = `<div class="position-empty">Aucune position en cours</div>`;
   }
@@ -4416,6 +4476,7 @@ function updatePositionField(key, value){
   touchUpdated(c);
   saveState();
   refreshInsightsSection();
+  refreshPositionDividend();
 }
 function togglePositionActive(checked){
   updatePositionField('active', checked);
@@ -4781,6 +4842,7 @@ async function refreshCurrentPrice(id, force){
     c.priceError = error;
   }
   saveState();
+  scheduleSnapshot(3000);
   refreshDerived();
   paintPriceStatus(id);
   if(currentView === 'space' || currentView === 'portfolio'){
@@ -5404,16 +5466,26 @@ function positionMetrics(c){
   const value = (qty !== null && cur !== null) ? qty * cur : null;
   const gain = (value !== null && invested !== null && fromPrice) ? value - invested : null;
   const gainPct = (buy !== null && buy !== 0 && cur !== null) ? (cur - buy) / buy * 100 : null;
-  return { devise, qty, buy, cur, invested, value, gain, gainPct };
+  // Dividendes : uniquement si l'analyse indique que l'entreprise en verse (Identité, Politique de dividende)
+  const dv = c.fields.identite && c.fields.identite.politiqueDividende;
+  const dps = (dv && typeof dv === 'object' && dv.mode === 'verse') ? num(dv.dividendeAction) : null;
+  const divAnnual = (dps !== null && qty !== null) ? dps * qty : null;
+  const yoc = (dps !== null && buy !== null && buy > 0) ? dps / buy * 100 : null;
+  return { devise, qty, buy, cur, invested, value, gain, gainPct, dps, divAnnual, yoc };
 }
 function portfolioSummary(){
   const rows = [];
   state.companies.forEach(c => { const m = positionMetrics(c); if(m) rows.push({ c, m }); });
   const byDev = {};
   rows.forEach(({ m }) => {
-    const d = byDev[m.devise] || (byDev[m.devise] = { invested:0, value:0, gain:0, nInv:0, nGain:0 });
+    const d = byDev[m.devise] || (byDev[m.devise] = { invested:0, value:0, gain:0, nInv:0, nGain:0, div:0, nDiv:0, divYocNum:0, divBase:0, divCurNum:0, divValue:0 });
     if(m.invested !== null){ d.invested += m.invested; d.nInv++; }
     if(m.gain !== null){ d.gain += m.gain; d.value += m.value; d.nGain++; }
+    if(m.divAnnual !== null){
+      d.div += m.divAnnual; d.nDiv++;
+      if(m.invested !== null){ d.divYocNum += m.divAnnual; d.divBase += m.invested; }
+      if(m.value !== null){ d.divCurNum += m.divAnnual; d.divValue += m.value; }
+    }
   });
   let main = null;
   Object.keys(byDev).forEach(k => { if(byDev[k].nInv && (main === null || byDev[k].invested > byDev[main].invested)) main = k; });
@@ -5728,6 +5800,11 @@ function buildPrefsCard(){
       <button class="btn btn-outline btn-sm" data-open-price-guide>Guide pas à pas pour obtenir ma clé</button>
     </div>
     <div class="pref">
+      <div class="pref-l">Visite guidée</div>
+      <div class="pref-h">Un tour de 30 secondes pour retrouver où se trouvent les fonctions principales.</div>
+      <button class="btn btn-outline btn-sm" data-start-tour>Revoir la visite guidée</button>
+    </div>
+    <div class="pref">
       <div class="pref-l">Sauvegarde de vos analyses</div>
       <div class="pref-h">Vos analyses sont enregistrées dans ce navigateur. Pour ne rien perdre, activez la sauvegarde automatique dans un fichier ou téléchargez une sauvegarde.</div>
       <div id="backupPanel" class="bk-panel">${backupPanelHtml()}</div>
@@ -5795,6 +5872,7 @@ function importDataFile(file){
         else kept++;
       });
       if(!added && !updated && !kept) throw new Error('vide');
+      mergeHistory(data.history);
       saveState();
       render();
       showToast(`Sauvegarde importée : ${added} ajoutée${added > 1 ? 's' : ''}, ${updated} mise${updated > 1 ? 's' : ''} à jour, ${kept} conservée${kept > 1 ? 's' : ''} (déjà plus récentes ici).`);
@@ -6504,6 +6582,141 @@ function pfDiversification(rowsCur, total){
     <div class="s-note"><span class="pill pill-watch">${label}</span> Repère indicatif, sans bon ni mauvais : à vous de juger selon votre stratégie.</div>`;
 }
 
+// Dividendes attendus : dividende annuel par action × quantité, uniquement pour les positions dont l'analyse indique un dividende
+function pfDividends(pf){
+  const devs = Object.keys(pf.byDev).filter(d => pf.byDev[d].nDiv).sort((a, b) => (a === pf.main ? -1 : 0) - (b === pf.main ? -1 : 0));
+  if(!devs.length) return `<div class="s-empty">Aucune de vos positions ne verse de dividende dans vos analyses. Dans une analyse, section Identité, choisissez « Verse des dividendes » et indiquez le dividende annuel par action : le revenu attendu apparaît ici.</div>`;
+  const st = (l, v) => `<div><div class="pf-stat-l">${l}</div><div class="pf-stat-v">${v}</div></div>`;
+  return devs.map(d => {
+    const x = pf.byDev[d];
+    const yoc = x.divBase > 0 ? fmtNum(x.divYocNum / x.divBase * 100, 2) + '&nbsp;%' : '—';
+    const cy = x.divValue > 0 ? fmtNum(x.divCurNum / x.divValue * 100, 2) + '&nbsp;%' : '—';
+    const rows = pf.rows.filter(r => r.m.devise === d && r.m.divAnnual !== null).sort((a, b) => b.m.divAnnual - a.m.divAnnual);
+    const list = `<div class="tg-list">` + rows.map(r => `<button class="tg-row" data-open-company="${r.c.id}" data-jump="position-card">${miniAv(r.c)}<span class="tg-id"><span class="tg-name">${escapeHtml(r.c.name || 'Sans nom')}</span><span class="tg-vals">${fmtMoney(r.m.dps, d)} par action${r.m.yoc !== null ? ' · ' + fmtNum(r.m.yoc, 2) + ' % sur votre prix d\'achat' : ''}</span></span><span class="pill pill-watch">${fmtMoney(r.m.divAnnual, d)} / an</span></button>`).join('') + `</div>`;
+    return `${devs.length > 1 ? `<div class="pf-stat-l" style="margin:6px 0 8px 0">${d === '$' ? 'En dollars' : 'En euros'}</div>` : ''}
+      <div class="pf-stats">${st('Dividendes par an', fmtMoney(x.div, d))}${st('Sur prix d\'achat', yoc)}${st('Sur cours actuel', cy)}</div>
+      ${list}`;
+  }).join('') + `<div class="s-note">Estimation : dividende annuel actuel de chaque analyse × quantité détenue, avant impôts, sans tenir compte des variations futures. Ce n'est pas une promesse de versement.</div>`;
+}
+
+// ---------- Historique de la valeur du portefeuille ----------
+// Une "photo" par jour (state.history[jour] = { t, c: { '$': { i: capital investi, v: valeur }, '€': {...} } }), séparée par devise (jamais de conversion).
+// Elle est prise quand l'application est ouverte, donc la courbe se construit au fil des jours. Synchronisée avec le compte (fusion par jour, la plus récente gagne).
+let portfolioRange = 'all';
+const HISTORY_MAX_DAYS = 1500;
+function cleanHistoryEntry(e){
+  if(!e || typeof e !== 'object' || !e.c || typeof e.c !== 'object') return null;
+  const c = {};
+  ['$', '€'].forEach(k => {
+    const x = e.c[k];
+    if(!x || typeof x !== 'object') return;
+    const i = Number(x.i), v = Number(x.v);
+    if(Number.isFinite(i) && Number.isFinite(v) && i >= 0 && v >= 0) c[k] = { i:Math.round(i * 100) / 100, v:Math.round(v * 100) / 100 };
+  });
+  return Object.keys(c).length ? { t:Number(e.t) || 0, c } : null;
+}
+function mergeHistory(remote){
+  const rem = (remote && typeof remote === 'object' && !Array.isArray(remote)) ? remote : {};
+  let changed = false, push = false;
+  Object.keys(rem).slice(0, 4000).forEach(day => {
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(day)) return;
+    const e = cleanHistoryEntry(rem[day]);
+    if(!e) return;
+    const l = state.history[day];
+    if(!l || e.t > l.t){ state.history[day] = e; changed = true; }
+  });
+  Object.keys(state.history).forEach(day => {
+    const r = rem[day];
+    if(!r || (Number(r.t) || 0) < state.history[day].t) push = true;
+  });
+  return { changed, push };
+}
+function recordPortfolioSnapshot(){
+  const pf = portfolioSummary();
+  const cur = {};
+  Object.keys(pf.byDev).forEach(d => {
+    const x = pf.byDev[d];
+    if((d === '$' || d === '€') && x.nGain > 0 && x.value > 0) cur[d] = { i:Math.round((x.value - x.gain) * 100) / 100, v:Math.round(x.value * 100) / 100 };
+  });
+  if(!Object.keys(cur).length) return;
+  const day = new Date().toLocaleDateString('sv-SE');
+  const prev = state.history[day];
+  if(prev && JSON.stringify(prev.c) === JSON.stringify(cur)) return;
+  state.history[day] = { t:Date.now(), c:cur };
+  const keys = Object.keys(state.history).sort();
+  keys.slice(0, Math.max(0, keys.length - HISTORY_MAX_DAYS)).forEach(k => delete state.history[k]);
+  saveState();
+}
+let snapshotTimer = null;
+function scheduleSnapshot(delay){
+  clearTimeout(snapshotTimer);
+  snapshotTimer = setTimeout(recordPortfolioSnapshot, delay || 4000);
+}
+const PF_RANGES = [['m1', '1 mois', 31], ['m3', '3 mois', 92], ['y1', '1 an', 366], ['all', 'Tout', 36500]];
+function pfHistory(cur){
+  const chips = `<div class="pf-chips" style="margin-bottom:14px"><span class="pf-chips-l">Période :</span>${PF_RANGES.map(r => `<button class="lr-chip${r[0] === portfolioRange ? ' on' : ''}" data-pf-range="${r[0]}">${r[1]}</button>`).join('')}</div>`;
+  const days = Object.keys(state.history).filter(d => state.history[d].c[cur]).sort();
+  if(days.length < 2) return `<div class="s-empty">La courbe se construit au fil des jours : l'application enregistre la valeur de votre portefeuille chaque jour où vous l'ouvrez. Revenez demain pour voir apparaître les premiers points.</div>`;
+  const span = (PF_RANGES.find(r => r[0] === portfolioRange) || PF_RANGES[3])[2];
+  const cutoff = new Date(Date.now() - span * 864e5).toLocaleDateString('sv-SE');
+  const sel = days.filter(d => d >= cutoff);
+  if(sel.length < 2) return chips + `<div class="s-empty">Pas encore assez de points sur cette période. Choisissez une période plus longue.</div>`;
+  const pts = sel.map(d => ({ d, v:state.history[d].c[cur].v, i:state.history[d].c[cur].i }));
+  const t0 = Date.parse(pts[0].d), t1 = Date.parse(pts[pts.length - 1].d);
+  const all = pts.reduce((a, p) => a.concat(p.v, p.i), []);
+  const lo = Math.min(...all), hi = Math.max(...all);
+  const pad = (hi - lo) * 0.1 || hi * 0.05 || 1;
+  const ax = niceAxisTicks(Math.max(0, lo - pad), hi + pad, 5);
+  const X = d => t1 === t0 ? 50 : (Date.parse(d) - t0) / (t1 - t0) * 100;
+  const Y = v => 100 - (v - ax.min) / (ax.max - ax.min) * 100;
+  const line = key => pts.map(p => `${X(p.d).toFixed(2)},${Y(p[key]).toFixed(2)}`).join(' ');
+  const area = `0,100 ` + pts.map(p => `${X(p.d).toFixed(2)},${Y(p.v).toFixed(2)}`).join(' ') + ` 100,100`;
+  const grid = ax.ticks.map(t => `<line x1="0" x2="100" y1="${Y(t).toFixed(2)}" y2="${Y(t).toFixed(2)}" class="pf-hist-grid" vector-effect="non-scaling-stroke"/>`).join('');
+  const ylab = ax.ticks.map(t => `<span class="pf-hist-y" style="top:${Y(t).toFixed(2)}%">${fmtNum(t)}</span>`).join('');
+  const last = pts[pts.length - 1], first = pts[0];
+  const perf = p => p.i > 0 ? (p.v - p.i) / p.i * 100 : null;
+  const fd = d => new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'2-digit' });
+  const pp = p => { const x = perf(p); return x === null ? '—' : `<span style="color:${pfColor(x)}">${pfPct(x)}</span>`; };
+  const st = (l, v) => `<div><div class="pf-stat-l">${l}</div><div class="pf-stat-v">${v}</div></div>`;
+  const dataPts = JSON.stringify(pts.map(p => [p.d, p.v, p.i, Number(X(p.d).toFixed(2)), Number(Y(p.v).toFixed(2))]));
+  return chips + `<div class="pf-hist-legend"><span><i class="pf-hist-sw pf-hist-sw-v"></i>Valeur du portefeuille</span><span><i class="pf-hist-sw pf-hist-sw-i"></i>Capital investi</span></div>
+    <div class="pf-hist">
+      <div class="pf-hist-plot" data-pts='${escapeHtml(dataPts)}' data-cur="${escapeHtml(cur)}">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${grid}<polygon points="${area}" class="pf-hist-area"/><polyline points="${line('i')}" class="pf-hist-i" vector-effect="non-scaling-stroke"/><polyline points="${line('v')}" class="pf-hist-v" vector-effect="non-scaling-stroke"/></svg>
+        ${ylab}
+        <span class="pf-hist-dot" style="left:${X(last.d).toFixed(2)}%;top:${Y(last.v).toFixed(2)}%"></span>
+        <span class="pf-hist-cursor" hidden></span>
+        <div class="pf-hist-tip" hidden></div>
+      </div>
+      <div class="pf-hist-x"><span>${fd(first.d)}</span><span>${fd(last.d)}</span></div>
+    </div>
+    <div class="pf-stats">${st('Valeur aujourd\'hui', fmtMoney(last.v, cur))}${st('Performance au ' + fd(first.d), pp(first))}${st('Performance au ' + fd(last.d), pp(last))}</div>
+    <div class="s-note">Une photo de la valeur est enregistrée chaque jour où vous ouvrez l'application. Un saut de la courbe peut venir d'un achat ou d'une vente : le capital investi bouge alors aussi. Calculé uniquement à partir de vos positions et de leurs cours saisis ou mis à jour automatiquement, sans conversion de devise.</div>`;
+}
+function bindHistoryHover(){
+  const plot = document.querySelector('.pf-hist-plot');
+  if(!plot) return;
+  let pts;
+  try{ pts = JSON.parse(plot.dataset.pts); }catch(e){ return; }
+  const cur = plot.dataset.cur, tip = plot.querySelector('.pf-hist-tip'), cursor = plot.querySelector('.pf-hist-cursor');
+  const show = e => {
+    const r = plot.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width * 100;
+    let best = pts[0];
+    pts.forEach(p => { if(Math.abs(p[3] - x) < Math.abs(best[3] - x)) best = p; });
+    const gain = best[1] - best[2];
+    tip.innerHTML = `<b>${new Date(best[0] + 'T12:00:00').toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' })}</b><span>Valeur : ${fmtMoney(best[1], cur)}</span><span>Investi : ${fmtMoney(best[2], cur)}</span><span style="color:${pfColor(gain)}">Résultat : ${pfSigned(gain, cur)}</span>`;
+    tip.hidden = false; cursor.hidden = false;
+    cursor.style.left = best[3] + '%';
+    tip.style.left = best[3] > 60 ? 'auto' : (best[3] + 2) + '%';
+    tip.style.right = best[3] > 60 ? (100 - best[3] + 2) + '%' : 'auto';
+  };
+  plot.addEventListener('mousemove', show);
+  plot.addEventListener('touchstart', e => { if(e.touches[0]) show(e.touches[0]); }, { passive:true });
+  plot.addEventListener('touchmove', e => { if(e.touches[0]) show(e.touches[0]); }, { passive:true });
+  plot.addEventListener('mouseleave', () => { tip.hidden = true; cursor.hidden = true; });
+}
+
 function pfIdeas(){
   const ideas = state.companies.filter(c => !(c.position && c.position.active)).map(c => {
     const info = pfInfo(c), price = num(c.fields.valorisation.prixActuel), target = num(c.fields.personnelle.prixAchatCible);
@@ -6521,6 +6734,7 @@ function pfIdeas(){
 
 function renderPortfolioView(){
   const main = document.getElementById('main');
+  recordPortfolioSnapshot();
   const pf = portfolioSummary();
   const devs = Object.keys(pf.byDev).filter(d => pf.byDev[d].nInv);
   const cur = (portfolioCur && devs.indexOf(portfolioCur) >= 0) ? portfolioCur : pf.main;
@@ -6562,8 +6776,11 @@ function renderPortfolioView(){
   }).join('') + `</div>` : `<div class="s-empty s-empty-ok"><strong>Rien à signaler.</strong> Aucun point d'attention sur vos positions pour le moment.</div>`;
   const chips = devs.length > 1 ? `<div class="pf-chips" style="margin-bottom:14px"><span class="pf-chips-l">Répartition en :</span>${devs.map(d => `<button class="lr-chip${d === cur ? ' on' : ''}" data-pf-cur="${d}">${d === '$' ? 'Dollars' : 'Euros'}</button>`).join('')}</div>` : '';
   const multi = Object.keys(pf.byDev).length > 1 ? `<div class="s-note">Vos positions sont en plusieurs devises : les totaux et la répartition sont calculés séparément, sans conversion.</div>` : '';
+  const chipsH = devs.length > 1 ? `<div class="pf-chips" style="margin-bottom:14px"><span class="pf-chips-l">Devise :</span>${devs.map(d => `<button class="lr-chip${d === cur ? ' on' : ''}" data-pf-cur="${d}">${d === '$' ? 'Dollars' : 'Euros'}</button>`).join('')}</div>` : '';
   html += `<div class="sgrid">
     ${spaceCard('s12', 'Vos positions', `${n} position${n > 1 ? 's' : ''}`, pfTable(pf) + multi)}
+    ${spaceCard('s7', 'Évolution de la valeur' + (cur ? ` (${cur})` : ''), 'Valeur du portefeuille et capital investi, jour après jour', chipsH + pfHistory(cur))}
+    ${spaceCard('s5', 'Dividendes attendus', 'Revenu annuel estimé de vos positions', pfDividends(pf))}
     ${spaceCard('s7', 'Performance par position', 'Écart entre le cours et votre prix d\'achat', pfPerformance(pf))}
     ${spaceCard('s5', 'Allocation du capital investi' + (cur ? ` (${cur})` : ''), 'Poids de chaque position', chips + pfAllocation(rowsCur, cur) + pfDiversification(rowsCur, total))}
     ${spaceCard('s6', 'Répartition par secteur', 'Capital investi' + (cur ? ` en ${cur}` : ''), pfBreakdown(rowsCur, i => i.sector, null, `Renseignez le secteur dans la section Identité.`))}
@@ -6583,6 +6800,8 @@ function bindPortfolio(){
     if(jump) setTimeout(() => { const t = document.getElementById(jump); if(t) t.scrollIntoView({ behavior:'smooth', block:'start' }); }, 80);
   }));
   main.querySelectorAll('[data-pf-cur]').forEach(el => el.addEventListener('click', () => { portfolioCur = el.dataset.pfCur; renderPortfolioView(); }));
+  main.querySelectorAll('[data-pf-range]').forEach(el => el.addEventListener('click', () => { portfolioRange = el.dataset.pfRange; renderPortfolioView(); }));
+  bindHistoryHover();
 }
 
 // ---------- Informations légales : confidentialité, conditions, mentions légales ----------
@@ -6695,6 +6914,99 @@ function renderLegalView(){
     <p class="legal-date">Dernière mise à jour : ${LEGAL_DATE_TXT}.</p>
   </div>`;
   main.querySelectorAll('[data-legal-tab]').forEach(b => b.addEventListener('click', () => goLegal(b.dataset.legalTab)));
+}
+
+// ---------- Visite guidée du premier lancement ----------
+// Affichée une seule fois (state.settings.tourDone, propre à l'appareil) ; les utilisateurs qui ont déjà des analyses ne la voient pas
+// automatiquement. Relançable depuis Mon espace, Préférences (bouton [data-start-tour]). Sur mobile, le menu latéral est ouvert le temps de la visite.
+const TOUR_STEPS = [
+  { sel:null, title:'Bienvenue sur The Analytics', text:"Une visite rapide, 30 secondes : voici où trouver l'essentiel. Vous pouvez la passer et la relancer plus tard depuis Mon espace, Préférences." },
+  { sel:'#sideNewBtn', title:'Créez votre première analyse', text:"Commencez ici : nommez une entreprise et remplissez sa fiche, section par section. Les ratios se calculent et se colorent tout seuls." },
+  { sel:'#navSpace', title:'Mon espace et Portefeuille', text:"Mon espace résume vos analyses et vous suggère quoi faire ensuite. Le Portefeuille, juste en dessous, suit vos vrais investissements : résultat, dividendes et évolution dans le temps." },
+  { sel:'#navLearn', title:'Apprentissage', text:"Débutant ? Cette section explique chaque indicateur avec des exemples et un quiz. Vous n'avez rien à savoir avant de commencer." },
+  { sel:'#accountBtn', title:'Un compte, si vous le souhaitez', text:"Sans compte, tout reste sur cet appareil. Avec un compte gratuit, vos analyses vous suivent sur tous vos appareils." },
+];
+const tour = { i:0, active:false, timer:null };
+function tourMobile(){ return window.innerWidth < 900; }
+function startTour(){
+  if(tour.active) return;
+  tour.i = 0; tour.active = true;
+  const layer = document.createElement('div');
+  layer.className = 'tour-layer'; layer.id = 'tourLayer';
+  layer.innerHTML = `<div class="tour-hi" id="tourHi"></div>
+    <div class="tour-pop" id="tourPop" role="dialog" aria-modal="true" aria-labelledby="tourTitle">
+      <div class="tour-count" id="tourCount"></div>
+      <h3 id="tourTitle"></h3>
+      <p id="tourText"></p>
+      <div class="tour-actions"><button type="button" class="link-btn" id="tourSkip">Passer la visite</button><span class="tour-btns"><button type="button" class="btn btn-outline btn-sm" id="tourPrev">Précédent</button><button type="button" class="btn btn-primary btn-sm" id="tourNext">Suivant</button></span></div>
+    </div>`;
+  document.body.appendChild(layer);
+  document.getElementById('tourSkip').addEventListener('click', () => endTour());
+  document.getElementById('tourPrev').addEventListener('click', () => { if(tour.i > 0){ tour.i--; showTourStep(); } });
+  document.getElementById('tourNext').addEventListener('click', () => { if(tour.i < TOUR_STEPS.length - 1){ tour.i++; showTourStep(); } else endTour(); });
+  showTourStep();
+}
+function showTourStep(){
+  clearTimeout(tour.timer);
+  const step = TOUR_STEPS[tour.i];
+  document.getElementById('tourCount').textContent = (tour.i + 1) + ' / ' + TOUR_STEPS.length;
+  document.getElementById('tourTitle').textContent = step.title;
+  document.getElementById('tourText').textContent = step.text;
+  document.getElementById('tourPrev').style.visibility = tour.i === 0 ? 'hidden' : 'visible';
+  document.getElementById('tourNext').textContent = tour.i === 0 ? 'Commencer' : (tour.i === TOUR_STEPS.length - 1 ? 'Terminer' : 'Suivant');
+  if(tourMobile()) document.body.classList.toggle('menu-open', !!step.sel);
+  // sur mobile le menu glisse pendant ~0,3 s : on mesure une fois qu'il est en place
+  tour.timer = setTimeout(placeTour, tourMobile() ? 340 : 30);
+  document.getElementById('tourNext').focus();
+}
+function placeTour(){
+  if(!tour.active) return;
+  const step = TOUR_STEPS[tour.i];
+  const hi = document.getElementById('tourHi'), pop = document.getElementById('tourPop');
+  if(!hi || !pop) return;
+  const el = step.sel ? document.querySelector(step.sel) : null;
+  pop.className = 'tour-pop';
+  pop.style.left = pop.style.top = pop.style.right = pop.style.bottom = '';
+  if(!el){
+    hi.style.display = 'none';
+    pop.classList.add('center');
+    document.getElementById('tourLayer').classList.add('dim');
+    return;
+  }
+  document.getElementById('tourLayer').classList.remove('dim');
+  el.scrollIntoView({ block:'nearest' });
+  const r = el.getBoundingClientRect();
+  hi.style.display = 'block';
+  hi.style.left = (r.left - 6) + 'px'; hi.style.top = (r.top - 6) + 'px';
+  hi.style.width = (r.width + 12) + 'px'; hi.style.height = (r.height + 12) + 'px';
+  if(tourMobile()){
+    pop.classList.add('mob');
+    if(r.top > window.innerHeight / 2) pop.style.top = '12px'; else pop.style.bottom = '12px';
+  }else{
+    const pw = pop.offsetWidth, ph = pop.offsetHeight;
+    pop.style.left = Math.min(r.right + 20, window.innerWidth - pw - 16) + 'px';
+    pop.style.top = Math.max(16, Math.min(r.top + r.height / 2 - ph / 2, window.innerHeight - ph - 16)) + 'px';
+  }
+}
+function endTour(){
+  clearTimeout(tour.timer);
+  tour.active = false;
+  const layer = document.getElementById('tourLayer');
+  if(layer) layer.remove();
+  closeMenu();
+  state.settings.tourDone = true;
+  saveState();
+}
+function initTour(){
+  document.addEventListener('click', e => { if(e.target.closest && e.target.closest('[data-start-tour]')){ closeAuth(); startTour(); } });
+  document.addEventListener('keydown', e => {
+    if(!tour.active) return;
+    if(e.key === 'Escape') endTour();
+    else if(e.key === 'ArrowRight' || e.key === 'Enter'){ if(e.target.id !== 'tourSkip' && e.target.id !== 'tourPrev'){ e.preventDefault(); document.getElementById('tourNext').click(); } }
+    else if(e.key === 'ArrowLeft') document.getElementById('tourPrev').click();
+  });
+  window.addEventListener('resize', () => { if(tour.active) placeTour(); });
+  if(!state.settings.tourDone && currentView === 'home' && !/access_token=|error_code=/.test(location.hash)) setTimeout(() => { if(!state.settings.tourDone && !tour.active) startTour(); }, 900);
 }
 
 // ---------- Apprentissage : affichage ----------
@@ -7752,8 +8064,10 @@ initFormatToolbar();
 initPlainTextPaste();
 ensureLogos();
 ensurePrices();
+scheduleSnapshot(6000);
 initFileBackup();
 bindAuth();
+initTour();
 
 if('serviceWorker' in navigator){
   window.addEventListener('load', () => {
