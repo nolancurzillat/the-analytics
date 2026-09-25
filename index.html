@@ -5534,6 +5534,7 @@ function sortedByRecent(){
 }
 
 // ---------- Recommandations : rappels et pistes de réflexion, uniquement à partir des saisies ----------
+// Plus affichée dans Mon espace depuis le 2026-09-25 (remplacée par unfinishedAnalyses / buildRecsCard) ; conservée au cas où Nolan voudrait retrouver ces rappels.
 function buildRecommendations(){
   const out = [];
   const add = (type, c, title, text, jump) => out.push({ type, id: c ? c.id : null, title, text, jump: jump || '' });
@@ -5654,20 +5655,29 @@ function buildSpaceKpis(){
   </div>`;
 }
 
-function buildRecsCard(recs){
-  const shown = recs.slice(0, 8);
-  const body = shown.length ? `<div class="rec-list">` + shown.map(r => {
-    const c = r.id ? state.companies.find(x => x.id === r.id) : null;
-    const tag = REC_TAGS[r.type];
-    const btn = c ? `<button class="btn btn-outline btn-sm" data-rec-open="${c.id}" data-rec-jump="${r.jump}">Ouvrir</button>` : (r.type === 'info' && state.companies.length === 1 ? `<button class="btn btn-outline btn-sm" data-new-analysis>Nouvelle analyse</button>` : '');
-    return `<div class="rec rec-${r.type}">
-      ${c ? miniAv(c) : `<span class="mini-av mini-av-info">i</span>`}
-      <div class="rec-body"><div class="rec-top"><span class="pill ${tag[1]}">${tag[0]}</span><span class="rec-title">${escapeHtml(r.title)}</span></div><div class="rec-text">${escapeHtml(r.text)}</div></div>
-      ${btn}
+// Analyses pas encore terminées (fiche complétée à moins de 100 %), la plus ancienne (date de création) d'abord
+function unfinishedAnalyses(){
+  return state.companies.map(c => ({ c, comp: companyCompletion(c) })).filter(x => x.comp.pct < 100)
+    .sort((a, b) => String(a.c.createdAt || '').localeCompare(String(b.c.createdAt || '')) || String(a.c.id).localeCompare(String(b.c.id)));
+}
+// Recommandations de Mon espace (demande de Nolan le 2026-09-25) : seulement 3, les analyses les plus anciennes qui ne sont pas encore terminées.
+// L'ancienne liste complète (buildRecommendations : vigilances, opportunités, décisions à revisiter...) n'est plus affichée ici ;
+// les points liés aux positions sont sur la page Portefeuille (pfAlerts), les objectifs d'achat dans la carte "Objectifs d'achat".
+const REC_MAX = 3;
+function buildRecsCard(){
+  const all = unfinishedAnalyses();
+  const shown = all.slice(0, REC_MAX);
+  const body = shown.length ? `<div class="rec-list">` + shown.map(({ c, comp }) => {
+    const w = weakestSection(c);
+    const tag = REC_TAGS.todo;
+    return `<div class="rec rec-todo">
+      ${miniAv(c)}
+      <div class="rec-body"><div class="rec-top"><span class="pill ${tag[1]}">${tag[0]}</span><span class="rec-title">${escapeHtml(c.name || 'Sans nom')} : fiche complétée à ${comp.pct} %</span></div><div class="rec-text">${escapeHtml(`Créée le ${formatDateFr(c.createdAt)}. Section la moins avancée : ${w.label}. Terminez-la pour obtenir un score plus fiable.`)}</div></div>
+      <button class="btn btn-outline btn-sm" data-rec-open="${c.id}" data-rec-jump="sec-${w.key}">Continuer</button>
     </div>`;
-  }).join('') + `</div>` : `<div class="s-empty s-empty-ok"><strong>Tout est en ordre.</strong> Aucun point d'attention pour le moment : vos analyses sont à jour et cohérentes.</div>`;
-  const sub = recs.length > shown.length ? `${shown.length} sur ${recs.length}` : (recs.length ? `${recs.length} point${recs.length > 1 ? 's' : ''}` : '');
-  return spaceCard('s7', 'Recommandations', sub, body + `<div class="s-note">Rappels et pistes de réflexion calculés uniquement à partir de vos propres saisies. Ils ne constituent pas un conseil en investissement.</div>`);
+  }).join('') + `</div>` : `<div class="s-empty s-empty-ok"><strong>Tout est en ordre.</strong> Toutes vos analyses sont terminées.</div>`;
+  const sub = all.length > shown.length ? `${shown.length} sur ${all.length} à terminer` : (all.length ? `${all.length} à terminer` : '');
+  return spaceCard('s7', 'Recommandations', sub, body + `<div class="s-note">Les analyses les plus anciennes et pas encore terminées passent en premier. Simples rappels calculés à partir de vos saisies, sans conseil en investissement.</div>`);
 }
 
 function buildResumeCard(){
@@ -5926,12 +5936,11 @@ function renderSpaceView(){
   const main = document.getElementById('main');
   const cs = state.companies;
   const name = (state.settings.firstName || '').trim();
-  const recs = cs.length ? buildRecommendations() : [];
   const last = cs.length ? sortedByRecent()[0] : null;
-  const attention = recs.filter(r => r.type === 'warning' || r.type === 'opportunity').length;
+  const todo = unfinishedAnalyses().length;
   let sub;
   if(!cs.length) sub = "Bienvenue. Créez votre première analyse pour que cet espace prenne vie : récapitulatif, recommandations et suivi de vos idées.";
-  else sub = `Vous suivez ${cs.length} entreprise${cs.length > 1 ? 's' : ''}. ` + (attention ? `${attention} point${attention > 1 ? 's méritent' : ' mérite'} votre attention.` : 'Aucun point de vigilance pour le moment.');
+  else sub = `Vous suivez ${cs.length} entreprise${cs.length > 1 ? 's' : ''}. ` + (todo ? `${todo} analyse${todo > 1 ? 's restent' : ' reste'} à terminer.` : 'Toutes vos analyses sont terminées.');
   const nameLink = name ? '' : ` <button class="link-btn" id="askName">Comment vous appeler ?</button>`;
 
   let html = `<div class="wrap page space">
@@ -5956,7 +5965,7 @@ function renderSpaceView(){
     </section>`;
   }else{
     html += buildSpaceKpis();
-    html += `<div class="sgrid">${buildRecsCard(recs)}${buildResumeCard()}${buildPipeline()}${buildScoreBars()}${buildValueGap()}${buildTargets()}${buildSectorsCard()}${buildCompaniesTable()}</div>`;
+    html += `<div class="sgrid">${buildRecsCard()}${buildResumeCard()}${buildPipeline()}${buildScoreBars()}${buildValueGap()}${buildTargets()}${buildSectorsCard()}${buildCompaniesTable()}</div>`;
   }
   html += `<div class="sgrid">${buildMilestones()}${buildTipCard()}${buildPrefsCard()}</div></div>`;
   main.innerHTML = html;
