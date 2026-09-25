@@ -2292,7 +2292,8 @@ function authErrorText(r){
   return 'Impossible de terminer : ' + (msg || 'erreur du service') + '.';
 }
 async function cloudSignUp(email, password){
-  const r = await sbFetch('/auth/v1/signup', { method:'POST', body:{ email, password } });
+  // redirect_to : le lien de l'e-mail ramène ici (doit figurer dans les "Redirect URLs" de Supabase, sinon Supabase utilise sa "Site URL")
+  const r = await sbFetch('/auth/v1/signup?redirect_to=' + encodeURIComponent(location.origin + location.pathname), { method:'POST', body:{ email, password } });
   if(!r.ok) throw new Error(authErrorText(r));
   if(r.data && r.data.access_token){ storeCloudSession(r.data, email); return { needsConfirm:false }; }
   return { needsConfirm:true };
@@ -2494,15 +2495,7 @@ async function submitAuth(){
     }else{
       await cloudSignIn(email, pw);
     }
-    const owner = localStorage.getItem(OWNER_KEY);
-    if(owner && owner !== cloud.session.user_id && state.companies.length){
-      if(!window.confirm("Cet appareil contient les analyses d'un autre compte. Pour ne pas les mélanger avec celles de ce compte, elles vont être retirées de cet appareil (elles restent dans leur compte en ligne). Continuer ?")){
-        await cloudLogout();
-        throw new Error('Connexion annulée.');
-      }
-      state.companies = []; state.deleted = {}; state.activeId = null; currentView = 'home';
-      try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
-    }
+    await checkCloudOwner();
     const hadLocal = state.companies.length > 0;
     closeAuth();
     authBusy = false;
@@ -2515,6 +2508,43 @@ async function submitAuth(){
     say(String(e && e.message ? e.message : e) === 'Failed to fetch' ? 'Connexion impossible : vérifiez votre connexion internet.' : String(e && e.message ? e.message : e), 'ko');
   }
   authBusy = false;
+}
+// Si l'appareil contient les analyses d'un AUTRE compte, on les retire (après accord) pour ne jamais mélanger deux comptes.
+async function checkCloudOwner(){
+  const owner = localStorage.getItem(OWNER_KEY);
+  if(owner && owner !== cloud.session.user_id && state.companies.length){
+    if(!window.confirm("Cet appareil contient les analyses d'un autre compte. Pour ne pas les mélanger avec celles de ce compte, elles vont être retirées de cet appareil (elles restent dans leur compte en ligne). Continuer ?")){
+      await cloudLogout();
+      throw new Error('Connexion annulée.');
+    }
+    state.companies = []; state.deleted = {}; state.activeId = null; currentView = 'home';
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+  }
+}
+// Arrivée par le lien de confirmation de l'e-mail : Supabase renvoie vers l'app avec la session dans l'adresse (après le #).
+async function handleAuthRedirect(){
+  const p = new URLSearchParams(location.hash.replace(/^#/, ''));
+  if(p.get('error_description') || p.get('error_code')){
+    history.replaceState(null, '', location.pathname + location.search);
+    showToast('Ce lien de confirmation a expiré ou est invalide. Connectez-vous, ou recréez votre compte.');
+    return;
+  }
+  const at = p.get('access_token'), rt = p.get('refresh_token');
+  if(!at || !rt) return;
+  history.replaceState(null, '', location.pathname + location.search);
+  try{
+    const r = await sbFetch('/auth/v1/user', { token:at });
+    if(!r.ok || !r.data || !r.data.id) throw new Error('user');
+    storeCloudSession({ access_token:at, refresh_token:rt, expires_in:Number(p.get('expires_in')) || 3600, user:r.data }, r.data.email);
+    await checkCloudOwner();
+    paintAccount(); paintBackupPanel();
+    localStorage.setItem(DIRTY_KEY, '1');
+    showToast('Adresse confirmée, vous êtes connecté.');
+    await syncNow();
+    if(currentView === 'space') render();
+  }catch(e){
+    if(String(e && e.message) !== 'Connexion annulée.') showToast('Confirmation reçue, mais la connexion automatique a échoué. Connectez-vous avec votre mot de passe.');
+  }
 }
 function bindAuth(){
   const modal = document.getElementById('authModal'), box = document.getElementById('authBox');
@@ -2548,7 +2578,8 @@ function bindAuth(){
   window.addEventListener('online', () => { if(cloud.session) syncNow(); });
   setInterval(() => { if(document.visibilityState === 'visible') soft(); }, 120000);
   paintAccount();
-  if(cloud.session) setTimeout(syncNow, 900);
+  if(/access_token=|error_code=|error_description=/.test(location.hash)) handleAuthRedirect();
+  else if(cloud.session) setTimeout(syncNow, 900);
 }
 
 let state = loadState();
