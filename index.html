@@ -3440,7 +3440,15 @@ function tipTresorerie(c){
 }
 function tipEcart(c, targetKey, label){
   const e = computeEcart(c, targetKey);
-  return `<div class='tt-formula'>Prix actuel ${n(raw(c.fields.valorisation.prixActuel))} vs ${escapeHtml(label)} ${n(raw(c.fields.valorisation[targetKey]))}</div>${tipRes('= '+(e===null?'—':(e>0?'+':'')+e.toFixed(1)+'%'))}`;
+  const prix = n(raw(c.fields.valorisation.prixActuel)), val = n(raw(c.fields.valorisation[targetKey]));
+  const lab = escapeHtml(label);
+  if(e !== null && e > 0.05){
+    return `<div class='tt-formula'>(Prix actuel ${prix} − ${lab} ${val}) ÷ Prix actuel ${prix}</div>${tipRes('= +' + fmtNum(e, 1) + ' %')}<div class='tt-desc'>Surévaluation : le cours devrait baisser de ${fmtNum(e, 1)} % pour rejoindre la valeur.</div>`;
+  }
+  if(e !== null && e < -0.05){
+    return `<div class='tt-formula'>(${lab} ${val} − Prix actuel ${prix}) ÷ ${lab} ${val}</div>${tipRes('= ' + fmtNum(Math.abs(e), 1) + ' %')}<div class='tt-desc'>Sous-évaluation : le cours est ${fmtNum(Math.abs(e), 1)} % sous la valeur (marge de sécurité).</div>`;
+  }
+  return `<div class='tt-formula'>Prix actuel ${prix} vs ${lab} ${val}</div>${tipRes(e === null ? '—' : 'Juste valorisé')}<div class='tt-desc'>Surévaluation : (Prix − Valeur) ÷ Prix. Sous-évaluation : (Valeur − Prix) ÷ Valeur.</div>`;
 }
 // Croissance totale sur `years` ans = (1 + CAGR)^années − 1, sans le signe % (le % est affiché à côté, comme pour le CAGR : `.value-suffix`)
 function growthTotalText(cagr, years){
@@ -3980,11 +3988,18 @@ function computeRevenuEmploye(c){
   if(ca === null || emp === null || emp === 0) return null;
   return ca / emp;
 }
+// Écart entre le cours et une valeur estimée (DCF ou valeur intrinsèque), signé : négatif = sous-évaluation, positif = surévaluation.
+// Sous-évaluation = (prix − valeur) ÷ valeur (marge de sécurité : la remise sur la valeur, jamais plus de 100 %).
+// Surévaluation = (prix − valeur) ÷ prix (de combien le cours devrait BAISSER pour rejoindre la valeur, toujours sous 100 %).
+// Demande de Nolan le 2026-09-25 : diviser par la valeur pour une surévaluation donnait +100 % pour un cours du double de la valeur,
+// alors que le cours n'a besoin de baisser que de 50 % pour la rejoindre.
 function computeEcart(c, targetKey){
   const prix = num(c.fields.valorisation.prixActuel);
   const target = num(c.fields.valorisation[targetKey]);
-  if(prix === null || target === null || target === 0) return null;
-  return ((prix - target) / target) * 100;
+  if(prix === null || target === null || target <= 0 || prix < 0) return null;
+  const diff = prix - target;
+  if(diff > 0) return prix > 0 ? diff / prix * 100 : null;
+  return diff / target * 100;
 }
 function ecartMarkup(e){
   if(e === null) return `<span class="ecart-text ecart-empty">—</span>`;
@@ -4369,7 +4384,7 @@ function buildSynthesisText(c){
   }
   if(ecartIntr !== null){
     if(ecartIntr < -0.05) parts.push(`Il semble sous-évalué de ${Math.abs(ecartIntr).toFixed(1)}% par rapport à ta valeur intrinsèque.`);
-    else if(ecartIntr > 0.05) parts.push(`Il semble surévalué de ${ecartIntr.toFixed(1)}% par rapport à ta valeur intrinsèque.`);
+    else if(ecartIntr > 0.05) parts.push(`Il semble surévalué : le cours devrait baisser de ${ecartIntr.toFixed(1)}% pour rejoindre ta valeur intrinsèque.`);
   }
   if(moatNote !== null) parts.push(`La note MOAT de ${moatNote}/10 reflète ${moatNote >= 7 ? 'un avantage concurrentiel solide' : 'un avantage concurrentiel à surveiller'}.`);
   if(buffett.checked > 0) parts.push(`La checklist Buffett valide ${buffett.checked}/${buffett.total} critères.`);
@@ -5585,7 +5600,7 @@ function buildRecommendations(){
       add('opportunity', c, `${nm} : décote de ${fmtNum(Math.abs(eIntr), 1)} %`, `Le cours est ${fmtNum(Math.abs(eIntr), 1)} % sous votre valeur intrinsèque, avec un score de ${gsTxt}/100. Une piste à examiner de plus près.`, 'insights-section');
     }
     if(decision === 'Acheter' && eIntr !== null && eIntr >= 15){
-      add('warning', c, `${nm} : décision à revisiter`, `Vous avez choisi « Acheter » alors que le cours dépasse votre valeur intrinsèque de ${fmtNum(eIntr, 1)} %.`, 'sec-valorisation');
+      add('warning', c, `${nm} : décision à revisiter`, `Vous avez choisi « Acheter » alors que le cours devrait baisser de ${fmtNum(eIntr, 1)} % pour rejoindre votre valeur intrinsèque.`, 'sec-valorisation');
     }
     if(conviction >= 4 && buff.checked <= 4){
       add('warning', c, `${nm} : conviction élevée, checklist faible`, `Conviction de ${String(conviction).replace('.', ',')}/5 mais seulement ${buff.checked}/${buff.total} critères Buffett validés. Vérifiez que votre thèse est bien étayée.`, 'sec-personnelle');
@@ -6188,7 +6203,7 @@ const LEARN_CHAPTERS = [
       ]),
       LH(`La marge de sécurité`),
       LP(`Estimer la valeur d'une entreprise n'est pas une science exacte. La marge de sécurité consiste à n'acheter que si le prix est nettement inférieur à votre estimation, pour absorber vos erreurs et les mauvaises surprises.`),
-      LFORM(`Marge de sécurité = (Valeur intrinsèque − Prix) ÷ Valeur intrinsèque`, `Exemple : valeur estimée 125 $, prix 100 $ : (125 − 100) ÷ 125 = 20 %. Dans l'application, l'écart s'affiche à côté de la valeur intrinsèque : « Sous-évaluation de 20 % ».`),
+      LFORM(`Marge de sécurité = (Valeur intrinsèque − Prix) ÷ Valeur intrinsèque`, `Exemple : valeur estimée 125 $, prix 100 $ : (125 − 100) ÷ 125 = 20 %. Dans l'application, l'écart s'affiche à côté de la valeur intrinsèque : « Sous-évaluation de 20 % ». Dans l'autre sens, pour une surévaluation, l'application calcule (Prix − Valeur) ÷ Prix : c'est de combien le cours devrait baisser pour rejoindre la valeur. Valeur 100 $, prix 150 $ : (150 − 100) ÷ 150 = 33,3 %.`),
       LTIP('astuce', `Habituez-vous à fixer un « prix d'achat cible » dans la section Décision : le prix auquel l'entreprise devient attractive pour vous. Mon espace vous montre alors la distance entre le cours et votre cible.`),
       LH(`La checklist des 10 critères`),
       { t:'buffett' },
@@ -6481,7 +6496,7 @@ const LEARN_INDICATORS = {
   croissanceEstimeeEps: { how:`Le rythme de croissance annuel (CAGR) attendu du bénéfice par action sur 3 ans. Vous saisissez ce taux annuel, la croissance totale sur 3 ans se calcule toute seule. Le PEG est le PE divisé par ce CAGR.`, ex:`Un bénéfice par action attendu en hausse de 50 % au total sur 3 ans correspond à un CAGR d'environ 14,5 % par an : c'est 14,5 que vous saisissez, pas 50.` },
   peg: { how:`Le PE divisé par la croissance des bénéfices (en %). Il permet de savoir si l'on paie cher ou non la croissance.`, ex:`PE de 20 et croissance de 15 % : PEG de 1,33.`, warn:`Le PEG dépend d'une prévision de croissance : plus elle est incertaine, moins le PEG est fiable.` },
   valorisationDcf: { how:`La valeur d'aujourd'hui de tout l'argent que l'entreprise va générer, calculée à partir de vos hypothèses de croissance. L'écart avec le cours s'affiche à droite.`, warn:`Très sensible aux hypothèses : changer légèrement la croissance ou le taux d'actualisation modifie beaucoup le résultat.` },
-  valeurIntrinseque: { how:`Votre estimation de ce que vaut réellement une action, indépendamment du cours du jour. Elle sert de référence pour la marge de sécurité.`, ex:`Valeur estimée de 125 $ pour un cours de 100 $ : sous-évaluation de 20 %.` },
+  valeurIntrinseque: { how:`Votre estimation de ce que vaut réellement une action, indépendamment du cours du jour. Elle sert de référence pour la marge de sécurité.`, ex:`Valeur estimée de 125 $ pour un cours de 100 $ : sous-évaluation de 20 % ((125 − 100) ÷ 125). Valeur de 100 $ pour un cours de 150 $ : surévaluation de 33,3 % ((150 − 100) ÷ 150), le cours devrait baisser d'un tiers pour rejoindre la valeur.` },
   beta: { how:`La sensibilité de l'action aux mouvements du marché. 1 : évolue comme le marché ; plus de 1 : plus volatile ; moins de 1 : plus stable.`, ex:`Avec un bêta de 1,3, si le marché baisse de 10 %, l'action baisse en moyenne de 13 %.` },
   positionShort: { how:`La part des actions vendues à découvert (pari à la baisse). Un pourcentage élevé signifie que beaucoup d'investisseurs parient contre l'entreprise.` },
   ratioVenteADecouvert: { how:`Le nombre de jours de volume normal nécessaires pour racheter toutes les actions vendues à découvert.` },
@@ -6539,7 +6554,7 @@ function pfAlerts(rows, total){
     if(m.gainPct !== null && m.gainPct <= -15) add('warning', c, `${nm} : en recul de ${fmtNum(Math.abs(m.gainPct), 1)} %`, `Le cours est nettement sous votre prix d'achat. Relisez votre thèse d'investissement : les raisons d'investir sont-elles toujours valables ?`);
     if(m.gainPct !== null && m.gainPct >= 50) add('info', c, `${nm} : en hausse de ${fmtNum(m.gainPct, 1)} %`, `Après une forte hausse, revérifiez que la valorisation reste justifiée (PEG, écart avec la valeur intrinsèque).`);
     const e = computeEcart(c, 'valeurIntrinseque');
-    if(e !== null && e > 10) add('warning', c, `${nm} : cours ${fmtNum(e, 1)} % au-dessus de votre valeur intrinsèque`, `Selon votre propre estimation, l'action est chère aujourd'hui. Vérifiez si votre estimation est encore à jour.`);
+    if(e !== null && e > 10) add('warning', c, `${nm} : surévaluation de ${fmtNum(e, 1)} % selon votre valeur intrinsèque`, `Le cours devrait baisser de ${fmtNum(e, 1)} % pour rejoindre votre estimation : l'action est chère aujourd'hui. Vérifiez si votre estimation est encore à jour.`);
     if(!info.thesis) add('todo', c, `${nm} : aucune thèse d'investissement`, `Écrire pourquoi vous détenez cette action (section Décision) vous aidera à garder votre calme quand le cours varie.`);
     if(m.cur === null || m.buy === null || m.qty === null) add('todo', c, `${nm} : données de position incomplètes`, `Renseignez la quantité, le prix d'achat et le cours actuel pour calculer précisément votre résultat.`);
   });
