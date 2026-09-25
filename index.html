@@ -3107,18 +3107,19 @@ function num(v){
   return isNaN(n) ? null : n;
 }
 
-// Parse un montant écrit avec une unité (K$, M$, Md$, T$) et le ramène à sa valeur brute,
+// Parse un montant écrit avec une unité (K$, M$, Md$ ou B$, T$) et le ramène à sa valeur brute,
 // pour que les calculs restent justes même si deux champs n'utilisent pas la même unité.
 function parseMoney(v){
   if(v === undefined || v === null) return null;
   const s = String(v).trim();
   if(!s) return null;
-  const match = s.match(/^(-?\d+(?:[.,]\d+)?)\s*(md|k|m|t)?\s*\$?\s*$/i);
+  // B et Bn (billion à l'anglo-saxonne) valent un milliard, comme Md
+  const match = s.match(/^(-?\d+(?:[.,]\d+)?)\s*(md|bn|b|k|m|t)?\s*\$?\s*$/i);
   if(!match) return num(v);
   const n = parseFloat(match[1].replace(',', '.'));
   if(isNaN(n)) return null;
   const unit = (match[2] || '').toLowerCase();
-  const mult = { '':1, 'k':1e3, 'm':1e6, 'md':1e9, 't':1e12 }[unit];
+  const mult = { '':1, 'k':1e3, 'm':1e6, 'md':1e9, 'bn':1e9, 'b':1e9, 't':1e12 }[unit];
   return n * mult;
 }
 
@@ -6138,7 +6139,7 @@ const LEARN_CHAPTERS = [
       ]),
       LH(`Saisir les chiffres facilement`),
       LUL([
-        `Vous pouvez écrire les montants avec des suffixes : <strong>K</strong> (millier), <strong>M</strong> (million), <strong>Md</strong> (milliard), <strong>T</strong> (mille milliards). Exemples : 3,2T, 391Md, 900M.`,
+        `Vous pouvez écrire les montants avec des suffixes : <strong>K</strong> (millier), <strong>M</strong> (million), <strong>Md</strong> ou <strong>B</strong> (milliard, le B est l'usage des sites américains), <strong>T</strong> (mille milliards). Exemples : 3,2T, 391Md, 391B, 900M.`,
         `La virgule et le point fonctionnent tous les deux pour les décimales.`,
         `Les symboles $ et % s'ajoutent tout seuls : inutile de les taper.`,
         `Un texte collé depuis un site web perd sa mise en forme d'origine, pour rester lisible et uniforme.`,
