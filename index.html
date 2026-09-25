@@ -236,6 +236,14 @@ svg{display:block;}
   display:flex; align-items:center; justify-content:space-between; gap:10px;
   font-size:12.5px; color:#7f8fae; line-height:1.4;
 }
+.side-legal{ display:flex; flex-wrap:wrap; gap:2px 12px; padding:0 20px 14px 20px; }
+.side-legal button{ background:none; border:none; padding:0; cursor:pointer; font:inherit; font-size:11.5px; color:#7f8fae; text-decoration:underline; text-underline-offset:3px; }
+.side-legal button:hover{ color:#c6d1e6; }
+.legal-tabs{ display:flex; gap:8px; flex-wrap:wrap; margin:18px 0 8px 0; }
+.legal-tab{ padding:9px 16px; border:1px solid var(--border); border-radius:999px; background:var(--card); color:var(--ink); font:inherit; font-size:14px; font-weight:600; cursor:pointer; }
+.legal-tab:hover{ background:var(--paper-line); }
+.legal-tab.active{ background:var(--accent); border-color:var(--accent); color:#fff; }
+.legal-date{ margin:26px 0 40px 0; font-size:13px; color:var(--ink-soft); }
 .acct-btn{
   flex:1 1 auto; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:2px;
   background:none; border:none; padding:0; text-align:left; cursor:pointer; font:inherit; color:inherit;
@@ -1126,6 +1134,13 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; font-family:
   background:var(--field); color:var(--ink); font-size:var(--fs-value); font-family:var(--font-ui); margin-bottom:20px;
 }
 .modal-box input:focus{ outline:none; border-color:var(--blue); box-shadow:0 0 0 3px var(--ring); }
+.auth-forgot{ margin:-10px 0 14px 0; font-size:13px; }
+.auth-links{ display:flex; gap:6px 18px; flex-wrap:wrap; justify-content:center; margin-top:16px; }
+.auth-links .link-btn{ font-size:12.5px; }
+.auth-consent{ display:flex; gap:10px; align-items:flex-start; font-size:13px; line-height:1.5; color:var(--ink-soft); margin:-4px 0 10px 0; cursor:pointer; }
+.auth-consent input{ width:18px; height:18px; flex:0 0 auto; margin:2px 0 0 0; accent-color:var(--accent); }
+.modal-actions button.danger{ background:var(--red); border-color:var(--red); }
+.modal-actions button.danger:hover{ filter:brightness(.92); }
 .pw-wrap{ position:relative; margin-bottom:20px; }
 .pw-wrap input{ margin-bottom:0; padding-right:48px; }
 .pw-eye{ position:absolute; right:5px; top:50%; transform:translateY(-50%); width:38px; height:38px; display:flex; align-items:center; justify-content:center; border:none; border-radius:8px; background:none; color:var(--ink-soft); cursor:pointer; }
@@ -1619,6 +1634,7 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; font-family:
     <button type="button" class="acct-btn" id="accountBtn" aria-label="Compte et synchronisation"></button>
     <button class="theme-btn" id="themeBtn" title="Changer de thème" aria-label="Changer de thème"></button>
   </div>
+  <div class="side-legal"><button type="button" data-legal="confidentialite">Confidentialité</button><button type="button" data-legal="conditions">Conditions</button><button type="button" data-legal="mentions">Mentions légales</button></div>
 </aside>
 <div class="side-overlay" id="sideOverlay"></div>
 
@@ -2285,6 +2301,7 @@ function authErrorText(r){
   if(code === 'invalid_credentials' || /invalid login/i.test(msg)) return 'Adresse e-mail ou mot de passe incorrect.';
   if(code === 'user_already_exists' || /already registered/i.test(msg)) return 'Un compte existe déjà avec cette adresse. Connectez-vous.';
   if(code === 'weak_password' || /password/i.test(code + msg) && /(short|least|weak)/i.test(msg)) return 'Mot de passe trop faible : 6 caractères minimum.';
+  if(code === 'same_password') return "Le nouveau mot de passe doit être différent de l'ancien.";
   if(code === 'email_not_confirmed') return "Adresse non confirmée : cliquez d'abord sur le lien reçu par e-mail.";
   if(code === 'over_email_send_rate_limit' || r.status === 429) return 'Trop de tentatives. Réessayez dans quelques minutes.';
   if(code === 'email_address_invalid' || /invalid.*email/i.test(msg)) return "Cette adresse e-mail n'est pas valide.";
@@ -2293,7 +2310,7 @@ function authErrorText(r){
 }
 async function cloudSignUp(email, password){
   // redirect_to : le lien de l'e-mail ramène ici (doit figurer dans les "Redirect URLs" de Supabase, sinon Supabase utilise sa "Site URL")
-  const r = await sbFetch('/auth/v1/signup?redirect_to=' + encodeURIComponent(location.origin + location.pathname), { method:'POST', body:{ email, password } });
+  const r = await sbFetch('/auth/v1/signup?redirect_to=' + encodeURIComponent(location.origin + location.pathname), { method:'POST', body:{ email, password, data:{ consent_version:LEGAL_VERSION, consent_at:new Date().toISOString() } } });
   if(!r.ok) throw new Error(authErrorText(r));
   if(r.data && r.data.access_token){ storeCloudSession(r.data, email); return { needsConfirm:false }; }
   return { needsConfirm:true };
@@ -2441,7 +2458,7 @@ const EYE_SVG = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" str
 const EYE_OFF_SVG = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.9 17.9A10.7 10.7 0 0 1 12 19C5.6 19 2 12 2 12a18 18 0 0 1 4.1-5.1M9.9 5.2A9.8 9.8 0 0 1 12 5c6.4 0 10 7 10 7a18 18 0 0 1-2.2 3.2"/><path d="M14.1 14.1a3 3 0 1 1-4.2-4.2"/><path d="M2 2l20 20"/></svg>';
 let authMode = 'login', authMsg = { t:'', cls:'' }, authBusy = false;
 function openAuth(mode){
-  authMode = cloud.session ? 'account' : (mode || 'login');
+  authMode = mode === 'newpw' ? 'newpw' : (cloud.session ? 'account' : (mode || 'login'));
   authMsg = { t:'', cls:'' };
   paintAuthModal();
   document.getElementById('authModal').classList.remove('hidden');
@@ -2452,38 +2469,120 @@ function paintAuthModal(){
   const box = document.getElementById('authBox');
   const prevEmail = (document.getElementById('authEmail') || {}).value || '';
   const res = `<div class="guide-result ${authMsg.cls}" id="authResult" aria-live="polite">${escapeHtml(authMsg.t)}</div>`;
+  const emailField = `<label class="modal-label" for="authEmail">Adresse e-mail</label>
+    <input type="email" id="authEmail" autocomplete="email" inputmode="email" spellcheck="false" placeholder="vous@exemple.com" value="${escapeHtml(prevEmail)}">`;
+  const pwField = (label, auto) => `<label class="modal-label" for="authPw">${label}</label>
+    <div class="pw-wrap"><input type="password" id="authPw" autocomplete="${auto}" placeholder="Votre mot de passe"><button type="button" class="pw-eye" data-auth="toggle-pw" aria-label="Afficher le mot de passe" aria-pressed="false">${EYE_SVG}</button></div>`;
   if(authMode === 'account' && cloud.session){
     box.innerHTML = `<h2>Mon compte</h2>
       <p class="guide-lead">Connecté avec <strong>${escapeHtml(cloud.session.email)}</strong>.</p>
       <div class="guide-result ${cloud.status === 'error' ? 'ko' : 'ok'}">${escapeHtml(cloudStatusText())}</div>
       <div class="modal-hint">Vos analyses restent enregistrées sur cet appareil, puis une copie part en ligne quelques secondes après chaque modification. Connectez-vous avec la même adresse sur un autre appareil pour les retrouver. Votre clé API Twelve Data reste sur cet appareil.</div>
-      <div class="modal-actions" style="margin-top:18px;flex-wrap:wrap"><button data-auth="close">Fermer</button><button data-auth="sync">Synchroniser maintenant</button><button class="primary" data-auth="logout">Se déconnecter</button></div>`;
+      <div class="modal-actions" style="margin-top:18px;flex-wrap:wrap"><button data-auth="close">Fermer</button><button data-auth="sync">Synchroniser maintenant</button><button class="primary" data-auth="logout">Se déconnecter</button></div>
+      <div class="modal-hint auth-links"><button class="link-btn" data-auth="export">Télécharger mes données</button><button class="link-btn" data-auth="mode-delete">Supprimer mon compte</button><button class="link-btn" data-legal="confidentialite">Confidentialité</button></div>`;
+    return;
+  }
+  if(authMode === 'delete' && cloud.session){
+    box.innerHTML = `<h2>Supprimer mon compte</h2>
+      <p class="guide-lead">Cette action est <strong>définitive</strong> : votre compte et toutes les analyses enregistrées en ligne seront effacés de nos serveurs.</p>
+      <div class="modal-hint" style="margin-top:-4px;margin-bottom:16px">Les analyses présentes sur cet appareil ne sont pas effacées : elles restent utilisables sans compte. Si vous en avez besoin ailleurs, téléchargez d'abord une sauvegarde.</div>
+      <label class="modal-label" for="authConfirm">Pour confirmer, tapez SUPPRIMER</label>
+      <input type="text" id="authConfirm" autocomplete="off" spellcheck="false" placeholder="SUPPRIMER">
+      ${res}
+      <div class="modal-actions" style="margin-top:12px"><button data-auth="back-account">Annuler</button><button class="primary danger" data-auth="submit">Supprimer définitivement</button></div>`;
+    return;
+  }
+  if(authMode === 'newpw'){
+    box.innerHTML = `<h2>Nouveau mot de passe</h2>
+      <p class="guide-lead">Choisissez le mot de passe que vous utiliserez désormais.</p>
+      ${pwField('Nouveau mot de passe (6 caractères minimum)', 'new-password')}
+      ${res}
+      <div class="modal-actions" style="margin-top:12px"><button data-auth="close">Plus tard</button><button class="primary" data-auth="submit">Enregistrer</button></div>`;
+    return;
+  }
+  if(authMode === 'forgot'){
+    box.innerHTML = `<h2>Mot de passe oublié</h2>
+      <p class="guide-lead">Saisissez l'adresse de votre compte : nous vous envoyons un lien pour choisir un nouveau mot de passe.</p>
+      ${emailField}
+      ${res}
+      <div class="modal-actions" style="margin-top:12px"><button data-auth="mode-login">Retour</button><button class="primary" data-auth="submit">Envoyer le lien</button></div>`;
     return;
   }
   const signup = authMode === 'signup';
   box.innerHTML = `<h2>${signup ? 'Créer un compte' : 'Se connecter'}</h2>
     <p class="guide-lead">${signup ? 'Retrouvez vos analyses sur tous vos appareils. Gratuit.' : 'Retrouvez vos analyses sur tous vos appareils.'}</p>
-    <label class="modal-label" for="authEmail">Adresse e-mail</label>
-    <input type="email" id="authEmail" autocomplete="email" inputmode="email" spellcheck="false" placeholder="vous@exemple.com" value="${escapeHtml(prevEmail)}">
-    <label class="modal-label" for="authPw">Mot de passe${signup ? ' (6 caractères minimum)' : ''}</label>
-    <div class="pw-wrap"><input type="password" id="authPw" autocomplete="${signup ? 'new-password' : 'current-password'}" placeholder="Votre mot de passe"><button type="button" class="pw-eye" data-auth="toggle-pw" aria-label="Afficher le mot de passe" aria-pressed="false">${EYE_SVG}</button></div>
+    ${emailField}
+    ${pwField('Mot de passe' + (signup ? ' (6 caractères minimum)' : ''), signup ? 'new-password' : 'current-password')}
+    ${signup ? '' : '<div class="auth-forgot"><button type="button" class="link-btn" data-auth="mode-forgot">Mot de passe oublié ?</button></div>'}
+    ${signup ? `<label class="auth-consent"><input type="checkbox" id="authConsent"><span>J'ai lu et j'accepte la <button type="button" class="link-btn" data-legal="confidentialite">politique de confidentialité</button> et les <button type="button" class="link-btn" data-legal="conditions">conditions d'utilisation</button>.</span></label>` : ''}
     ${res}
     <div class="modal-hint">Vos analyses sont enregistrées en ligne, liées à votre compte, et visibles uniquement par vous. Vous pouvez aussi continuer sans compte : tout reste alors sur cet appareil.</div>
     <div class="modal-actions" style="margin-top:16px"><button data-auth="close">Continuer sans compte</button><button class="primary" data-auth="submit">${signup ? 'Créer mon compte' : 'Se connecter'}</button></div>
     <div class="modal-hint" style="text-align:center;margin-top:14px">${signup ? 'Déjà un compte ? <button class="link-btn" data-auth="mode-login">Se connecter</button>' : 'Pas encore de compte ? <button class="link-btn" data-auth="mode-signup">Créer un compte</button>'}</div>`;
 }
+async function cloudRecover(email){
+  const r = await sbFetch('/auth/v1/recover?redirect_to=' + encodeURIComponent(location.origin + location.pathname), { method:'POST', body:{ email } });
+  if(!r.ok) throw new Error(authErrorText(r));
+}
+async function cloudSetPassword(password){
+  const token = await cloudToken();
+  const r = await sbFetch('/auth/v1/user', { method:'PUT', token, body:{ password } });
+  if(!r.ok) throw new Error(authErrorText(r));
+}
+// Suppression du compte : la fonction SQL delete_my_account (voir CLAUDE.md) efface l'utilisateur, ses données partent avec (cascade).
+async function deleteCloudAccount(){
+  const token = await cloudToken();
+  const uid = cloud.session.user_id;
+  const r = await sbFetch('/rest/v1/rpc/delete_my_account', { method:'POST', token, body:{} });
+  if(!r.ok){
+    if(r.status === 404){
+      await sbFetch('/rest/v1/user_data?user_id=eq.' + encodeURIComponent(uid), { method:'DELETE', token });
+      throw new Error("Vos analyses en ligne ont été effacées, mais la suppression complète du compte n'est pas encore activée sur le serveur. Contactez l'éditeur pour la finaliser.");
+    }
+    throw new Error('La suppression a échoué (' + ((r.data && r.data.message) || r.status) + '). Réessayez plus tard.');
+  }
+  clearCloudSession();
+  try{ localStorage.removeItem(OWNER_KEY); localStorage.removeItem(DIRTY_KEY); }catch(e){}
+}
 async function submitAuth(){
   if(authBusy) return;
-  const email = (document.getElementById('authEmail').value || '').trim();
-  const pw = document.getElementById('authPw').value || '';
+  const val = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+  const email = val('authEmail').trim(), pw = val('authPw');
   const res = document.getElementById('authResult');
   const say = (t, cls) => { authMsg = { t, cls }; res.textContent = t; res.className = 'guide-result ' + cls; };
-  if(!/^\S+@\S+\.\S+$/.test(email)){ say("Saisissez une adresse e-mail valide.", 'ko'); return; }
-  if(pw.length < 6){ say('Le mot de passe doit faire au moins 6 caractères.', 'ko'); return; }
+  const mode = authMode;
+  if((mode === 'login' || mode === 'signup' || mode === 'forgot') && !/^\S+@\S+\.\S+$/.test(email)){ say('Saisissez une adresse e-mail valide.', 'ko'); return; }
+  if((mode === 'login' || mode === 'signup' || mode === 'newpw') && pw.length < 6){ say('Le mot de passe doit faire au moins 6 caractères.', 'ko'); return; }
+  if(mode === 'signup' && !(document.getElementById('authConsent') || {}).checked){ say("Cochez la case pour accepter la politique de confidentialité et les conditions d'utilisation.", 'ko'); return; }
+  if(mode === 'delete' && val('authConfirm').trim().toUpperCase() !== 'SUPPRIMER'){ say('Tapez le mot SUPPRIMER pour confirmer.', 'ko'); return; }
   authBusy = true;
-  say(authMode === 'signup' ? 'Création du compte...' : 'Connexion...', '');
+  say({ signup:'Création du compte...', forgot:'Envoi...', newpw:'Enregistrement...', delete:'Suppression...' }[mode] || 'Connexion...', '');
   try{
-    if(authMode === 'signup'){
+    if(mode === 'forgot'){
+      await cloudRecover(email);
+      say("Si un compte existe avec cette adresse, un e-mail vient d'être envoyé (pensez aux courriers indésirables). Ouvrez le lien qu'il contient.", 'ok');
+      authBusy = false;
+      return;
+    }
+    if(mode === 'newpw'){
+      await cloudSetPassword(pw);
+      closeAuth();
+      authBusy = false;
+      showToast('Mot de passe modifié. Vous êtes connecté.');
+      localStorage.setItem(DIRTY_KEY, '1');
+      await syncNow();
+      if(currentView === 'space') render();
+      return;
+    }
+    if(mode === 'delete'){
+      await deleteCloudAccount();
+      closeAuth();
+      authBusy = false;
+      paintAccount(); paintBackupPanel();
+      showToast('Votre compte et vos données en ligne ont été supprimés. Vos analyses restent sur cet appareil.');
+      return;
+    }
+    if(mode === 'signup'){
       const r = await cloudSignUp(email, pw);
       if(r.needsConfirm){
         authMode = 'login';
@@ -2538,6 +2637,11 @@ async function handleAuthRedirect(){
     storeCloudSession({ access_token:at, refresh_token:rt, expires_in:Number(p.get('expires_in')) || 3600, user:r.data }, r.data.email);
     await checkCloudOwner();
     paintAccount(); paintBackupPanel();
+    if(p.get('type') === 'recovery'){
+      openAuth('newpw');
+      showToast('Lien valide : choisissez votre nouveau mot de passe.');
+      return;
+    }
     localStorage.setItem(DIRTY_KEY, '1');
     showToast('Adresse confirmée, vous êtes connecté.');
     await syncNow();
@@ -2557,6 +2661,10 @@ function bindAuth(){
     else if(a === 'submit') submitAuth();
     else if(a === 'mode-signup'){ authMode = 'signup'; authMsg = { t:'', cls:'' }; paintAuthModal(); }
     else if(a === 'mode-login'){ authMode = 'login'; authMsg = { t:'', cls:'' }; paintAuthModal(); }
+    else if(a === 'mode-forgot'){ authMode = 'forgot'; authMsg = { t:'', cls:'' }; paintAuthModal(); }
+    else if(a === 'mode-delete'){ authMode = 'delete'; authMsg = { t:'', cls:'' }; paintAuthModal(); }
+    else if(a === 'back-account'){ authMode = 'account'; authMsg = { t:'', cls:'' }; paintAuthModal(); }
+    else if(a === 'export') exportData();
     else if(a === 'toggle-pw'){
       const pw = document.getElementById('authPw'), show = pw.type === 'password';
       pw.type = show ? 'text' : 'password';
@@ -2571,6 +2679,7 @@ function bindAuth(){
   box.addEventListener('keydown', e => { if(e.key === 'Enter' && e.target.tagName === 'INPUT') submitAuth(); });
   document.getElementById('accountBtn').addEventListener('click', () => openAuth('login'));
   document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-auth-open]'); if(b) openAuth(b.dataset.authOpen || 'signup'); });
+  document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-legal]'); if(b){ closeAuth(); goLegal(b.dataset.legal); } });
   // Reprise de la synchronisation : retour sur l'onglet, retour du réseau, et toutes les 2 minutes tant que la page est visible
   const soft = () => { if(cloud.session && !cloud.busy && Date.now() - cloud.lastSync > 30000) syncNow(); };
   document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') soft(); else if(cloud.timer) syncNow(); });
@@ -6467,6 +6576,118 @@ function bindPortfolio(){
   main.querySelectorAll('[data-pf-cur]').forEach(el => el.addEventListener('click', () => { portfolioCur = el.dataset.pfCur; renderPortfolioView(); }));
 }
 
+// ---------- Informations légales : confidentialité, conditions, mentions légales ----------
+// Textes rédigés comme base de travail, à faire relire avant une ouverture large au public. Pas de `${` ni de guillemet oblique dans les textes.
+const LEGAL_VERSION = '2026-09-25';
+const LEGAL_DATE_TXT = '25 septembre 2026';
+const LEGAL_PUBLISHER = 'Nolan Curzillat';
+const LEGAL_CONTACT = `via la page du projet, <a href="https://github.com/nolancurzillat/the-analytics/issues" target="_blank" rel="noopener noreferrer">github.com/nolancurzillat/the-analytics/issues</a> (n'y indiquez aucune information personnelle)`;
+const LEGAL_TABS = [
+  { id:'confidentialite', label:'Confidentialité', title:'Politique de confidentialité' },
+  { id:'conditions', label:"Conditions d'utilisation", title:"Conditions d'utilisation" },
+  { id:'mentions', label:'Mentions légales', title:'Mentions légales' },
+];
+const LEGAL_CONTENT = {
+  confidentialite: [
+    LH('En bref'),
+    LP(`The Analytics est un outil d'analyse d'actions. Vous pouvez l'utiliser <strong>sans compte</strong> : vos analyses restent alors uniquement dans votre navigateur, et nous n'en recevons rien. Si vous <strong>créez un compte</strong>, vos analyses sont enregistrées en ligne pour que vous les retrouviez sur vos appareils. Nous ne vendons pas vos données, nous n'affichons aucune publicité et nous n'utilisons aucun outil de statistiques ou de suivi.`),
+    LH('Qui est responsable de vos données'),
+    LP(`Le responsable du traitement est l'éditeur du site, ${LEGAL_PUBLISHER} (voir les mentions légales). Pour toute question sur vos données : ${LEGAL_CONTACT}.`),
+    LH('Quelles données, pourquoi'),
+    LUL([
+      `<strong>Sans compte</strong> : ce que vous saisissez est stocké dans le stockage local de votre navigateur, sur votre appareil. Nous n'y avons pas accès.`,
+      `<strong>Adresse e-mail et mot de passe</strong> (avec un compte) : pour créer et protéger votre compte. Le mot de passe est stocké sous forme chiffrée par notre prestataire d'authentification, nous ne le voyons jamais. Base légale : l'exécution du service que vous demandez.`,
+      `<strong>Vos analyses et préférences</strong> (avec un compte) : contenu de vos fiches, prénom facultatif, devise par défaut, ordre de tri, progression dans l'apprentissage. Elles servent uniquement à la synchronisation entre vos appareils. Base légale : l'exécution du service.`,
+      `<strong>Date et version de votre acceptation</strong> de ces règles, enregistrées à la création du compte, pour pouvoir prouver votre accord. Base légale : notre intérêt légitime à conserver cette preuve.`,
+      `<strong>Votre clé API Twelve Data</strong>, si vous en utilisez une : elle reste sur votre appareil et n'est jamais envoyée à nos serveurs.`,
+    ]),
+    LP(`Vos analyses contiennent ce que vous y écrivez librement (notes, thèses d'investissement, positions, prix d'achat). Ces informations peuvent révéler votre situation financière : ne saisissez en ligne que ce que vous acceptez d'y stocker. Vous pouvez à tout moment vous en passer en n'utilisant pas de compte. N'y indiquez aucune information sur d'autres personnes.`),
+    LH(`Qui d'autre reçoit des données`),
+    LUL([
+      `<strong>Supabase</strong> (base de données et authentification) : reçoit votre adresse e-mail, votre mot de passe chiffré et vos analyses, si vous avez un compte.`,
+      `<strong>GitHub Pages</strong> (hébergement du site) : comme tout site web, reçoit votre adresse IP quand vous ouvrez l'application.`,
+      `<strong>Google Fonts</strong> : les polices d'écriture sont chargées depuis Google, qui reçoit votre adresse IP.`,
+      `<strong>Wikidata, Wikimedia et le service d'icônes de Google</strong> (logos des entreprises) : reçoivent uniquement le nom de l'entreprise analysée, si l'option de recherche automatique des logos est activée. Vous pouvez la désactiver dans Mon espace, Préférences.`,
+      `<strong>Twelve Data</strong> (prix actuels) : reçoit uniquement le ticker de l'action, si vous avez renseigné votre propre clé API.`,
+    ]),
+    LP(`Hors Supabase, aucun de ces services ne reçoit le contenu de vos analyses. Certains prestataires sont des sociétés américaines : les éventuels transferts de données hors de l'Union européenne sont encadrés par les mécanismes prévus par le règlement européen (RGPD), comme les clauses contractuelles types.`),
+    LH('Durée de conservation'),
+    LP(`Les données de votre compte sont conservées tant que le compte existe. Quand vous supprimez votre compte, elles sont effacées de la base de données. Des copies techniques de sauvegarde du prestataire peuvent subsister brièvement avant leur effacement définitif. Les analyses stockées sur votre appareil restent chez vous tant que vous ne videz pas les données de votre navigateur.`),
+    LH('Sécurité'),
+    LP(`Les échanges sont chiffrés (HTTPS). Chaque compte n'accède qu'à ses propres données grâce à des règles d'accès appliquées côté serveur. En revanche, vos analyses ne sont <strong>pas chiffrées de bout en bout</strong> : l'éditeur y a techniquement accès via l'administration de la base de données, et ne les consulte que pour assurer le fonctionnement et la sécurité du service, ou si la loi l'exige.`),
+    LH('Vos droits'),
+    LUL([
+      `<strong>Accès et portabilité</strong> : le bouton « Télécharger mes données » de la fenêtre Mon compte vous donne toutes vos analyses dans un fichier lisible.`,
+      `<strong>Rectification</strong> : modifiez directement vos analyses dans l'application.`,
+      `<strong>Effacement</strong> : le bouton « Supprimer mon compte » de la fenêtre Mon compte efface votre compte et vos données en ligne.`,
+      `<strong>Opposition, limitation, autres questions</strong> : ${LEGAL_CONTACT}.`,
+      `<strong>Réclamation</strong> : vous pouvez saisir la CNIL (cnil.fr) si vous estimez que vos droits ne sont pas respectés.`,
+    ]),
+    LH('Cookies et stockage local'),
+    LP(`L'application n'utilise aucun cookie publicitaire ni traceur. Elle utilise le stockage local de votre navigateur, strictement nécessaire à son fonctionnement : vos analyses, vos préférences et votre connexion. Aucun bandeau de consentement n'est donc nécessaire pour cela.`),
+    LH('Modifications'),
+    LP(`Cette politique peut évoluer. La date de dernière mise à jour figure en bas de page, et tout changement important vous sera signalé dans l'application.`),
+  ],
+  conditions: [
+    LH('Objet'),
+    LP(`The Analytics est un outil gratuit d'aide à l'analyse d'actions selon une méthode de type value et qualité : vous y saisissez des informations sur des entreprises, l'application calcule des indicateurs et les met en couleur selon des barèmes. Elle propose aussi une section d'apprentissage.`),
+    LH(`Ce n'est pas un conseil en investissement`),
+    LP(`Les indicateurs, scores, barèmes, recommandations et textes d'apprentissage sont pédagogiques et reposent sur <strong>vos propres saisies</strong>. Ils ne constituent ni un conseil en investissement, ni une recommandation personnalisée, ni une incitation à acheter ou à vendre un titre. L'éditeur n'est pas conseiller en investissements financiers. Investir en bourse comporte un risque de perte en capital : vous restez seul responsable de vos décisions.`),
+    LH('Exactitude des données'),
+    LP(`Les calculs s'appuient sur les données que vous saisissez et, pour le prix actuel, sur un service tiers qui peut être erroné, incomplet ou différé. Vérifiez toujours vos chiffres auprès de sources officielles, comme les documents publiés par les entreprises.`),
+    LH('Votre compte'),
+    LUL([
+      `Le compte est facultatif. Vous devez indiquer une adresse e-mail valide et en être le titulaire.`,
+      `Vous êtes responsable de la confidentialité de votre mot de passe et de l'activité de votre compte.`,
+      `Vous pouvez supprimer votre compte à tout moment depuis la fenêtre Mon compte.`,
+      `L'éditeur peut suspendre un compte en cas d'usage abusif, par exemple une tentative d'accès aux données d'autres utilisateurs ou une surcharge volontaire du service.`,
+    ]),
+    LH('Vos données et vos sauvegardes'),
+    LP(`Vos analyses vous appartiennent. Nous vous conseillons de télécharger régulièrement une sauvegarde (Mon espace, Préférences), car aucune sauvegarde ni disponibilité permanente ne peut être garantie.`),
+    LH('Disponibilité et responsabilité'),
+    LP(`Le service est fourni gratuitement et en l'état, sans garantie de disponibilité continue ni d'absence d'erreur. Dans les limites permises par la loi, l'éditeur n'est pas responsable des pertes de données, des décisions d'investissement prises à partir de l'application, ni des dommages indirects. Ces limites ne s'appliquent pas là où la loi l'interdit.`),
+    LH('Évolution du service'),
+    LP(`Le service et ces conditions peuvent évoluer. La date de dernière mise à jour figure en bas de page, et tout changement important vous sera signalé dans l'application.`),
+    LH('Droit applicable'),
+    LP(`Ces conditions sont soumises au droit français.`),
+  ],
+  mentions: [
+    LH('Éditeur du site'),
+    LP(`${LEGAL_PUBLISHER}, personne physique, éditeur non professionnel. Directeur de la publication : ${LEGAL_PUBLISHER}. Contact : ${LEGAL_CONTACT}.`),
+    LH('Hébergement'),
+    LUL([
+      `<strong>Site</strong> : GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis (GitHub Pages, github.com).`,
+      `<strong>Données des comptes</strong> : Supabase, Inc. (supabase.com), prestataire de base de données et d'authentification.`,
+    ]),
+    LH('Propriété intellectuelle'),
+    LP(`Le code de l'application, les textes d'apprentissage et l'identité visuelle de The Analytics sont la propriété de leur auteur. Les noms, marques et logos d'entreprises affichés dans les analyses appartiennent à leurs propriétaires respectifs et ne sont utilisés que pour identifier les sociétés analysées.`),
+    LH('Signaler un contenu ou un problème'),
+    LP(`Pour signaler un problème, un contenu illicite ou une erreur : ${LEGAL_CONTACT}.`),
+  ],
+};
+let legalTab = 'confidentialite';
+function goLegal(tab){
+  if(LEGAL_TABS.some(t => t.id === tab)) legalTab = tab;
+  currentView = 'legal';
+  render();
+  window.scrollTo(0, 0);
+  closeMenu();
+}
+function renderLegalView(){
+  const main = document.getElementById('main');
+  const cur = LEGAL_TABS.find(t => t.id === legalTab) || LEGAL_TABS[0];
+  main.innerHTML = `<div class="wrap page legal-page">
+    <div class="space-head"><div>
+      <div class="kicker">Informations légales</div>
+      <h1 class="space-title">${escapeHtml(cur.title)}</h1>
+    </div></div>
+    <div class="legal-tabs" role="tablist">${LEGAL_TABS.map(t => `<button type="button" class="legal-tab${t.id === cur.id ? ' active' : ''}" role="tab" aria-selected="${t.id === cur.id}" data-legal-tab="${t.id}">${escapeHtml(t.label)}</button>`).join('')}</div>
+    <div class="legal-body">${learnBlocksHtml(LEGAL_CONTENT[cur.id])}</div>
+    <p class="legal-date">Dernière mise à jour : ${LEGAL_DATE_TXT}.</p>
+  </div>`;
+  main.querySelectorAll('[data-legal-tab]').forEach(b => b.addEventListener('click', () => goLegal(b.dataset.legalTab)));
+}
+
 // ---------- Apprentissage : affichage ----------
 let learnChapterId = 'bases';
 let learnIndSection = 'all', learnIndQuery = '', learnGlossQuery = '';
@@ -6815,6 +7036,10 @@ function render(){
   }
   if(currentView === 'learn'){
     renderLearnView();
+    return;
+  }
+  if(currentView === 'legal'){
+    renderLegalView();
     return;
   }
   const main = document.getElementById('main');
