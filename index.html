@@ -840,6 +840,11 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; font-family:
 .pie-row{ display:flex; align-items:center; gap:10px; }
 .pie-row .field-remove{ margin-top:0; }
 .pie-legend .add-field-btn{ align-self:flex-start; margin-top:2px; }
+.pie-svg, .donut-svg{ overflow:visible; }
+.pie-slice{ cursor:default; transform-origin:90px 90px; transition:transform .16s ease, opacity .16s ease, filter .16s ease; }
+.pie-active .pie-slice{ opacity:.45; }
+.pie-active .pie-slice.hl{ opacity:1; transform:scale(1.06); filter:drop-shadow(0 3px 6px rgba(0,0,0,.35)); }
+.pie-row.hl, .dn-row.hl{ background:color-mix(in srgb, var(--blue) 12%, transparent); border-radius:8px; box-shadow:0 0 0 5px color-mix(in srgb, var(--blue) 12%, transparent); }
 .pie-swatch{ width:14px; height:14px; border-radius:4px; flex:0 0 auto; }
 .pie-label{ flex:1 !important; width:auto !important; min-width:0; }
 .pie-value{ width:120px !important; flex:0 0 120px !important; text-align:right; }
@@ -3501,13 +3506,33 @@ function buildPieSvgInner(arr, colorByIdx){
     const startAngle = cumulative;
     const endAngle = cumulative + angle;
     cumulative = endAngle;
+    // Chaque part porte son infobulle (data-tooltip, échappée deux fois : le libellé est saisi par l'utilisateur) et son rang pour la mise en évidence au survol
+    const tip = escapeHtml(`<div class='tt-header' style='color:${colorByIdx[idx]}'>${escapeHtml(s.label || 'Sans nom')}</div><div class='tt-desc'>Valeur saisie : ${n(s.value || '?')}</div>${tipRes(fmtNum(angle / 360 * 100, 1) + ' % du total')}`);
     if(angle >= 359.99){
-      out += `<circle cx="90" cy="90" r="80" fill="${colorByIdx[idx]}"></circle>`;
+      out += `<circle class="pie-slice" data-i="${idx}" data-tooltip="${tip}" cx="90" cy="90" r="80" fill="${colorByIdx[idx]}"></circle>`;
     }else{
-      out += `<path d="${describeArc(90,90,80,startAngle,endAngle)}" fill="${colorByIdx[idx]}"></path>`;
+      out += `<path class="pie-slice" data-i="${idx}" data-tooltip="${tip}" d="${describeArc(90,90,80,startAngle,endAngle)}" fill="${colorByIdx[idx]}"></path>`;
     }
   });
   return out;
+}
+// Mise en évidence au survol (camemberts des analyses et anneaux de Mon espace / Portefeuille) : la part survolée ressort, les autres s'estompent,
+// et la ligne correspondante de la légende s'allume (et inversement en survolant la légende).
+function initPieHover(){
+  const set = (wrap, i) => {
+    wrap.classList.toggle('pie-active', i !== null);
+    wrap.querySelectorAll('.pie-slice').forEach(s => s.classList.toggle('hl', i !== null && Number(s.dataset.i) === i));
+    wrap.querySelectorAll('.pie-row, .dn-row').forEach((r, k) => r.classList.toggle('hl', i !== null && k === i));
+  };
+  document.addEventListener('mouseover', e => {
+    const t = e.target.closest ? e.target.closest('.pie-slice, .pie-row, .dn-row') : null;
+    const wrap = t ? t.closest('.pie-wrap, .dn-wrap') : null;
+    document.querySelectorAll('.pie-active').forEach(w => { if(w !== wrap) set(w, null); });
+    if(!t || !wrap) return;
+    const i = t.classList.contains('pie-slice') ? Number(t.dataset.i) : Array.from(t.parentNode.children).filter(x => x.matches('.pie-row, .dn-row')).indexOf(t);
+    set(wrap, i);
+  });
+  document.addEventListener('mouseleave', () => document.querySelectorAll('.pie-active').forEach(w => set(w, null)));
 }
 
 function refreshPieVisual(sectionKey, fieldKey){
@@ -5582,9 +5607,11 @@ function buildDonut(items){
   const total = items.reduce((s, i) => s + i.value, 0);
   if(total <= 0) return '';
   let cum = 0, paths = '';
-  items.forEach(it => {
+  items.forEach((it, idx) => {
     const ang = it.value / total * 360;
-    paths += ang >= 359.99 ? `<circle cx="90" cy="90" r="80" fill="${it.color}"/>` : `<path d="${describeArc(90, 90, 80, cum, cum + ang)}" fill="${it.color}"/>`;
+    const plain = String(it.label).replace(/<[^>]*>/g, '').trim();   // le libellé est déjà échappé ; on retire seulement les éventuelles icônes (drapeaux)
+    const tip = escapeHtml(`<div class='tt-header' style='color:${it.color}'>${plain}</div>${tipRes(fmtNum(ang / 360 * 100, 1) + ' % du total')}`);
+    paths += ang >= 359.99 ? `<circle class="pie-slice" data-i="${idx}" data-tooltip="${tip}" cx="90" cy="90" r="80" fill="${it.color}"/>` : `<path class="pie-slice" data-i="${idx}" data-tooltip="${tip}" d="${describeArc(90, 90, 80, cum, cum + ang)}" fill="${it.color}"/>`;
     cum += ang;
   });
   const legend = items.map(it => `<div class="dn-row"><span class="pie-swatch" style="background:${it.color}"></span><span class="dn-lbl">${it.label}</span><span class="dn-val">${fmtNum(it.value / total * 100)}&nbsp;%</span></div>`).join('');
@@ -8068,6 +8095,7 @@ scheduleSnapshot(6000);
 initFileBackup();
 bindAuth();
 initTour();
+initPieHover();
 
 if('serviceWorker' in navigator){
   window.addEventListener('load', () => {
