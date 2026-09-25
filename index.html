@@ -4095,7 +4095,8 @@ function computeLongTerm(c){
   const fin = c.fields.financier || {}, val = c.fields.valorisation || {}, ws = val.wallStreet || {};
   const ca0 = parseMoney(fin.chiffreAffaires), b0 = parseMoney(fin.beneficeNet);
   const ca5 = parseMoney(ws.ca5), b5 = parseMoney(ws.benef5);
-  const mc = parseMoney(fin.marketCap), price = parseMoney(val.prixActuel);
+  // Le Market Cap se saisit dans la section IDENTITÉ (pas Financier) ; repli sur Financier au cas où d'anciennes données l'y auraient
+  const mc = parseMoney((c.fields.identite || {}).marketCap) ?? parseMoney(fin.marketCap), price = parseMoney(val.prixActuel);
   const cagr = (a, b) => (a !== null && b !== null && a > 0 && b > 0) ? (Math.pow(b / a, 1 / 5) - 1) * 100 : null;
   const marge0 = (ca0 !== null && ca0 > 0 && b0 !== null) ? b0 / ca0 * 100 : num(fin.margeNette);
   const marge5 = (ca5 !== null && ca5 > 0 && b5 !== null) ? b5 / ca5 * 100 : null;
@@ -4132,7 +4133,7 @@ function wsLtIndicatorsHtml(c){
     const delta = d.marge0 === null ? null : d.marge5 - d.marge0;
     mCell = wsLtCell('Marge nette dans 5 ans', fmtNum(d.marge5, 1) + ' %', d.marge0 === null ? 'Marge actuelle non renseignée' : `Aujourd'hui ${fmtNum(d.marge0, 1)} % (${delta >= 0 ? '+' : ''}${fmtNum(delta, 1)} pt)`, tierColor('margeNette', d.marge5));
   }
-  let pCell = wsLtCell('PE sur le bénéfice futur', dash, d.b5 === null ? 'Renseignez le bénéfice estimé' : (d.b0 === null || d.b0 <= 0 ? 'Renseignez le bénéfice net actuel (Financier)' : 'Renseignez la capitalisation (Financier), ou le prix et l\'EPS (Valorisation)'));
+  let pCell = wsLtCell('PE sur le bénéfice futur', dash, d.b5 === null ? 'Renseignez le bénéfice estimé' : (d.b0 === null || d.b0 <= 0 ? 'Renseignez le bénéfice net actuel (Financier)' : 'Renseignez le Market Cap (Identité), ou le prix et l\'EPS (Valorisation)'));
   if(d.pe5 !== null) pCell = wsLtCell('PE sur le bénéfice futur', fmtNum(d.pe5, 1), d.pe === null ? 'Capitalisation ÷ bénéfice dans 5 ans' : `Contre ${fmtNum(d.pe, 1)} aujourd'hui`);
   let coursRow = `<div class="ws-lt-price"><div class="ws-lt-l">Cours théorique dans 5 ans, à PE constant</div><div class="ws-lt-v">${dash}</div><div class="ws-lt-s">Renseignez le prix actuel, le bénéfice net actuel et le bénéfice estimé.</div></div>`;
   if(d.cours5 !== null){
