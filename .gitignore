@@ -3,3 +3,4 @@ the-analytics-sauvegarde*.json
 *.zip
 *.bat
 .claude/
+modeles-emails/

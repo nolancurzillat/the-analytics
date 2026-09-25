@@ -346,6 +346,14 @@ main{ display:block; }
 .hero h1 em{ font-style:normal; color:#8fb1ff; }
 .hero-sub{ font-size:17px; line-height:1.65; color:#b8c5de; max-width:580px; margin:0; }
 .hero-cta{ display:flex; gap:12px; flex-wrap:wrap; margin-top:32px; }
+.hero-login{ margin-top:16px; font-size:14px; color:rgba(255,255,255,.72); }
+.hero-login .link-btn{ color:#fff; font-weight:600; }
+.hero-login-sep{ margin:0 6px; opacity:.5; }
+.acct-compare{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:22px; max-width:980px; margin:0 auto; }
+.acct-compare .feature{ display:flex; flex-direction:column; align-items:flex-start; gap:14px; }
+.acct-compare .learn-list{ margin:0; }
+.acct-compare .feature-accent{ border-color:var(--blue); box-shadow:0 0 0 1px var(--blue) inset; }
+@media (max-width:760px){ .acct-compare{ grid-template-columns:1fr; } }
 .hero-trust{
   display:flex; flex-wrap:wrap; gap:10px 26px; margin-top:34px;
   font-size:14px; color:#a9b8d3;
@@ -2571,7 +2579,7 @@ async function submitAuth(){
       showToast('Mot de passe modifié. Vous êtes connecté.');
       localStorage.setItem(DIRTY_KEY, '1');
       await syncNow();
-      if(currentView === 'space') render();
+      if(currentView === 'space' || currentView === 'home') render();
       return;
     }
     if(mode === 'delete'){
@@ -2580,6 +2588,7 @@ async function submitAuth(){
       authBusy = false;
       paintAccount(); paintBackupPanel();
       showToast('Votre compte et vos données en ligne ont été supprimés. Vos analyses restent sur cet appareil.');
+      if(currentView === 'home') render();
       return;
     }
     if(mode === 'signup'){
@@ -2602,7 +2611,7 @@ async function submitAuth(){
     paintAccount(); paintBackupPanel();
     localStorage.setItem(DIRTY_KEY, '1');
     await syncNow();
-    if(currentView === 'space') render();
+    if(currentView === 'space' || currentView === 'home') render();
   }catch(e){
     say(String(e && e.message ? e.message : e) === 'Failed to fetch' ? 'Connexion impossible : vérifiez votre connexion internet.' : String(e && e.message ? e.message : e), 'ko');
   }
@@ -2645,7 +2654,7 @@ async function handleAuthRedirect(){
     localStorage.setItem(DIRTY_KEY, '1');
     showToast('Adresse confirmée, vous êtes connecté.');
     await syncNow();
-    if(currentView === 'space') render();
+    if(currentView === 'space' || currentView === 'home') render();
   }catch(e){
     if(String(e && e.message) !== 'Connexion annulée.') showToast('Confirmation reçue, mais la connexion automatique a échoué. Connectez-vous avec votre mot de passe.');
   }
@@ -2674,7 +2683,7 @@ function bindAuth(){
       pw.focus();
     }
     else if(a === 'sync') syncNow();
-    else if(a === 'logout'){ cloudLogout().then(() => { closeAuth(); showToast('Déconnecté. Vos analyses restent sur cet appareil.'); }); }
+    else if(a === 'logout'){ cloudLogout().then(() => { closeAuth(); showToast('Déconnecté. Vos analyses restent sur cet appareil.'); if(currentView === 'home') render(); }); }
   });
   box.addEventListener('keydown', e => { if(e.key === 'Enter' && e.target.tagName === 'INPUT') submitAuth(); });
   document.getElementById('accountBtn').addEventListener('click', () => openAuth('login'));
@@ -6892,7 +6901,7 @@ function renderHomeView(){
     [String(nFields), "champs d'analyse répartis en 5 sections"],
     [String(nScale), "indicateurs notés du très bon au mauvais"],
     [String(BUFFETT_RULES.length), "critères dans la checklist Buffett"],
-    ["100&nbsp;%", "privé : vos données restent sur votre appareil"],
+    ["Gratuit", "sans abonnement, compte facultatif, données privées"],
   ].map(s => `<div class="stat"><div class="stat-n">${s[0]}</div><div class="stat-l">${s[1]}</div></div>`).join('');
 
   const features = [
@@ -6901,7 +6910,7 @@ function renderHomeView(){
     ['score', "Un score qui résume tout", "Un score composite pondéré (Qualité 25&nbsp;%, Rentabilité 25&nbsp;%, Solidité 20&nbsp;%, Croissance 15&nbsp;%, Valorisation 15&nbsp;%) et un radar de profil pour comparer vos idées d'un regard."],
     ['value', "Une valorisation sans angle mort", "PE, PE forward, PEG, DCF, valeur intrinsèque et consensus de Wall Street : mesurez précisément l'écart entre le prix du marché et la valeur de l'entreprise."],
     ['decide', "Décidez avec discipline", "Checklist Buffett en 10 critères, thèse d'investissement, niveau de conviction, prix d'achat cible et suivi de votre position : chaque décision est argumentée et traçable."],
-    ['lock', "Vos données vous appartiennent", "Aucun compte, aucun serveur : toutes vos analyses sont enregistrées localement sur votre appareil. Vous gardez le contrôle total de votre recherche."],
+    ['lock', "Vos données vous appartiennent", "Sans compte, tout reste enregistré sur votre appareil. Avec un compte gratuit, vos analyses vous suivent sur tous vos appareils, et vous pouvez les télécharger ou supprimer votre compte à tout moment."],
   ].map(f => `<div class="feature"><div class="feature-ico">${svgIcon(HOME_ICONS[f[0]])}</div><h3>${f[1]}</h3><p>${f[2]}</p></div>`).join('');
 
   const learnBullets = [
@@ -6917,6 +6926,24 @@ function renderHomeView(){
     ["3", "Décidez avec méthode", "Score, radar, synthèse et checklist Buffett vous donnent une vue claire. Notez votre conviction et votre prix d'achat cible."],
   ].map(s => `<div class="step"><div class="step-n">${s[0]}</div><h3>${s[1]}</h3><p>${s[2]}</p></div>`).join('');
 
+  const visitor = !cloud.session && !state.companies.length;
+  const accountCards = `<div class="acct-compare">
+      <div class="feature"><h3>Sans compte</h3><ul class="learn-list">${[
+        "Vous commencez tout de suite, en quelques secondes.",
+        "Vos analyses restent sur cet appareil et ce navigateur.",
+        "Vous pouvez télécharger une sauvegarde à tout moment.",
+      ].map(t => `<li>${HOME_ICONS.check}<span>${t}</span></li>`).join('')}</ul><button class="btn btn-ghost" data-new-analysis>Essayer sans compte</button></div>
+      <div class="feature feature-accent"><h3>Avec un compte gratuit</h3><ul class="learn-list">${[
+        "Vos analyses vous suivent sur ordinateur, téléphone et tablette.",
+        "Une copie en ligne vous protège d'une perte de données.",
+        "Vous pouvez supprimer votre compte et vos données quand vous voulez.",
+      ].map(t => `<li>${HOME_ICONS.check}<span>${t}</span></li>`).join('')}</ul><button class="btn btn-primary" data-auth-open="signup">Créer un compte gratuit</button></div>
+    </div>`;
+  const ctaButtons = visitor
+    ? `<button class="btn btn-primary" data-auth-open="signup">Créer un compte gratuit</button>
+            <button class="btn btn-ghost" data-new-analysis>Essayer sans compte</button>`
+    : `<button class="btn btn-primary" data-new-analysis>Commencer une analyse</button>`;
+
   main.innerHTML = `
     <section class="hero">
       <div class="hero-inner">
@@ -6928,12 +6955,13 @@ function renderHomeView(){
             ${state.companies.length
               ? `<button class="btn btn-primary" data-go-space>Ouvrir mon espace</button>
             <button class="btn btn-ghost" data-new-analysis>Nouvelle analyse</button>`
-              : `<button class="btn btn-primary" data-new-analysis>Commencer une analyse</button>
-            <button class="btn btn-ghost" data-scroll="why">Découvrir la méthode</button>`}
+              : (visitor ? ctaButtons : `<button class="btn btn-primary" data-new-analysis>Commencer une analyse</button>
+            <button class="btn btn-ghost" data-scroll="why">Découvrir la méthode</button>`)}
           </div>
+          ${visitor ? `<div class="hero-login">Déjà un compte ? <button class="link-btn" data-auth-open="login">Se connecter</button> <span class="hero-login-sep">·</span> <button class="link-btn" data-scroll="why">Découvrir la méthode</button></div>` : ''}
           <div class="hero-trust">
-            <span>${HOME_ICONS.check}Aucun compte à créer</span>
-            <span>${HOME_ICONS.check}Données privées sur votre appareil</span>
+            <span>${HOME_ICONS.check}Gratuit, compte facultatif</span>
+            <span>${HOME_ICONS.check}Vos analyses vous appartiennent</span>
             <span>${HOME_ICONS.check}Installable comme une application</span>
           </div>
         </div>
@@ -6977,6 +7005,15 @@ function renderHomeView(){
       <div class="steps">${steps}</div>
     </section>
 
+    ${visitor ? `<section class="hsec" id="account">
+      <div class="hsec-head">
+        <div class="kicker">Votre espace de travail</div>
+        <h2>Avec ou sans compte, vous choisissez</h2>
+        <p class="hsec-lead">Vous pouvez commencer immédiatement, sans rien créer. Un compte gratuit ajoute la synchronisation entre vos appareils et une copie de sécurité en ligne. Vous pourrez en créer un plus tard : vos analyses seront reprises automatiquement.</p>
+      </div>
+      ${accountCards}
+    </section>` : ''}
+
     <section class="hsec" id="prices">
       <div class="home-price">
         <div>
@@ -6992,8 +7029,8 @@ function renderHomeView(){
     <section class="hsec">
       <div class="cta-band">
         <h2>Prêt à analyser votre prochaine entreprise ?</h2>
-        <p>Créez votre première fiche en quelques secondes. Aucun compte, aucune installation, aucun abonnement.</p>
-        <button class="btn btn-primary" data-new-analysis>Commencer une analyse</button>
+        <p>Créez votre première fiche en quelques secondes. Gratuit, sans installation, avec ou sans compte.</p>
+        <div class="hero-cta" style="justify-content:center;margin-top:22px">${ctaButtons}</div>
       </div>
     </section>
 
