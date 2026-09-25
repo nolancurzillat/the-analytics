@@ -920,17 +920,24 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; font-family:
 .duo-label{ color:var(--ink-soft); font-size:14px; flex:0 0 auto; }
 .duo-item input{ width:120px !important; }
 .duo-item-auto input{ width:auto !important; min-width:64px; }
-.ws-top{ display:grid; grid-template-columns:minmax(0, 560px) minmax(250px, 1fr); gap:14px; align-items:stretch; }
+.ws-top{ display:grid; grid-template-columns:minmax(0, 480px) minmax(320px, 1fr); gap:14px; align-items:stretch; }
 .ws-left{ display:flex; flex-direction:column; gap:12px; min-width:0; }
+.ws-left .ws-reco, .ws-left .ws-cols{ flex:1 1 auto; }   /* le surplus de hauteur est réparti entre les deux cartes de gauche, pour aligner le bas avec la carte de droite */
 @media (max-width:1180px){ .ws-top{ grid-template-columns:1fr; } }
-.ws-stats{ display:flex; flex-direction:column; border:1px solid var(--border); border-radius:14px; background:var(--card); padding:12px 16px; min-width:0; }
-.ws-stats-title{ font-size:12px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:4px; }
-.ws-stat{ flex:1 1 0; display:flex; flex-direction:column; justify-content:center; gap:2px; padding:6px 0; border-top:1px solid var(--border); }
-.ws-left .ws-reco{ flex:1 1 auto; }
-.ws-stats-title + .ws-stat{ border-top:0; }
-.ws-stat-l{ font-size:13px; font-weight:600; color:var(--ink-soft); }
-.ws-stat-v{ font-family:var(--font-ui); font-size:21px; font-weight:700; line-height:1.2; }
-.ws-stat-s{ font-size:12.5px; line-height:1.35; color:var(--ink-soft); }
+/* Carte "Prévision long terme" : deux cases de saisie puis les indicateurs calculés (même police Inter que le reste) */
+.ws-lt{ display:flex; flex-direction:column; gap:8px; border:1px solid var(--border); border-radius:14px; background:var(--card); padding:12px 16px; min-width:0; }
+.ws-lt-title{ font-size:12px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-soft); }
+.ws-lt-inputs{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px; }
+.ws-lt-in{ display:flex; flex-direction:column; gap:5px; min-width:0; font-size:12.5px; font-weight:600; color:var(--ink-soft); line-height:1.3; }
+.ws-lt-in input{ padding:8px 10px; font-size:15px; }
+.ws-lt-grid{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:0 12px; border-top:1px solid var(--border); }
+.ws-lt-cell{ display:flex; flex-direction:column; gap:1px; padding:6px 0; border-bottom:1px solid var(--border); min-width:0; }
+.ws-lt-price{ display:flex; flex-direction:column; gap:2px; padding:2px 0 0 0; }
+.ws-lt-l{ font-size:12.5px; font-weight:600; color:var(--ink-soft); line-height:1.3; }
+.ws-lt-v{ font-family:var(--font-ui); font-size:19px; font-weight:700; line-height:1.2; }
+.ws-lt-s{ font-size:12px; line-height:1.35; color:var(--ink-soft); }
+.ws-lt-note{ font-size:12px; line-height:1.4; color:var(--ink-soft); opacity:.85; }
+@media (max-width:640px){ .ws-lt-inputs{ grid-template-columns:1fr; } }
 /* Une seule carte, trois colonnes séparées par un filet fin : compact (le prix cible en haut, le pourcentage juste dessous) */
 .ws-cols{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); border:1px solid var(--border); border-radius:14px; background:var(--card); overflow:hidden; }
 .ws-col{ display:flex; flex-direction:column; justify-content:center; gap:9px; padding:12px 16px; min-width:0; }
@@ -4076,44 +4083,75 @@ function tipWsPct(c, k){
   const p = d && d.pct[k];
   return `<div class='tt-formula'>(Prix cible ${n(raw(ws[k]))} ÷ Prix actuel ${n(raw(c.fields.valorisation.prixActuel))}) − 1</div>${tipRes('= ' + (p === null || p === undefined ? '—' : wsFmtPct(p)))}<div class='tt-desc'>Hausse ou baisse attendue à 1 an par rapport au prix actuel, calculée automatiquement.</div>`;
 }
-// Carte "Potentiel à 1 an" à droite des prévisions Wall Street (piste 3, choisie par Nolan le 2026-09-26) : trois chiffres calculés à partir des prix cibles.
-//  1. Rendement total attendu = hausse moyenne prévue + rendement du dividende (0 si l'entreprise n'en verse pas) ;
-//  2. Fourchette des analystes = du minimum au maximum, avec l'écart en points (mesure de leur désaccord) ;
-//  3. Cible moyenne vs votre valeur intrinsèque = (cible moyenne − valeur) ÷ valeur, sans couleur bon/mauvais : simple comparaison entre eux et vous.
-function buildWsStats(c){
-  const d = computeWallStreetTargets(c);
-  const cur = c.currency;
-  const row = (label, value, sub, color) => `<div class="ws-stat"><div class="ws-stat-l">${label}</div><div class="ws-stat-v"${color ? ` style="color:${color}"` : ''}>${value}</div><div class="ws-stat-s">${sub}</div></div>`;
-  const dash = '—';
-  let r1 = row('Rendement total attendu', dash, 'Renseignez le prix actuel et le prix cible moyen.');
-  let r2 = row('Fourchette des analystes', dash, 'Renseignez le prix cible maximum et minimum.');
-  let r3 = row('Cible moyenne vs votre valeur intrinsèque', dash, 'Renseignez le prix cible moyen et votre valeur intrinsèque.');
-  if(d){
-    if(d.pct.moy !== null){
-      const dv = c.fields.identite.politiqueDividende;
-      const dy = (dv && dv.mode === 'verse') ? computeDividendYield(c) : null;   // seulement si l'analyse indique que l'entreprise verse un dividende
-      const total = d.pct.moy + (dy === null ? 0 : dy);
-      r1 = row('Rendement total attendu', wsFmtPct(total), `${wsFmtPct(d.pct.moy)} de hausse moyenne${dy === null ? ', sans dividende' : ' + ' + fmtNum(dy, 1) + ' % de dividende'}`, wallStreetColor(total));
-    }
-    if(d.pct.max !== null && d.pct.min !== null){
-      r2 = row('Fourchette des analystes', `${wsFmtPct(d.pct.min)} à ${wsFmtPct(d.pct.max)}`, `Écart de ${fmtNum(d.pct.max - d.pct.min, 0)} points entre analystes`);
-    }else if(d.pct.max !== null || d.pct.min !== null){
-      r2 = row('Fourchette des analystes', dash, 'Il manque le prix cible ' + (d.pct.max === null ? 'maximum' : 'minimum') + '.');
-    }
-    const vi = parseMoney(c.fields.valorisation.valeurIntrinseque);
-    if(d.target.moy !== null && vi !== null && vi > 0){
-      const gap = (d.target.moy - vi) / vi * 100;
-      r3 = row('Cible moyenne vs votre valeur intrinsèque', wsFmtPct(gap), Math.abs(gap) < 0.05 ? 'Les analystes voient comme vous' : `Plus ${gap > 0 ? 'optimistes' : 'prudents'} que vous : ${fmtMoney(d.target.moy, cur)} contre ${fmtMoney(vi, cur)}`);
-    }
+// Carte "Prévision long terme" à droite des prévisions Wall Street (remplace la carte "Potentiel à 1 an", jugée peu utile par Nolan le 2026-09-26).
+// L'utilisateur saisit deux chiffres (wallStreet.ca5 : chiffre d'affaires annuel estimé dans 5 ans ; wallStreet.benef5 : bénéfice net annuel estimé dans 5 ans)
+// et l'app en déduit, avec les chiffres actuels de la section Financier et le prix actuel :
+//  - le CAGR implicite du CA et du bénéfice net (croissance annuelle moyenne nécessaire pour y arriver), colorés avec les barèmes existants ;
+//  - la marge nette estimée dans 5 ans, comparée à la marge actuelle ;
+//  - le PE sur le bénéfice de dans 5 ans (capitalisation ÷ bénéfice estimé) : combien l'on paie aujourd'hui pour les bénéfices futurs ;
+//  - le cours théorique dans 5 ans à PE constant (cours actuel × bénéfice estimé ÷ bénéfice actuel), sans dividende ni variation du nombre d'actions.
+function computeLongTerm(c){
+  const fin = c.fields.financier || {}, val = c.fields.valorisation || {}, ws = val.wallStreet || {};
+  const ca0 = parseMoney(fin.chiffreAffaires), b0 = parseMoney(fin.beneficeNet);
+  const ca5 = parseMoney(ws.ca5), b5 = parseMoney(ws.benef5);
+  const mc = parseMoney(fin.marketCap), price = parseMoney(val.prixActuel);
+  const cagr = (a, b) => (a !== null && b !== null && a > 0 && b > 0) ? (Math.pow(b / a, 1 / 5) - 1) * 100 : null;
+  const marge0 = (ca0 !== null && ca0 > 0 && b0 !== null) ? b0 / ca0 * 100 : num(fin.margeNette);
+  const marge5 = (ca5 !== null && ca5 > 0 && b5 !== null) ? b5 / ca5 * 100 : null;
+  const pe5 = (mc !== null && mc > 0 && b5 !== null && b5 > 0) ? mc / b5 : null;
+  const cours5 = (price !== null && price > 0 && b0 !== null && b0 > 0 && b5 !== null && b5 > 0) ? price * b5 / b0 : null;
+  return { ca0, b0, ca5, b5, mc, price, cagrCa:cagr(ca0, ca5), cagrB:cagr(b0, b5), marge0, marge5, pe5, cours5, pe:computePeActuel(c) };
+}
+// Montant compact lisible (391 Md$, 2,85 T$, 950 M$), sans décimales inutiles
+function compactMoney(v, cur){
+  const a = Math.abs(v);
+  if(a >= 1e12) return fmtNum(v / 1e12, 2) + ' T' + cur;
+  if(a >= 1e9) return fmtNum(v / 1e9, 1) + ' Md' + cur;
+  if(a >= 1e6) return fmtNum(v / 1e6, 1) + ' M' + cur;
+  return fmtMoney(v, cur);
+}
+function wsLtCell(label, value, sub, color){
+  return `<div class="ws-lt-cell"><div class="ws-lt-l">${label}</div><div class="ws-lt-v"${color ? ` style="color:${color}"` : ''}>${value}</div><div class="ws-lt-s">${sub}</div></div>`;
+}
+function wsLtIndicatorsHtml(c){
+  const d = computeLongTerm(c), cur = c.currency, dash = '—';
+  const fm = v => compactMoney(v, cur);
+  const signed = v => (v > 0 ? '+' : '') + fmtNum(v, 1) + ' %';
+  const tierColor = (key, v) => { const t = getScaleTier(key, v); return t ? TIER_COLORS[t] : ''; };
+  let caCell = wsLtCell('Croissance annuelle du CA', dash, d.ca5 === null ? 'Renseignez le CA estimé' : 'Renseignez le CA actuel (Financier)');
+  if(d.cagrCa !== null) caCell = wsLtCell('Croissance annuelle du CA', signed(d.cagrCa), `${fm(d.ca0)} → ${fm(d.ca5)}`, tierColor('croissanceCA', d.cagrCa));
+  let bCell = wsLtCell('Croissance annuelle du bénéfice', dash, d.b5 === null ? 'Renseignez le bénéfice estimé' : (d.b0 !== null && d.b0 <= 0 ? 'Bénéfice actuel négatif ou nul' : 'Renseignez le bénéfice net actuel (Financier)'));
+  if(d.cagrB !== null) bCell = wsLtCell('Croissance annuelle du bénéfice', signed(d.cagrB), `${fm(d.b0)} → ${fm(d.b5)}`, tierColor('croissanceBenef', d.cagrB));
+  let mCell = wsLtCell('Marge nette dans 5 ans', dash, 'Renseignez CA et bénéfice estimés');
+  if(d.marge5 !== null){
+    const delta = d.marge0 === null ? null : d.marge5 - d.marge0;
+    mCell = wsLtCell('Marge nette dans 5 ans', fmtNum(d.marge5, 1) + ' %', d.marge0 === null ? 'Marge actuelle non renseignée' : `Aujourd'hui ${fmtNum(d.marge0, 1)} % (${delta >= 0 ? '+' : ''}${fmtNum(delta, 1)} pt)`, tierColor('margeNette', d.marge5));
   }
-  return `<div class="ws-stats" id="wsStats"><div class="ws-stats-title">Potentiel à 1 an</div>${r1}${r2}${r3}</div>`;
+  let pCell = wsLtCell('PE sur le bénéfice futur', dash, d.b5 === null ? 'Renseignez le bénéfice estimé' : 'Renseignez la capitalisation (Financier)');
+  if(d.pe5 !== null) pCell = wsLtCell('PE sur le bénéfice futur', fmtNum(d.pe5, 1), d.pe === null ? 'Capitalisation ÷ bénéfice dans 5 ans' : `Contre ${fmtNum(d.pe, 1)} aujourd'hui`);
+  let coursRow = `<div class="ws-lt-price"><div class="ws-lt-l">Cours théorique dans 5 ans, à PE constant</div><div class="ws-lt-v">${dash}</div><div class="ws-lt-s">Renseignez le prix actuel, le bénéfice net actuel et le bénéfice estimé.</div></div>`;
+  if(d.cours5 !== null){
+    const gain = (d.cours5 / d.price - 1) * 100;
+    coursRow = `<div class="ws-lt-price"><div class="ws-lt-l">Cours théorique dans 5 ans, à PE constant</div><div class="ws-lt-v">${fmtMoney(d.cours5, cur)}</div><div class="ws-lt-s">${signed(gain)} soit ${signed(d.cagrB)} par an, sans dividende</div></div>`;
+  }
+  return `<div class="ws-lt-grid">${caCell}${bCell}${mCell}${pCell}</div>${coursRow}`;
+}
+function buildWsLongTerm(c){
+  const ws = (c.fields.valorisation && c.fields.valorisation.wallStreet) || {};
+  const inp = (key, label) => `<label class="ws-lt-in"><span>${label}</span><div class="ws-col-price"><input type="text" inputmode="decimal" data-ws-section="valorisation" data-ws-field="wallStreet" data-ws-sub="${key}" value="${escapeHtml(ws[key] || '')}" placeholder="ex : 700 Md"><span class="value-suffix">${escapeHtml(c.currency)}</span></div></label>`;
+  return `<div class="ws-lt" id="wsLongTerm">
+    <div class="ws-lt-title">Prévision long terme</div>
+    <div class="ws-lt-inputs">${inp('ca5', "Chiffre d'affaires estimé dans 5 ans")}${inp('benef5', 'Bénéfice net estimé dans 5 ans')}</div>
+    <div id="wsLtInd">${wsLtIndicatorsHtml(c)}</div>
+    <div class="ws-lt-note">Calcul simple : PE et nombre d'actions supposés inchangés.</div>
+  </div>`;
 }
 // Met à jour, sans re-rendre la page, les pourcentages et pastilles des cases Max / Moy / Min
 function refreshWsPercents(){
   const c = getActive();
   if(!c) return;
-  const st = document.getElementById('wsStats');
-  if(st) st.outerHTML = buildWsStats(c);
+  const lt = document.getElementById('wsLtInd');
+  if(lt) lt.innerHTML = wsLtIndicatorsHtml(c);   // seulement la partie calculée : les cases de saisie de la carte ne sont jamais refaites pendant la frappe
   const d = computeWallStreetTargets(c);
   ['max', 'moy', 'min'].forEach(k => {
     const cell = document.getElementById('ws-pct-' + k);
@@ -5462,7 +5500,7 @@ function isFieldFilled(c, section, field){
   if(field.type === 'moat') return str(v) || str(c.fields[section.key].moatNote);
   if(field.type === 'list') return Array.isArray(v) && v.some(str);
   if(field.type === 'pieChart') return Array.isArray(v) && v.some(s => s && (str(s.label) || str(s.value)));
-  if(field.type === 'wallStreetTrio') return !!(v && typeof v === 'object' && ['max', 'moy', 'min', 'reco'].some(k => str(v[k])));   // `unit` et `legacyPct` ne comptent pas
+  if(field.type === 'wallStreetTrio') return !!(v && typeof v === 'object' && ['max', 'moy', 'min', 'reco', 'ca5', 'benef5'].some(k => str(v[k])));   // `unit` et `legacyPct` ne comptent pas
   if(field.type === 'growthDuo') return !!(v && typeof v === 'object' && str(v.cagr));   // seul le CAGR est saisi, le total est calculé
   if(v && typeof v === 'object') return Object.keys(v).some(k => typeof v[k] === 'string' && str(v[k]));
   return str(v);
@@ -6750,7 +6788,7 @@ const LEARN_INDICATORS = {
   beta: { how:`La sensibilité de l'action aux mouvements du marché. 1 : évolue comme le marché ; plus de 1 : plus volatile ; moins de 1 : plus stable.`, ex:`Avec un bêta de 1,3, si le marché baisse de 10 %, l'action baisse en moyenne de 13 %.` },
   positionShort: { how:`La part des actions vendues à découvert (pari à la baisse). Un pourcentage élevé signifie que beaucoup d'investisseurs parient contre l'entreprise.` },
   ratioVenteADecouvert: { how:`Le nombre de jours de volume normal nécessaires pour racheter toutes les actions vendues à découvert.` },
-  wallStreet: { how:`Les prix cibles à 1 an des analystes : maximum, moyenne et minimum. Vous saisissez les prix, l'application calcule la hausse attendue en % par rapport au prix actuel (rouge sous 0 %, jaune de 0 à 10 %, vert clair de 10 à 30 %, vert foncé au-dessus) et les trace en éventail.`, ex:`Prix actuel de 100 $ et prix cible moyen de 118 $ : hausse attendue de +18 %, en vert clair. La jauge du consensus (Strong Sell, Sell, Hold, Buy, Strong Buy) reprend la recommandation moyenne des analystes : réglez l'aiguille à la main d'après TradingView ou le site de votre courtier.`, warn:`Les analystes se trompent souvent : servez-vous-en comme d'un ordre de grandeur, pas comme d'une promesse.` },
+  wallStreet: { how:`Les prix cibles à 1 an des analystes : maximum, moyenne et minimum. Vous saisissez les prix, l'application calcule la hausse attendue en % par rapport au prix actuel (rouge sous 0 %, jaune de 0 à 10 %, vert clair de 10 à 30 %, vert foncé au-dessus) et les trace en éventail.`, ex:`Prix actuel de 100 $ et prix cible moyen de 118 $ : hausse attendue de +18 %, en vert clair. À droite, la carte « Prévision long terme » : vous saisissez le chiffre d'affaires et le bénéfice net estimés dans 5 ans, et l'application en déduit la croissance annuelle (CAGR) de chacun, la marge nette future, le PE sur le bénéfice futur et un cours théorique à PE constant. La jauge du consensus (Strong Sell, Sell, Hold, Buy, Strong Buy) reprend la recommandation moyenne des analystes : réglez l'aiguille à la main d'après TradingView ou le site de votre courtier.`, warn:`Les analystes se trompent souvent : servez-vous-en comme d'un ordre de grandeur, pas comme d'une promesse.` },
   graphique: { how:`Collez une capture du graphique de cours pour garder une trace visuelle de la tendance.` },
   conclusionValorisation: { how:`Votre verdict sur le prix : cher, correct ou bon marché, et pourquoi.` },
   regleBuffett: { how:`La checklist en 10 critères. Certains se cochent tout seuls à partir de vos chiffres (voir le chapitre « La méthode »).` },
@@ -7816,7 +7854,7 @@ function render(){
         const legacy = obj.legacyPct ? `<div class="ws-legacy">Anciennes prévisions en pourcentage conservées (Max ${escapeHtml(String(obj.legacyPct.max || '—'))} %, Moy ${escapeHtml(String(obj.legacyPct.moy || '—'))} %, Min ${escapeHtml(String(obj.legacyPct.min || '—'))} %) : elles seront converties en prix dès que le prix actuel sera renseigné (section Valorisation).</div>` : '';
         html += `<div class="field-row"><div class="field-label" data-tooltip="${fieldDescTooltip(field.key)}">${field.label}</div>
           <div class="field-value">
-            <div class="ws-top"><div class="ws-left"><div class="ws-cols">${itemsHtml}</div>${buildWsGauge(c)}</div>${buildWsStats(c)}</div>${legacy}
+            <div class="ws-top"><div class="ws-left"><div class="ws-cols">${itemsHtml}</div>${buildWsGauge(c)}</div>${buildWsLongTerm(c)}</div>${legacy}
             ${buildWallStreetChart(c)}
           </div></div>`;
         return;
