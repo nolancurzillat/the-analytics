@@ -920,23 +920,25 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; font-family:
 .duo-label{ color:var(--ink-soft); font-size:14px; flex:0 0 auto; }
 .duo-item input{ width:120px !important; }
 .duo-item-auto input{ width:auto !important; min-width:64px; }
-.ws-top{ display:grid; grid-template-columns:minmax(0,1fr) minmax(280px, 360px); gap:16px; align-items:stretch; }
-.ws-cols{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; }
-.ws-col{ display:flex; flex-direction:column; justify-content:center; gap:12px; padding:16px 16px 16px 16px; border:1px solid var(--border); border-radius:14px; background:var(--card); min-width:0; }
-.ws-col-l{ font-size:12.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); }
-.ws-col-price{ display:flex; align-items:center; gap:8px; min-width:0; }
-.ws-col-price input{ flex:1 1 auto; min-width:0; width:100% !important; }
-.ws-col-pct{ display:flex; align-items:center; gap:10px; }
-@media (max-width:1180px){ .ws-top{ grid-template-columns:1fr; } }
-@media (max-width:640px){ .ws-cols{ grid-template-columns:1fr; } }
-.ws-reco{ max-width:none; background:var(--navy); border-radius:14px; padding:16px 20px 14px 20px; color:#fff; text-align:center; display:flex; flex-direction:column; align-items:stretch; }
-.ws-reco-title{ font-size:12px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:rgba(255,255,255,.62); text-align:left; }
-.ws-gauge{ display:block; width:100%; max-width:340px; margin:6px auto 0 auto; cursor:pointer; touch-action:none; user-select:none; -webkit-user-select:none; outline:none; }
+.ws-top{ display:flex; flex-direction:column; gap:12px; max-width:620px; }
+/* Une seule carte, trois colonnes séparées par un filet fin : compact (le prix cible en haut, le pourcentage juste dessous) */
+.ws-cols{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); border:1px solid var(--border); border-radius:14px; background:var(--card); overflow:hidden; }
+.ws-col{ display:flex; flex-direction:column; justify-content:center; gap:9px; padding:12px 16px; min-width:0; }
+.ws-col + .ws-col{ border-left:1px solid var(--border); }
+.ws-col-l{ font-size:13px; font-weight:600; color:var(--ink-soft); }
+.ws-col-price{ display:flex; align-items:center; gap:7px; min-width:0; }
+.ws-col-price input{ flex:1 1 auto; min-width:0; width:100% !important; padding:8px 10px; font-size:15px; }
+.ws-col-pct{ display:flex; align-items:center; gap:9px; }
+@media (max-width:640px){ .ws-cols{ grid-template-columns:1fr; } .ws-col + .ws-col{ border-left:0; border-top:1px solid var(--border); } }
+/* Carte du consensus : texte à gauche, jauge à droite, même largeur que la carte des trois prix (aucun vide) */
+.ws-reco{ background:var(--navy); border-radius:14px; padding:12px 18px; color:#fff; text-align:left; display:grid; grid-template-columns:minmax(0,1fr) 200px; grid-template-areas:"title gauge" "label gauge" "sub gauge"; align-content:center; align-items:center; column-gap:16px; }
+.ws-reco-title{ grid-area:title; align-self:end; font-size:12px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:rgba(255,255,255,.62); }
+@media (max-width:640px){ .ws-reco{ grid-template-columns:1fr; grid-template-areas:"title" "gauge" "label" "sub"; text-align:center; } .ws-reco-title{ text-align:left; } .ws-reco-label{ text-align:center !important; } }
+.ws-gauge{ grid-area:gauge; display:block; width:100%; max-width:200px; margin:0 auto; cursor:pointer; touch-action:none; user-select:none; -webkit-user-select:none; outline:none; }
 .ws-gauge:focus-visible{ outline:2px solid #5b8cf7; outline-offset:4px; border-radius:10px; }
 .ws-needle{ transform-origin:150px 150px; transition:transform .14s ease, opacity .14s ease; }
-.ws-reco-label{ font-size:26px; font-weight:800; line-height:1.15; margin-top:-2px; font-family:var(--font-ui); }
-.ws-reco-sub{ font-size:13px; color:rgba(255,255,255,.62); margin-top:3px; }
-.ws-reco-foot{ margin-top:auto; padding-top:12px; font-size:12.5px; line-height:1.45; color:rgba(255,255,255,.5); text-align:center; }
+.ws-reco-label{ grid-area:label; font-size:24px; font-weight:800; line-height:1.15; margin-top:2px; font-family:var(--font-ui); text-align:left; }
+.ws-reco-sub{ grid-area:sub; font-size:12.5px; line-height:1.4; color:rgba(255,255,255,.62); margin-top:3px; }
 .ws-legacy{ margin-top:10px; font-size:13px; line-height:1.5; color:var(--ink-soft); max-width:680px; }
 .trio-row{ flex-wrap:wrap; gap:14px 22px; }
 .trio-row .duo-item{ flex:0 0 auto; }
@@ -4117,13 +4119,16 @@ function computeWallStreetTargets(c){
 // ---------- Jauge du consensus des analystes (Strong Sell à Strong Buy), réglée à la main ----------
 // wallStreet.reco = recommandation moyenne de 1 (Strong Sell) à 5 (Strong Buy), une décimale. 5 zones égales de 0,8 point : Hold est centré sur 3.
 // Les titres restent en anglais (demande de Nolan le 2026-09-25). Aiguille réglable au clic, au glissement ou au clavier.
+// Couleurs (demande de Nolan le 2026-09-25) : rouge, jaune, gris, vert clair, vert foncé. `color` = teinte vive pour la carte marine de la jauge ;
+// `tier` = palier du barème de l'app (TIER_COLORS, s'adapte au thème clair/sombre) pour le texte posé sur fond clair, comme dans le résumé de valorisation.
 const WS_RECO = [
-  { label:'Strong Sell', color:'#ff8c00' },
-  { label:'Sell', color:'#ffa62b' },
-  { label:'Hold', color:'#8b9099' },
-  { label:'Buy', color:'#0fa58a' },
-  { label:'Strong Buy', color:'#47c0a9' },
+  { label:'Strong Sell', color:'#f26b6b', tier:'mauvais' },
+  { label:'Sell', color:'#f2c94c', tier:'moyen' },
+  { label:'Hold', color:'#8b9099', tier:null },
+  { label:'Buy', color:'#a6e3b2', tier:'bon' },
+  { label:'Strong Buy', color:'#1fb75a', tier:'tresbon' },
 ];
+function wsRecoTextColor(s){ return s.tier ? TIER_COLORS[s.tier] : 'var(--ink-soft)'; }
 function wsRecoValue(c){
   const w = c.fields.valorisation && c.fields.valorisation.wallStreet;
   const v = num(w && w.reco);
@@ -4144,7 +4149,6 @@ function buildWsGauge(c){
     <svg viewBox="0 0 300 172" class="ws-gauge" role="slider" tabindex="0" aria-label="Recommandation moyenne des analystes" aria-valuemin="1" aria-valuemax="5">${segs}<g class="ws-needle"><path d="M150 143 L264 150 L150 157 Z" fill="#e4e4e4"/><circle cx="150" cy="150" r="9" fill="#e4e4e4"/></g></svg>
     <div class="ws-reco-label"></div>
     <div class="ws-reco-sub"></div>
-    <div class="ws-reco-foot">Cliquez sur la jauge ou faites glisser l'aiguille pour régler la recommandation moyenne.</div>
   </div>`;
 }
 function paintWsGauge(){
@@ -4158,11 +4162,11 @@ function paintWsGauge(){
   needle.style.opacity = v === null ? '.35' : '1';
   if(v === null){
     label.textContent = 'Non renseigné'; label.style.color = 'rgba(255,255,255,.55)';
-    sub.textContent = 'Recommandation moyenne des analystes';
+    sub.textContent = "Cliquez sur la jauge ou faites glisser l'aiguille";
     svg.removeAttribute('aria-valuenow'); svg.setAttribute('aria-valuetext', 'Non renseigné');
   }else{
     const s = WS_RECO[wsRecoIndex(v)];
-    label.textContent = s.label; label.style.color = s.color;
+    label.textContent = s.label; label.style.color = s.color;   // fond marine : teinte vive
     sub.textContent = 'Moyenne ' + fmtNum(v, 1) + ' / 5';
     svg.setAttribute('aria-valuenow', String(v)); svg.setAttribute('aria-valuetext', s.label);
   }
@@ -4357,7 +4361,7 @@ function buildValuationSummaryBlock(c){
   const pegTier = getScaleTier('peg', peg);
   const pegColor = pegTier ? TIER_COLORS[pegTier] : 'var(--ink-soft)';
   const eIntrInfo = ecartCompact(computeEcart(c, 'valeurIntrinseque'));
-  const pe = computePeActuel(c);
+  const pe = computePeActuel(c), peFwd = computePeForward(c);
   const shortV = num(c.fields.valorisation.positionShort);
   const shortTier = getScaleTier('positionShort', shortV);
   const shortColor = shortTier ? TIER_COLORS[shortTier] : 'var(--ink-soft)';
@@ -4377,11 +4381,12 @@ function buildValuationSummaryBlock(c){
     <div class="valuation-summary-title">Résumé de valorisation</div>
     <div class="valuation-summary">
       ${chip('PE', `<span>${pe === null ? '—' : fmtNum(pe, 1)}</span>`)}
+      ${chip('PE forward', `<span>${peFwd === null ? '—' : fmtNum(peFwd, 1)}</span>`)}
       ${chip('PEG', `<span style="color:${pegColor}">${peg === null ? '—' : peg.toFixed(2)}</span>`)}
       ${chip('PE / Secteur', `<span style="color:${peRelColor}">${peRel === null ? '—' : peRel.toFixed(2)}</span>`)}
       ${chip('vs Intrinsèque', `<span style="color:${eIntrInfo.color}">${eIntrInfo.text}</span>`)}
       ${chip('Wall St. moy', `<span style="color:${wsColor}">${wsMoy === null ? '—' : wsFmtPct(wsMoy).replace(' %', '%')}</span>`)}
-      ${chip('Consensus', `<span style="color:${recoS ? recoS.color : 'var(--ink-soft)'}">${recoS ? recoS.label : '—'}</span>`, 'vs-value-sm')}
+      ${chip('Consensus', `<span style="color:${recoS ? wsRecoTextColor(recoS) : 'var(--ink-soft)'}">${recoS ? recoS.label : '—'}</span>`, 'vs-value-sm')}
       ${chip('Position short', `<span style="color:${shortColor}">${shortV === null ? '—' : fmtNum(shortV, 1) + '%'}</span>`)}
     </div>
   </div>`;
@@ -7746,7 +7751,7 @@ function render(){
       }
       if(field.type === 'wallStreetTrio'){
         const obj = (value && typeof value === 'object') ? value : {};
-        const subs = [{key:'max',label:'Max'},{key:'moy',label:'Moy'},{key:'min',label:'Min'}];
+        const subs = [{key:'max',label:'Maximum'},{key:'moy',label:'Moyenne'},{key:'min',label:'Minimum'}];
         const wsData = computeWallStreetTargets(c);
         const itemsHtml = subs.map(sub => {
           const v = obj[sub.key] || '';
