@@ -929,7 +929,7 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; font-family:
 .ws-left .ws-reco{ flex:1 1 auto; }
 .ws-stats-title + .ws-stat{ border-top:0; }
 .ws-stat-l{ font-size:13px; font-weight:600; color:var(--ink-soft); }
-.ws-stat-v{ font-family:var(--font-mono); font-size:21px; font-weight:700; line-height:1.2; }
+.ws-stat-v{ font-family:var(--font-ui); font-size:21px; font-weight:700; line-height:1.2; }
 .ws-stat-s{ font-size:12.5px; line-height:1.35; color:var(--ink-soft); }
 /* Une seule carte, trois colonnes séparées par un filet fin : compact (le prix cible en haut, le pourcentage juste dessous) */
 .ws-cols{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); border:1px solid var(--border); border-radius:14px; background:var(--card); overflow:hidden; }
@@ -4087,7 +4087,7 @@ function buildWsStats(c){
   const dash = '—';
   let r1 = row('Rendement total attendu', dash, 'Renseignez le prix actuel et le prix cible moyen.');
   let r2 = row('Fourchette des analystes', dash, 'Renseignez le prix cible maximum et minimum.');
-  let r3 = row('Cible moyenne vs votre valeur', dash, 'Renseignez le prix cible moyen et votre valeur intrinsèque.');
+  let r3 = row('Cible moyenne vs votre valeur intrinsèque', dash, 'Renseignez le prix cible moyen et votre valeur intrinsèque.');
   if(d){
     if(d.pct.moy !== null){
       const dv = c.fields.identite.politiqueDividende;
@@ -4103,7 +4103,7 @@ function buildWsStats(c){
     const vi = parseMoney(c.fields.valorisation.valeurIntrinseque);
     if(d.target.moy !== null && vi !== null && vi > 0){
       const gap = (d.target.moy - vi) / vi * 100;
-      r3 = row('Cible moyenne vs votre valeur', wsFmtPct(gap), Math.abs(gap) < 0.05 ? 'Les analystes voient comme vous' : `Plus ${gap > 0 ? 'optimistes' : 'prudents'} que vous : ${fmtMoney(d.target.moy, cur)} contre ${fmtMoney(vi, cur)}`);
+      r3 = row('Cible moyenne vs votre valeur intrinsèque', wsFmtPct(gap), Math.abs(gap) < 0.05 ? 'Les analystes voient comme vous' : `Plus ${gap > 0 ? 'optimistes' : 'prudents'} que vous : ${fmtMoney(d.target.moy, cur)} contre ${fmtMoney(vi, cur)}`);
     }
   }
   return `<div class="ws-stats" id="wsStats"><div class="ws-stats-title">Potentiel à 1 an</div>${r1}${r2}${r3}</div>`;
