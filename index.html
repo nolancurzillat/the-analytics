@@ -877,6 +877,9 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; font-family:
 .div-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:14px 20px; margin-top:16px; }
 .div-cell{ display:flex; flex-direction:column; gap:6px; align-items:flex-start; min-width:0; }
 .div-cell.div-wide{ grid-column:1 / -1; align-items:stretch; }
+.notes-row{ display:flex; align-items:center; gap:8px; }
+.notes-row input{ flex:1 1 auto; min-width:0; }
+.notes-row .field-remove{ margin-top:0; flex:0 0 auto; }
 .div-cell select{ max-width:100%; }
 .value-with-note{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
 .value-with-note input{ width:170px !important; flex:0 0 auto; }
@@ -2827,7 +2830,7 @@ function migrateCompany(c){
     idn.politiqueDividende = { mode:'', dividendeAction:'', frequence:'', payout:'', croissance:'', securite:'', notes:'' };
   }
   delete idn.politiqueDividende.annees;
-  ['mode','dividendeAction','frequence','payout','croissance','securite','notes'].forEach(k => {
+  ['mode','dividendeAction','frequence','payout','croissance','securite','notes','notesHidden'].forEach(k => {
     const v = idn.politiqueDividende[k];
     idn.politiqueDividende[k] = (typeof v === 'string') ? v : (typeof v === 'number' ? String(v) : '');
   });
@@ -7631,6 +7634,10 @@ function render(){
         const sub = k => `data-duo-section="${section.key}" data-duo-field="${field.key}" data-duo-sub="${k}"`;
         const numIn = (k, min) => `<input type="text" inputmode="decimal" size="${Math.max(String(obj[k] || '').length, min) + 1}" ${sub(k)} value="${escapeHtml(obj[k] || '')}">`;
         const y = computeDividendYield(c), po = computeDividendPayout(c);
+        // La case "Précisions" peut être enlevée (notesHidden = '1') puis remise ; le texte saisi n'est jamais effacé, pour pouvoir annuler une erreur
+        const notesCell = label => obj.notesHidden === '1'
+          ? `<div class="div-cell div-wide"><button type="button" class="link-btn" data-div-notes="show">+ Remettre la case Précisions${obj.notes ? ' (votre texte est conservé)' : ''}</button></div>`
+          : `<div class="div-cell div-wide"><span class="duo-label">${label}</span><div class="notes-row"><input type="text" ${sub('notes')} value="${escapeHtml(obj.notes || '')}"><button type="button" class="field-remove" data-div-notes="hide" aria-label="Enlever la case Précisions" data-tooltip="<div class='tt-desc'>Enlever cette case. Votre texte est conservé : vous pourrez la remettre.</div>">✕</button></div></div>`;
         const freqOpts = ['', 'Trimestrielle', 'Semestrielle', 'Annuelle', 'Mensuelle', 'Irrégulière'].map(o => `<option value="${o}"${o === (obj.frequence || '') ? ' selected' : ''}>${o || 'Choisir...'}</option>`).join('');
         const detail = mode === 'verse' ? `<div class="div-grid">
             <div class="div-cell"><span class="duo-label">Dividende annuel par action</span><div class="value-with-suffix">${numIn('dividendeAction', 3)}<span class="value-suffix">${escapeHtml(c.currency)}</span></div></div>
@@ -7639,8 +7646,8 @@ function render(){
             <div class="div-cell"><span class="duo-label">Taux de distribution</span><span class="computed" id="computed-identite-politiqueDividende-payout" data-tooltip="${tipDividendPayout(c)}">${po === null ? '—' : fmtNum(po, 1) + ' %'}</span></div>
             <div class="div-cell"><span class="duo-label">Croissance du dividende (5 ans)</span><div class="value-with-suffix">${numIn('croissance', 2)}<span class="value-suffix">%</span></div></div>
             <div class="div-cell"><span class="duo-label">Sécurité du dividende</span><div class="value-with-badge">${numIn('securite', 2)}<span class="value-suffix">/100</span>${dividendSecurityBadge(num(obj.securite))}</div></div>
-            <div class="div-cell div-wide"><span class="duo-label">Précisions (historique, dates, particularités)</span><input type="text" ${sub('notes')} value="${escapeHtml(obj.notes || '')}"></div>
-          </div>` : (mode === 'aucun' ? `<div class="div-grid"><div class="div-cell div-wide"><span class="duo-label">Précisions (ex : réinvestit ses bénéfices, rachats d'actions)</span><input type="text" ${sub('notes')} value="${escapeHtml(obj.notes || '')}"></div></div>` : (obj.notes ? `<div class="div-grid"><div class="div-cell div-wide"><span class="duo-label">Ancien texte conservé, choisissez une option ci-dessus</span><input type="text" ${sub('notes')} value="${escapeHtml(obj.notes || '')}"></div></div>` : ''));
+            ${notesCell('Précisions (historique, dates, particularités)')}
+          </div>` : (mode === 'aucun' ? `<div class="div-grid">${notesCell("Précisions (ex : réinvestit ses bénéfices, rachats d'actions)")}</div>` : (obj.notes ? `<div class="div-grid"><div class="div-cell div-wide"><span class="duo-label">Ancien texte conservé, choisissez une option ci-dessus</span><input type="text" ${sub('notes')} value="${escapeHtml(obj.notes || '')}"></div></div>` : ''));
         html += `<div class="field-row"><div class="field-label" data-tooltip="${fieldDescTooltip(field.key)}">${field.label}</div>
           <div class="field-value"><div class="currency-toggle">
             <button type="button" class="cur-opt${mode === 'aucun' ? ' active' : ''}" data-div-mode="aucun">Ne verse pas de dividende</button>
@@ -7932,6 +7939,10 @@ function render(){
     });
   });
 
+  main.querySelectorAll('[data-div-notes]').forEach(b => b.addEventListener('click', () => {
+    updateDuo('identite', 'politiqueDividende', 'notesHidden', b.dataset.divNotes === 'hide' ? '1' : '');
+    render();
+  }));
   main.querySelectorAll('[data-div-mode]').forEach(b => b.addEventListener('click', () => {
     const cur = ((getActive().fields.identite.politiqueDividende) || {}).mode;
     updateDuo('identite', 'politiqueDividende', 'mode', cur === b.dataset.divMode ? '' : b.dataset.divMode);
