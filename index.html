@@ -6581,7 +6581,7 @@ function bindPortfolio(){
 const LEGAL_VERSION = '2026-09-25';
 const LEGAL_DATE_TXT = '25 septembre 2026';
 const LEGAL_PUBLISHER = 'Nolan Curzillat';
-const LEGAL_CONTACT = `via la page du projet, <a href="https://github.com/nolancurzillat/the-analytics/issues" target="_blank" rel="noopener noreferrer">github.com/nolancurzillat/the-analytics/issues</a> (n'y indiquez aucune information personnelle)`;
+const LEGAL_CONTACT = `<a href="mailto:the.analytics.app@gmail.com">the.analytics.app@gmail.com</a>`;
 const LEGAL_TABS = [
   { id:'confidentialite', label:'Confidentialité', title:'Politique de confidentialité' },
   { id:'conditions', label:"Conditions d'utilisation", title:"Conditions d'utilisation" },
@@ -6604,7 +6604,7 @@ const LEGAL_CONTENT = {
     LP(`Vos analyses contiennent ce que vous y écrivez librement (notes, thèses d'investissement, positions, prix d'achat). Ces informations peuvent révéler votre situation financière : ne saisissez en ligne que ce que vous acceptez d'y stocker. Vous pouvez à tout moment vous en passer en n'utilisant pas de compte. N'y indiquez aucune information sur d'autres personnes.`),
     LH(`Qui d'autre reçoit des données`),
     LUL([
-      `<strong>Supabase</strong> (base de données et authentification) : reçoit votre adresse e-mail, votre mot de passe chiffré et vos analyses, si vous avez un compte.`,
+      `<strong>Supabase</strong> (base de données et authentification, serveurs situés en Europe) : reçoit votre adresse e-mail, votre mot de passe chiffré et vos analyses, si vous avez un compte.`,
       `<strong>GitHub Pages</strong> (hébergement du site) : comme tout site web, reçoit votre adresse IP quand vous ouvrez l'application.`,
       `<strong>Google Fonts</strong> : les polices d'écriture sont chargées depuis Google, qui reçoit votre adresse IP.`,
       `<strong>Wikidata, Wikimedia et le service d'icônes de Google</strong> (logos des entreprises) : reçoivent uniquement le nom de l'entreprise analysée, si l'option de recherche automatique des logos est activée. Vous pouvez la désactiver dans Mon espace, Préférences.`,
@@ -6657,7 +6657,7 @@ const LEGAL_CONTENT = {
     LH('Hébergement'),
     LUL([
       `<strong>Site</strong> : GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis (GitHub Pages, github.com).`,
-      `<strong>Données des comptes</strong> : Supabase, Inc. (supabase.com), prestataire de base de données et d'authentification.`,
+      `<strong>Données des comptes</strong> : Supabase, Inc. (supabase.com), prestataire de base de données et d'authentification, avec des serveurs situés en Europe.`,
     ]),
     LH('Propriété intellectuelle'),
     LP(`Le code de l'application, les textes d'apprentissage et l'identité visuelle de The Analytics sont la propriété de leur auteur. Les noms, marques et logos d'entreprises affichés dans les analyses appartiennent à leurs propriétaires respectifs et ne sont utilisés que pour identifier les sociétés analysées.`),
