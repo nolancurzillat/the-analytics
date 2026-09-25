@@ -4144,7 +4144,7 @@ function wsLtIndicatorsHtml(c){
 }
 function buildWsLongTerm(c){
   const ws = (c.fields.valorisation && c.fields.valorisation.wallStreet) || {};
-  const inp = (key, label) => `<label class="ws-lt-in"><span>${label}</span><div class="ws-col-price"><input type="text" inputmode="decimal" data-ws-section="valorisation" data-ws-field="wallStreet" data-ws-sub="${key}" value="${escapeHtml(ws[key] || '')}" placeholder="ex : 700 Md"><span class="value-suffix">${escapeHtml(c.currency)}</span></div></label>`;
+  const inp = (key, label) => `<label class="ws-lt-in"><span>${label}</span><div class="ws-col-price"><input type="text" inputmode="decimal" data-ws-section="valorisation" data-ws-field="wallStreet" data-ws-sub="${key}" value="${escapeHtml(ws[key] || '')}"><span class="value-suffix">${escapeHtml(c.currency)}</span></div></label>`;
   return `<div class="ws-lt" id="wsLongTerm">
     <div class="ws-lt-title">Prévision long terme</div>
     <div class="ws-lt-inputs">${inp('ca5', "Chiffre d'affaires estimé dans 5 ans")}${inp('benef5', 'Bénéfice net estimé dans 5 ans')}</div>
