@@ -920,6 +920,7 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; font-family:
 .duo-label{ color:var(--ink-soft); font-size:14px; flex:0 0 auto; }
 .duo-item input{ width:120px !important; }
 .duo-item-auto input{ width:auto !important; min-width:64px; }
+.ws-legacy{ margin-top:10px; font-size:13px; line-height:1.5; color:var(--ink-soft); max-width:680px; }
 .trio-row{ flex-wrap:wrap; gap:14px 22px; }
 .trio-row .duo-item{ flex:0 0 auto; }
 .trio-row .duo-item input{ width:96px !important; }
@@ -1828,7 +1829,7 @@ const FIELD_DESCRIPTIONS = {
   beta: "La volatilité du titre par rapport au marché : au-dessus de 1, il bouge plus fort que le marché.",
   positionShort: "La part du flottant vendue à découvert par les investisseurs qui parient sur une baisse.",
   ratioVenteADecouvert: "Le nombre de jours de volume moyen pour que les vendeurs à découvert rachètent leurs positions.",
-  wallStreet: "Les estimations de variation de prix des analystes sur les 12 prochains mois (Max/Moy/Min).",
+  wallStreet: "Les prix cibles à 1 an des analystes (Max, Moy, Min). Vous saisissez le prix prévu, la hausse ou baisse en % par rapport au prix actuel est calculée automatiquement, avec sa couleur : rouge sous 0 %, jaune de 0 à 10 %, vert clair de 10 à 30 %, vert foncé au-dessus.",
   conclusionValorisation: "Ta synthèse personnelle sur si le titre est cher, bon marché, ou correctement valorisé.",
   regleBuffett: "Une checklist des critères classiques de l'investissement value/qualité façon Warren Buffett.",
   pointsForts: "Les principales qualités de l'entreprise qui soutiennent la thèse d'investissement.",
@@ -2759,6 +2760,7 @@ function newCompany(name, currency){
   fields.identite.clients = [];
   fields.financier.revenuSource = [{label:'', value:''}, {label:'', value:''}];
   fields.financier.revenuPays = [{label:'', value:''}, {label:'', value:''}];
+  fields.valorisation.wallStreet = { max:'', moy:'', min:'', unit:'price' };
   const customFields = {};
   SECTIONS.forEach(s => customFields[s.key] = []);
   const position = { active:false, quantite:'', prixAchat:'', montantInvesti:'' };
@@ -2866,6 +2868,7 @@ function migrateCompany(c){
     val.wallStreet = { max: val.wallStreet, moy:'', min:'' };
   }
   if(!val.wallStreet || typeof val.wallStreet !== 'object') val.wallStreet = { max:'', moy:'', min:'' };
+  applyLegacyWallStreet(c);   // anciennes cases en % converties en prix cibles (voir applyLegacyWallStreet)
   // Croissance estimée de l'EPS : ancien champ simple (le taux annuel saisi) devenu { cagr, total } ; le nombre saisi reste le CAGR, donc le PEG ne change pas
   if(typeof val.croissanceEstimeeEps === 'string' || typeof val.croissanceEstimeeEps === 'number') val.croissanceEstimeeEps = { cagr:String(val.croissanceEstimeeEps), total:'' };
   if(!val.croissanceEstimeeEps || typeof val.croissanceEstimeeEps !== 'object' || Array.isArray(val.croissanceEstimeeEps)) val.croissanceEstimeeEps = { cagr:'', total:'' };
@@ -4008,11 +4011,55 @@ function ecartMarkup(e){
   if(e < -0.05) return `<span class="ecart-text ecart-under">Sous-évaluation de ${pct}%</span>`;
   return `<span class="ecart-text">Juste valorisé</span>`;
 }
+// Barème Wall Street (hausse attendue à 1 an par rapport au prix actuel, demande de Nolan le 2026-09-25) :
+// négatif rouge, de 0 à 10 % jaune, de 10 à 30 % vert clair, 30 % et plus vert foncé.
+function wallStreetTier(v){
+  if(v === null || v === undefined || isNaN(v)) return null;
+  if(v < 0) return 'mauvais';
+  if(v < 10) return 'moyen';
+  if(v < 30) return 'bon';
+  return 'tresbon';
+}
 function wallStreetColor(v){
-  if(v === null) return '';
-  if(v < 0) return TIER_COLORS.mauvais;
-  if(v < 50) return TIER_COLORS.bon;
-  return TIER_COLORS.tresbon;
+  const t = wallStreetTier(v);
+  return t ? TIER_COLORS[t] : '';
+}
+function wsScaleTooltip(currentTier){
+  const rows = [
+    { tier:'tresbon', text:'Très bon : 30 % et plus' },
+    { tier:'bon', text:'Bon : 10 à 30 %' },
+    { tier:'moyen', text:'Moyen : 0 à 10 %' },
+    { tier:'mauvais', text:'Mauvais : moins de 0 %' },
+  ];
+  return `<div class='tt-tiers'>` + rows.map(r => {
+    const color = TOOLTIP_TIER_COLORS[r.tier];
+    return `<div class='tt-row${r.tier === currentTier ? ' tt-current' : ''}'><span class='tt-dot' style='background:${color}'></span><span style='color:${color}'>${r.text}</span></div>`;
+  }).join('') + `</div>`;
+}
+function wsBadge(pct, id){
+  const tier = wallStreetTier(pct);
+  const header = tier ? `<div class='tt-header' style='color:${TOOLTIP_TIER_COLORS[tier]}'>${TIER_LABELS[tier]}</div>` : `<div class='tt-header tt-header-empty'>Pas de donnée</div>`;
+  return `<span id="${id}" class="${tier ? 'scale-badge' : 'scale-badge scale-badge-empty'}" style="background:${tier ? TIER_COLORS[tier] : ''}" data-tooltip="${header}${wsScaleTooltip(tier)}"></span>`;
+}
+function tipWsPct(c, k){
+  const d = computeWallStreetTargets(c), ws = (c.fields.valorisation && c.fields.valorisation.wallStreet) || {};
+  const p = d && d.pct[k];
+  return `<div class='tt-formula'>(Prix cible ${n(raw(ws[k]))} ÷ Prix actuel ${n(raw(c.fields.valorisation.prixActuel))}) − 1</div>${tipRes('= ' + (p === null || p === undefined ? '—' : wsFmtPct(p)))}<div class='tt-desc'>Hausse ou baisse attendue à 1 an par rapport au prix actuel, calculée automatiquement.</div>`;
+}
+// Met à jour, sans re-rendre la page, les pourcentages et pastilles des cases Max / Moy / Min
+function refreshWsPercents(){
+  const c = getActive();
+  if(!c) return;
+  const d = computeWallStreetTargets(c);
+  ['max', 'moy', 'min'].forEach(k => {
+    const cell = document.getElementById('ws-pct-' + k);
+    if(!cell) return;
+    const p = d ? d.pct[k] : null;
+    cell.textContent = p === null ? '—' : wsFmtPct(p);
+    cell.dataset.tooltip = tipWsPct(c, k);
+    const b = document.getElementById('ws-badge-' + k);
+    if(b) b.outerHTML = wsBadge(p, 'ws-badge-' + k);
+  });
 }
 
 // Formate une variation en % à la française, sans décimale inutile (ex : "+12 %", "-5,5 %")
@@ -4038,15 +4085,43 @@ function niceAxisTicks(min, max, targetCount){
   return { ticks, min: niceMin, max: niceMax };
 }
 
-// Calcule les prix cibles à partir du prix actuel et des % Wall Street (personne n'a besoin de les calculer à la main)
+// Prévisions Wall Street : l'utilisateur saisit les PRIX CIBLES à 1 an (Max, Moy, Min, dans la devise de l'analyse) ; les pourcentages
+// (par rapport au prix actuel) sont calculés automatiquement. Depuis le 2026-09-25 (avant, on saisissait les %, voir applyLegacyWallStreet).
 function computeWallStreetTargets(c){
-  const price = num(c.fields.valorisation.prixActuel);
-  if(price === null) return null;
+  const price = parseMoney(c.fields.valorisation.prixActuel);
+  if(price === null || price <= 0) return null;
   const ws = (c.fields.valorisation && c.fields.valorisation.wallStreet) || {};
-  const pct = { max: num(ws.max), moy: num(ws.moy), min: num(ws.min) };
-  const target = {};
-  ['max','moy','min'].forEach(k => { target[k] = pct[k] === null ? null : price * (1 + pct[k] / 100); });
+  const target = { max: parseMoney(ws.max), moy: parseMoney(ws.moy), min: parseMoney(ws.min) };
+  const pct = {};
+  ['max','moy','min'].forEach(k => { pct[k] = target[k] === null ? null : (target[k] / price - 1) * 100; });
   return { price, pct, target };
+}
+// Anciennes données : les cases contenaient des POURCENTAGES. On les convertit en prix cibles (prix actuel × (1 + %)) dès que le prix actuel est connu ;
+// sinon elles sont mises de côté dans wallStreet.legacyPct (jamais perdues) et converties plus tard. wallStreet.unit === 'price' marque le nouveau format.
+function applyLegacyWallStreet(c){
+  const val = c.fields.valorisation;
+  if(!val || !val.wallStreet || typeof val.wallStreet !== 'object') return false;
+  const ws = val.wallStreet;
+  const price = parseMoney(val.prixActuel);
+  let changed = false;
+  if(ws.unit !== 'price'){
+    ws.unit = 'price';
+    const old = { max:ws.max, moy:ws.moy, min:ws.min };
+    if(['max','moy','min'].some(k => num(old[k]) !== null)){
+      ws.legacyPct = old;
+      ws.max = ws.moy = ws.min = '';
+    }
+    changed = true;
+  }
+  if(ws.legacyPct && price !== null && price > 0){
+    ['max','moy','min'].forEach(k => {
+      const p = num(ws.legacyPct[k]);
+      if(p !== null && !String(ws[k] || '').trim()) ws[k] = String(Math.round(price * (1 + p / 100) * 100) / 100);
+    });
+    delete ws.legacyPct;
+    changed = true;
+  }
+  return changed;
 }
 
 // Graphique des prévisions Wall Street : des lignes pointillées partent, en ligne droite, du prix actuel
@@ -4151,6 +4226,7 @@ function buildWallStreetChart(c){
 function refreshWallStreetChart(){
   const c = getActive();
   if(!c) return;
+  refreshWsPercents();
   const el = document.getElementById('wsChartWrap');
   if(!el) return;
   el.outerHTML = buildWallStreetChart(c);
@@ -4171,7 +4247,8 @@ function buildValuationSummaryBlock(c){
   const peRel = computePeRelatif(c);
   const peRelTier = getScaleTier('peRelatifSecteur', peRel);
   const peRelColor = peRelTier ? TIER_COLORS[peRelTier] : 'var(--ink-soft)';
-  const wsMoy = num(c.fields.valorisation.wallStreet && c.fields.valorisation.wallStreet.moy);
+  const wsData = computeWallStreetTargets(c);
+  const wsMoy = wsData ? wsData.pct.moy : null;
   const wsColor = wsMoy === null ? 'var(--ink-soft)' : wallStreetColor(wsMoy);
   const moatNote = c.fields.identite.moatNote || '';
   const moatTier = getScaleTier('moatNote', num(moatNote));
@@ -4186,7 +4263,7 @@ function buildValuationSummaryBlock(c){
       ${chip('vs DCF', `<span style="color:${eDcfInfo.color}">${eDcfInfo.text}</span>`)}
       ${chip('vs Intrinsèque', `<span style="color:${eIntrInfo.color}">${eIntrInfo.text}</span>`)}
       ${chip('PE / Secteur', `<span style="color:${peRelColor}">${peRel === null ? '—' : peRel.toFixed(2)}</span>`)}
-      ${chip('Wall St. moy', `<span style="color:${wsColor}">${wsMoy === null ? '—' : (wsMoy>0?'+':'') + wsMoy + '%'}</span>`)}
+      ${chip('Wall St. moy', `<span style="color:${wsColor}">${wsMoy === null ? '—' : wsFmtPct(wsMoy).replace(' %', '%')}</span>`)}
       ${chip('MOAT', `<span style="color:${moatColor}">${moatNote ? escapeHtml(String(moatNote)) + '/10' : '—'}</span>`)}
     </div>
   </div>`;
@@ -4372,7 +4449,8 @@ function buildSynthesisText(c){
   const moatNote = num(c.fields.identite.moatNote);
   const buffett = computeBuffettScore(c);
   const conviction = c.fields.personnelle.conviction;
-  const wsMoy = num(c.fields.valorisation.wallStreet && c.fields.valorisation.wallStreet.moy);
+  const wsT = computeWallStreetTargets(c);
+  const wsMoy = wsT ? wsT.pct.moy : null;
   const ecartIntr = computeEcart(c, 'valeurIntrinseque');
 
   const parts = [];
@@ -4388,7 +4466,7 @@ function buildSynthesisText(c){
   }
   if(moatNote !== null) parts.push(`La note MOAT de ${moatNote}/10 reflète ${moatNote >= 7 ? 'un avantage concurrentiel solide' : 'un avantage concurrentiel à surveiller'}.`);
   if(buffett.checked > 0) parts.push(`La checklist Buffett valide ${buffett.checked}/${buffett.total} critères.`);
-  if(wsMoy !== null) parts.push(`Les analystes de Wall Street anticipent en moyenne ${wsMoy > 0 ? '+' : ''}${wsMoy}% sur 12 mois.`);
+  if(wsMoy !== null) parts.push(`Les analystes de Wall Street anticipent en moyenne ${wsFmtPct(wsMoy).replace(' %', '%')} sur 12 mois.`);
   if(conviction) parts.push(`Ta conviction personnelle est actuellement de ${String(conviction).replace('.', ',')}/5.`);
   if(parts.length <= 1) parts.push(`Complète les sections ci-dessus pour générer une synthèse plus riche.`);
   return parts.join(' ');
@@ -4568,6 +4646,7 @@ function updateWallStreetField(sectionKey, fieldKey, subKey, value){
   if(!c.fields[sectionKey][fieldKey] || typeof c.fields[sectionKey][fieldKey] !== 'object' || Array.isArray(c.fields[sectionKey][fieldKey])){
     c.fields[sectionKey][fieldKey] = {};
   }
+  c.fields[sectionKey][fieldKey].unit = 'price';   // ce que l'on saisit ici est un prix cible, jamais un % (voir applyLegacyWallStreet)
   c.fields[sectionKey][fieldKey][subKey] = value;
   touchUpdated(c);
   saveState();
@@ -4899,6 +4978,7 @@ async function refreshCurrentPrice(id, force){
     }else{
       c.fields.valorisation.prixActuel = String(Math.round(result.price * 10) / 10);
       c.priceError = null;
+      applyLegacyWallStreet(c);
       touchUpdated(c);
     }
     c.priceUpdatedAt = new Date().toISOString();
@@ -6500,7 +6580,7 @@ const LEARN_INDICATORS = {
   beta: { how:`La sensibilité de l'action aux mouvements du marché. 1 : évolue comme le marché ; plus de 1 : plus volatile ; moins de 1 : plus stable.`, ex:`Avec un bêta de 1,3, si le marché baisse de 10 %, l'action baisse en moyenne de 13 %.` },
   positionShort: { how:`La part des actions vendues à découvert (pari à la baisse). Un pourcentage élevé signifie que beaucoup d'investisseurs parient contre l'entreprise.` },
   ratioVenteADecouvert: { how:`Le nombre de jours de volume normal nécessaires pour racheter toutes les actions vendues à découvert.` },
-  wallStreet: { how:`Les prévisions d'évolution du cours sur 1 an des analystes : maximum, moyenne et minimum en %. L'application calcule les prix cibles et les trace en éventail.`, warn:`Les analystes se trompent souvent : servez-vous-en comme d'un ordre de grandeur, pas comme d'une promesse.` },
+  wallStreet: { how:`Les prix cibles à 1 an des analystes : maximum, moyenne et minimum. Vous saisissez les prix, l'application calcule la hausse attendue en % par rapport au prix actuel (rouge sous 0 %, jaune de 0 à 10 %, vert clair de 10 à 30 %, vert foncé au-dessus) et les trace en éventail.`, ex:`Prix actuel de 100 $ et prix cible moyen de 118 $ : hausse attendue de +18 %, en vert clair.`, warn:`Les analystes se trompent souvent : servez-vous-en comme d'un ordre de grandeur, pas comme d'une promesse.` },
   graphique: { how:`Collez une capture du graphique de cours pour garder une trace visuelle de la tendance.` },
   conclusionValorisation: { how:`Votre verdict sur le prix : cher, correct ou bon marché, et pourquoi.` },
   regleBuffett: { how:`La checklist en 10 critères. Certains se cochent tout seuls à partir de vos chiffres (voir le chapitre « La méthode »).` },
@@ -7474,6 +7554,7 @@ function render(){
     renderHomeView();
     return;
   }
+  if(applyLegacyWallStreet(c)) saveState();   // convertit d'anciennes prévisions en % dès que le prix actuel est connu
 
   let html = `
     <div class="wrap page">
@@ -7545,17 +7626,22 @@ function render(){
       if(field.type === 'wallStreetTrio'){
         const obj = (value && typeof value === 'object') ? value : {};
         const subs = [{key:'max',label:'Max'},{key:'moy',label:'Moy'},{key:'min',label:'Min'}];
+        const wsData = computeWallStreetTargets(c);
         const itemsHtml = subs.map(sub => {
           const v = obj[sub.key] || '';
-          const color = wallStreetColor(num(v));
-          return `<div class="duo-item">
+          const p = wsData ? wsData.pct[sub.key] : null;
+          return `<div class="duo-item duo-item-auto">
             <span class="duo-label">${sub.label}</span>
-            <input type="text" data-ws-section="${section.key}" data-ws-field="${field.key}" data-ws-sub="${sub.key}" value="${escapeHtml(v)}" style="color:${color}">
+            <input type="text" inputmode="decimal" size="${Math.max(String(v).length, 3) + 1}" data-ws-section="${section.key}" data-ws-field="${field.key}" data-ws-sub="${sub.key}" value="${escapeHtml(v)}">
+            <span class="value-suffix">${escapeHtml(c.currency)}</span>
+            <span class="computed" id="ws-pct-${sub.key}" data-tooltip="${tipWsPct(c, sub.key)}">${p === null ? '—' : wsFmtPct(p)}</span>
+            ${wsBadge(p, 'ws-badge-' + sub.key)}
           </div>`;
         }).join('');
+        const legacy = obj.legacyPct ? `<div class="ws-legacy">Anciennes prévisions en pourcentage conservées (Max ${escapeHtml(String(obj.legacyPct.max || '—'))} %, Moy ${escapeHtml(String(obj.legacyPct.moy || '—'))} %, Min ${escapeHtml(String(obj.legacyPct.min || '—'))} %) : elles seront converties en prix dès que le prix actuel sera renseigné (section Valorisation).</div>` : '';
         html += `<div class="field-row"><div class="field-label" data-tooltip="${fieldDescTooltip(field.key)}">${field.label}</div>
           <div class="field-value">
-            <div class="duo-row trio-row">${itemsHtml}</div>
+            <div class="duo-row trio-row">${itemsHtml}</div>${legacy}
             ${buildWallStreetChart(c)}
           </div></div>`;
         return;
@@ -8009,7 +8095,7 @@ function render(){
   main.querySelectorAll('[data-ws-sub]').forEach(el => {
     el.addEventListener('input', e => {
       updateWallStreetField(el.dataset.wsSection, el.dataset.wsField, el.dataset.wsSub, e.target.value);
-      e.target.style.color = wallStreetColor(num(e.target.value));
+      if(el.hasAttribute('size')) el.size = Math.max(e.target.value.length, 3) + 1;
       refreshWallStreetChart();
     });
   });
