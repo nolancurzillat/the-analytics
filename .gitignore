@@ -1,0 +1,5 @@
+# Fichiers personnels, jamais publies en ligne
+the-analytics-sauvegarde*.json
+*.zip
+*.bat
+.claude/
