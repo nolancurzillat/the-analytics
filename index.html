@@ -3157,12 +3157,13 @@ function parseMoney(v){
   const s = String(v).trim();
   if(!s) return null;
   // B et Bn (billion à l'anglo-saxonne) valent un milliard, comme Md
-  const match = s.match(/^(-?\d+(?:[.,]\d+)?)\s*(md|bn|b|k|m|t)?\s*\$?\s*$/i);
+  // Accepte aussi les espaces de milliers ("3 200 Md"), le symbole € et les abréviations françaises Mds / Mrd (milliards)
+  const match = s.match(/^(-?\d[\d\s  ]*(?:[.,]\d+)?)\s*(mds|mrd|md|bn|b|k|m|t)?\s*[$€]?\s*$/i);
   if(!match) return num(v);
-  const n = parseFloat(match[1].replace(',', '.'));
+  const n = parseFloat(match[1].replace(/[\s  ]/g, '').replace(',', '.'));
   if(isNaN(n)) return null;
   const unit = (match[2] || '').toLowerCase();
-  const mult = { '':1, 'k':1e3, 'm':1e6, 'md':1e9, 'bn':1e9, 'b':1e9, 't':1e12 }[unit];
+  const mult = { '':1, 'k':1e3, 'm':1e6, 'md':1e9, 'mds':1e9, 'mrd':1e9, 'bn':1e9, 'b':1e9, 't':1e12 }[unit];
   return n * mult;
 }
 
@@ -4098,9 +4099,13 @@ function computeLongTerm(c){
   const cagr = (a, b) => (a !== null && b !== null && a > 0 && b > 0) ? (Math.pow(b / a, 1 / 5) - 1) * 100 : null;
   const marge0 = (ca0 !== null && ca0 > 0 && b0 !== null) ? b0 / ca0 * 100 : num(fin.margeNette);
   const marge5 = (ca5 !== null && ca5 > 0 && b5 !== null) ? b5 / ca5 * 100 : null;
-  const pe5 = (mc !== null && mc > 0 && b5 !== null && b5 > 0) ? mc / b5 : null;
+  // PE futur = capitalisation ÷ bénéfice estimé ; sans capitalisation, on le déduit du PE actuel : PE actuel × bénéfice actuel ÷ bénéfice estimé
+  const peNow = computePeActuel(c);
+  let pe5 = null, pe5Src = '';
+  if(mc !== null && mc > 0 && b5 !== null && b5 > 0){ pe5 = mc / b5; pe5Src = 'cap'; }
+  else if(peNow !== null && peNow > 0 && b0 !== null && b0 > 0 && b5 !== null && b5 > 0){ pe5 = peNow * b0 / b5; pe5Src = 'pe'; }
   const cours5 = (price !== null && price > 0 && b0 !== null && b0 > 0 && b5 !== null && b5 > 0) ? price * b5 / b0 : null;
-  return { ca0, b0, ca5, b5, mc, price, cagrCa:cagr(ca0, ca5), cagrB:cagr(b0, b5), marge0, marge5, pe5, cours5, pe:computePeActuel(c) };
+  return { ca0, b0, ca5, b5, mc, price, cagrCa:cagr(ca0, ca5), cagrB:cagr(b0, b5), marge0, marge5, pe5, pe5Src, cours5, pe:peNow };
 }
 // Montant compact lisible (391 Md$, 2,85 T$, 950 M$), sans décimales inutiles
 function compactMoney(v, cur){
@@ -4127,7 +4132,7 @@ function wsLtIndicatorsHtml(c){
     const delta = d.marge0 === null ? null : d.marge5 - d.marge0;
     mCell = wsLtCell('Marge nette dans 5 ans', fmtNum(d.marge5, 1) + ' %', d.marge0 === null ? 'Marge actuelle non renseignée' : `Aujourd'hui ${fmtNum(d.marge0, 1)} % (${delta >= 0 ? '+' : ''}${fmtNum(delta, 1)} pt)`, tierColor('margeNette', d.marge5));
   }
-  let pCell = wsLtCell('PE sur le bénéfice futur', dash, d.b5 === null ? 'Renseignez le bénéfice estimé' : 'Renseignez la capitalisation (Financier)');
+  let pCell = wsLtCell('PE sur le bénéfice futur', dash, d.b5 === null ? 'Renseignez le bénéfice estimé' : (d.b0 === null || d.b0 <= 0 ? 'Renseignez le bénéfice net actuel (Financier)' : 'Renseignez la capitalisation (Financier), ou le prix et l\'EPS (Valorisation)'));
   if(d.pe5 !== null) pCell = wsLtCell('PE sur le bénéfice futur', fmtNum(d.pe5, 1), d.pe === null ? 'Capitalisation ÷ bénéfice dans 5 ans' : `Contre ${fmtNum(d.pe, 1)} aujourd'hui`);
   let coursRow = `<div class="ws-lt-price"><div class="ws-lt-l">Cours théorique dans 5 ans, à PE constant</div><div class="ws-lt-v">${dash}</div><div class="ws-lt-s">Renseignez le prix actuel, le bénéfice net actuel et le bénéfice estimé.</div></div>`;
   if(d.cours5 !== null){
