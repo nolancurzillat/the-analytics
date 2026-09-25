@@ -1788,8 +1788,8 @@ const FIELD_DESCRIPTIONS = {
   politiqueDividende: "Indique si l'entreprise verse un dividende et, si oui, son montant par action, son rendement et le taux de distribution (calculés), sa fréquence et son historique d'augmentation.",
   chiffreAffaires: "Le total des ventes générées par l'entreprise sur la période.",
   beneficeNet: "Le profit final après toutes les charges et impôts.",
-  croissanceCA: "Le taux de croissance annuel moyen (CAGR) et la croissance totale du CA sur 5 ans.",
-  croissanceBenef: "Le CAGR et la croissance totale des bénéfices sur 5 ans.",
+  croissanceCA: "Le taux de croissance annuel moyen (CAGR) du CA, que vous saisissez, et la croissance totale sur 5 ans, calculée automatiquement à partir du CAGR.",
+  croissanceBenef: "Le CAGR des bénéfices, que vous saisissez, et la croissance totale sur 5 ans, calculée automatiquement à partir du CAGR.",
   margeBrute: "La part du chiffre d'affaires restante après le coût direct de production.",
   margeNette: "La part du chiffre d'affaires qui reste comme profit final.",
   roe: "Le rendement généré sur les capitaux propres des actionnaires.",
@@ -1988,8 +1988,8 @@ const SECTIONS = [
     fields:[
       {key:'chiffreAffaires', label:"Chiffre d'affaires", type:'text', money:true, span:6, group:'Résultats et croissance'},
       {key:'beneficeNet', label:'Bénéfice net', type:'text', money:true, span:6},
-      {key:'croissanceCA', label:'Croissance du CA (5 ans)', type:'duo', span:6, subs:[{key:'cagr',label:'CAGR', percent:true},{key:'total',label:'Total'}]},
-      {key:'croissanceBenef', label:'Croissance des bénéfices (5 ans)', type:'duo', span:6, subs:[{key:'cagr',label:'CAGR', percent:true},{key:'total',label:'Total'}]},
+      {key:'croissanceCA', label:'Croissance du CA (5 ans)', type:'growthDuo', years:5, span:6},
+      {key:'croissanceBenef', label:'Croissance des bénéfices (5 ans)', type:'growthDuo', years:5, span:6},
       {key:'margeBrute', label:'Marge brute', type:'text', percent:true, span:3, group:'Rentabilité'},
       {key:'margeNette', label:'Marge nette', type:'text', percent:true, span:3},
       {key:'roe', label:'ROE', type:'text', percent:true, span:3},
@@ -3438,11 +3438,17 @@ function tipEcart(c, targetKey, label){
   const e = computeEcart(c, targetKey);
   return `<div class='tt-formula'>Prix actuel ${n(raw(c.fields.valorisation.prixActuel))} vs ${escapeHtml(label)} ${n(raw(c.fields.valorisation[targetKey]))}</div>${tipRes('= '+(e===null?'—':(e>0?'+':'')+e.toFixed(1)+'%'))}`;
 }
+// Croissance totale sur `years` ans = (1 + CAGR)^années − 1, sans le signe % (le % est affiché à côté, comme pour le CAGR : `.value-suffix`)
+function growthTotalText(cagr, years){
+  const v = num(cagr);
+  if(v === null) return '—';
+  const total = (Math.pow(1 + v / 100, years) - 1) * 100;
+  return (total > 0 ? '+' : '') + fmtNum(total, 1);
+}
 function tipGrowthTotal(cagr, years){
   const cagrVal = num(cagr);
   if(cagrVal === null) return `<div class='tt-formula'>Total = (1 + CAGR)^${years} − 1</div>`;
-  const total = (Math.pow(1+cagrVal/100, years) - 1) * 100;
-  return `<div class='tt-formula'>(1 + ${n(cagrVal+'%')})^${years} − 1</div>${tipRes('= '+((total>0?'+':'')+total.toFixed(1))+'%')}`;
+  return `<div class='tt-formula'>(1 + ${n(fmtNum(cagrVal, 2) + ' %')})^${years} − 1</div>${tipRes('= ' + growthTotalText(cagr, years) + ' %')}<div class='tt-desc'>Calculé automatiquement à partir du CAGR sur ${years} ans.</div>`;
 }
 function scaleTier(val, t){
   if(val >= t[0]) return 'tresbon';
@@ -3677,11 +3683,12 @@ function refreshAllComputed(){
   }
   const revEmp = computeRevenuEmploye(c);
   setText('computed-identite-nbEmployes', revEmp === null ? '—' : formatMoneyDisplay(revEmp, c.currency) + ' / employé', tipRevenuEmploye(c));
-  const caObj = c.fields.croissance && c.fields.croissance.croissanceAttendueCA;
-  const caCagr = caObj && caObj.cagr;
-  const caTotalVal = num(caCagr);
-  const caTotal = caTotalVal === null ? null : (Math.pow(1 + caTotalVal/100, 3) - 1) * 100;
-  setText('computed-croissance-croissanceAttendueCA-total', caTotal === null ? '—' : (caTotal>0?'+':'') + caTotal.toFixed(1) + '%', tipGrowthTotal(caCagr, 3));
+  // Totaux de croissance (champs growthDuo : CA et bénéfices sur 5 ans, CA attendu sur 3 ans), calculés depuis le CAGR
+  SECTIONS.forEach(s => s.fields.forEach(f => {
+    if(f.type !== 'growthDuo') return;
+    const o = c.fields[s.key] && c.fields[s.key][f.key];
+    setText(`computed-${s.key}-${f.key}-total`, growthTotalText(o && o.cagr, f.years), tipGrowthTotal(o && o.cagr, f.years));
+  }));
 }
 
 function moatGaugeSvg(note, color){
@@ -5186,6 +5193,7 @@ function isFieldFilled(c, section, field){
   if(field.type === 'moat') return str(v) || str(c.fields[section.key].moatNote);
   if(field.type === 'list') return Array.isArray(v) && v.some(str);
   if(field.type === 'pieChart') return Array.isArray(v) && v.some(s => s && (str(s.label) || str(s.value)));
+  if(field.type === 'growthDuo') return !!(v && typeof v === 'object' && str(v.cagr));   // seul le CAGR est saisi, le total est calculé
   if(v && typeof v === 'object') return Object.keys(v).some(k => typeof v[k] === 'string' && str(v[k]));
   return str(v);
 }
@@ -7690,13 +7698,12 @@ function render(){
       if(field.type === 'growthDuo'){
         const obj = (value && typeof value === 'object') ? value : {};
         const cagrVal = num(obj.cagr);
-        const totalComputed = cagrVal === null ? null : (Math.pow(1 + cagrVal/100, field.years) - 1) * 100;
-        const totalText = totalComputed === null ? '—' : (totalComputed>0?'+':'') + totalComputed.toFixed(1) + '%';
+        const totalText = growthTotalText(obj.cagr, field.years);
         const badge = SCALE_CONFIG[field.key] ? renderBadge(field.key, cagrVal, `badge-${section.key}-${field.key}`) : '';
         html += `<div class="field-row"><div class="field-label" data-tooltip="${fieldDescTooltip(field.key)}">${field.label}</div>
           <div class="field-value"><div class="duo-row">
             <div class="duo-item duo-item-auto"><span class="duo-label">CAGR</span><input type="text" size="${Math.max(String(obj.cagr || '').length, 3) + 1}" data-duo-section="${section.key}" data-duo-field="${field.key}" data-duo-sub="cagr" value="${escapeHtml(obj.cagr || '')}"><span class="value-suffix">%</span></div>
-            <div class="duo-item"><span class="duo-label">Total</span><span class="computed" id="computed-${section.key}-${field.key}-total" data-tooltip="${tipGrowthTotal(obj.cagr, field.years)}">${totalText}</span></div>
+            <div class="duo-item"><span class="duo-label">Total</span><span class="computed" id="computed-${section.key}-${field.key}-total" data-tooltip="${tipGrowthTotal(obj.cagr, field.years)}">${totalText}</span><span class="value-suffix">%</span></div>
             ${badge}
           </div></div></div>`;
         return;
