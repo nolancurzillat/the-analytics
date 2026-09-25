@@ -1821,7 +1821,7 @@ const FIELD_DESCRIPTIONS = {
   peForward: "Le PE calculé avec le bénéfice par action estimé plutôt qu'actuel.",
   peSectoriel: "Le PE moyen des entreprises du même secteur, pour comparaison.",
   peRelatifSecteur: "Le PE comparé à celui du secteur : en dessous de 1, décote ; au-dessus, prime.",
-  croissanceEstimeeEps: "La croissance du bénéfice par action attendue par les analystes sur 3 ans.",
+  croissanceEstimeeEps: "Le taux de croissance annuel moyen (CAGR) du bénéfice par action attendu par les analystes sur 3 ans, que vous saisissez. La croissance totale sur 3 ans est calculée automatiquement. Le PEG utilise le CAGR.",
   peg: "Le PE ajusté de la croissance : sous 1, le titre est plutôt bon marché vu sa croissance.",
   valorisationDcf: "La valeur théorique de l'action selon un modèle d'actualisation des flux futurs.",
   valeurIntrinseque: "Ta propre estimation de la vraie valeur de l'entreprise.",
@@ -2035,7 +2035,7 @@ const SECTIONS = [
       {key:'peForward', label:'PE forward', type:'computed-pe-forward', span:3},
       {key:'peSectoriel', label:'PE sectoriel', type:'number', span:3},
       {key:'peRelatifSecteur', label:'PE relatif au secteur', type:'computed-pe-relatif', span:3},
-      {key:'croissanceEstimeeEps', label:'Croissance estimée EPS (3ans)', type:'number', percent:true, span:6},
+      {key:'croissanceEstimeeEps', label:'Croissance estimée EPS (3 ans)', type:'growthDuo', years:3, span:6},
       {key:'peg', label:'PEG', type:'computed-peg', span:6},
       {key:'valorisationDcf', label:'Valorisation DCF', type:'number-ecart', money:true, span:6, group:'Valeur estimée'},
       {key:'valeurIntrinseque', label:'Valeur intrinsèque', type:'number-ecart', money:true, span:6},
@@ -2866,6 +2866,9 @@ function migrateCompany(c){
     val.wallStreet = { max: val.wallStreet, moy:'', min:'' };
   }
   if(!val.wallStreet || typeof val.wallStreet !== 'object') val.wallStreet = { max:'', moy:'', min:'' };
+  // Croissance estimée de l'EPS : ancien champ simple (le taux annuel saisi) devenu { cagr, total } ; le nombre saisi reste le CAGR, donc le PEG ne change pas
+  if(typeof val.croissanceEstimeeEps === 'string' || typeof val.croissanceEstimeeEps === 'number') val.croissanceEstimeeEps = { cagr:String(val.croissanceEstimeeEps), total:'' };
+  if(!val.croissanceEstimeeEps || typeof val.croissanceEstimeeEps !== 'object' || Array.isArray(val.croissanceEstimeeEps)) val.croissanceEstimeeEps = { cagr:'', total:'' };
   const pers = c.fields.personnelle || (c.fields.personnelle = {});
   if(pers.decision === 'Attendre') pers.decision = 'Garder';
   if(!pers.regleBuffett || typeof pers.regleBuffett !== 'object' || Array.isArray(pers.regleBuffett)){
@@ -3346,7 +3349,7 @@ function tipPeForward(c){
 function tipPeg(c){
   const pe = computePeActuel(c);
   const v = computePeg(c);
-  return `<div class='tt-formula'>PE actuel ${n(pe===null?'?':pe.toFixed(2))} ÷ Croissance estimée EPS ${n(raw(c.fields.valorisation.croissanceEstimeeEps)+'%')}</div>${tipRes('= '+(v===null?'—':v.toFixed(2)))}`;
+  return `<div class='tt-formula'>PE actuel ${n(pe===null?'?':pe.toFixed(2))} ÷ CAGR estimé de l'EPS ${n(raw(c.fields.valorisation.croissanceEstimeeEps && c.fields.valorisation.croissanceEstimeeEps.cagr)+'%')}</div><div class='tt-desc'>On divise par le taux de croissance annuel (CAGR), pas par le total sur 3 ans.</div>${tipRes('= '+(v===null?'—':v.toFixed(2)))}`;
 }
 function tipPeRelatif(c){
   const pe = computePeActuel(c);
@@ -3947,7 +3950,8 @@ function computePeActuel(c){
 }
 function computePeg(c){
   const pe = computePeActuel(c);
-  const growth = num(c.fields.valorisation.croissanceEstimeeEps);
+  // Le PEG se calcule avec le CAGR (taux annuel), jamais avec le total sur 3 ans
+  const growth = num(c.fields.valorisation.croissanceEstimeeEps && c.fields.valorisation.croissanceEstimeeEps.cagr);
   if(pe === null || growth === null || growth === 0) return null;
   return pe / growth;
 }
@@ -6474,7 +6478,7 @@ const LEARN_INDICATORS = {
   peForward: { how:`Le PE calculé avec le bénéfice attendu dans 12 mois. S'il est inférieur au PE actuel, les bénéfices sont attendus en hausse.` },
   peSectoriel: { how:`Le PE moyen du secteur, à saisir pour comparer l'entreprise à ses concurrentes.` },
   peRelatifSecteur: { how:`PE de l'entreprise ÷ PE du secteur. Inférieur à 1, elle est moins chère que son secteur ; supérieur à 1, plus chère.`, ex:`PE de 25 et PE sectoriel de 20 : 1,25, soit 25 % plus cher que le secteur.` },
-  croissanceEstimeeEps: { how:`La croissance annuelle attendue du bénéfice par action sur 3 ans. Elle sert à calculer le PEG.` },
+  croissanceEstimeeEps: { how:`Le rythme de croissance annuel (CAGR) attendu du bénéfice par action sur 3 ans. Vous saisissez ce taux annuel, la croissance totale sur 3 ans se calcule toute seule. Le PEG est le PE divisé par ce CAGR.`, ex:`Un bénéfice par action attendu en hausse de 50 % au total sur 3 ans correspond à un CAGR d'environ 14,5 % par an : c'est 14,5 que vous saisissez, pas 50.` },
   peg: { how:`Le PE divisé par la croissance des bénéfices (en %). Il permet de savoir si l'on paie cher ou non la croissance.`, ex:`PE de 20 et croissance de 15 % : PEG de 1,33.`, warn:`Le PEG dépend d'une prévision de croissance : plus elle est incertaine, moins le PEG est fiable.` },
   valorisationDcf: { how:`La valeur d'aujourd'hui de tout l'argent que l'entreprise va générer, calculée à partir de vos hypothèses de croissance. L'écart avec le cours s'affiche à droite.`, warn:`Très sensible aux hypothèses : changer légèrement la croissance ou le taux d'actualisation modifie beaucoup le résultat.` },
   valeurIntrinseque: { how:`Votre estimation de ce que vaut réellement une action, indépendamment du cours du jour. Elle sert de référence pour la marge de sécurité.`, ex:`Valeur estimée de 125 $ pour un cours de 100 $ : sous-évaluation de 20 %.` },
