@@ -920,6 +920,15 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; font-family:
 .duo-label{ color:var(--ink-soft); font-size:14px; flex:0 0 auto; }
 .duo-item input{ width:120px !important; }
 .duo-item-auto input{ width:auto !important; min-width:64px; }
+.ws-reco{ margin-top:16px; max-width:460px; background:var(--navy); border-radius:14px; padding:16px 20px 14px 20px; color:#fff; text-align:center; }
+.ws-reco-title{ font-size:12px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:rgba(255,255,255,.62); text-align:left; }
+.ws-gauge{ display:block; width:100%; max-width:340px; margin:6px auto 0 auto; cursor:pointer; touch-action:none; user-select:none; -webkit-user-select:none; outline:none; }
+.ws-gauge:focus-visible{ outline:2px solid #5b8cf7; outline-offset:4px; border-radius:10px; }
+.ws-needle{ transform-origin:150px 150px; transition:transform .14s ease, opacity .14s ease; }
+.ws-reco-label{ font-size:26px; font-weight:800; line-height:1.15; margin-top:-2px; font-family:var(--font-ui); }
+.ws-reco-sub{ font-size:13px; color:rgba(255,255,255,.62); margin-top:3px; }
+.ws-reco-foot{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:12px; font-size:12.5px; line-height:1.45; color:rgba(255,255,255,.55); text-align:left; }
+.ws-reco-foot .link-btn{ color:#fff; flex:0 0 auto; }
 .ws-legacy{ margin-top:10px; font-size:13px; line-height:1.5; color:var(--ink-soft); max-width:680px; }
 .trio-row{ flex-wrap:wrap; gap:14px 22px; }
 .trio-row .duo-item{ flex:0 0 auto; }
@@ -1829,7 +1838,7 @@ const FIELD_DESCRIPTIONS = {
   beta: "La volatilité du titre par rapport au marché : au-dessus de 1, il bouge plus fort que le marché.",
   positionShort: "La part du flottant vendue à découvert par les investisseurs qui parient sur une baisse.",
   ratioVenteADecouvert: "Le nombre de jours de volume moyen pour que les vendeurs à découvert rachètent leurs positions.",
-  wallStreet: "Les prix cibles à 1 an des analystes (Max, Moy, Min). Vous saisissez le prix prévu, la hausse ou baisse en % par rapport au prix actuel est calculée automatiquement, avec sa couleur : rouge sous 0 %, jaune de 0 à 10 %, vert clair de 10 à 30 %, vert foncé au-dessus.",
+  wallStreet: "Les prix cibles à 1 an des analystes (Max, Moy, Min). Vous saisissez le prix prévu, la hausse ou baisse en % par rapport au prix actuel est calculée automatiquement, avec sa couleur : rouge sous 0 %, jaune de 0 à 10 %, vert clair de 10 à 30 %, vert foncé au-dessus. Une jauge « Consensus des analystes » (Strong Sell, Sell, Hold, Buy, Strong Buy) se règle à la main.",
   conclusionValorisation: "Ta synthèse personnelle sur si le titre est cher, bon marché, ou correctement valorisé.",
   regleBuffett: "Une checklist des critères classiques de l'investissement value/qualité façon Warren Buffett.",
   pointsForts: "Les principales qualités de l'entreprise qui soutiennent la thèse d'investissement.",
@@ -4096,6 +4105,105 @@ function computeWallStreetTargets(c){
   ['max','moy','min'].forEach(k => { pct[k] = target[k] === null ? null : (target[k] / price - 1) * 100; });
   return { price, pct, target };
 }
+// ---------- Jauge du consensus des analystes (Strong Sell à Strong Buy), réglée à la main ----------
+// wallStreet.reco = recommandation moyenne de 1 (Strong Sell) à 5 (Strong Buy), une décimale. 5 zones égales de 0,8 point : Hold est centré sur 3.
+// Les titres restent en anglais (demande de Nolan le 2026-09-25). Aiguille réglable au clic, au glissement ou au clavier.
+const WS_RECO = [
+  { label:'Strong Sell', color:'#ff8c00' },
+  { label:'Sell', color:'#ffa62b' },
+  { label:'Hold', color:'#8b9099' },
+  { label:'Buy', color:'#0fa58a' },
+  { label:'Strong Buy', color:'#47c0a9' },
+];
+function wsRecoValue(c){
+  const w = c.fields.valorisation && c.fields.valorisation.wallStreet;
+  const v = num(w && w.reco);
+  return v === null ? null : Math.max(1, Math.min(5, v));
+}
+function wsRecoIndex(v){ return Math.max(0, Math.min(4, Math.floor((v - 1) / 0.8 + 1e-9))); }   // + 1e-9 : (3,4 − 1) ÷ 0,8 vaut 2,9999... en flottant
+function wsGaugeArc(i){
+  const cx = 150, cy = 150, r = 122;
+  const a0 = 180 - i * 36 - 5, a1 = 180 - (i + 1) * 36 + 5;
+  const pt = a => [cx + r * Math.cos(a * Math.PI / 180), cy - r * Math.sin(a * Math.PI / 180)];
+  const p0 = pt(a0), p1 = pt(a1);
+  return `M ${p0[0].toFixed(2)} ${p0[1].toFixed(2)} A ${r} ${r} 0 0 1 ${p1[0].toFixed(2)} ${p1[1].toFixed(2)}`;
+}
+function buildWsGauge(c){
+  const segs = WS_RECO.map((s, i) => `<path d="${wsGaugeArc(i)}" fill="none" stroke="${s.color}" stroke-width="15" stroke-linecap="round"/>`).join('');
+  return `<div class="ws-reco" id="wsGaugeWrap">
+    <div class="ws-reco-title">Consensus des analystes</div>
+    <svg viewBox="0 0 300 172" class="ws-gauge" role="slider" tabindex="0" aria-label="Recommandation moyenne des analystes" aria-valuemin="1" aria-valuemax="5">${segs}<g class="ws-needle"><path d="M150 143 L264 150 L150 157 Z" fill="#e4e4e4"/><circle cx="150" cy="150" r="9" fill="#e4e4e4"/></g></svg>
+    <div class="ws-reco-label"></div>
+    <div class="ws-reco-sub"></div>
+    <div class="ws-reco-foot"><span>Cliquez sur la jauge ou faites glisser l'aiguille pour régler la moyenne des recommandations.</span><button type="button" class="link-btn" id="wsRecoClear">Effacer</button></div>
+  </div>`;
+}
+function paintWsGauge(){
+  const c = getActive(), wrap = document.getElementById('wsGaugeWrap');
+  if(!c || !wrap) return;
+  const v = wsRecoValue(c);
+  const svg = wrap.querySelector('svg'), label = wrap.querySelector('.ws-reco-label'), sub = wrap.querySelector('.ws-reco-sub');
+  const angle = v === null ? 90 : (5 - v) / 4 * 180;
+  const needle = wrap.querySelector('.ws-needle');
+  needle.style.transform = `rotate(${-angle}deg)`;
+  needle.style.opacity = v === null ? '.35' : '1';
+  if(v === null){
+    label.textContent = 'Non renseigné'; label.style.color = 'rgba(255,255,255,.55)';
+    sub.textContent = 'Recommandation moyenne des analystes';
+    svg.removeAttribute('aria-valuenow'); svg.setAttribute('aria-valuetext', 'Non renseigné');
+    wrap.querySelector('#wsRecoClear').style.visibility = 'hidden';
+  }else{
+    const s = WS_RECO[wsRecoIndex(v)];
+    label.textContent = s.label; label.style.color = s.color;
+    sub.textContent = 'Moyenne ' + fmtNum(v, 1) + ' / 5';
+    svg.setAttribute('aria-valuenow', String(v)); svg.setAttribute('aria-valuetext', s.label);
+    wrap.querySelector('#wsRecoClear').style.visibility = 'visible';
+  }
+}
+function setWsReco(v, commit){
+  const c = getActive();
+  if(!c) return;
+  const val = c.fields.valorisation;
+  if(!val.wallStreet || typeof val.wallStreet !== 'object') val.wallStreet = { max:'', moy:'', min:'' };
+  val.wallStreet.unit = 'price';
+  val.wallStreet.reco = v === null ? '' : String(Math.max(1, Math.min(5, Math.round(v * 10) / 10)));
+  paintWsGauge();
+  if(commit){ touchUpdated(c); saveState(); refreshInsightsSection(); }
+}
+function bindWsGauge(){
+  const wrap = document.getElementById('wsGaugeWrap');
+  if(!wrap) return;
+  const svg = wrap.querySelector('svg');
+  paintWsGauge();
+  const fromEvent = e => {
+    const r = svg.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width * 300, y = (e.clientY - r.top) / r.height * 172;
+    const a = Math.atan2(Math.max(150 - y, 0), x - 150) * 180 / Math.PI;   // 0 (droite, Strong Buy) à 180 (gauche, Strong Sell)
+    return 5 - a / 180 * 4;
+  };
+  let drag = false;
+  svg.addEventListener('pointerdown', e => { drag = true; try{ svg.setPointerCapture(e.pointerId); }catch(err){} setWsReco(fromEvent(e), false); e.preventDefault(); });
+  svg.addEventListener('pointermove', e => { if(drag) setWsReco(fromEvent(e), false); });
+  const end = () => { if(drag){ drag = false; setWsReco(wsRecoValue(getActive()), true); } };
+  svg.addEventListener('pointerup', end);
+  svg.addEventListener('pointercancel', end);
+  svg.addEventListener('keydown', e => {
+    const c = getActive(); if(!c) return;
+    const cur = wsRecoValue(c);
+    const step = e.shiftKey ? 0.5 : 0.1;
+    let next = null;
+    if(e.key === 'ArrowRight' || e.key === 'ArrowUp') next = (cur === null ? 3 : cur) + step;
+    else if(e.key === 'ArrowLeft' || e.key === 'ArrowDown') next = (cur === null ? 3 : cur) - step;
+    else if(e.key === 'Home') next = 1;
+    else if(e.key === 'End') next = 5;
+    else if(e.key === 'Delete' || e.key === 'Backspace'){ e.preventDefault(); setWsReco(null, true); return; }
+    if(next === null) return;
+    e.preventDefault();
+    setWsReco(next, true);
+  });
+  wrap.querySelector('#wsRecoClear').addEventListener('click', () => setWsReco(null, true));
+}
+
 // Anciennes données : les cases contenaient des POURCENTAGES. On les convertit en prix cibles (prix actuel × (1 + %)) dès que le prix actuel est connu ;
 // sinon elles sont mises de côté dans wallStreet.legacyPct (jamais perdues) et converties plus tard. wallStreet.unit === 'price' marque le nouveau format.
 function applyLegacyWallStreet(c){
@@ -4467,6 +4575,8 @@ function buildSynthesisText(c){
   if(moatNote !== null) parts.push(`La note MOAT de ${moatNote}/10 reflète ${moatNote >= 7 ? 'un avantage concurrentiel solide' : 'un avantage concurrentiel à surveiller'}.`);
   if(buffett.checked > 0) parts.push(`La checklist Buffett valide ${buffett.checked}/${buffett.total} critères.`);
   if(wsMoy !== null) parts.push(`Les analystes de Wall Street anticipent en moyenne ${wsFmtPct(wsMoy).replace(' %', '%')} sur 12 mois.`);
+  const reco = wsRecoValue(c);
+  if(reco !== null) parts.push(`Leur recommandation moyenne est « ${WS_RECO[wsRecoIndex(reco)].label} » (${fmtNum(reco, 1)}/5).`);
   if(conviction) parts.push(`Ta conviction personnelle est actuellement de ${String(conviction).replace('.', ',')}/5.`);
   if(parts.length <= 1) parts.push(`Complète les sections ci-dessus pour générer une synthèse plus riche.`);
   return parts.join(' ');
@@ -5293,6 +5403,7 @@ function isFieldFilled(c, section, field){
   if(field.type === 'moat') return str(v) || str(c.fields[section.key].moatNote);
   if(field.type === 'list') return Array.isArray(v) && v.some(str);
   if(field.type === 'pieChart') return Array.isArray(v) && v.some(s => s && (str(s.label) || str(s.value)));
+  if(field.type === 'wallStreetTrio') return !!(v && typeof v === 'object' && ['max', 'moy', 'min', 'reco'].some(k => str(v[k])));   // `unit` et `legacyPct` ne comptent pas
   if(field.type === 'growthDuo') return !!(v && typeof v === 'object' && str(v.cagr));   // seul le CAGR est saisi, le total est calculé
   if(v && typeof v === 'object') return Object.keys(v).some(k => typeof v[k] === 'string' && str(v[k]));
   return str(v);
@@ -6580,7 +6691,7 @@ const LEARN_INDICATORS = {
   beta: { how:`La sensibilité de l'action aux mouvements du marché. 1 : évolue comme le marché ; plus de 1 : plus volatile ; moins de 1 : plus stable.`, ex:`Avec un bêta de 1,3, si le marché baisse de 10 %, l'action baisse en moyenne de 13 %.` },
   positionShort: { how:`La part des actions vendues à découvert (pari à la baisse). Un pourcentage élevé signifie que beaucoup d'investisseurs parient contre l'entreprise.` },
   ratioVenteADecouvert: { how:`Le nombre de jours de volume normal nécessaires pour racheter toutes les actions vendues à découvert.` },
-  wallStreet: { how:`Les prix cibles à 1 an des analystes : maximum, moyenne et minimum. Vous saisissez les prix, l'application calcule la hausse attendue en % par rapport au prix actuel (rouge sous 0 %, jaune de 0 à 10 %, vert clair de 10 à 30 %, vert foncé au-dessus) et les trace en éventail.`, ex:`Prix actuel de 100 $ et prix cible moyen de 118 $ : hausse attendue de +18 %, en vert clair.`, warn:`Les analystes se trompent souvent : servez-vous-en comme d'un ordre de grandeur, pas comme d'une promesse.` },
+  wallStreet: { how:`Les prix cibles à 1 an des analystes : maximum, moyenne et minimum. Vous saisissez les prix, l'application calcule la hausse attendue en % par rapport au prix actuel (rouge sous 0 %, jaune de 0 à 10 %, vert clair de 10 à 30 %, vert foncé au-dessus) et les trace en éventail.`, ex:`Prix actuel de 100 $ et prix cible moyen de 118 $ : hausse attendue de +18 %, en vert clair. La jauge du consensus (Strong Sell, Sell, Hold, Buy, Strong Buy) reprend la recommandation moyenne des analystes : réglez l'aiguille à la main d'après TradingView ou le site de votre courtier.`, warn:`Les analystes se trompent souvent : servez-vous-en comme d'un ordre de grandeur, pas comme d'une promesse.` },
   graphique: { how:`Collez une capture du graphique de cours pour garder une trace visuelle de la tendance.` },
   conclusionValorisation: { how:`Votre verdict sur le prix : cher, correct ou bon marché, et pourquoi.` },
   regleBuffett: { how:`La checklist en 10 critères. Certains se cochent tout seuls à partir de vos chiffres (voir le chapitre « La méthode »).` },
@@ -7642,6 +7753,7 @@ function render(){
         html += `<div class="field-row"><div class="field-label" data-tooltip="${fieldDescTooltip(field.key)}">${field.label}</div>
           <div class="field-value">
             <div class="duo-row trio-row">${itemsHtml}</div>${legacy}
+            ${buildWsGauge(c)}
             ${buildWallStreetChart(c)}
           </div></div>`;
         return;
@@ -8092,6 +8204,7 @@ function render(){
     });
   });
 
+  bindWsGauge();
   main.querySelectorAll('[data-ws-sub]').forEach(el => {
     el.addEventListener('input', e => {
       updateWallStreetField(el.dataset.wsSection, el.dataset.wsField, el.dataset.wsSub, e.target.value);
