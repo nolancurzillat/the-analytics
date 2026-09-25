@@ -920,15 +920,23 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; font-family:
 .duo-label{ color:var(--ink-soft); font-size:14px; flex:0 0 auto; }
 .duo-item input{ width:120px !important; }
 .duo-item-auto input{ width:auto !important; min-width:64px; }
-.ws-reco{ margin-top:16px; max-width:460px; background:var(--navy); border-radius:14px; padding:16px 20px 14px 20px; color:#fff; text-align:center; }
+.ws-top{ display:grid; grid-template-columns:minmax(0,1fr) minmax(280px, 360px); gap:16px; align-items:stretch; }
+.ws-cols{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; }
+.ws-col{ display:flex; flex-direction:column; justify-content:center; gap:12px; padding:16px 16px 16px 16px; border:1px solid var(--border); border-radius:14px; background:var(--card); min-width:0; }
+.ws-col-l{ font-size:12.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); }
+.ws-col-price{ display:flex; align-items:center; gap:8px; min-width:0; }
+.ws-col-price input{ flex:1 1 auto; min-width:0; width:100% !important; }
+.ws-col-pct{ display:flex; align-items:center; gap:10px; }
+@media (max-width:1180px){ .ws-top{ grid-template-columns:1fr; } }
+@media (max-width:640px){ .ws-cols{ grid-template-columns:1fr; } }
+.ws-reco{ max-width:none; background:var(--navy); border-radius:14px; padding:16px 20px 14px 20px; color:#fff; text-align:center; display:flex; flex-direction:column; align-items:stretch; }
 .ws-reco-title{ font-size:12px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:rgba(255,255,255,.62); text-align:left; }
 .ws-gauge{ display:block; width:100%; max-width:340px; margin:6px auto 0 auto; cursor:pointer; touch-action:none; user-select:none; -webkit-user-select:none; outline:none; }
 .ws-gauge:focus-visible{ outline:2px solid #5b8cf7; outline-offset:4px; border-radius:10px; }
 .ws-needle{ transform-origin:150px 150px; transition:transform .14s ease, opacity .14s ease; }
 .ws-reco-label{ font-size:26px; font-weight:800; line-height:1.15; margin-top:-2px; font-family:var(--font-ui); }
 .ws-reco-sub{ font-size:13px; color:rgba(255,255,255,.62); margin-top:3px; }
-.ws-reco-foot{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:12px; font-size:12.5px; line-height:1.45; color:rgba(255,255,255,.55); text-align:left; }
-.ws-reco-foot .link-btn{ color:#fff; flex:0 0 auto; }
+.ws-reco-foot{ margin-top:auto; padding-top:12px; font-size:12.5px; line-height:1.45; color:rgba(255,255,255,.5); text-align:center; }
 .ws-legacy{ margin-top:10px; font-size:13px; line-height:1.5; color:var(--ink-soft); max-width:680px; }
 .trio-row{ flex-wrap:wrap; gap:14px 22px; }
 .trio-row .duo-item{ flex:0 0 auto; }
@@ -1052,7 +1060,8 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; font-family:
   border:1px solid var(--border); border-radius:14px;
 }
 .valuation-summary-title{ font-size:13px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:12px; }
-.valuation-summary{ display:grid; grid-template-columns:repeat(6, minmax(0,1fr)); gap:12px; }
+.valuation-summary{ display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px; }
+.vs-value.vs-value-sm{ font-size:16px; }
 .vs-chip{
   background:var(--card); border:1px solid var(--border); border-radius:11px;
   padding:12px 14px; display:flex; flex-direction:column; gap:4px; min-width:0;
@@ -4135,7 +4144,7 @@ function buildWsGauge(c){
     <svg viewBox="0 0 300 172" class="ws-gauge" role="slider" tabindex="0" aria-label="Recommandation moyenne des analystes" aria-valuemin="1" aria-valuemax="5">${segs}<g class="ws-needle"><path d="M150 143 L264 150 L150 157 Z" fill="#e4e4e4"/><circle cx="150" cy="150" r="9" fill="#e4e4e4"/></g></svg>
     <div class="ws-reco-label"></div>
     <div class="ws-reco-sub"></div>
-    <div class="ws-reco-foot"><span>Cliquez sur la jauge ou faites glisser l'aiguille pour régler la moyenne des recommandations.</span><button type="button" class="link-btn" id="wsRecoClear">Effacer</button></div>
+    <div class="ws-reco-foot">Cliquez sur la jauge ou faites glisser l'aiguille pour régler la recommandation moyenne.</div>
   </div>`;
 }
 function paintWsGauge(){
@@ -4151,13 +4160,11 @@ function paintWsGauge(){
     label.textContent = 'Non renseigné'; label.style.color = 'rgba(255,255,255,.55)';
     sub.textContent = 'Recommandation moyenne des analystes';
     svg.removeAttribute('aria-valuenow'); svg.setAttribute('aria-valuetext', 'Non renseigné');
-    wrap.querySelector('#wsRecoClear').style.visibility = 'hidden';
   }else{
     const s = WS_RECO[wsRecoIndex(v)];
     label.textContent = s.label; label.style.color = s.color;
     sub.textContent = 'Moyenne ' + fmtNum(v, 1) + ' / 5';
     svg.setAttribute('aria-valuenow', String(v)); svg.setAttribute('aria-valuetext', s.label);
-    wrap.querySelector('#wsRecoClear').style.visibility = 'visible';
   }
 }
 function setWsReco(v, commit){
@@ -4168,7 +4175,7 @@ function setWsReco(v, commit){
   val.wallStreet.unit = 'price';
   val.wallStreet.reco = v === null ? '' : String(Math.max(1, Math.min(5, Math.round(v * 10) / 10)));
   paintWsGauge();
-  if(commit){ touchUpdated(c); saveState(); refreshInsightsSection(); }
+  if(commit){ touchUpdated(c); saveState(); refreshInsightsSection(); refreshValuationSummary(); }
 }
 function bindWsGauge(){
   const wrap = document.getElementById('wsGaugeWrap');
@@ -4201,7 +4208,6 @@ function bindWsGauge(){
     e.preventDefault();
     setWsReco(next, true);
   });
-  wrap.querySelector('#wsRecoClear').addEventListener('click', () => setWsReco(null, true));
 }
 
 // Anciennes données : les cases contenaient des POURCENTAGES. On les convertit en prix cibles (prix actuel × (1 + %)) dès que le prix actuel est connu ;
@@ -4350,29 +4356,33 @@ function buildValuationSummaryBlock(c){
   const peg = computePeg(c);
   const pegTier = getScaleTier('peg', peg);
   const pegColor = pegTier ? TIER_COLORS[pegTier] : 'var(--ink-soft)';
-  const eDcfInfo = ecartCompact(computeEcart(c, 'valorisationDcf'));
   const eIntrInfo = ecartCompact(computeEcart(c, 'valeurIntrinseque'));
+  const pe = computePeActuel(c);
+  const shortV = num(c.fields.valorisation.positionShort);
+  const shortTier = getScaleTier('positionShort', shortV);
+  const shortColor = shortTier ? TIER_COLORS[shortTier] : 'var(--ink-soft)';
+  const recoV = wsRecoValue(c);
+  const recoS = recoV === null ? null : WS_RECO[wsRecoIndex(recoV)];
   const peRel = computePeRelatif(c);
   const peRelTier = getScaleTier('peRelatifSecteur', peRel);
   const peRelColor = peRelTier ? TIER_COLORS[peRelTier] : 'var(--ink-soft)';
   const wsData = computeWallStreetTargets(c);
   const wsMoy = wsData ? wsData.pct.moy : null;
   const wsColor = wsMoy === null ? 'var(--ink-soft)' : wallStreetColor(wsMoy);
-  const moatNote = c.fields.identite.moatNote || '';
-  const moatTier = getScaleTier('moatNote', num(moatNote));
-  const moatColor = moatTier ? TIER_COLORS[moatTier] : 'var(--ink-soft)';
+  const chip = (label, valueHtml, cls) => `<div class="vs-chip"><span class="vs-label">${label}</span><span class="vs-value${cls ? ' ' + cls : ''}">${valueHtml}</span></div>`;
 
-  const chip = (label, valueHtml) => `<div class="vs-chip"><span class="vs-label">${label}</span><span class="vs-value">${valueHtml}</span></div>`;
-
+  // Chips (demande de Nolan le 2026-09-25) : MOAT et "vs DCF" retirés (le DCF dépend trop des hypothèses ; la valeur intrinsèque est la référence
+  // de toute l'app : marge de sécurité, alertes, Mon espace) ; PE, position short et consensus des analystes ajoutés.
   return `<div class="valuation-summary-wrap" id="valuation-summary">
     <div class="valuation-summary-title">Résumé de valorisation</div>
     <div class="valuation-summary">
+      ${chip('PE', `<span>${pe === null ? '—' : fmtNum(pe, 1)}</span>`)}
       ${chip('PEG', `<span style="color:${pegColor}">${peg === null ? '—' : peg.toFixed(2)}</span>`)}
-      ${chip('vs DCF', `<span style="color:${eDcfInfo.color}">${eDcfInfo.text}</span>`)}
-      ${chip('vs Intrinsèque', `<span style="color:${eIntrInfo.color}">${eIntrInfo.text}</span>`)}
       ${chip('PE / Secteur', `<span style="color:${peRelColor}">${peRel === null ? '—' : peRel.toFixed(2)}</span>`)}
+      ${chip('vs Intrinsèque', `<span style="color:${eIntrInfo.color}">${eIntrInfo.text}</span>`)}
       ${chip('Wall St. moy', `<span style="color:${wsColor}">${wsMoy === null ? '—' : wsFmtPct(wsMoy).replace(' %', '%')}</span>`)}
-      ${chip('MOAT', `<span style="color:${moatColor}">${moatNote ? escapeHtml(String(moatNote)) + '/10' : '—'}</span>`)}
+      ${chip('Consensus', `<span style="color:${recoS ? recoS.color : 'var(--ink-soft)'}">${recoS ? recoS.label : '—'}</span>`, 'vs-value-sm')}
+      ${chip('Position short', `<span style="color:${shortColor}">${shortV === null ? '—' : fmtNum(shortV, 1) + '%'}</span>`)}
     </div>
   </div>`;
 }
@@ -7741,19 +7751,23 @@ function render(){
         const itemsHtml = subs.map(sub => {
           const v = obj[sub.key] || '';
           const p = wsData ? wsData.pct[sub.key] : null;
-          return `<div class="duo-item duo-item-auto">
-            <span class="duo-label">${sub.label}</span>
-            <input type="text" inputmode="decimal" size="${Math.max(String(v).length, 3) + 1}" data-ws-section="${section.key}" data-ws-field="${field.key}" data-ws-sub="${sub.key}" value="${escapeHtml(v)}">
-            <span class="value-suffix">${escapeHtml(c.currency)}</span>
-            <span class="computed" id="ws-pct-${sub.key}" data-tooltip="${tipWsPct(c, sub.key)}">${p === null ? '—' : wsFmtPct(p)}</span>
-            ${wsBadge(p, 'ws-badge-' + sub.key)}
+          // Chaque prévision est une petite colonne : le prix cible en haut, le pourcentage calculé juste dessous (plus lisible que tout sur une ligne)
+          return `<div class="ws-col">
+            <span class="ws-col-l">${sub.label}</span>
+            <div class="ws-col-price">
+              <input type="text" inputmode="decimal" data-ws-section="${section.key}" data-ws-field="${field.key}" data-ws-sub="${sub.key}" value="${escapeHtml(v)}" placeholder="Prix cible">
+              <span class="value-suffix">${escapeHtml(c.currency)}</span>
+            </div>
+            <div class="ws-col-pct">
+              <span class="computed" id="ws-pct-${sub.key}" data-tooltip="${tipWsPct(c, sub.key)}">${p === null ? '—' : wsFmtPct(p)}</span>
+              ${wsBadge(p, 'ws-badge-' + sub.key)}
+            </div>
           </div>`;
         }).join('');
         const legacy = obj.legacyPct ? `<div class="ws-legacy">Anciennes prévisions en pourcentage conservées (Max ${escapeHtml(String(obj.legacyPct.max || '—'))} %, Moy ${escapeHtml(String(obj.legacyPct.moy || '—'))} %, Min ${escapeHtml(String(obj.legacyPct.min || '—'))} %) : elles seront converties en prix dès que le prix actuel sera renseigné (section Valorisation).</div>` : '';
         html += `<div class="field-row"><div class="field-label" data-tooltip="${fieldDescTooltip(field.key)}">${field.label}</div>
           <div class="field-value">
-            <div class="duo-row trio-row">${itemsHtml}</div>${legacy}
-            ${buildWsGauge(c)}
+            <div class="ws-top"><div class="ws-cols">${itemsHtml}</div>${buildWsGauge(c)}</div>${legacy}
             ${buildWallStreetChart(c)}
           </div></div>`;
         return;
@@ -8208,8 +8222,8 @@ function render(){
   main.querySelectorAll('[data-ws-sub]').forEach(el => {
     el.addEventListener('input', e => {
       updateWallStreetField(el.dataset.wsSection, el.dataset.wsField, el.dataset.wsSub, e.target.value);
-      if(el.hasAttribute('size')) el.size = Math.max(e.target.value.length, 3) + 1;
       refreshWallStreetChart();
+      refreshValuationSummary();
     });
   });
 
