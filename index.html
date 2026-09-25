@@ -920,7 +920,17 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; font-family:
 .duo-label{ color:var(--ink-soft); font-size:14px; flex:0 0 auto; }
 .duo-item input{ width:120px !important; }
 .duo-item-auto input{ width:auto !important; min-width:64px; }
-.ws-top{ display:flex; flex-direction:column; gap:12px; max-width:620px; }
+.ws-top{ display:grid; grid-template-columns:minmax(0, 560px) minmax(250px, 1fr); gap:14px; align-items:stretch; }
+.ws-left{ display:flex; flex-direction:column; gap:12px; min-width:0; }
+@media (max-width:1180px){ .ws-top{ grid-template-columns:1fr; } }
+.ws-stats{ display:flex; flex-direction:column; border:1px solid var(--border); border-radius:14px; background:var(--card); padding:12px 16px; min-width:0; }
+.ws-stats-title{ font-size:12px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:4px; }
+.ws-stat{ flex:1 1 0; display:flex; flex-direction:column; justify-content:center; gap:2px; padding:6px 0; border-top:1px solid var(--border); }
+.ws-left .ws-reco{ flex:1 1 auto; }
+.ws-stats-title + .ws-stat{ border-top:0; }
+.ws-stat-l{ font-size:13px; font-weight:600; color:var(--ink-soft); }
+.ws-stat-v{ font-family:var(--font-mono); font-size:21px; font-weight:700; line-height:1.2; }
+.ws-stat-s{ font-size:12.5px; line-height:1.35; color:var(--ink-soft); }
 /* Une seule carte, trois colonnes séparées par un filet fin : compact (le prix cible en haut, le pourcentage juste dessous) */
 .ws-cols{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); border:1px solid var(--border); border-radius:14px; background:var(--card); overflow:hidden; }
 .ws-col{ display:flex; flex-direction:column; justify-content:center; gap:9px; padding:12px 16px; min-width:0; }
@@ -4066,10 +4076,44 @@ function tipWsPct(c, k){
   const p = d && d.pct[k];
   return `<div class='tt-formula'>(Prix cible ${n(raw(ws[k]))} ÷ Prix actuel ${n(raw(c.fields.valorisation.prixActuel))}) − 1</div>${tipRes('= ' + (p === null || p === undefined ? '—' : wsFmtPct(p)))}<div class='tt-desc'>Hausse ou baisse attendue à 1 an par rapport au prix actuel, calculée automatiquement.</div>`;
 }
+// Carte "Potentiel à 1 an" à droite des prévisions Wall Street (piste 3, choisie par Nolan le 2026-09-26) : trois chiffres calculés à partir des prix cibles.
+//  1. Rendement total attendu = hausse moyenne prévue + rendement du dividende (0 si l'entreprise n'en verse pas) ;
+//  2. Fourchette des analystes = du minimum au maximum, avec l'écart en points (mesure de leur désaccord) ;
+//  3. Cible moyenne vs votre valeur intrinsèque = (cible moyenne − valeur) ÷ valeur, sans couleur bon/mauvais : simple comparaison entre eux et vous.
+function buildWsStats(c){
+  const d = computeWallStreetTargets(c);
+  const cur = c.currency;
+  const row = (label, value, sub, color) => `<div class="ws-stat"><div class="ws-stat-l">${label}</div><div class="ws-stat-v"${color ? ` style="color:${color}"` : ''}>${value}</div><div class="ws-stat-s">${sub}</div></div>`;
+  const dash = '—';
+  let r1 = row('Rendement total attendu', dash, 'Renseignez le prix actuel et le prix cible moyen.');
+  let r2 = row('Fourchette des analystes', dash, 'Renseignez le prix cible maximum et minimum.');
+  let r3 = row('Cible moyenne vs votre valeur', dash, 'Renseignez le prix cible moyen et votre valeur intrinsèque.');
+  if(d){
+    if(d.pct.moy !== null){
+      const dv = c.fields.identite.politiqueDividende;
+      const dy = (dv && dv.mode === 'verse') ? computeDividendYield(c) : null;   // seulement si l'analyse indique que l'entreprise verse un dividende
+      const total = d.pct.moy + (dy === null ? 0 : dy);
+      r1 = row('Rendement total attendu', wsFmtPct(total), `${wsFmtPct(d.pct.moy)} de hausse moyenne${dy === null ? ', sans dividende' : ' + ' + fmtNum(dy, 1) + ' % de dividende'}`, wallStreetColor(total));
+    }
+    if(d.pct.max !== null && d.pct.min !== null){
+      r2 = row('Fourchette des analystes', `${wsFmtPct(d.pct.min)} à ${wsFmtPct(d.pct.max)}`, `Écart de ${fmtNum(d.pct.max - d.pct.min, 0)} points entre analystes`);
+    }else if(d.pct.max !== null || d.pct.min !== null){
+      r2 = row('Fourchette des analystes', dash, 'Il manque le prix cible ' + (d.pct.max === null ? 'maximum' : 'minimum') + '.');
+    }
+    const vi = parseMoney(c.fields.valorisation.valeurIntrinseque);
+    if(d.target.moy !== null && vi !== null && vi > 0){
+      const gap = (d.target.moy - vi) / vi * 100;
+      r3 = row('Cible moyenne vs votre valeur', wsFmtPct(gap), Math.abs(gap) < 0.05 ? 'Les analystes voient comme vous' : `Plus ${gap > 0 ? 'optimistes' : 'prudents'} que vous : ${fmtMoney(d.target.moy, cur)} contre ${fmtMoney(vi, cur)}`);
+    }
+  }
+  return `<div class="ws-stats" id="wsStats"><div class="ws-stats-title">Potentiel à 1 an</div>${r1}${r2}${r3}</div>`;
+}
 // Met à jour, sans re-rendre la page, les pourcentages et pastilles des cases Max / Moy / Min
 function refreshWsPercents(){
   const c = getActive();
   if(!c) return;
+  const st = document.getElementById('wsStats');
+  if(st) st.outerHTML = buildWsStats(c);
   const d = computeWallStreetTargets(c);
   ['max', 'moy', 'min'].forEach(k => {
     const cell = document.getElementById('ws-pct-' + k);
@@ -7772,7 +7816,7 @@ function render(){
         const legacy = obj.legacyPct ? `<div class="ws-legacy">Anciennes prévisions en pourcentage conservées (Max ${escapeHtml(String(obj.legacyPct.max || '—'))} %, Moy ${escapeHtml(String(obj.legacyPct.moy || '—'))} %, Min ${escapeHtml(String(obj.legacyPct.min || '—'))} %) : elles seront converties en prix dès que le prix actuel sera renseigné (section Valorisation).</div>` : '';
         html += `<div class="field-row"><div class="field-label" data-tooltip="${fieldDescTooltip(field.key)}">${field.label}</div>
           <div class="field-value">
-            <div class="ws-top"><div class="ws-cols">${itemsHtml}</div>${buildWsGauge(c)}</div>${legacy}
+            <div class="ws-top"><div class="ws-left"><div class="ws-cols">${itemsHtml}</div>${buildWsGauge(c)}</div>${buildWsStats(c)}</div>${legacy}
             ${buildWallStreetChart(c)}
           </div></div>`;
         return;
