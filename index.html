@@ -637,6 +637,9 @@ input.company-name:focus{ outline:none; border-bottom-color:var(--blue); }
 .kpi-v small{ font-size:13px; color:var(--ink-soft); font-weight:400; }
 .kpi-s{ font-size:13px; color:var(--ink-soft); margin-top:3px; line-height:1.35; }
 .kpi-score{ display:flex; align-items:center; gap:12px; }
+.kpi-link{ cursor:pointer; transition:border-color .12s ease, box-shadow .12s ease; }
+.kpi-link:hover{ border-color:var(--blue); box-shadow:0 0 0 1px var(--blue) inset; }
+.kpi-link:focus-visible{ outline:2px solid var(--blue); outline-offset:2px; }
 .kpi-score .kpi-l{ white-space:normal; line-height:1.3; }
 .kpi-ring{ width:54px; height:54px; flex:0 0 54px; position:relative; }
 .kpi-ring span{
@@ -3611,6 +3614,17 @@ function buildPieSvgInner(arr, colorByIdx){
 // Mise en évidence au survol (camemberts des analyses et anneaux de Mon espace / Portefeuille) : la part survolée ressort, les autres s'estompent,
 // et la ligne correspondante de la légende s'allume. Dans l'autre sens, seule la petite pastille de couleur de la légende déclenche l'effet
 // (demande de Nolan : survoler le texte à côté ne fait rien).
+// Éléments [data-goto="<id>"] : un clic (ou Entrée / Espace) fait défiler en douceur jusqu'à l'élément désigné.
+// Délégué et posé une seule fois, car l'en-tête de l'analyse est redessiné à chaque mise à jour. Utilisé par le score composite de l'en-tête.
+function initGotoLinks(){
+  const go = el => { const t = document.getElementById(el.dataset.goto); if(t) t.scrollIntoView({ behavior:'smooth', block:'start' }); };
+  document.addEventListener('click', e => { const el = e.target.closest && e.target.closest('[data-goto]'); if(el) go(el); });
+  document.addEventListener('keydown', e => {
+    if(e.key !== 'Enter' && e.key !== ' ') return;
+    const el = e.target.closest && e.target.closest('[data-goto]');
+    if(el && e.target === el){ e.preventDefault(); go(el); }
+  });
+}
 function initPieHover(){
   const set = (wrap, i) => {
     wrap.classList.toggle('pie-active', i !== null);
@@ -5691,7 +5705,7 @@ function buildCompanyKpis(c){
   const ecart = ecartCompact(computeEcart(c, 'valeurIntrinseque'));
   const kpi = (label, inner, sub) => `<div class="kpi"><div class="kpi-l">${label}</div>${inner}${sub !== undefined ? `<div class="kpi-s">${sub}</div>` : ''}</div>`;
   return [
-    `<div class="kpi kpi-score"><div class="kpi-ring" data-tooltip="<div class='tt-desc'>Score composite sur 100 : moyenne pondérée des 5 axes du profil global.</div>${scoreScaleTooltip()}"><svg viewBox="0 0 54 54" width="54" height="54"><circle cx="27" cy="27" r="23" fill="none" stroke="var(--border)" stroke-width="6"/><circle cx="27" cy="27" r="23" fill="none" stroke="${gs === null ? 'transparent' : gsColor}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 27 27)"/></svg><span style="color:${gsColor}">${gs === null ? '—' : Math.round(gs)}</span></div><div><div class="kpi-l">Score composite</div><div class="kpi-s">${gs === null ? 'sur 100' : (sinfo.provisional ? 'provisoire · ' : 'sur 100 · ') + sinfo.filled + '/' + sinfo.total + ' axes'}</div></div></div>`,
+    `<div class="kpi kpi-score kpi-link" data-goto="insights-section" role="button" tabindex="0" aria-label="Voir le détail du score composite"><div class="kpi-ring" data-tooltip="<div class='tt-desc'>Score composite sur 100 : moyenne pondérée des 5 axes du profil global. Cliquez pour voir le détail.</div>${scoreScaleTooltip()}"><svg viewBox="0 0 54 54" width="54" height="54"><circle cx="27" cy="27" r="23" fill="none" stroke="var(--border)" stroke-width="6"/><circle cx="27" cy="27" r="23" fill="none" stroke="${gs === null ? 'transparent' : gsColor}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 27 27)"/></svg><span style="color:${gsColor}">${gs === null ? '—' : Math.round(gs)}</span></div><div><div class="kpi-l">Score composite</div><div class="kpi-s">${gs === null ? 'sur 100' : (sinfo.provisional ? 'provisoire · ' : 'sur 100 · ') + sinfo.filled + '/' + sinfo.total + ' axes'}</div></div></div>`,
     kpi('Décision', `<div style="margin-top:9px">${decisionPill(pers.decision || '')}</div>`, pers.prixAchatCible ? 'Cible d\'achat : ' + escapeHtml(String(pers.prixAchatCible)) : 'Aucun prix cible'),
     kpi('Conviction', `<div class="kpi-v" style="color:var(--star)">${conviction ? '★ ' + String(conviction).replace('.', ',') : '—'}<small> / 5</small></div>`, conviction ? 'Votre niveau de conviction' : 'À renseigner'),
     kpi('PEG', `<div class="kpi-v" style="color:${pegColor}">${peg === null ? '—' : peg.toFixed(2)}</div>`, pegTier ? TIER_LABELS[pegTier] : 'Pas assez de données'),
@@ -8594,6 +8608,7 @@ initFileBackup();
 bindAuth();
 initTour();
 initPieHover();
+initGotoLinks();
 
 if('serviceWorker' in navigator){
   window.addEventListener('load', () => {
