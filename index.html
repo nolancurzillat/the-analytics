@@ -5730,6 +5730,9 @@ function buildCompanyKpis(c){
   const pegTier = getScaleTier('peg', peg);
   const pegColor = pegTier ? TIER_COLORS[pegTier] : 'var(--ink-soft)';
   const buff = computeBuffettScore(c);
+  // Couleur du barème de la checklist (80 % et plus très bon, 60 à 80 bon, 40 à 60 moyen, sinon mauvais) ; neutre tant qu'aucun critère n'est validé
+  const buffTier = (buff.total && buff.checked > 0) ? scaleTier(buff.checked / buff.total * 100, [80, 60, 40]) : null;
+  const buffColor = buffTier ? TIER_COLORS[buffTier] : 'var(--ink-soft)';
   const pers = c.fields.personnelle || {};
   const val = c.fields.valorisation || {};
   const conviction = parseFloat(pers.conviction) || 0;
@@ -5741,7 +5744,7 @@ function buildCompanyKpis(c){
     kpi('Décision', `<div style="margin-top:9px">${decisionPill(pers.decision || '')}</div>`, pers.prixAchatCible ? 'Cible d\'achat : ' + escapeHtml(String(pers.prixAchatCible)) : 'Aucun prix cible'),
     kpi('Conviction', `<div class="kpi-v" style="color:var(--star)">${conviction ? '★ ' + String(conviction).replace('.', ',') : '—'}<small> / 5</small></div>`, conviction ? 'Votre niveau de conviction' : 'À renseigner'),
     kpi('PEG', `<div class="kpi-v" style="color:${pegColor}">${peg === null ? '—' : peg.toFixed(2)}</div>`, pegTier ? TIER_LABELS[pegTier] : 'Pas assez de données'),
-    kpi('Checklist Buffett', `<div class="kpi-v">${buff.checked}<small> / ${buff.total}</small></div>`, 'critères validés'),
+    kpi('Checklist Buffett', `<div class="kpi-v" style="color:${buffColor}">${buff.checked}<small> / ${buff.total}</small></div>`, buffTier ? `critères validés · ${TIER_LABELS[buffTier]}` : 'critères validés'),
     kpi('Prix actuel', `<div class="kpi-v">${val.prixActuel ? escapeHtml(String(val.prixActuel)) + '<small> ' + devise + '</small>' : '—'}</div>`, `<span style="color:${ecart.color}">${ecart.text === '—' ? 'Valeur intrinsèque à saisir' : ecart.text + ' vs intrinsèque'}</span>`),
   ].join('');
 }
