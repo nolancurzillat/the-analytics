@@ -4551,8 +4551,8 @@ const SCORE_AXES = [
 const SCORE_MIN_AXES = 3;
 // Marge de sécurité = remise du cours sur la valeur intrinsèque, en % (30 % et plus très bon, 15 à 30 bon, 0 à 15 moyen, cours au-dessus de la valeur mauvais)
 const MARGE_SECURITE_SCALE = { thresholds:[30, 15, 0], inverse:false };
-// Checklist Buffett : part de critères validés en % (80 % et plus très bon, 60 à 80 bon, 40 à 60 moyen), mêmes seuils que ses couleurs partout dans l'app
-const BUFFETT_SCALE = { thresholds:[80, 60, 40], inverse:false };
+// Checklist Buffett : notation LINÉAIRE (demande de Nolan le 2026-09-26) : chaque critère validé vaut 10 points sur 10 critères, donc 7/10 = 70 points.
+// (Les couleurs de la checklist ailleurs dans l'app gardent leurs propres seuils 80 / 60 / 40.)
 const SCORE_PART_LABELS = { moatNote:'MOAT', buffett:'Checklist Buffett', margeBrute:'Marge brute', croissanceEstimeeEps:'Croissance estimée du BPA (3 ans)', margeNette:'Marge nette', roic:'ROIC', roe:'ROE', croissanceBenef:'CAGR du bénéfice net', croissanceCA:'CAGR du CA', croissanceAttendueCA:'Croissance attendue du CA (3 ans)', detteActif:'Dette nette / FCF', detteTotalActif:'Dette totale / Total actif', tresorerieDette:'Trésorerie / Dette totale', scoreSolvabilite:'Score de solvabilité', probaFaillite:'Probabilité de faillite', conversionFcf:'Conversion du FCF', peg:'PEG', margeSecurite:'Marge de sécurité', peRelatifSecteur:'PE / Secteur' };
 const SCORE_PART_UNITS = { moatNote:'/10', buffett:' %', margeBrute:' %', croissanceEstimeeEps:' %', margeNette:' %', roic:' %', roe:' %', croissanceBenef:' %', croissanceCA:' %', croissanceAttendueCA:' %', detteActif:'', detteTotalActif:' %', tresorerieDette:' %', scoreSolvabilite:'/100', probaFaillite:' %', conversionFcf:' %', peg:'', margeSecurite:' %', peRelatifSecteur:'' };
 // Barème de couleurs de la NOTE GLOBALE (demande de Nolan le 2026-09-26) : 5 paliers de 20 points, rouge (0 à 20), orange (20 à 40), jaune (40 à 60),
@@ -4597,7 +4597,8 @@ function scorePartValue(c, key){
 }
 function scorePartScore(key, val){
   if(val === null) return null;
-  const cfg = key === 'margeSecurite' ? MARGE_SECURITE_SCALE : (key === 'buffett' ? BUFFETT_SCALE : SCALE_CONFIG[key]);
+  if(key === 'buffett') return Math.max(0, Math.min(100, val));   // val = part de critères validés en % : 7/10 vaut 70 points
+  const cfg = key === 'margeSecurite' ? MARGE_SECURITE_SCALE : SCALE_CONFIG[key];
   return cfg ? continuousScore(val, cfg.thresholds, cfg.inverse) : null;
 }
 function computeRadarAxes(c){
