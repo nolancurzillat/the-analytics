@@ -487,12 +487,18 @@ main{ display:block; }
 .score-chip{ font-family:var(--font-mono); font-weight:600; font-size:14px; display:inline-flex; align-items:center; gap:8px; }
 .score-chip i{ width:9px; height:9px; border-radius:50%; display:inline-block; }
 .ct-empty{ color:var(--ink-soft); }
-/* Étoiles de conviction dans un tableau : compactes, couleur dorée héritée de .star-fill */
-.ct-stars{ gap:1px; padding-top:0; }
-.ct-stars .star-slot{ width:12px; height:12px; cursor:default; }
-.ct-stars .star-empty, .ct-stars .star-fill{ height:12px; }
-.ct-stars .star-empty{ width:12px; }
-.ct-stars .star-empty svg, .ct-stars .star-fill svg{ width:12px; height:12px; }
+/* Pastille chiffrée : teinte du palier (--c posé en ligne), texte assombri ou éclairci vers la couleur du texte pour rester lisible dans les deux thèmes */
+.vchip{ display:inline-flex; align-items:center; justify-content:center; min-width:42px; padding:3px 9px; border-radius:9px;
+  font-family:var(--font-mono); font-weight:700; font-size:14px; line-height:1.3; white-space:nowrap;
+  color:color-mix(in srgb, var(--c) 62%, var(--ink)); background:color-mix(in srgb, var(--c) 17%, transparent); border:1px solid color-mix(in srgb, var(--c) 50%, transparent); }
+.vchip-lg{ min-width:52px; padding:4px 12px; font-size:17px; border-radius:10px; border-width:1.5px; }
+.vchip.is-prov{ border-style:dashed; }
+/* Étoiles de conviction dans un tableau : dorées, plus grandes que dans la barre latérale */
+.ct-stars{ gap:2px; padding-top:0; }
+.ct-stars .star-slot{ width:16px; height:16px; cursor:default; }
+.ct-stars .star-empty, .ct-stars .star-fill{ height:16px; }
+.ct-stars .star-empty{ width:16px; }
+.ct-stars .star-empty svg, .ct-stars .star-fill svg{ width:16px; height:16px; }
 
 /* "Toutes vos analyses" : version compacte, sans barre de défilement horizontale sur un écran normal */
 .home-table--tight td{ padding:9px 6px; }
@@ -504,10 +510,12 @@ main{ display:block; }
 .home-table--tight .ht-sec{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:130px; }
 .home-table--tight .home-ticker{ margin-left:6px; }
 .home-table--tight .home-rename-btn{ margin-left:4px; }
-.home-table--tight .comp-cell{ gap:6px; }
-.home-table--tight .comp-cell .hbar-track{ width:32px; }
+.home-table--tight .comp-cell{ gap:7px; }
+.home-table--tight .comp-cell .hbar-track{ width:40px; height:8px; }
+.home-table--tight .comp-cell b{ font-family:var(--font-mono); font-size:13px; }
 .home-table--tight .home-updated{ font-size:12px; }
-.home-table--tight .score-chip{ font-size:13px; gap:6px; }
+.home-table--tight .vchip{ font-size:13.5px; padding:3px 8px; min-width:40px; }
+.home-table--tight .vchip-lg{ font-size:16.5px; padding:4px 11px; min-width:50px; }
 .home-table--tight .pill{ padding:2px 8px; font-size:11.5px; }
 
 .home-empty{
@@ -6243,35 +6251,42 @@ function buildSectorsCard(){
 }
 
 function buildCompaniesTable(){
-  const chip = (val, color, text) => val === null ? '<span class="ct-empty">—</span>' : `<span class="score-chip"><i style="background:${color}"></i>${text}</span>`;
+  // Valeurs chiffrées mises en valeur (demande de Nolan le 2026-09-26) : une pastille teintée à la couleur du palier, chiffre en gras ; la note globale en plus grand,
+  // avec un contour en pointillés quand elle est provisoire.
+  const chip = (val, color, text, opt) => {
+    if(val === null) return '<span class="ct-empty">—</span>';
+    const o = opt || {};
+    return `<span class="vchip${o.lg ? ' vchip-lg' : ''}${o.prov ? ' is-prov' : ''}" style="--c:${color}"${o.prov ? ` data-tooltip="<div class='tt-desc'>Note provisoire : moins de ${SCORE_MIN_AXES} axes renseignés</div>"` : ''}>${text}</span>`;
+  };
   const rows = state.companies.map(c => {
     const idn = c.fields.identite || {};
     const ticker = idn.ticker || '';
     const sect = (idn.secteur && idn.secteur.secteur) || '';
-    const gs = computeGlobalScore(c);
+    const sinfo = computeScoreInfo(c);
+    const gs = sinfo.score;
     const gsColor = gs === null ? 'var(--border-strong)' : scoreColor5(gs);
     const peg = computePeg(c);
     const pegTier = getScaleTier('peg', peg);
     const moat = num(idn.moatNote);
     const moatTier = getScaleTier('moatNote', moat);
     const buffett = computeBuffettScore(c);
-    const buffPct = buffett.total ? (buffett.checked / buffett.total) * 100 : null;
+    const buffPct = (buffett.total && buffett.checked > 0) ? (buffett.checked / buffett.total) * 100 : null;   // aucune case cochée : checklist non commencée, pas de pastille rouge
     const buffTier = buffPct === null ? null : scaleTier(buffPct, [80, 60, 40]);
     const decision = (c.fields.personnelle && c.fields.personnelle.decision) || '';
     const conviction = parseFloat(c.fields.personnelle && c.fields.personnelle.conviction) || 0;
     const comp = companyCompletion(c);
     return `<tr data-open-company="${c.id}">
       <td><div class="ht-co">${miniAv(c)}<div class="ht-id">
-        <div class="home-td-name"><span class="home-td-name-txt">${escapeHtml(c.name || 'Sans nom')}</span>${ticker ? `<span class="home-ticker">${escapeHtml(ticker)}</span>` : ''}<button class="home-rename-btn" data-rename-id="${c.id}" title="Renommer">✎</button></div>
+        <div class="home-td-name"><span class="home-td-name-txt">${escapeHtml(c.name || 'Sans nom')}</span>${ticker ? `<span class="home-ticker">${escapeHtml(ticker)}</span>` : ''}</div>
         <div class="ht-sec">${sect ? escapeHtml(sect) : 'Secteur non renseigné'}</div>
       </div></div></td>
-      <td>${chip(gs, gsColor, gs === null ? '' : Math.round(gs))}</td>
+      <td>${chip(gs, gsColor, gs === null ? '' : Math.round(gs), { lg:true, prov:sinfo.provisional })}</td>
       <td>${chip(peg, pegTier ? TIER_COLORS[pegTier] : 'var(--border-strong)', peg === null ? '' : peg.toFixed(2))}</td>
       <td>${chip(moat, moatTier ? TIER_COLORS[moatTier] : 'var(--border-strong)', moat === null ? '' : escapeHtml(idn.moatNote) + '/10')}</td>
       <td>${chip(buffPct, buffTier ? TIER_COLORS[buffTier] : 'var(--border-strong)', buffett.checked + '/' + buffett.total)}</td>
       <td>${decisionPill(decision)}</td>
       <td>${conviction ? starsRowHtml(conviction, 'ct-stars') : '<span class="ct-empty">—</span>'}</td>
-      <td><span class="comp-cell"><span class="hbar-track"><i style="width:${comp.pct}%;background:var(--accent)"></i></span>${comp.pct}&nbsp;%</span></td>
+      <td><span class="comp-cell"><span class="hbar-track"><i style="width:${comp.pct}%;background:${comp.pct >= 100 ? 'var(--green)' : 'var(--accent)'}"></i></span><b>${comp.pct}&nbsp;%</b></span></td>
       <td class="home-updated">${formatDateFrShort(c.updatedAt || c.createdAt)}</td>
     </tr>`;
   }).join('');
