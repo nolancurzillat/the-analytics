@@ -926,6 +926,9 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; font-family:
 @media (max-width:1180px){ .ws-top{ grid-template-columns:1fr; } }
 /* Carte "Prévision long terme" : deux cases de saisie puis les indicateurs calculés (même police Inter que le reste) */
 .ws-lt{ display:flex; flex-direction:column; gap:8px; border:1px solid var(--border); border-radius:14px; background:var(--card); padding:12px 16px; min-width:0; }
+.altman-block{ display:flex; flex-direction:column; gap:8px; align-items:flex-start; }
+.altman-risk{ font-size:14.5px; line-height:1.5; }
+.altman-range{ color:var(--ink-soft); font-size:13px; }
 .radar-reliab{ margin-top:10px; font-size:12.5px; line-height:1.45; color:var(--ink-soft); }
 .radar-reliab.is-prov{ color:var(--ink); }
 .hbar-prov{ margin-left:6px; padding:1px 7px; border-radius:999px; font-size:11px; font-weight:600; color:var(--ink-soft); border:1px solid var(--border-strong); white-space:nowrap; }
@@ -1842,7 +1845,14 @@ const FIELD_DESCRIPTIONS = {
   detteNette: "La dette totale moins la trésorerie disponible.",
   detteTotal: "L'ensemble des emprunts et dettes financières de l'entreprise.",
   tresorerie: "L'argent immédiatement disponible, calculé à partir de la dette totale et nette.",
-  detteActif: "Le niveau d'endettement net rapporté à la capacité de génération de cash.",
+  detteActif: "Le niveau d'endettement net rapporté à la capacité de génération de cash : le nombre d'années de free cash flow nécessaires pour rembourser la dette nette. Un FCF négatif avec de la dette donne « n.s. » et la pire note.",
+  detteTotalActif: "La part de ce que possède l'entreprise (total actif) qui est financée par de la dette. Calculée automatiquement : dette totale ÷ total actif.",
+  tresorerieDette: "Le cash disponible couvre-t-il la dette ? Calculée automatiquement : trésorerie ÷ dette totale. Au-dessus de 100 %, la trésorerie suffirait à tout rembourser.",
+  totalPassif: "Le total de ce que l'entreprise doit (dettes financières, fournisseurs, provisions...). Se trouve dans le bilan. Avec le total actif, il donne les capitaux propres.",
+  fondsRoulement: "Actifs courants moins passifs courants : la marge dont l'entreprise dispose pour payer ses dettes de moins d'un an. Peut être négatif.",
+  beneficesNonDistribues: "Les bénéfices accumulés depuis la création et gardés dans l'entreprise (retained earnings). Un signe de maturité et d'autofinancement. Peut être négatif.",
+  resultatExploitation: "Le résultat opérationnel avant intérêts et impôts (EBIT). Se trouve dans le compte de résultat.",
+  altmanZ: "Le Z-Score d'Altman (version Z'') mesure la solidité financière avec 4 ratios du bilan et du compte de résultat. Plus de 2,6 : zone sûre. 1,1 à 2,6 : zone grise. Moins de 1,1 : zone de détresse. Le risque de faillite affiché est un ordre de grandeur déduit de ces zones, pas une prévision.",
   conversionFcf: "La part du bénéfice net qui se transforme réellement en cash disponible.",
   nbActions: "Le nombre d'actions du flottant (Free Float) et celui des actionnaires stables (Closely Held). La part disponible se calcule toute seule : Free Float ÷ (Free Float + Closely Held).",
   revenuSource: "La répartition du chiffre d'affaires par ligne de produit ou service.",
@@ -2044,6 +2054,13 @@ const SECTIONS = [
       {key:'detteNette', label:'Dette nette', type:'text', money:true},
       {key:'tresorerie', label:'Trésorerie / Cash disponible', type:'computed-tresorerie', span:6},
       {key:'detteActif', label:'Dette nette / FCF', type:'computed-dette-actif', span:6},
+      {key:'detteTotalActif', label:'Dette totale / Total actif', type:'computed-dette-total-actif', span:6},
+      {key:'tresorerieDette', label:'Trésorerie / Dette totale', type:'computed-tresorerie-dette', span:6},
+      {key:'totalPassif', label:'Total passif', type:'text', money:true, span:3, group:'Solvabilité et risque de faillite'},
+      {key:'fondsRoulement', label:'Fonds de roulement', type:'text', money:true, span:3},
+      {key:'beneficesNonDistribues', label:'Bénéfices non distribués', type:'text', money:true, span:3},
+      {key:'resultatExploitation', label:"Résultat d'exploitation (EBIT)", type:'text', money:true, span:3},
+      {key:'altmanZ', label:'Score de solvabilité (Altman)', type:'computed-altman', span:12},
       {key:'nbActions', label:"Nb d'actions", type:'sharesTrio', group:'Actionnariat et répartition du chiffre d\'affaires'},
       {key:'revenuSource', label:'Revenu par source', type:'pieChart'},
       {key:'revenuPays', label:'Revenu par pays', type:'pieChart'},
@@ -3342,6 +3359,9 @@ const SCALE_CONFIG = {
   roe:            { thresholds:[20,15,8], inverse:false },
   roic:           { thresholds:[20,15,8], inverse:false },
   detteActif:     { thresholds:[1,2,4], inverse:true },
+  detteTotalActif:{ thresholds:[20,35,50], inverse:true },
+  tresorerieDette:{ thresholds:[100,50,25], inverse:false },
+  altmanZ:        { thresholds:[3.5,2.6,1.1], inverse:false },
   conversionFcf:  { thresholds:[90,70,50], inverse:false },
   positionShort:  { thresholds:[2,5,10], inverse:true },
   ratioVenteADecouvert: { thresholds:[2,4,7], inverse:true },
@@ -3353,7 +3373,7 @@ const SCALE_CONFIG = {
 };
 const BADGE_UNITS = {
   croissanceCA:'%', croissanceBenef:'%', margeBrute:'%', margeNette:'%', roe:'%', roic:'%',
-  detteActif:'', conversionFcf:'%', positionShort:'%', ratioVenteADecouvert:' j', capexRatio:'%',
+  detteActif:'', detteTotalActif:'%', tresorerieDette:'%', altmanZ:'', conversionFcf:'%', positionShort:'%', ratioVenteADecouvert:' j', capexRatio:'%',
   peg:'', croissanceAttendueCA:'%', peRelatifSecteur:'', moatNote:'/10',
 };
 const TOOLTIP_TIER_COLORS = { tresbon:'#22c55e', bon:'#c2f5d0', moyen:'#fde047', mauvais:'#f87171' };
@@ -3402,7 +3422,29 @@ function tipPeRelatif(c){
 }
 function tipDetteActif(c){
   const v = computeDetteActif(c);
-  return `<div class='tt-formula'>Dette nette ${n(raw(c.fields.financier.detteNette))} ÷ Free Cash Flow ${n(raw(c.fields.financier.fcf))}</div>${tipRes('= '+(v===null?'—':v.toFixed(2)))}`;
+  const note = v === null ? '' : (v >= DETTE_NON_REMBOURSABLE ? `<div class='tt-desc'>Free cash flow négatif ou nul avec de la dette : elle ne peut pas être remboursée avec le FCF actuel (noté mauvais).</div>` : (v <= 0 ? `<div class='tt-desc'>Dette nette négative ou nulle : l'entreprise a plus de trésorerie que de dettes.</div>` : ''));
+  return `<div class='tt-formula'>Dette nette ${n(raw(c.fields.financier.detteNette))} ÷ Free Cash Flow ${n(raw(c.fields.financier.fcf))}</div>${tipRes('= '+(v===null?'—':(v >= DETTE_NON_REMBOURSABLE ? 'non significatif' : v.toFixed(2))))}${note}`;
+}
+function tipDetteTotalActif(c){
+  const v = computeDetteTotalActif(c);
+  return `<div class='tt-formula'>Dette totale ${n(raw(c.fields.financier.detteTotal))} ÷ Total actif ${n(raw(c.fields.financier.totalActif))} × 100</div>${tipRes('= '+(v===null?'—':v.toFixed(1)+'%'))}<div class='tt-desc'>La part de ce que possède l'entreprise qui est financée par de la dette.</div>`;
+}
+function tipTresorerieDette(c){
+  const v = computeTresorerieDette(c);
+  return `<div class='tt-formula'>Trésorerie ${n(formatMoneyDisplay(computeTresorerie(c), c.currency))} ÷ Dette totale ${n(raw(c.fields.financier.detteTotal))} × 100</div>${tipRes('= '+(v===null?'—':v.toFixed(0)+'%'))}<div class='tt-desc'>Au-dessus de 100 %, le cash disponible suffirait à rembourser toute la dette. Sans dette, l'indicateur n'est pas calculable.</div>`;
+}
+function tipAltman(c){
+  const a = computeAltman(c), f = c.fields.financier;
+  if(a.z === null) return `<div class='tt-formula'>Il manque : ${escapeHtml(a.missing.join(', '))}</div><div class='tt-desc'>Score d'Altman (Z'') = 6,56 × Fonds de roulement/Total actif + 3,26 × Bénéfices non distribués/Total actif + 6,72 × EBIT/Total actif + 1,05 × Capitaux propres/Total passif.</div>`;
+  const r = altmanRisk(a.z);
+  return `<div class='tt-formula'>6,56 × ${n(fmtNum(a.x1, 3))} + 3,26 × ${n(fmtNum(a.x2, 3))} + 6,72 × ${n(fmtNum(a.x3, 3))} + 1,05 × ${n(fmtNum(a.x4, 3))}</div>${tipRes('= ' + fmtNum(a.z, 2))}<div class='tt-desc'>Zones du modèle d'Altman : plus de 2,6 sûre, 1,1 à 2,6 grise, moins de 1,1 détresse. Risque de faillite ${escapeHtml(r.label.toLowerCase())} (ordre de grandeur : ${r.range}). Modèle statistique américain, pas une prévision.</div>`;
+}
+// Bloc "Score de solvabilité" : le score d'Altman avec sa pastille de couleur et le risque de faillite qui en découle (aucune case de saisie à l'intérieur)
+function altmanBlockInner(c){
+  const a = computeAltman(c), r = altmanRisk(a.z);
+  const zTxt = a.z === null ? '—' : fmtNum(a.z, 2);
+  const risk = r ? `Risque de faillite : <strong style="color:${TIER_COLORS[r.tier]}">${r.label}</strong> <span class="altman-range">(${r.range}, ordre de grandeur)</span>` : `<span class="altman-range">${a.missing.length ? 'Il manque : ' + escapeHtml(a.missing.join(', ')) + '.' : ''}</span>`;
+  return `<div class="value-with-badge"><span class="computed" id="computed-financier-altmanZ" data-tooltip="${tipAltman(c)}">${zTxt}</span>${renderBadge('altmanZ', a.z, 'badge-financier-altmanZ')}</div><div class="altman-risk">${risk}</div>`;
 }
 function tipConversionFcf(c){
   const v = computeConversionFcf(c);
@@ -3669,6 +3711,8 @@ function refreshAllBadges(){
     { section:'financier', key:'roe', val: num(c.fields.financier.roe) },
     { section:'financier', key:'roic', val: num(c.fields.financier.roic) },
     { section:'financier', key:'detteActif', val: computeDetteActif(c) },
+    { section:'financier', key:'detteTotalActif', val: computeDetteTotalActif(c) },
+    { section:'financier', key:'tresorerieDette', val: computeTresorerieDette(c) },
     { section:'financier', key:'conversionFcf', val: computeConversionFcf(c) },
     { section:'financier', key:'capexRatio', val: computeCapexRatio(c) },
     { section:'valorisation', key:'positionShort', val: num(c.fields.valorisation.positionShort) },
@@ -3712,7 +3756,13 @@ function refreshAllComputed(){
   const tres = computeTresorerie(c);
   setText('computed-financier-tresorerie', formatMoneyDisplay(tres, c.currency), tipTresorerie(c));
   const dette = computeDetteActif(c);
-  setText('computed-financier-detteActif', dette === null ? '—' : dette.toFixed(2), tipDetteActif(c));
+  setText('computed-financier-detteActif', fmtDetteActif(dette), tipDetteActif(c));
+  const dta = computeDetteTotalActif(c);
+  setText('computed-financier-detteTotalActif', dta === null ? '—' : dta.toFixed(1) + '%', tipDetteTotalActif(c));
+  const trd = computeTresorerieDette(c);
+  setText('computed-financier-tresorerieDette', trd === null ? '—' : trd.toFixed(0) + '%', tipTresorerieDette(c));
+  const altBlock = document.getElementById('altman-block');
+  if(altBlock) altBlock.innerHTML = altmanBlockInner(c);
   const conv = computeConversionFcf(c);
   setText('computed-financier-conversionFcf', conv === null ? '—' : conv.toFixed(1) + '%', tipConversionFcf(c));
   const capexR = computeCapexRatio(c);
@@ -4504,21 +4554,21 @@ function continuousScore(val, thresholds, inverse){
 //   Qualité (25 %)      MOAT + marge nette
 //   Rentabilité (25 %)  ROIC (à défaut ROE) + CAGR du bénéfice net
 //   Croissance (15 %)   CAGR du CA + croissance attendue du CA sur 3 ans
-//   Solidité (20 %)     dette nette / FCF + conversion du FCF
+//   Solidité (20 %)     dette nette / FCF + conversion du FCF + dette totale / total actif + trésorerie / dette totale + score d'Altman
 //   Valorisation (15 %) PEG + marge de sécurité (écart avec la valeur intrinsèque) + PE relatif au secteur
 // La note globale est la moyenne pondérée des axes renseignés (poids réajustés). Elle est "provisoire" tant que moins de 3 axes sur 5 sont renseignés.
 const SCORE_AXES = [
   { id:'qualite', label:'Qualité', weight:0.25, parts:['moatNote', 'margeNette'] },
   { id:'rentabilite', label:'Rentabilité', weight:0.25, parts:['rendement', 'croissanceBenef'] },
   { id:'croissance', label:'Croissance', weight:0.15, parts:['croissanceCA', 'croissanceAttendueCA'] },
-  { id:'solidite', label:'Solidité', weight:0.20, parts:['detteActif', 'conversionFcf'] },
+  { id:'solidite', label:'Solidité', weight:0.20, parts:['detteActif', 'conversionFcf', 'detteTotalActif', 'tresorerieDette', 'altmanZ'] },
   { id:'valorisation', label:'Valorisation', weight:0.15, parts:['peg', 'margeSecurite', 'peRelatifSecteur'] },
 ];
 const SCORE_MIN_AXES = 3;
 // Marge de sécurité = remise du cours sur la valeur intrinsèque, en % (30 % et plus très bon, 15 à 30 bon, 0 à 15 moyen, cours au-dessus de la valeur mauvais)
 const MARGE_SECURITE_SCALE = { thresholds:[30, 15, 0], inverse:false };
-const SCORE_PART_LABELS = { moatNote:'MOAT', margeNette:'Marge nette', roic:'ROIC', roe:'ROE', croissanceBenef:'CAGR du bénéfice net', croissanceCA:'CAGR du CA', croissanceAttendueCA:'Croissance attendue du CA (3 ans)', detteActif:'Dette nette / FCF', conversionFcf:'Conversion du FCF', peg:'PEG', margeSecurite:'Marge de sécurité', peRelatifSecteur:'PE / Secteur' };
-const SCORE_PART_UNITS = { moatNote:'/10', margeNette:' %', roic:' %', roe:' %', croissanceBenef:' %', croissanceCA:' %', croissanceAttendueCA:' %', detteActif:'', conversionFcf:' %', peg:'', margeSecurite:' %', peRelatifSecteur:'' };
+const SCORE_PART_LABELS = { moatNote:'MOAT', margeNette:'Marge nette', roic:'ROIC', roe:'ROE', croissanceBenef:'CAGR du bénéfice net', croissanceCA:'CAGR du CA', croissanceAttendueCA:'Croissance attendue du CA (3 ans)', detteActif:'Dette nette / FCF', detteTotalActif:'Dette totale / Total actif', tresorerieDette:'Trésorerie / Dette totale', altmanZ:"Score d'Altman", conversionFcf:'Conversion du FCF', peg:'PEG', margeSecurite:'Marge de sécurité', peRelatifSecteur:'PE / Secteur' };
+const SCORE_PART_UNITS = { moatNote:'/10', margeNette:' %', roic:' %', roe:' %', croissanceBenef:' %', croissanceCA:' %', croissanceAttendueCA:' %', detteActif:'', detteTotalActif:' %', tresorerieDette:' %', altmanZ:'', conversionFcf:' %', peg:'', margeSecurite:' %', peRelatifSecteur:'' };
 function tierFromScore(s){ return s === null ? null : (s >= 75 ? 'tresbon' : (s >= 50 ? 'bon' : (s >= 25 ? 'moyen' : 'mauvais'))); }
 function scorePartValue(c, key){
   const fin = c.fields.financier || {};
@@ -4528,6 +4578,9 @@ function scorePartValue(c, key){
   if(key === 'croissanceCA') return num(fin.croissanceCA && fin.croissanceCA.cagr);
   if(key === 'croissanceAttendueCA') return num(c.fields.croissance && c.fields.croissance.croissanceAttendueCA && c.fields.croissance.croissanceAttendueCA.cagr);
   if(key === 'detteActif') return computeDetteActif(c);
+  if(key === 'detteTotalActif') return computeDetteTotalActif(c);
+  if(key === 'tresorerieDette') return computeTresorerieDette(c);
+  if(key === 'altmanZ') return computeAltman(c).z;
   if(key === 'conversionFcf') return computeConversionFcf(c);
   if(key === 'peg') return computePeg(c);
   if(key === 'peRelatifSecteur') return computePeRelatif(c);
@@ -4908,11 +4961,55 @@ function updateWallStreetField(sectionKey, fieldKey, subKey, value){
   touchUpdated(c);
   saveState();
 }
+// Dette nette / FCF, en années de FCF pour rembourser la dette nette.
+// Correction du 2026-09-26 : un ratio négatif était toujours noté "très bon", même quand il venait d'un FCF NÉGATIF avec de la dette.
+//  - dette nette ≤ 0 (plus de cash que de dette) : ratio ≤ 0, très bon quel que soit le FCF ;
+//  - dette nette > 0 et FCF ≤ 0 : la dette ne peut pas être remboursée avec le FCF actuel, on renvoie DETTE_NON_REMBOURSABLE (noté mauvais, affiché "n.s.").
+const DETTE_NON_REMBOURSABLE = 99;
 function computeDetteActif(c){
   const detteNette = parseMoney(c.fields.financier.detteNette);
   const fcf = parseMoney(c.fields.financier.fcf);
-  if(detteNette === null || fcf === null || fcf === 0) return null;
+  if(detteNette === null || fcf === null) return null;
+  if(detteNette <= 0) return fcf === 0 ? 0 : detteNette / Math.abs(fcf);
+  if(fcf <= 0) return DETTE_NON_REMBOURSABLE;
   return detteNette / fcf;
+}
+function fmtDetteActif(v){ return v === null ? '—' : (v >= DETTE_NON_REMBOURSABLE ? 'n.s.' : v.toFixed(2)); }
+// Dette totale / Total actif (en %) : la part de l'entreprise financée par de la dette
+function computeDetteTotalActif(c){
+  const dette = parseMoney(c.fields.financier.detteTotal), actif = parseMoney(c.fields.financier.totalActif);
+  if(dette === null || actif === null || actif <= 0) return null;
+  return dette / actif * 100;
+}
+// Trésorerie / Dette totale (en %) : le cash disponible couvre-t-il la dette ? (non calculable sans dette)
+function computeTresorerieDette(c){
+  const tres = computeTresorerie(c), dette = parseMoney(c.fields.financier.detteTotal);
+  if(tres === null || dette === null || dette <= 0) return null;
+  return tres / dette * 100;
+}
+// Score de solvabilité : Z''-Score d'Altman (version pour toutes les entreprises, sans le chiffre d'affaires) :
+//   Z'' = 6,56 × Fonds de roulement / Total actif + 3,26 × Bénéfices non distribués / Total actif + 6,72 × EBIT / Total actif + 1,05 × Capitaux propres / Total passif
+//   (capitaux propres = total actif − total passif). Zones : plus de 2,6 sûre, 1,1 à 2,6 grise, moins de 1,1 détresse.
+// Le risque de faillite en % n'est qu'un ordre de grandeur DÉDUIT des zones du modèle (altmanRisk), jamais une prévision.
+function computeAltman(c){
+  const f = c.fields.financier;
+  const ta = parseMoney(f.totalActif), tl = parseMoney(f.totalPassif), wc = parseMoney(f.fondsRoulement), re = parseMoney(f.beneficesNonDistribues), ebit = parseMoney(f.resultatExploitation);
+  const missing = [];
+  if(ta === null || ta <= 0) missing.push('Total actif');
+  if(tl === null || tl <= 0) missing.push('Total passif');
+  if(wc === null) missing.push('Fonds de roulement');
+  if(re === null) missing.push('Bénéfices non distribués');
+  if(ebit === null) missing.push("Résultat d'exploitation");
+  if(missing.length) return { z:null, missing };
+  const x1 = wc / ta, x2 = re / ta, x3 = ebit / ta, x4 = (ta - tl) / tl;
+  return { z:6.56 * x1 + 3.26 * x2 + 6.72 * x3 + 1.05 * x4, x1, x2, x3, x4, missing:[] };
+}
+function altmanRisk(z){
+  if(z === null || z === undefined) return null;
+  if(z >= 3.5) return { label:'Très faible', range:'moins de 1 %', tier:'tresbon' };
+  if(z >= 2.6) return { label:'Faible', range:'1 à 5 %', tier:'bon' };
+  if(z >= 1.1) return { label:'Modéré', range:'5 à 20 %', tier:'moyen' };
+  return { label:'Élevé', range:'plus de 20 %', tier:'mauvais' };
 }
 function computeTresorerie(c){
   const total = parseMoney(c.fields.financier.detteTotal);
@@ -5815,7 +5912,7 @@ function buildGlobalRecap(c){
       ['ROIC', pct(roic), dot('roic', roic)],
       ['Marge nette', pct(margeNette), dot('margeNette', margeNette)],
       ['Croissance bénéf.', pct(croiss), dot('croissanceBenef', croiss)],
-      ['Dette / FCF', dette === null ? '—' : fr(dette, 2), dot('detteActif', dette)],
+      ['Dette / FCF', fmtDetteActif(dette).replace('.', ','), dot('detteActif', dette)],
       ['PEG', peg === null ? '—' : fr(peg, 2), dot('peg', peg)],
       ['MOAT', moat === null ? '—' : fr(moat, 1).replace(/,0$/, '') + '/10', dot('moatNote', moat)],
       ['Checklist Buffett', buff.checked + '/' + buff.total, buffColor],
@@ -6546,7 +6643,7 @@ const LEARN_CHAPTERS = [
       { t:'buffett' },
       LP(`Les critères marqués « auto » se cochent tout seuls quand les chiffres saisis le justifient ; vous pouvez toujours cliquer pour corriger. Un score de 8/10 ou plus est un très bon signe, mais la checklist ne remplace jamais votre jugement.`),
       LH(`Le score composite sur 100`),
-      LP(`La synthèse combine cinq axes en une note moyenne pondérée : <strong>Qualité 25 %</strong>, <strong>Rentabilité 25 %</strong>, <strong>Solidité 20 %</strong>, <strong>Croissance 15 %</strong> et <strong>Valorisation 15 %</strong>. Chaque axe est lui-même la moyenne de ses indicateurs : <strong>Qualité</strong> (MOAT et marge nette), <strong>Rentabilité</strong> (ROIC, ou ROE à défaut, et CAGR du bénéfice net), <strong>Solidité</strong> (dette nette sur FCF et conversion du FCF), <strong>Croissance</strong> (CAGR du chiffre d'affaires et croissance attendue du CA sur 3 ans) et <strong>Valorisation</strong> (PEG, marge de sécurité par rapport à votre valeur intrinsèque et PE relatif au secteur). Les indicateurs non renseignés sont simplement ignorés. La note est marquée <strong>provisoire</strong> tant que moins de 3 axes sur 5 sont renseignés : une note fondée sur un seul chiffre ne dit presque rien. Le radar montre en un coup d'œil où l'entreprise est forte ou faible, et au survol d'un axe vous voyez le détail de ses indicateurs. Le score est un repère pour comparer vos analyses entre elles, pas une recommandation.`),
+      LP(`La synthèse combine cinq axes en une note moyenne pondérée : <strong>Qualité 25 %</strong>, <strong>Rentabilité 25 %</strong>, <strong>Solidité 20 %</strong>, <strong>Croissance 15 %</strong> et <strong>Valorisation 15 %</strong>. Chaque axe est lui-même la moyenne de ses indicateurs : <strong>Qualité</strong> (MOAT et marge nette), <strong>Rentabilité</strong> (ROIC, ou ROE à défaut, et CAGR du bénéfice net), <strong>Solidité</strong> (dette nette sur FCF, conversion du FCF, dette totale sur total actif, trésorerie sur dette totale et score d'Altman), <strong>Croissance</strong> (CAGR du chiffre d'affaires et croissance attendue du CA sur 3 ans) et <strong>Valorisation</strong> (PEG, marge de sécurité par rapport à votre valeur intrinsèque et PE relatif au secteur). Les indicateurs non renseignés sont simplement ignorés. La note est marquée <strong>provisoire</strong> tant que moins de 3 axes sur 5 sont renseignés : une note fondée sur un seul chiffre ne dit presque rien. Le radar montre en un coup d'œil où l'entreprise est forte ou faible, et au survol d'un axe vous voyez le détail de ses indicateurs. Le score est un repère pour comparer vos analyses entre elles, pas une recommandation.`),
       LTIP('attention', `Un score élevé avec peu de données saisies n'est pas fiable. Regardez la progression de chaque section : plus la fiche est complète, plus le score a de sens.`),
     ],
   },
@@ -6812,7 +6909,10 @@ const LEARN_INDICATORS = {
   detteNette: { how:`La dette moins la trésorerie disponible : ce que l'entreprise devrait réellement rembourser.` },
   detteTotal: { how:`L'ensemble des emprunts et dettes financières.` },
   tresorerie: { how:`Calculée automatiquement : dette totale moins dette nette.` },
-  detteActif: { how:`Le nombre d'années de free cash flow nécessaires pour rembourser la dette nette.`, ex:`Dette nette de 60 et FCF de 30 par an : 2 ans.`, warn:`Une dette nette négative (plus de trésorerie que de dettes) est un très bon signe.` },
+  detteActif: { how:`Le nombre d'années de free cash flow nécessaires pour rembourser la dette nette.`, ex:`Dette nette de 60 et FCF de 30 par an : 2 ans.`, warn:`Une dette nette négative (plus de trésorerie que de dettes) est un très bon signe. En revanche, de la dette avec un FCF négatif ou nul s'affiche « n.s. » et reçoit la pire note.` },
+  detteTotalActif: { how:`La part de l'actif financée par de la dette. Moins l'entreprise dépend de la dette, plus elle résiste aux mauvaises années.`, ex:`Dette totale de 30 pour un total actif de 100 : 30 %, un niveau raisonnable.`, warn:`Certains secteurs (immobilier, banques, services publics) sont naturellement plus endettés : comparez avec des entreprises du même secteur.` },
+  tresorerieDette: { how:`Le rapport entre le cash disponible et la dette totale : peut-on la rembourser avec ce que l'on a en caisse ?`, ex:`Trésorerie de 40 pour une dette totale de 50 : 80 %.`, warn:`Sans aucune dette, l'indicateur n'est pas calculable (et ce n'est pas un problème).` },
+  altmanZ: { how:`Un score de solvabilité inventé par l'économiste Edward Altman pour repérer les entreprises menacées de faillite. Il combine la liquidité, l'autofinancement, la rentabilité d'exploitation et la part de capitaux propres. Il faut renseigner le total actif, le total passif, le fonds de roulement, les bénéfices non distribués et le résultat d'exploitation.`, ex:`Un score de 3,4 est en zone sûre : risque de faillite faible. Sous 1,1, l'entreprise est en zone de détresse.`, warn:`Modèle statistique établi sur des entreprises américaines : un repère, jamais une prévision. Peu adapté aux banques et assurances.` },
   nbActions: { how:`Free Float : nombre d'actions librement échangeables. Closely Held : actions détenues durablement par des initiés ou de gros actionnaires. Disponible : part du flottant, calculée automatiquement.`, ex:`Free Float 9 Md et Closely Held 900 M : disponible = 9 ÷ (9 + 0,9) = 90,9 %.`, warn:`Le repère « flottant » est indicatif : un capital concentré peut aussi signaler des dirigeants très engagés.` },
   revenuSource: { how:`Le poids de chaque activité ou produit dans le chiffre d'affaires, affiché en camembert.`, warn:`Une forte dépendance à un seul produit est un risque.` },
   revenuPays: { how:`Le poids de chaque pays dans le chiffre d'affaires, affiché en camembert.`, warn:`Une forte dépendance à un seul pays est un risque.` },
@@ -7937,7 +8037,24 @@ function render(){
       if(field.type === 'computed-dette-actif'){
         const d = computeDetteActif(c);
         html += `<div class="field-row"><div class="field-label" data-tooltip="${fieldDescTooltip(field.key)}">${field.label}</div>
-          <div class="field-value"><div class="value-with-badge"><span class="computed" id="computed-${section.key}-${field.key}" data-tooltip="${tipDetteActif(c)}">${d === null ? '—' : d.toFixed(2)}</span>${renderBadge(field.key, d, `badge-${section.key}-${field.key}`)}</div></div></div>`;
+          <div class="field-value"><div class="value-with-badge"><span class="computed" id="computed-${section.key}-${field.key}" data-tooltip="${tipDetteActif(c)}">${fmtDetteActif(d)}</span>${renderBadge(field.key, d, `badge-${section.key}-${field.key}`)}</div></div></div>`;
+        return;
+      }
+      if(field.type === 'computed-dette-total-actif'){
+        const v = computeDetteTotalActif(c);
+        html += `<div class="field-row"><div class="field-label" data-tooltip="${fieldDescTooltip(field.key)}">${field.label}</div>
+          <div class="field-value"><div class="value-with-badge"><span class="computed" id="computed-${section.key}-${field.key}" data-tooltip="${tipDetteTotalActif(c)}">${v === null ? '—' : v.toFixed(1) + '%'}</span>${renderBadge(field.key, v, `badge-${section.key}-${field.key}`)}</div></div></div>`;
+        return;
+      }
+      if(field.type === 'computed-tresorerie-dette'){
+        const v = computeTresorerieDette(c);
+        html += `<div class="field-row"><div class="field-label" data-tooltip="${fieldDescTooltip(field.key)}">${field.label}</div>
+          <div class="field-value"><div class="value-with-badge"><span class="computed" id="computed-${section.key}-${field.key}" data-tooltip="${tipTresorerieDette(c)}">${v === null ? '—' : v.toFixed(0) + '%'}</span>${renderBadge(field.key, v, `badge-${section.key}-${field.key}`)}</div></div></div>`;
+        return;
+      }
+      if(field.type === 'computed-altman'){
+        html += `<div class="field-row"><div class="field-label" data-tooltip="${fieldDescTooltip(field.key)}">${field.label}</div>
+          <div class="field-value"><div class="altman-block" id="altman-block">${altmanBlockInner(c)}</div></div></div>`;
         return;
       }
       if(field.type === 'computed-conversion-fcf'){
