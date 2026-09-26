@@ -3999,6 +3999,9 @@ function updateChecklistItem(itemKey, checked){
   touchUpdated(c);
   saveState();
   refreshBuffettChecklist();
+  // La checklist alimente la note (axe Qualité) et la carte de l'en-tête : on les remet à jour tout de suite
+  refreshCompanySummary();
+  refreshInsightsSection();
 }
 
 function updateDuo(sectionKey, fieldKey, subKey, value){
