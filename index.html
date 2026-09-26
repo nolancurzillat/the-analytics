@@ -4598,6 +4598,7 @@ function scorePartValue(c, key){
 }
 function scorePartScore(key, val){
   if(val === null) return null;
+  if(key === 'moatNote') return Math.max(0, Math.min(100, val * 10));   // MOAT noté sur 10, notation LINÉAIRE (demande de Nolan le 2026-09-26) : 1 point = 10, donc 7/10 = 70
   if(key === 'buffett') return Math.max(0, Math.min(100, val));   // val = part de critères validés en % : 7/10 vaut 70 points
   if(key === 'consensus') return Math.max(0, Math.min(100, (val - 1) / 4 * 100));   // linéaire : Strong Sell 0, Sell 25, Hold 50, Buy 75, Strong Buy 100
   const cfg = key === 'margeSecurite' ? MARGE_SECURITE_SCALE : SCALE_CONFIG[key];
