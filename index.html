@@ -1150,7 +1150,11 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; font-family:
 .position-body{ display:block; }
 .position-toggle{ flex:0 0 auto; display:flex; align-items:center; gap:10px; font-size:14.5px; color:var(--ink-soft); cursor:pointer; }
 .position-toggle input[type=checkbox]{ width:18px; height:18px; accent-color:var(--sec-c, var(--accent)); cursor:pointer; }
-.position-fields{ margin-top:0; display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:22px 28px; }
+.position-fields{ margin-top:0; display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:22px 28px; }
+.pos-result{ display:inline-flex; align-items:baseline; gap:10px; padding:9px 14px; border-radius:10px; font-size:16px; font-weight:700; color:var(--sec-c); background:color-mix(in srgb, var(--sec-c) 12%, transparent); border:1px solid color-mix(in srgb, var(--sec-c) 35%, transparent); }
+.pos-result-p{ font-size:14px; font-weight:600; opacity:.9; }
+@media (max-width:1180px){ .position-fields{ grid-template-columns:repeat(2, minmax(0,1fr)); } }
+.position-section.is-neutral .pos-result{ color:var(--ink-soft); }
 .position-fields .field-row{ grid-column:auto; }
 .position-fields input#posQuantite{ width:auto; min-width:90px; }
 .position-div{ margin-top:22px; padding-top:18px; border-top:1px dashed var(--border); }
@@ -4750,21 +4754,6 @@ function buildTargetPriceCard(c){
     <div class="target-value" style="color:${color}">${reached ? '✓' : ''} ${reached ? Math.abs(diff).toFixed(1)+'% sous ton objectif' : diff.toFixed(1)+'% au-dessus de ton objectif'}</div>
     <div class="pnl-sub">Objectif : ${escapeHtml(String(c.fields.personnelle.prixAchatCible))} ${escapeHtml(c.currency)} · Actuel : ${cur} ${escapeHtml(c.currency)}</div>`;
 }
-function buildPositionPnl(c){
-  if(!c.position || !c.position.active) return '';
-  const qty = num(c.position.quantite);
-  const buyPrice = num(c.position.prixAchat);
-  const curPrice = num(c.fields.valorisation.prixActuel);
-  if(qty === null || buyPrice === null || curPrice === null || buyPrice === 0) return '';
-  const devise = c.currency;
-  const gainPct = ((curPrice - buyPrice) / buyPrice) * 100;
-  const gainTotal = (curPrice - buyPrice) * qty;
-  const positive = gainPct >= 0;
-  const color = positive ? TIER_COLORS.tresbon : TIER_COLORS.mauvais;
-  return `<div class="insight-card-title">Plus/moins-value latente</div>
-    <div class="pnl-value" style="color:${color}">${positive?'+':''}${gainPct.toFixed(1)}%</div>
-    <div class="pnl-sub">${positive?'+':''}${gainTotal.toFixed(2)} ${devise} sur ${qty} titres</div>`;
-}
 function buildSynthesisText(c){
   const name = c.name || 'Cette entreprise';
   const secteurObj = c.fields.identite.secteur;
@@ -4844,12 +4833,10 @@ function buildInsightsSection(c){
   const targetCardHtml = buildTargetPriceCard(c);
   const synthesis = buildSynthesisText(c);
 
-  const pnlHtml = buildPositionPnl(c);
   const riskHtml = buildRiskCard(c);
   const sideHtml = [
     targetCardHtml ? `<div class="insight-card">${targetCardHtml}</div>` : '',
     riskHtml ? `<div class="insight-card">${riskHtml}</div>` : '',
-    pnlHtml ? `<div class="insight-card">${pnlHtml}</div>` : '',
   ].join('');
   return `<div class="section insights-section" id="insights-section" style="--sec-c:#f3e9d7">
     <div class="section-title"><span class="section-num">6</span><span class="section-title-text"><span class="st-name">Synthèse globale</span><span class="st-sub">Le bilan de votre analyse, calculé à partir de vos données</span></span></div>
@@ -4926,6 +4913,7 @@ function buildPositionBlock(c){
         <input type="text" id="posMontant" size="${Math.max(String(pos.montantInvesti||'').length,2)+1}" value="${escapeHtml(pos.montantInvesti || '')}">
         <span class="value-suffix">${escapeHtml(c.currency)}</span>
       </div></div></div>
+      <div class="field-row"><div class="field-label" id="posResultLabel">${positionResultInfo(c).label}</div><div class="field-value"><div class="pos-result" id="posResult">${positionResultInfo(c).html}</div></div></div>
     </div>${positionDividendHtml(c)}`;
   } else {
     inner = `<div class="position-empty">Aucune position en cours</div>`;
@@ -4955,9 +4943,20 @@ function positionHeaderInfo(c){
   }
   return { color:'var(--border-strong)', neutral:true, glyph:'&#9679;', sub:"Renseignez la quantité, le prix d'achat et le cours actuel pour calculer votre résultat" };
 }
+// Case "Plus-value / Moins-value latente" du bloc Position (déplacée ici depuis la Synthèse globale, demande de Nolan le 2026-09-26) :
+// montant en devise de l'analyse et en %, teintée verte ou rouge par la variable --sec-c du bloc (posée par positionHeaderInfo).
+function positionResultInfo(c){
+  const pm = positionMetrics(c);
+  if(!pm || pm.gain === null) return { label:'Plus-value ou moins-value latente', html:'<span class="pos-result-v">—</span>' };
+  const up = pm.gain >= 0;
+  return { label: up ? 'Plus-value latente' : 'Moins-value latente', html:`<span class="pos-result-v">${pfSigned(pm.gain, c.currency)}</span><span class="pos-result-p">${pfPct(pm.gainPct)}</span>` };
+}
 function refreshPositionHeader(){
   const c = getActive(), el = document.getElementById('position-card');
   if(!c || !el) return;
+  const ri = positionResultInfo(c), rl = document.getElementById('posResultLabel'), rv = document.getElementById('posResult');
+  if(rl) rl.textContent = ri.label;
+  if(rv) rv.innerHTML = ri.html;
   const h = positionHeaderInfo(c);
   el.style.setProperty('--sec-c', h.color);
   el.classList.toggle('is-neutral', h.neutral);
