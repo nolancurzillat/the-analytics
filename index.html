@@ -4534,7 +4534,7 @@ function continuousScore(val, thresholds, inverse){
 }
 // ---------- Note du profil global (refondue le 2026-09-26, demande de Nolan) ----------
 // 5 axes ; chaque axe est la MOYENNE des notes (0 à 100, calculées en continu avec les barèmes de l'app) de ses indicateurs disponibles :
-//   Qualité (25 %)      MOAT + marge nette
+//   Qualité (25 %)      MOAT + marge brute + marge nette + checklist Buffett (part de critères validés, ignorée tant qu'aucun n'est validé)
 //   Rentabilité (25 %)  ROIC + ROE + CAGR du bénéfice net
 //   Croissance (15 %)   CAGR du CA + croissance attendue du CA sur 3 ans + croissance estimée du BPA (EPS) sur 3 ans
 // (Depuis le 2026-09-26, chaque axe compte au moins 3 indicateurs, demande de Nolan.)
@@ -4542,7 +4542,7 @@ function continuousScore(val, thresholds, inverse){
 //   Valorisation (15 %) PEG + marge de sécurité (écart avec la valeur intrinsèque) + PE relatif au secteur
 // La note globale est la moyenne pondérée des axes renseignés (poids réajustés). Elle est "provisoire" tant que moins de 3 axes sur 5 sont renseignés.
 const SCORE_AXES = [
-  { id:'qualite', label:'Qualité', weight:0.25, parts:['moatNote', 'margeBrute', 'margeNette'] },
+  { id:'qualite', label:'Qualité', weight:0.25, parts:['moatNote', 'margeBrute', 'margeNette', 'buffett'] },
   { id:'rentabilite', label:'Rentabilité', weight:0.25, parts:['roic', 'roe', 'croissanceBenef'] },
   { id:'croissance', label:'Croissance', weight:0.15, parts:['croissanceCA', 'croissanceAttendueCA', 'croissanceEstimeeEps'] },
   { id:'solidite', label:'Solidité', weight:0.20, parts:['detteActif', 'conversionFcf', 'detteTotalActif', 'tresorerieDette', 'scoreSolvabilite', 'probaFaillite'] },
@@ -4551,8 +4551,10 @@ const SCORE_AXES = [
 const SCORE_MIN_AXES = 3;
 // Marge de sécurité = remise du cours sur la valeur intrinsèque, en % (30 % et plus très bon, 15 à 30 bon, 0 à 15 moyen, cours au-dessus de la valeur mauvais)
 const MARGE_SECURITE_SCALE = { thresholds:[30, 15, 0], inverse:false };
-const SCORE_PART_LABELS = { moatNote:'MOAT', margeBrute:'Marge brute', croissanceEstimeeEps:'Croissance estimée du BPA (3 ans)', margeNette:'Marge nette', roic:'ROIC', roe:'ROE', croissanceBenef:'CAGR du bénéfice net', croissanceCA:'CAGR du CA', croissanceAttendueCA:'Croissance attendue du CA (3 ans)', detteActif:'Dette nette / FCF', detteTotalActif:'Dette totale / Total actif', tresorerieDette:'Trésorerie / Dette totale', scoreSolvabilite:'Score de solvabilité', probaFaillite:'Probabilité de faillite', conversionFcf:'Conversion du FCF', peg:'PEG', margeSecurite:'Marge de sécurité', peRelatifSecteur:'PE / Secteur' };
-const SCORE_PART_UNITS = { moatNote:'/10', margeBrute:' %', croissanceEstimeeEps:' %', margeNette:' %', roic:' %', roe:' %', croissanceBenef:' %', croissanceCA:' %', croissanceAttendueCA:' %', detteActif:'', detteTotalActif:' %', tresorerieDette:' %', scoreSolvabilite:'/100', probaFaillite:' %', conversionFcf:' %', peg:'', margeSecurite:' %', peRelatifSecteur:'' };
+// Checklist Buffett : part de critères validés en % (80 % et plus très bon, 60 à 80 bon, 40 à 60 moyen), mêmes seuils que ses couleurs partout dans l'app
+const BUFFETT_SCALE = { thresholds:[80, 60, 40], inverse:false };
+const SCORE_PART_LABELS = { moatNote:'MOAT', buffett:'Checklist Buffett', margeBrute:'Marge brute', croissanceEstimeeEps:'Croissance estimée du BPA (3 ans)', margeNette:'Marge nette', roic:'ROIC', roe:'ROE', croissanceBenef:'CAGR du bénéfice net', croissanceCA:'CAGR du CA', croissanceAttendueCA:'Croissance attendue du CA (3 ans)', detteActif:'Dette nette / FCF', detteTotalActif:'Dette totale / Total actif', tresorerieDette:'Trésorerie / Dette totale', scoreSolvabilite:'Score de solvabilité', probaFaillite:'Probabilité de faillite', conversionFcf:'Conversion du FCF', peg:'PEG', margeSecurite:'Marge de sécurité', peRelatifSecteur:'PE / Secteur' };
+const SCORE_PART_UNITS = { moatNote:'/10', buffett:' %', margeBrute:' %', croissanceEstimeeEps:' %', margeNette:' %', roic:' %', roe:' %', croissanceBenef:' %', croissanceCA:' %', croissanceAttendueCA:' %', detteActif:'', detteTotalActif:' %', tresorerieDette:' %', scoreSolvabilite:'/100', probaFaillite:' %', conversionFcf:' %', peg:'', margeSecurite:' %', peRelatifSecteur:'' };
 // Barème de couleurs de la NOTE GLOBALE (demande de Nolan le 2026-09-26) : 5 paliers de 20 points, rouge (0 à 20), orange (20 à 40), jaune (40 à 60),
 // vert clair (60 à 80), vert foncé (80 à 100). Distinct du barème à 4 paliers des indicateurs (TIER_COLORS), qui reste inchangé.
 // scoreColor5(note, true) donne les teintes vives pour les cartes à fond marine.
@@ -4575,6 +4577,7 @@ function scorePartValue(c, key){
   if(key === 'moatNote') return num((c.fields.identite || {}).moatNote);
   if(key === 'margeNette') return num(fin.margeNette);
   if(key === 'margeBrute') return num(fin.margeBrute);
+  if(key === 'buffett'){ const b = computeBuffettScore(c); return (b.total && b.checked > 0) ? b.checked / b.total * 100 : null; }   // aucun critère validé = checklist non commencée, ignorée
   if(key === 'croissanceEstimeeEps'){ const g = (c.fields.valorisation || {}).croissanceEstimeeEps; return num(g && g.cagr); }
   if(key === 'croissanceBenef') return num(fin.croissanceBenef && fin.croissanceBenef.cagr);
   if(key === 'croissanceCA') return num(fin.croissanceCA && fin.croissanceCA.cagr);
@@ -4594,7 +4597,7 @@ function scorePartValue(c, key){
 }
 function scorePartScore(key, val){
   if(val === null) return null;
-  const cfg = key === 'margeSecurite' ? MARGE_SECURITE_SCALE : SCALE_CONFIG[key];
+  const cfg = key === 'margeSecurite' ? MARGE_SECURITE_SCALE : (key === 'buffett' ? BUFFETT_SCALE : SCALE_CONFIG[key]);
   return cfg ? continuousScore(val, cfg.thresholds, cfg.inverse) : null;
 }
 function computeRadarAxes(c){
@@ -4621,7 +4624,7 @@ function computeScoreInfo(c){
 function axisTooltip(a){
   const rows = a.parts.map(p => {
     const col = p.tier ? TOOLTIP_TIER_COLORS[p.tier] : 'rgba(255,255,255,.5)';
-    const v = p.val === null ? 'non renseigné' : fmtNum(p.val, 2) + SCORE_PART_UNITS[p.key];
+    const v = p.val === null ? (p.key === 'buffett' ? 'aucun critère validé' : 'non renseigné') : (p.key === 'buffett' ? Math.round(p.val * BUFFETT_RULES.length / 100) + '/' + BUFFETT_RULES.length : fmtNum(p.val, 2) + SCORE_PART_UNITS[p.key]);
     return `<div class='tt-row'><span class='tt-dot' style='background:${col}'></span><span>${escapeHtml(p.label)} : ${escapeHtml(v)}${p.score === null ? '' : ' (' + Math.round(p.score) + '/100)'}</span></div>`;
   }).join('');
   return `<div class='tt-header'>${escapeHtml(a.label)}${a.score === null ? '' : ' : ' + Math.round(a.score) + '/100'}</div><div class='tt-tiers'>${rows}</div><div class='tt-desc'>Moyenne des indicateurs renseignés.</div>`;
@@ -6615,7 +6618,7 @@ const LEARN_CHAPTERS = [
       { t:'buffett' },
       LP(`Les critères marqués « auto » se cochent tout seuls quand les chiffres saisis le justifient ; vous pouvez toujours cliquer pour corriger. Un score de 8/10 ou plus est un très bon signe, mais la checklist ne remplace jamais votre jugement.`),
       LH(`Le score composite sur 100`),
-      LP(`La synthèse combine cinq axes en une note moyenne pondérée : <strong>Qualité 25 %</strong>, <strong>Rentabilité 25 %</strong>, <strong>Solidité 20 %</strong>, <strong>Croissance 15 %</strong> et <strong>Valorisation 15 %</strong>. Chaque axe est lui-même la moyenne de ses indicateurs : <strong>Qualité</strong> (MOAT, marge brute et marge nette), <strong>Rentabilité</strong> (ROIC, ROE et CAGR du bénéfice net), <strong>Solidité</strong> (dette nette sur FCF, conversion du FCF, dette totale sur total actif, trésorerie sur dette totale, score de solvabilité et probabilité de faillite), <strong>Croissance</strong> (CAGR du chiffre d'affaires, croissance attendue du CA sur 3 ans et croissance estimée du bénéfice par action sur 3 ans) et <strong>Valorisation</strong> (PEG, marge de sécurité par rapport à votre valeur intrinsèque et PE relatif au secteur). Les indicateurs non renseignés sont simplement ignorés. La note est marquée <strong>provisoire</strong> tant que moins de 3 axes sur 5 sont renseignés : une note fondée sur un seul chiffre ne dit presque rien. Sa couleur suit cinq paliers de 20 points : rouge (moins de 20), orange (20 à 40), jaune (40 à 60), vert clair (60 à 80) et vert foncé (80 et plus). Le radar montre en un coup d'œil où l'entreprise est forte ou faible, et au survol d'un axe vous voyez le détail de ses indicateurs. Le score est un repère pour comparer vos analyses entre elles, pas une recommandation.`),
+      LP(`La synthèse combine cinq axes en une note moyenne pondérée : <strong>Qualité 25 %</strong>, <strong>Rentabilité 25 %</strong>, <strong>Solidité 20 %</strong>, <strong>Croissance 15 %</strong> et <strong>Valorisation 15 %</strong>. Chaque axe est lui-même la moyenne de ses indicateurs : <strong>Qualité</strong> (MOAT, marge brute, marge nette et checklist Buffett), <strong>Rentabilité</strong> (ROIC, ROE et CAGR du bénéfice net), <strong>Solidité</strong> (dette nette sur FCF, conversion du FCF, dette totale sur total actif, trésorerie sur dette totale, score de solvabilité et probabilité de faillite), <strong>Croissance</strong> (CAGR du chiffre d'affaires, croissance attendue du CA sur 3 ans et croissance estimée du bénéfice par action sur 3 ans) et <strong>Valorisation</strong> (PEG, marge de sécurité par rapport à votre valeur intrinsèque et PE relatif au secteur). Les indicateurs non renseignés sont simplement ignorés. La note est marquée <strong>provisoire</strong> tant que moins de 3 axes sur 5 sont renseignés : une note fondée sur un seul chiffre ne dit presque rien. Sa couleur suit cinq paliers de 20 points : rouge (moins de 20), orange (20 à 40), jaune (40 à 60), vert clair (60 à 80) et vert foncé (80 et plus). Le radar montre en un coup d'œil où l'entreprise est forte ou faible, et au survol d'un axe vous voyez le détail de ses indicateurs. Le score est un repère pour comparer vos analyses entre elles, pas une recommandation.`),
       LTIP('attention', `Un score élevé avec peu de données saisies n'est pas fiable. Regardez la progression de chaque section : plus la fiche est complète, plus le score a de sens.`),
     ],
   },
