@@ -3353,7 +3353,8 @@ const SCALE_CONFIG = {
   detteTotalActif:{ thresholds:[20,35,50], inverse:true },
   tresorerieDette:{ thresholds:[100,50,25], inverse:false },
   scoreSolvabilite:{ thresholds:[75,50,25], inverse:false },
-  probaFaillite:  { thresholds:[1,5,20], inverse:true },
+  probaFaillite:  { thresholds:[1,5,20], inverse:true, inclusive:true },
+  croissanceEstimeeEps: { thresholds:[20,10,0], inverse:false },
   conversionFcf:  { thresholds:[90,70,50], inverse:false },
   positionShort:  { thresholds:[2,5,10], inverse:true },
   ratioVenteADecouvert: { thresholds:[2,4,7], inverse:true },
@@ -3365,7 +3366,7 @@ const SCALE_CONFIG = {
 };
 const BADGE_UNITS = {
   croissanceCA:'%', croissanceBenef:'%', margeBrute:'%', margeNette:'%', roe:'%', roic:'%',
-  detteActif:'', detteTotalActif:'%', tresorerieDette:'%', scoreSolvabilite:'/100', probaFaillite:'%', conversionFcf:'%', positionShort:'%', ratioVenteADecouvert:' j', capexRatio:'%',
+  detteActif:'', detteTotalActif:'%', tresorerieDette:'%', scoreSolvabilite:'/100', probaFaillite:'%', croissanceEstimeeEps:'%', conversionFcf:'%', positionShort:'%', ratioVenteADecouvert:' j', capexRatio:'%',
   peg:'', croissanceAttendueCA:'%', peRelatifSecteur:'', moatNote:'/10',
 };
 const TOOLTIP_TIER_COLORS = { tresbon:'#22c55e', bon:'#c2f5d0', moyen:'#fde047', mauvais:'#f87171' };
@@ -3375,7 +3376,7 @@ function scaleTooltip(fieldKey, currentTier){
   const u = BADGE_UNITS[fieldKey] || '';
   const t = cfg.thresholds;
   const rows = cfg.inverse ? [
-    { tier:'tresbon', text:`Très bon : &lt; ${t[0]}${u}` },
+    { tier:'tresbon', text:`Très bon : ${cfg.inclusive ? '&le;' : '&lt;'} ${t[0]}${u}` },
     { tier:'bon', text:`Bon : ${t[0]} à ${t[1]}${u}` },
     { tier:'moyen', text:`Moyen : ${t[1]} à ${t[2]}${u}` },
     { tier:'mauvais', text:`Mauvais : &gt; ${t[2]}${u}` },
@@ -3533,16 +3534,18 @@ function scaleTier(val, t){
   if(val >= t[2]) return 'moyen';
   return 'mauvais';
 }
-function scaleTierInverse(val, t){
-  if(val < t[0]) return 'tresbon';
-  if(val < t[1]) return 'bon';
-  if(val < t[2]) return 'moyen';
+// `inclusive` (barème avec `inclusive:true`, ex. probabilité de faillite) : la borne appartient au palier le meilleur (≤ 1 % très bon)
+function scaleTierInverse(val, t, inclusive){
+  const lt = inclusive ? (v, x) => v <= x : (v, x) => v < x;
+  if(lt(val, t[0])) return 'tresbon';
+  if(lt(val, t[1])) return 'bon';
+  if(lt(val, t[2])) return 'moyen';
   return 'mauvais';
 }
 function getScaleTier(fieldKey, val){
   const cfg = SCALE_CONFIG[fieldKey];
   if(!cfg || val === null || val === undefined) return null;
-  return cfg.inverse ? scaleTierInverse(val, cfg.thresholds) : scaleTier(val, cfg.thresholds);
+  return cfg.inverse ? scaleTierInverse(val, cfg.thresholds, cfg.inclusive) : scaleTier(val, cfg.thresholds);
 }
 function renderBadge(fieldKey, val, id){
   const tier = getScaleTier(fieldKey, val);
@@ -3694,6 +3697,7 @@ function refreshAllBadges(){
     { section:'financier', key:'tresorerieDette', val: computeTresorerieDette(c) },
     { section:'financier', key:'scoreSolvabilite', val: num(c.fields.financier.scoreSolvabilite) },
     { section:'financier', key:'probaFaillite', val: num(c.fields.financier.probaFaillite) },
+    { section:'valorisation', key:'croissanceEstimeeEps', val: num(c.fields.valorisation.croissanceEstimeeEps && c.fields.valorisation.croissanceEstimeeEps.cagr) },
     { section:'financier', key:'conversionFcf', val: computeConversionFcf(c) },
     { section:'financier', key:'capexRatio', val: computeCapexRatio(c) },
     { section:'valorisation', key:'positionShort', val: num(c.fields.valorisation.positionShort) },
@@ -4531,28 +4535,31 @@ function continuousScore(val, thresholds, inverse){
 // ---------- Note du profil global (refondue le 2026-09-26, demande de Nolan) ----------
 // 5 axes ; chaque axe est la MOYENNE des notes (0 à 100, calculées en continu avec les barèmes de l'app) de ses indicateurs disponibles :
 //   Qualité (25 %)      MOAT + marge nette
-//   Rentabilité (25 %)  ROIC (à défaut ROE) + CAGR du bénéfice net
-//   Croissance (15 %)   CAGR du CA + croissance attendue du CA sur 3 ans
+//   Rentabilité (25 %)  ROIC + ROE + CAGR du bénéfice net
+//   Croissance (15 %)   CAGR du CA + croissance attendue du CA sur 3 ans + croissance estimée du BPA (EPS) sur 3 ans
+// (Depuis le 2026-09-26, chaque axe compte au moins 3 indicateurs, demande de Nolan.)
 //   Solidité (20 %)     dette nette / FCF + conversion du FCF + dette totale / total actif + trésorerie / dette totale + score de solvabilité + probabilité de faillite
 //   Valorisation (15 %) PEG + marge de sécurité (écart avec la valeur intrinsèque) + PE relatif au secteur
 // La note globale est la moyenne pondérée des axes renseignés (poids réajustés). Elle est "provisoire" tant que moins de 3 axes sur 5 sont renseignés.
 const SCORE_AXES = [
-  { id:'qualite', label:'Qualité', weight:0.25, parts:['moatNote', 'margeNette'] },
-  { id:'rentabilite', label:'Rentabilité', weight:0.25, parts:['rendement', 'croissanceBenef'] },
-  { id:'croissance', label:'Croissance', weight:0.15, parts:['croissanceCA', 'croissanceAttendueCA'] },
+  { id:'qualite', label:'Qualité', weight:0.25, parts:['moatNote', 'margeBrute', 'margeNette'] },
+  { id:'rentabilite', label:'Rentabilité', weight:0.25, parts:['roic', 'roe', 'croissanceBenef'] },
+  { id:'croissance', label:'Croissance', weight:0.15, parts:['croissanceCA', 'croissanceAttendueCA', 'croissanceEstimeeEps'] },
   { id:'solidite', label:'Solidité', weight:0.20, parts:['detteActif', 'conversionFcf', 'detteTotalActif', 'tresorerieDette', 'scoreSolvabilite', 'probaFaillite'] },
   { id:'valorisation', label:'Valorisation', weight:0.15, parts:['peg', 'margeSecurite', 'peRelatifSecteur'] },
 ];
 const SCORE_MIN_AXES = 3;
 // Marge de sécurité = remise du cours sur la valeur intrinsèque, en % (30 % et plus très bon, 15 à 30 bon, 0 à 15 moyen, cours au-dessus de la valeur mauvais)
 const MARGE_SECURITE_SCALE = { thresholds:[30, 15, 0], inverse:false };
-const SCORE_PART_LABELS = { moatNote:'MOAT', margeNette:'Marge nette', roic:'ROIC', roe:'ROE', croissanceBenef:'CAGR du bénéfice net', croissanceCA:'CAGR du CA', croissanceAttendueCA:'Croissance attendue du CA (3 ans)', detteActif:'Dette nette / FCF', detteTotalActif:'Dette totale / Total actif', tresorerieDette:'Trésorerie / Dette totale', scoreSolvabilite:'Score de solvabilité', probaFaillite:'Probabilité de faillite', conversionFcf:'Conversion du FCF', peg:'PEG', margeSecurite:'Marge de sécurité', peRelatifSecteur:'PE / Secteur' };
-const SCORE_PART_UNITS = { moatNote:'/10', margeNette:' %', roic:' %', roe:' %', croissanceBenef:' %', croissanceCA:' %', croissanceAttendueCA:' %', detteActif:'', detteTotalActif:' %', tresorerieDette:' %', scoreSolvabilite:'/100', probaFaillite:' %', conversionFcf:' %', peg:'', margeSecurite:' %', peRelatifSecteur:'' };
+const SCORE_PART_LABELS = { moatNote:'MOAT', margeBrute:'Marge brute', croissanceEstimeeEps:'Croissance estimée du BPA (3 ans)', margeNette:'Marge nette', roic:'ROIC', roe:'ROE', croissanceBenef:'CAGR du bénéfice net', croissanceCA:'CAGR du CA', croissanceAttendueCA:'Croissance attendue du CA (3 ans)', detteActif:'Dette nette / FCF', detteTotalActif:'Dette totale / Total actif', tresorerieDette:'Trésorerie / Dette totale', scoreSolvabilite:'Score de solvabilité', probaFaillite:'Probabilité de faillite', conversionFcf:'Conversion du FCF', peg:'PEG', margeSecurite:'Marge de sécurité', peRelatifSecteur:'PE / Secteur' };
+const SCORE_PART_UNITS = { moatNote:'/10', margeBrute:' %', croissanceEstimeeEps:' %', margeNette:' %', roic:' %', roe:' %', croissanceBenef:' %', croissanceCA:' %', croissanceAttendueCA:' %', detteActif:'', detteTotalActif:' %', tresorerieDette:' %', scoreSolvabilite:'/100', probaFaillite:' %', conversionFcf:' %', peg:'', margeSecurite:' %', peRelatifSecteur:'' };
 function tierFromScore(s){ return s === null ? null : (s >= 75 ? 'tresbon' : (s >= 50 ? 'bon' : (s >= 25 ? 'moyen' : 'mauvais'))); }
 function scorePartValue(c, key){
   const fin = c.fields.financier || {};
   if(key === 'moatNote') return num((c.fields.identite || {}).moatNote);
   if(key === 'margeNette') return num(fin.margeNette);
+  if(key === 'margeBrute') return num(fin.margeBrute);
+  if(key === 'croissanceEstimeeEps'){ const g = (c.fields.valorisation || {}).croissanceEstimeeEps; return num(g && g.cagr); }
   if(key === 'croissanceBenef') return num(fin.croissanceBenef && fin.croissanceBenef.cagr);
   if(key === 'croissanceCA') return num(fin.croissanceCA && fin.croissanceCA.cagr);
   if(key === 'croissanceAttendueCA') return num(c.fields.croissance && c.fields.croissance.croissanceAttendueCA && c.fields.croissance.croissanceAttendueCA.cagr);
@@ -4576,9 +4583,7 @@ function scorePartScore(key, val){
 }
 function computeRadarAxes(c){
   return SCORE_AXES.map(ax => {
-    const parts = ax.parts.map(k => {
-      let key = k;
-      if(k === 'rendement') key = scorePartValue(c, 'roic') !== null ? 'roic' : 'roe';   // ROIC en priorité, ROE à défaut
+    const parts = ax.parts.map(key => {
       const val = scorePartValue(c, key);
       const score = scorePartScore(key, val);
       return { key, label:SCORE_PART_LABELS[key], val, score, tier:tierFromScore(score) };
@@ -4604,7 +4609,8 @@ function axisTooltip(a){
     return `<div class='tt-row'><span class='tt-dot' style='background:${col}'></span><span>${escapeHtml(p.label)} : ${escapeHtml(v)}${p.score === null ? '' : ' (' + Math.round(p.score) + '/100)'}</span></div>`;
   }).join('');
   return `<div class='tt-header'>${escapeHtml(a.label)}${a.score === null ? '' : ' : ' + Math.round(a.score) + '/100'}</div><div class='tt-tiers'>${rows}</div><div class='tt-desc'>Moyenne des indicateurs renseignés.</div>`;
-}function buildRadarSvg(axes){
+}
+function buildRadarSvg(axes){
   const cx = 110, cy = 105, maxR = 62;
   const n = axes.length;
   const angleFor = i => (Math.PI*2*i/n) - Math.PI/2;
@@ -6599,7 +6605,7 @@ const LEARN_CHAPTERS = [
       { t:'buffett' },
       LP(`Les critères marqués « auto » se cochent tout seuls quand les chiffres saisis le justifient ; vous pouvez toujours cliquer pour corriger. Un score de 8/10 ou plus est un très bon signe, mais la checklist ne remplace jamais votre jugement.`),
       LH(`Le score composite sur 100`),
-      LP(`La synthèse combine cinq axes en une note moyenne pondérée : <strong>Qualité 25 %</strong>, <strong>Rentabilité 25 %</strong>, <strong>Solidité 20 %</strong>, <strong>Croissance 15 %</strong> et <strong>Valorisation 15 %</strong>. Chaque axe est lui-même la moyenne de ses indicateurs : <strong>Qualité</strong> (MOAT et marge nette), <strong>Rentabilité</strong> (ROIC, ou ROE à défaut, et CAGR du bénéfice net), <strong>Solidité</strong> (dette nette sur FCF, conversion du FCF, dette totale sur total actif, trésorerie sur dette totale, score de solvabilité et probabilité de faillite), <strong>Croissance</strong> (CAGR du chiffre d'affaires et croissance attendue du CA sur 3 ans) et <strong>Valorisation</strong> (PEG, marge de sécurité par rapport à votre valeur intrinsèque et PE relatif au secteur). Les indicateurs non renseignés sont simplement ignorés. La note est marquée <strong>provisoire</strong> tant que moins de 3 axes sur 5 sont renseignés : une note fondée sur un seul chiffre ne dit presque rien. Le radar montre en un coup d'œil où l'entreprise est forte ou faible, et au survol d'un axe vous voyez le détail de ses indicateurs. Le score est un repère pour comparer vos analyses entre elles, pas une recommandation.`),
+      LP(`La synthèse combine cinq axes en une note moyenne pondérée : <strong>Qualité 25 %</strong>, <strong>Rentabilité 25 %</strong>, <strong>Solidité 20 %</strong>, <strong>Croissance 15 %</strong> et <strong>Valorisation 15 %</strong>. Chaque axe est lui-même la moyenne de ses indicateurs : <strong>Qualité</strong> (MOAT, marge brute et marge nette), <strong>Rentabilité</strong> (ROIC, ROE et CAGR du bénéfice net), <strong>Solidité</strong> (dette nette sur FCF, conversion du FCF, dette totale sur total actif, trésorerie sur dette totale, score de solvabilité et probabilité de faillite), <strong>Croissance</strong> (CAGR du chiffre d'affaires, croissance attendue du CA sur 3 ans et croissance estimée du bénéfice par action sur 3 ans) et <strong>Valorisation</strong> (PEG, marge de sécurité par rapport à votre valeur intrinsèque et PE relatif au secteur). Les indicateurs non renseignés sont simplement ignorés. La note est marquée <strong>provisoire</strong> tant que moins de 3 axes sur 5 sont renseignés : une note fondée sur un seul chiffre ne dit presque rien. Le radar montre en un coup d'œil où l'entreprise est forte ou faible, et au survol d'un axe vous voyez le détail de ses indicateurs. Le score est un repère pour comparer vos analyses entre elles, pas une recommandation.`),
       LTIP('attention', `Un score élevé avec peu de données saisies n'est pas fiable. Regardez la progression de chaque section : plus la fiche est complète, plus le score a de sens.`),
     ],
   },
