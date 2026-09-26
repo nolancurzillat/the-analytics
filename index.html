@@ -4553,6 +4553,22 @@ const SCORE_MIN_AXES = 3;
 const MARGE_SECURITE_SCALE = { thresholds:[30, 15, 0], inverse:false };
 const SCORE_PART_LABELS = { moatNote:'MOAT', margeBrute:'Marge brute', croissanceEstimeeEps:'Croissance estimée du BPA (3 ans)', margeNette:'Marge nette', roic:'ROIC', roe:'ROE', croissanceBenef:'CAGR du bénéfice net', croissanceCA:'CAGR du CA', croissanceAttendueCA:'Croissance attendue du CA (3 ans)', detteActif:'Dette nette / FCF', detteTotalActif:'Dette totale / Total actif', tresorerieDette:'Trésorerie / Dette totale', scoreSolvabilite:'Score de solvabilité', probaFaillite:'Probabilité de faillite', conversionFcf:'Conversion du FCF', peg:'PEG', margeSecurite:'Marge de sécurité', peRelatifSecteur:'PE / Secteur' };
 const SCORE_PART_UNITS = { moatNote:'/10', margeBrute:' %', croissanceEstimeeEps:' %', margeNette:' %', roic:' %', roe:' %', croissanceBenef:' %', croissanceCA:' %', croissanceAttendueCA:' %', detteActif:'', detteTotalActif:' %', tresorerieDette:' %', scoreSolvabilite:'/100', probaFaillite:' %', conversionFcf:' %', peg:'', margeSecurite:' %', peRelatifSecteur:'' };
+// Barème de couleurs de la NOTE GLOBALE (demande de Nolan le 2026-09-26) : 5 paliers de 20 points, rouge (0 à 20), orange (20 à 40), jaune (40 à 60),
+// vert clair (60 à 80), vert foncé (80 à 100). Distinct du barème à 4 paliers des indicateurs (TIER_COLORS), qui reste inchangé.
+// scoreColor5(note, true) donne les teintes vives pour les cartes à fond marine.
+const SCORE5_LABELS = ['Moins de 20', '20 à 40', '40 à 60', '60 à 80', '80 et plus'];
+function scoreTier5(s){ return s === null || s === undefined ? null : (s >= 80 ? 4 : (s >= 60 ? 3 : (s >= 40 ? 2 : (s >= 20 ? 1 : 0)))); }
+function scoreColor5(s, onDark){
+  const i = scoreTier5(s);
+  if(i === null) return '';
+  const light = [TIER_COLORS.mauvais, '#f2994a', TIER_COLORS.moyen, TIER_COLORS.bon, TIER_COLORS.tresbon];
+  const dark = [TOOLTIP_TIER_COLORS.mauvais, '#fb923c', TOOLTIP_TIER_COLORS.moyen, TOOLTIP_TIER_COLORS.bon, TOOLTIP_TIER_COLORS.tresbon];
+  return (onDark ? dark : light)[i];
+}
+function scoreScaleTooltip(){
+  const dark = [TOOLTIP_TIER_COLORS.mauvais, '#fb923c', TOOLTIP_TIER_COLORS.moyen, TOOLTIP_TIER_COLORS.bon, TOOLTIP_TIER_COLORS.tresbon];
+  return `<div class='tt-tiers'>` + [4, 3, 2, 1, 0].map(i => `<div class='tt-row'><span class='tt-dot' style='background:${dark[i]}'></span><span style='color:${dark[i]}'>${SCORE5_LABELS[i]}</span></div>`).join('') + `</div>`;
+}
 function tierFromScore(s){ return s === null ? null : (s >= 75 ? 'tresbon' : (s >= 50 ? 'bon' : (s >= 25 ? 'moyen' : 'mauvais'))); }
 function scorePartValue(c, key){
   const fin = c.fields.financier || {};
@@ -4633,8 +4649,7 @@ function buildRadarSvg(axes){
     return pointAt(i, frac).join(',');
   }).join(' ');
   const avgScore = computeGlobalScoreFromAxesLocal(axes);
-  const tier = avgScore === null ? null : scaleTier(avgScore, [80,60,40]);
-  const color = tier ? TIER_COLORS[tier] : '#9c998f';
+  const color = avgScore === null ? '#9c998f' : scoreColor5(avgScore);
   let labels = '';
   axes.forEach((a,i) => {
     const angle = angleFor(i);
@@ -5655,8 +5670,7 @@ function buildCompanyMeta(c){
 function buildCompanyKpis(c){
   const sinfo = computeScoreInfo(c);
   const gs = sinfo.score;
-  const gsTier = gs === null ? null : scaleTier(gs, [80, 60, 40]);
-  const gsColor = gsTier ? TIER_COLORS[gsTier] : 'var(--ink-soft)';
+  const gsColor = gs === null ? 'var(--ink-soft)' : scoreColor5(gs);
   const circ = 2 * Math.PI * 23;
   const dash = gs === null ? 0 : (gs / 100) * circ;
   const peg = computePeg(c);
@@ -5670,7 +5684,7 @@ function buildCompanyKpis(c){
   const ecart = ecartCompact(computeEcart(c, 'valeurIntrinseque'));
   const kpi = (label, inner, sub) => `<div class="kpi"><div class="kpi-l">${label}</div>${inner}${sub !== undefined ? `<div class="kpi-s">${sub}</div>` : ''}</div>`;
   return [
-    `<div class="kpi kpi-score"><div class="kpi-ring"><svg viewBox="0 0 54 54" width="54" height="54"><circle cx="27" cy="27" r="23" fill="none" stroke="var(--border)" stroke-width="6"/><circle cx="27" cy="27" r="23" fill="none" stroke="${gs === null ? 'transparent' : gsColor}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 27 27)"/></svg><span style="color:${gsColor}">${gs === null ? '—' : Math.round(gs)}</span></div><div><div class="kpi-l">Score composite</div><div class="kpi-s">${gs === null ? 'sur 100' : (sinfo.provisional ? 'provisoire · ' : 'sur 100 · ') + sinfo.filled + '/' + sinfo.total + ' axes'}</div></div></div>`,
+    `<div class="kpi kpi-score"><div class="kpi-ring" data-tooltip="<div class='tt-desc'>Score composite sur 100 : moyenne pondérée des 5 axes du profil global.</div>${scoreScaleTooltip()}"><svg viewBox="0 0 54 54" width="54" height="54"><circle cx="27" cy="27" r="23" fill="none" stroke="var(--border)" stroke-width="6"/><circle cx="27" cy="27" r="23" fill="none" stroke="${gs === null ? 'transparent' : gsColor}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 27 27)"/></svg><span style="color:${gsColor}">${gs === null ? '—' : Math.round(gs)}</span></div><div><div class="kpi-l">Score composite</div><div class="kpi-s">${gs === null ? 'sur 100' : (sinfo.provisional ? 'provisoire · ' : 'sur 100 · ') + sinfo.filled + '/' + sinfo.total + ' axes'}</div></div></div>`,
     kpi('Décision', `<div style="margin-top:9px">${decisionPill(pers.decision || '')}</div>`, pers.prixAchatCible ? 'Cible d\'achat : ' + escapeHtml(String(pers.prixAchatCible)) : 'Aucun prix cible'),
     kpi('Conviction', `<div class="kpi-v" style="color:var(--star)">${conviction ? '★ ' + String(conviction).replace('.', ',') : '—'}<small> / 5</small></div>`, conviction ? 'Votre niveau de conviction' : 'À renseigner'),
     kpi('PEG', `<div class="kpi-v" style="color:${pegColor}">${peg === null ? '—' : peg.toFixed(2)}</div>`, pegTier ? TIER_LABELS[pegTier] : 'Pas assez de données'),
@@ -5846,7 +5860,6 @@ function buildGlobalRecap(c){
   const idn = c.fields.identite || {}, fin = c.fields.financier || {}, pers = c.fields.personnelle || {};
   const sinfo = computeScoreInfo(c);
   const gs = sinfo.score;
-  const gsTier = gs === null ? null : scaleTier(gs, [80, 60, 40]);
   const axes = sinfo.axes.map(a => ({ label: a.label, v: a.score === null ? null : Math.round(a.score), color: a.tier ? pal[a.tier] : none }));
   const roic = num(fin.roic), margeNette = num(fin.margeNette);
   const croiss = num(fin.croissanceBenef && fin.croissanceBenef.cagr);
@@ -5866,9 +5879,9 @@ function buildGlobalRecap(c){
     title: escapeHtml(c.name || 'Sans nom'),
     sub: escapeHtml((idn.ticker || '—') + ' · ' + (sect || 'Secteur non renseigné')),
     tagHtml: st ? `<span class="preview-tag" style="color:${st.color};border-color:${st.color}">${escapeHtml(decision)}</span>` : `<span class="preview-tag" style="color:#8fa1c2;border-color:rgba(143,161,194,.4)">Décision à définir</span>`,
-    score: gs, ringColor: gsTier ? pal[gsTier] : none,
+    score: gs, ringColor: gs === null ? none : scoreColor5(gs, true),
     scoreNote: sinfo.provisional ? 'provisoire' : '',
-    ringTooltip: `<div class='tt-desc'>Score composite : moyenne pondérée des 5 axes (Qualité 25%, Rentabilité 25%, Solidité 20%, Croissance 15%, Valorisation 15%), chacun étant la moyenne de ses indicateurs renseignés. Les axes sans donnée sont ignorés et les poids réajustés.${gs === null ? '' : ` Note basée sur ${sinfo.filled} axe${sinfo.filled > 1 ? 's' : ''} sur ${sinfo.total}${sinfo.provisional ? ' : provisoire tant que moins de ' + SCORE_MIN_AXES + ' axes sont renseignés.' : '.'}`}</div>`,
+    ringTooltip: `<div class='tt-desc'>Score composite : moyenne pondérée des 5 axes (Qualité 25%, Rentabilité 25%, Solidité 20%, Croissance 15%, Valorisation 15%), chacun étant la moyenne de ses indicateurs renseignés. Les axes sans donnée sont ignorés et les poids réajustés.</div>${scoreScaleTooltip()}<div class='tt-desc'>${gs === null ? '' : ` Note basée sur ${sinfo.filled} axe${sinfo.filled > 1 ? 's' : ''} sur ${sinfo.total}${sinfo.provisional ? ' : provisoire tant que moins de ' + SCORE_MIN_AXES + ' axes sont renseignés.' : '.'}`}</div>`,
     axes,
     chips: [
       ['ROIC', pct(roic), dot('roic', roic)],
@@ -6062,7 +6075,6 @@ function buildSpaceKpis(){
   const cs = state.companies;
   const scores = cs.map(c => computeGlobalScore(c)).filter(s => s !== null);
   const avgScore = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
-  const scTier = avgScore === null ? null : scaleTier(avgScore, [80, 60, 40]);
   const convs = cs.map(c => parseFloat(c.fields.personnelle && c.fields.personnelle.conviction) || 0).filter(v => v > 0);
   const avgConv = convs.length ? convs.reduce((a, b) => a + b, 0) / convs.length : null;
   const avgComp = Math.round(cs.reduce((s, c) => s + companyCompletion(c).pct, 0) / cs.length);
@@ -6074,7 +6086,7 @@ function buildSpaceKpis(){
   const tile = (l, v, s) => `<div class="dkpi"><div class="dkpi-l">${l}</div><div class="dkpi-v">${v}</div><div class="dkpi-s">${s}</div></div>`;
   return `<div class="space-kpis">
     ${tile('Analyses', String(cs.length), `${decided} avec une décision`)}
-    ${tile('Score moyen', avgScore === null ? '—' : `<span style="color:${TIER_COLORS[scTier]}">${avgScore}</span><span class="dkpi-unit"> / 100</span>`, scores.length ? `sur ${scores.length} fiche${scores.length > 1 ? 's' : ''} scorée${scores.length > 1 ? 's' : ''}` : 'pas encore de score')}
+    ${tile('Score moyen', avgScore === null ? '—' : `<span style="color:${scoreColor5(avgScore)}">${avgScore}</span><span class="dkpi-unit"> / 100</span>`, scores.length ? `sur ${scores.length} fiche${scores.length > 1 ? 's' : ''} scorée${scores.length > 1 ? 's' : ''}` : 'pas encore de score')}
     ${tile('Conviction moyenne', avgConv === null ? '—' : `<span style="color:var(--star)">&#9733;</span> ${fmtNum(avgConv, 1)}<span class="dkpi-unit"> / 5</span>`, convs.length ? `sur ${convs.length} analyse${convs.length > 1 ? 's' : ''}` : 'à renseigner')}
     ${tile('Fiches complétées', `${avgComp}<span class="dkpi-unit">&nbsp;%</span>`, 'en moyenne')}
     ${tile('Capital investi', `<span class="dkpi-sm">${investedTxt || '—'}</span>`, pf.rows.length ? `${pf.rows.length} position${pf.rows.length > 1 ? 's' : ''} suivie${pf.rows.length > 1 ? 's' : ''}` : 'aucune position')}
@@ -6140,8 +6152,7 @@ function buildPipeline(){
 function buildScoreBars(){
   const rows = state.companies.map(c => { const si = computeScoreInfo(c); return { c, gs: si.score, prov: si.provisional }; }).filter(r => r.gs !== null).sort((a, b) => b.gs - a.gs);
   const body = rows.length ? `<div class="hbar-list">` + rows.map(r => {
-    const tier = scaleTier(r.gs, [80, 60, 40]);
-    return `<button class="hbar" data-open-company="${r.c.id}">${miniAv(r.c)}<span class="hbar-name">${escapeHtml(r.c.name || 'Sans nom')}${r.prov ? ' <span class="hbar-prov">provisoire</span>' : ''}</span><span class="hbar-track"><i style="width:${Math.max(2, r.gs)}%;background:${TIER_COLORS[tier]}"></i></span><span class="hbar-val">${Math.round(r.gs)}</span></button>`;
+    return `<button class="hbar" data-open-company="${r.c.id}">${miniAv(r.c)}<span class="hbar-name">${escapeHtml(r.c.name || 'Sans nom')}${r.prov ? ' <span class="hbar-prov">provisoire</span>' : ''}</span><span class="hbar-track"><i style="width:${Math.max(2, r.gs)}%;background:${scoreColor5(r.gs)}"></i></span><span class="hbar-val">${Math.round(r.gs)}</span></button>`;
   }).join('') + `</div>` : `<div class="s-empty">Le score apparaît dès qu'un indicateur de qualité, de rentabilité, de croissance, de solidité ou de valorisation est renseigné (ROIC ou ROE, MOAT, marge nette, dette, PEG...).</div>`;
   return spaceCard('s5', 'Classement par score', 'Score composite sur 100', body);
 }
@@ -6193,8 +6204,7 @@ function buildCompaniesTable(){
     const ticker = idn.ticker || '';
     const sect = (idn.secteur && idn.secteur.secteur) || '';
     const gs = computeGlobalScore(c);
-    const gsTier = gs === null ? null : scaleTier(gs, [80, 60, 40]);
-    const gsColor = gsTier ? TIER_COLORS[gsTier] : 'var(--border-strong)';
+    const gsColor = gs === null ? 'var(--border-strong)' : scoreColor5(gs);
     const peg = computePeg(c);
     const pegTier = getScaleTier('peg', peg);
     const moat = num(idn.moatNote);
@@ -6605,7 +6615,7 @@ const LEARN_CHAPTERS = [
       { t:'buffett' },
       LP(`Les critères marqués « auto » se cochent tout seuls quand les chiffres saisis le justifient ; vous pouvez toujours cliquer pour corriger. Un score de 8/10 ou plus est un très bon signe, mais la checklist ne remplace jamais votre jugement.`),
       LH(`Le score composite sur 100`),
-      LP(`La synthèse combine cinq axes en une note moyenne pondérée : <strong>Qualité 25 %</strong>, <strong>Rentabilité 25 %</strong>, <strong>Solidité 20 %</strong>, <strong>Croissance 15 %</strong> et <strong>Valorisation 15 %</strong>. Chaque axe est lui-même la moyenne de ses indicateurs : <strong>Qualité</strong> (MOAT, marge brute et marge nette), <strong>Rentabilité</strong> (ROIC, ROE et CAGR du bénéfice net), <strong>Solidité</strong> (dette nette sur FCF, conversion du FCF, dette totale sur total actif, trésorerie sur dette totale, score de solvabilité et probabilité de faillite), <strong>Croissance</strong> (CAGR du chiffre d'affaires, croissance attendue du CA sur 3 ans et croissance estimée du bénéfice par action sur 3 ans) et <strong>Valorisation</strong> (PEG, marge de sécurité par rapport à votre valeur intrinsèque et PE relatif au secteur). Les indicateurs non renseignés sont simplement ignorés. La note est marquée <strong>provisoire</strong> tant que moins de 3 axes sur 5 sont renseignés : une note fondée sur un seul chiffre ne dit presque rien. Le radar montre en un coup d'œil où l'entreprise est forte ou faible, et au survol d'un axe vous voyez le détail de ses indicateurs. Le score est un repère pour comparer vos analyses entre elles, pas une recommandation.`),
+      LP(`La synthèse combine cinq axes en une note moyenne pondérée : <strong>Qualité 25 %</strong>, <strong>Rentabilité 25 %</strong>, <strong>Solidité 20 %</strong>, <strong>Croissance 15 %</strong> et <strong>Valorisation 15 %</strong>. Chaque axe est lui-même la moyenne de ses indicateurs : <strong>Qualité</strong> (MOAT, marge brute et marge nette), <strong>Rentabilité</strong> (ROIC, ROE et CAGR du bénéfice net), <strong>Solidité</strong> (dette nette sur FCF, conversion du FCF, dette totale sur total actif, trésorerie sur dette totale, score de solvabilité et probabilité de faillite), <strong>Croissance</strong> (CAGR du chiffre d'affaires, croissance attendue du CA sur 3 ans et croissance estimée du bénéfice par action sur 3 ans) et <strong>Valorisation</strong> (PEG, marge de sécurité par rapport à votre valeur intrinsèque et PE relatif au secteur). Les indicateurs non renseignés sont simplement ignorés. La note est marquée <strong>provisoire</strong> tant que moins de 3 axes sur 5 sont renseignés : une note fondée sur un seul chiffre ne dit presque rien. Sa couleur suit cinq paliers de 20 points : rouge (moins de 20), orange (20 à 40), jaune (40 à 60), vert clair (60 à 80) et vert foncé (80 et plus). Le radar montre en un coup d'œil où l'entreprise est forte ou faible, et au survol d'un axe vous voyez le détail de ses indicateurs. Le score est un repère pour comparer vos analyses entre elles, pas une recommandation.`),
       LTIP('attention', `Un score élevé avec peu de données saisies n'est pas fiable. Regardez la progression de chaque section : plus la fiche est complète, plus le score a de sens.`),
     ],
   },
