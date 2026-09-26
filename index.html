@@ -926,6 +926,9 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; font-family:
 @media (max-width:1180px){ .ws-top{ grid-template-columns:1fr; } }
 /* Carte "Prévision long terme" : deux cases de saisie puis les indicateurs calculés (même police Inter que le reste) */
 .ws-lt{ display:flex; flex-direction:column; gap:8px; border:1px solid var(--border); border-radius:14px; background:var(--card); padding:12px 16px; min-width:0; }
+.radar-reliab{ margin-top:10px; font-size:12.5px; line-height:1.45; color:var(--ink-soft); }
+.radar-reliab.is-prov{ color:var(--ink); }
+.hbar-prov{ margin-left:6px; padding:1px 7px; border-radius:999px; font-size:11px; font-weight:600; color:var(--ink-soft); border:1px solid var(--border-strong); white-space:nowrap; }
 .ws-lt-title{ font-size:12px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-soft); }
 .ws-lt-inputs{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px; }
 .ws-lt-in{ display:flex; flex-direction:column; gap:5px; min-width:0; font-size:12.5px; font-weight:600; color:var(--ink-soft); line-height:1.3; }
@@ -4496,35 +4499,79 @@ function continuousScore(val, thresholds, inverse){
   else score = 25 + ((v-c)/gapMid)*25;
   return Math.max(0, Math.min(100, score));
 }
+// ---------- Note du profil global (refondue le 2026-09-26, demande de Nolan) ----------
+// 5 axes ; chaque axe est la MOYENNE des notes (0 à 100, calculées en continu avec les barèmes de l'app) de ses indicateurs disponibles :
+//   Qualité (25 %)      MOAT + marge nette
+//   Rentabilité (25 %)  ROIC (à défaut ROE) + CAGR du bénéfice net
+//   Croissance (15 %)   CAGR du CA + croissance attendue du CA sur 3 ans
+//   Solidité (20 %)     dette nette / FCF + conversion du FCF
+//   Valorisation (15 %) PEG + marge de sécurité (écart avec la valeur intrinsèque) + PE relatif au secteur
+// La note globale est la moyenne pondérée des axes renseignés (poids réajustés). Elle est "provisoire" tant que moins de 3 axes sur 5 sont renseignés.
+const SCORE_AXES = [
+  { id:'qualite', label:'Qualité', weight:0.25, parts:['moatNote', 'margeNette'] },
+  { id:'rentabilite', label:'Rentabilité', weight:0.25, parts:['rendement', 'croissanceBenef'] },
+  { id:'croissance', label:'Croissance', weight:0.15, parts:['croissanceCA', 'croissanceAttendueCA'] },
+  { id:'solidite', label:'Solidité', weight:0.20, parts:['detteActif', 'conversionFcf'] },
+  { id:'valorisation', label:'Valorisation', weight:0.15, parts:['peg', 'margeSecurite', 'peRelatifSecteur'] },
+];
+const SCORE_MIN_AXES = 3;
+// Marge de sécurité = remise du cours sur la valeur intrinsèque, en % (30 % et plus très bon, 15 à 30 bon, 0 à 15 moyen, cours au-dessus de la valeur mauvais)
+const MARGE_SECURITE_SCALE = { thresholds:[30, 15, 0], inverse:false };
+const SCORE_PART_LABELS = { moatNote:'MOAT', margeNette:'Marge nette', roic:'ROIC', roe:'ROE', croissanceBenef:'CAGR du bénéfice net', croissanceCA:'CAGR du CA', croissanceAttendueCA:'Croissance attendue du CA (3 ans)', detteActif:'Dette nette / FCF', conversionFcf:'Conversion du FCF', peg:'PEG', margeSecurite:'Marge de sécurité', peRelatifSecteur:'PE / Secteur' };
+const SCORE_PART_UNITS = { moatNote:'/10', margeNette:' %', roic:' %', roe:' %', croissanceBenef:' %', croissanceCA:' %', croissanceAttendueCA:' %', detteActif:'', conversionFcf:' %', peg:'', margeSecurite:' %', peRelatifSecteur:'' };
+function tierFromScore(s){ return s === null ? null : (s >= 75 ? 'tresbon' : (s >= 50 ? 'bon' : (s >= 25 ? 'moyen' : 'mauvais'))); }
+function scorePartValue(c, key){
+  const fin = c.fields.financier || {};
+  if(key === 'moatNote') return num((c.fields.identite || {}).moatNote);
+  if(key === 'margeNette') return num(fin.margeNette);
+  if(key === 'croissanceBenef') return num(fin.croissanceBenef && fin.croissanceBenef.cagr);
+  if(key === 'croissanceCA') return num(fin.croissanceCA && fin.croissanceCA.cagr);
+  if(key === 'croissanceAttendueCA') return num(c.fields.croissance && c.fields.croissance.croissanceAttendueCA && c.fields.croissance.croissanceAttendueCA.cagr);
+  if(key === 'detteActif') return computeDetteActif(c);
+  if(key === 'conversionFcf') return computeConversionFcf(c);
+  if(key === 'peg') return computePeg(c);
+  if(key === 'peRelatifSecteur') return computePeRelatif(c);
+  if(key === 'margeSecurite'){ const e = computeEcart(c, 'valeurIntrinseque'); return e === null ? null : -e; }
+  if(key === 'roic') return num(fin.roic);
+  if(key === 'roe') return num(fin.roe);
+  return null;
+}
+function scorePartScore(key, val){
+  if(val === null) return null;
+  const cfg = key === 'margeSecurite' ? MARGE_SECURITE_SCALE : SCALE_CONFIG[key];
+  return cfg ? continuousScore(val, cfg.thresholds, cfg.inverse) : null;
+}
 function computeRadarAxes(c){
-  const order = { tresbon:4, bon:3, moyen:2, mauvais:1 };
-  const roeVal = num(c.fields.financier.roe);
-  const roicVal = num(c.fields.financier.roic);
-  const tRoe = getScaleTier('roe', roeVal);
-  const tRoic = getScaleTier('roic', roicVal);
-  let rentabiliteKey = 'roe', rentabiliteVal = roeVal, rentabiliteTier = tRoe;
-  if(tRoe && tRoic){
-    if(order[tRoic] > order[tRoe]){ rentabiliteKey = 'roic'; rentabiliteVal = roicVal; rentabiliteTier = tRoic; }
-  } else if(!tRoe && tRoic){
-    rentabiliteKey = 'roic'; rentabiliteVal = roicVal; rentabiliteTier = tRoic;
-  }
-  const moatVal = num(c.fields.identite.moatNote);
-  const croissanceVal = num(c.fields.financier.croissanceBenef && c.fields.financier.croissanceBenef.cagr);
-  const detteVal = computeDetteActif(c);
-  const pegVal = computePeg(c);
-  return [
-    { label:'Qualité', key:'moatNote', val:moatVal, tier: getScaleTier('moatNote', moatVal), weight:0.25 },
-    { label:'Rentabilité', key:rentabiliteKey, val:rentabiliteVal, tier: rentabiliteTier, weight:0.25 },
-    { label:'Croissance', key:'croissanceBenef', val:croissanceVal, tier: getScaleTier('croissanceBenef', croissanceVal), weight:0.15 },
-    { label:'Solidité', key:'detteActif', val:detteVal, tier: getScaleTier('detteActif', detteVal), weight:0.20 },
-    { label:'Valorisation', key:'peg', val:pegVal, tier: getScaleTier('peg', pegVal), weight:0.15 },
-  ];
+  return SCORE_AXES.map(ax => {
+    const parts = ax.parts.map(k => {
+      let key = k;
+      if(k === 'rendement') key = scorePartValue(c, 'roic') !== null ? 'roic' : 'roe';   // ROIC en priorité, ROE à défaut
+      const val = scorePartValue(c, key);
+      const score = scorePartScore(key, val);
+      return { key, label:SCORE_PART_LABELS[key], val, score, tier:tierFromScore(score) };
+    });
+    const got = parts.filter(p => p.score !== null);
+    const score = got.length ? got.reduce((s, p) => s + p.score, 0) / got.length : null;
+    return { id:ax.id, label:ax.label, weight:ax.weight, score, tier:tierFromScore(score), parts };
+  });
 }
 function computeGlobalScore(c){
-  const axes = computeRadarAxes(c);
-  return computeGlobalScoreFromAxesLocal(axes);
+  return computeGlobalScoreFromAxesLocal(computeRadarAxes(c));
 }
-function buildRadarSvg(axes){
+// Note + fiabilité : nombre d'axes renseignés sur 5, "provisoire" sous SCORE_MIN_AXES
+function computeScoreInfo(c){
+  const axes = computeRadarAxes(c);
+  const filled = axes.filter(a => a.score !== null).length;
+  return { score:computeGlobalScoreFromAxesLocal(axes), filled, total:axes.length, provisional:filled > 0 && filled < SCORE_MIN_AXES, axes };
+}
+function axisTooltip(a){
+  const rows = a.parts.map(p => {
+    const col = p.tier ? TOOLTIP_TIER_COLORS[p.tier] : 'rgba(255,255,255,.5)';
+    const v = p.val === null ? 'non renseigné' : fmtNum(p.val, 2) + SCORE_PART_UNITS[p.key];
+    return `<div class='tt-row'><span class='tt-dot' style='background:${col}'></span><span>${escapeHtml(p.label)} : ${escapeHtml(v)}${p.score === null ? '' : ' (' + Math.round(p.score) + '/100)'}</span></div>`;
+  }).join('');
+  return `<div class='tt-header'>${escapeHtml(a.label)}${a.score === null ? '' : ' : ' + Math.round(a.score) + '/100'}</div><div class='tt-tiers'>${rows}</div><div class='tt-desc'>Moyenne des indicateurs renseignés.</div>`;
+}function buildRadarSvg(axes){
   const cx = 110, cy = 105, maxR = 62;
   const n = axes.length;
   const angleFor = i => (Math.PI*2*i/n) - Math.PI/2;
@@ -4543,9 +4590,7 @@ function buildRadarSvg(axes){
     axisLines += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="var(--border)" stroke-width="1"/>`;
   });
   const dataPts = axes.map((a,i) => {
-    const cfg = SCALE_CONFIG[a.key];
-    const score = (cfg && a.val !== null) ? continuousScore(a.val, cfg.thresholds, cfg.inverse) : null;
-    const frac = score === null ? 0.03 : score/100;
+    const frac = a.score === null ? 0.03 : a.score/100;
     return pointAt(i, frac).join(',');
   }).join(' ');
   const avgScore = computeGlobalScoreFromAxesLocal(axes);
@@ -4571,11 +4616,8 @@ function buildRadarSvg(axes){
 function computeGlobalScoreFromAxesLocal(axes){
   let totalWeight = 0, weightedSum = 0;
   axes.forEach(a => {
-    const cfg = SCALE_CONFIG[a.key];
-    if(!cfg || a.val === null) return;
-    const score = continuousScore(a.val, cfg.thresholds, cfg.inverse);
-    if(score === null) return;
-    weightedSum += score * a.weight;
+    if(a.score === null) return;
+    weightedSum += a.score * a.weight;
     totalWeight += a.weight;
   });
   if(totalWeight === 0) return null;
@@ -4718,11 +4760,13 @@ function buildKeyHighlights(c){
 function buildInsightsSection(c){
   const axes = computeRadarAxes(c);
   const radarSvg = buildRadarSvg(axes);
+  const info = computeScoreInfo(c);
+  const reliab = info.filled === 0 ? '' : `<div class="radar-reliab${info.provisional ? ' is-prov' : ''}">${info.provisional ? '<strong>Note provisoire</strong> : ' : ''}basée sur ${info.filled} axe${info.filled > 1 ? 's' : ''} sur ${info.total}${info.provisional ? '. Renseignez d\'autres indicateurs pour la fiabiliser.' : ''}</div>`;
   const radarLegend = `<div class="radar-legend">` + axes.map(a => {
     const color = a.tier ? TIER_COLORS[a.tier] : 'var(--border)';
     const label = a.tier ? TIER_LABELS[a.tier] : 'Pas de donnée';
-    return `<div class="radar-legend-row"><span class="radar-legend-dot" style="background:${color}"></span><span class="radar-legend-name">${a.label}</span><span class="radar-legend-value" style="color:${color}">${label}</span></div>`;
-  }).join('') + `</div>`;
+    return `<div class="radar-legend-row" data-tooltip="${axisTooltip(a).replace(/"/g, '&quot;')}"><span class="radar-legend-dot" style="background:${color}"></span><span class="radar-legend-name">${a.label}</span><span class="radar-legend-value" style="color:${color}">${label}</span></div>`;
+  }).join('') + reliab + `</div>`;
   const targetCardHtml = buildTargetPriceCard(c);
   const synthesis = buildSynthesisText(c);
 
@@ -5550,7 +5594,8 @@ function buildCompanyMeta(c){
   return out;
 }
 function buildCompanyKpis(c){
-  const gs = computeGlobalScore(c);
+  const sinfo = computeScoreInfo(c);
+  const gs = sinfo.score;
   const gsTier = gs === null ? null : scaleTier(gs, [80, 60, 40]);
   const gsColor = gsTier ? TIER_COLORS[gsTier] : 'var(--ink-soft)';
   const circ = 2 * Math.PI * 23;
@@ -5566,7 +5611,7 @@ function buildCompanyKpis(c){
   const ecart = ecartCompact(computeEcart(c, 'valeurIntrinseque'));
   const kpi = (label, inner, sub) => `<div class="kpi"><div class="kpi-l">${label}</div>${inner}${sub !== undefined ? `<div class="kpi-s">${sub}</div>` : ''}</div>`;
   return [
-    `<div class="kpi kpi-score"><div class="kpi-ring"><svg viewBox="0 0 54 54" width="54" height="54"><circle cx="27" cy="27" r="23" fill="none" stroke="var(--border)" stroke-width="6"/><circle cx="27" cy="27" r="23" fill="none" stroke="${gs === null ? 'transparent' : gsColor}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 27 27)"/></svg><span style="color:${gsColor}">${gs === null ? '—' : Math.round(gs)}</span></div><div><div class="kpi-l">Score composite</div><div class="kpi-s">sur 100</div></div></div>`,
+    `<div class="kpi kpi-score"><div class="kpi-ring"><svg viewBox="0 0 54 54" width="54" height="54"><circle cx="27" cy="27" r="23" fill="none" stroke="var(--border)" stroke-width="6"/><circle cx="27" cy="27" r="23" fill="none" stroke="${gs === null ? 'transparent' : gsColor}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 27 27)"/></svg><span style="color:${gsColor}">${gs === null ? '—' : Math.round(gs)}</span></div><div><div class="kpi-l">Score composite</div><div class="kpi-s">${gs === null ? 'sur 100' : (sinfo.provisional ? 'provisoire · ' : 'sur 100 · ') + sinfo.filled + '/' + sinfo.total + ' axes'}</div></div></div>`,
     kpi('Décision', `<div style="margin-top:9px">${decisionPill(pers.decision || '')}</div>`, pers.prixAchatCible ? 'Cible d\'achat : ' + escapeHtml(String(pers.prixAchatCible)) : 'Aucun prix cible'),
     kpi('Conviction', `<div class="kpi-v" style="color:var(--star)">${conviction ? '★ ' + String(conviction).replace('.', ',') : '—'}<small> / 5</small></div>`, conviction ? 'Votre niveau de conviction' : 'À renseigner'),
     kpi('PEG', `<div class="kpi-v" style="color:${pegColor}">${peg === null ? '—' : peg.toFixed(2)}</div>`, pegTier ? TIER_LABELS[pegTier] : 'Pas assez de données'),
@@ -5706,7 +5751,7 @@ function buildRecapCard(d){
     <div class="preview-body">
       <div class="preview-ring"${d.ringTooltip ? ` data-tooltip="${d.ringTooltip}"` : ''}>
         <svg viewBox="0 0 112 112" width="112" height="112"><circle cx="56" cy="56" r="48" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="9"/><circle cx="56" cy="56" r="48" fill="none" stroke="${d.ringColor}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${hasScore ? (d.score / 100 * circ).toFixed(1) : 0} ${circ.toFixed(1)}" transform="rotate(-90 56 56)"/></svg>
-        <div class="preview-ring-val">${hasScore ? Math.round(d.score) : '—'}<small>sur 100</small></div>
+        <div class="preview-ring-val">${hasScore ? Math.round(d.score) : '—'}<small>${d.scoreNote || 'sur 100'}</small></div>
       </div>
       <div class="preview-bars">${bars}</div>
     </div>
@@ -5740,13 +5785,10 @@ function buildGlobalRecap(c){
   const pct = v => v === null ? '—' : fr(v, 1).replace(/,0$/, '') + '&nbsp;%';
   const dot = (key, v) => { const t = getScaleTier(key, v); return t ? pal[t] : none; };
   const idn = c.fields.identite || {}, fin = c.fields.financier || {}, pers = c.fields.personnelle || {};
-  const gs = computeGlobalScore(c);
+  const sinfo = computeScoreInfo(c);
+  const gs = sinfo.score;
   const gsTier = gs === null ? null : scaleTier(gs, [80, 60, 40]);
-  const axes = computeRadarAxes(c).map(a => {
-    const cfg = SCALE_CONFIG[a.key];
-    const s = (cfg && a.val !== null) ? Math.round(continuousScore(a.val, cfg.thresholds, cfg.inverse)) : null;
-    return { label: a.label, v: s, color: a.tier ? pal[a.tier] : none };
-  });
+  const axes = sinfo.axes.map(a => ({ label: a.label, v: a.score === null ? null : Math.round(a.score), color: a.tier ? pal[a.tier] : none }));
   const roic = num(fin.roic), margeNette = num(fin.margeNette);
   const croiss = num(fin.croissanceBenef && fin.croissanceBenef.cagr);
   const dette = computeDetteActif(c), peg = computePeg(c), moat = num(idn.moatNote);
@@ -5766,7 +5808,8 @@ function buildGlobalRecap(c){
     sub: escapeHtml((idn.ticker || '—') + ' · ' + (sect || 'Secteur non renseigné')),
     tagHtml: st ? `<span class="preview-tag" style="color:${st.color};border-color:${st.color}">${escapeHtml(decision)}</span>` : `<span class="preview-tag" style="color:#8fa1c2;border-color:rgba(143,161,194,.4)">Décision à définir</span>`,
     score: gs, ringColor: gsTier ? pal[gsTier] : none,
-    ringTooltip: `<div class='tt-desc'>Score composite : moyenne pondérée calculée en continu à partir des chiffres exacts (Qualité 25%, Rentabilité 25%, Solidité 20%, Croissance 15%, Valorisation 15%). Les axes sans donnée sont ignorés et les poids réajustés.</div>`,
+    scoreNote: sinfo.provisional ? 'provisoire' : '',
+    ringTooltip: `<div class='tt-desc'>Score composite : moyenne pondérée des 5 axes (Qualité 25%, Rentabilité 25%, Solidité 20%, Croissance 15%, Valorisation 15%), chacun étant la moyenne de ses indicateurs renseignés. Les axes sans donnée sont ignorés et les poids réajustés.${gs === null ? '' : ` Note basée sur ${sinfo.filled} axe${sinfo.filled > 1 ? 's' : ''} sur ${sinfo.total}${sinfo.provisional ? ' : provisoire tant que moins de ' + SCORE_MIN_AXES + ' axes sont renseignés.' : '.'}`}</div>`,
     axes,
     chips: [
       ['ROIC', pct(roic), dot('roic', roic)],
@@ -6036,11 +6079,11 @@ function buildPipeline(){
 }
 
 function buildScoreBars(){
-  const rows = state.companies.map(c => ({ c, gs: computeGlobalScore(c) })).filter(r => r.gs !== null).sort((a, b) => b.gs - a.gs);
+  const rows = state.companies.map(c => { const si = computeScoreInfo(c); return { c, gs: si.score, prov: si.provisional }; }).filter(r => r.gs !== null).sort((a, b) => b.gs - a.gs);
   const body = rows.length ? `<div class="hbar-list">` + rows.map(r => {
     const tier = scaleTier(r.gs, [80, 60, 40]);
-    return `<button class="hbar" data-open-company="${r.c.id}">${miniAv(r.c)}<span class="hbar-name">${escapeHtml(r.c.name || 'Sans nom')}</span><span class="hbar-track"><i style="width:${Math.max(2, r.gs)}%;background:${TIER_COLORS[tier]}"></i></span><span class="hbar-val">${Math.round(r.gs)}</span></button>`;
-  }).join('') + `</div>` : `<div class="s-empty">Le score apparaît dès que le ROE ou le ROIC, la croissance, la dette, le PEG ou la note MOAT sont renseignés.</div>`;
+    return `<button class="hbar" data-open-company="${r.c.id}">${miniAv(r.c)}<span class="hbar-name">${escapeHtml(r.c.name || 'Sans nom')}${r.prov ? ' <span class="hbar-prov">provisoire</span>' : ''}</span><span class="hbar-track"><i style="width:${Math.max(2, r.gs)}%;background:${TIER_COLORS[tier]}"></i></span><span class="hbar-val">${Math.round(r.gs)}</span></button>`;
+  }).join('') + `</div>` : `<div class="s-empty">Le score apparaît dès qu'un indicateur de qualité, de rentabilité, de croissance, de solidité ou de valorisation est renseigné (ROIC ou ROE, MOAT, marge nette, dette, PEG...).</div>`;
   return spaceCard('s5', 'Classement par score', 'Score composite sur 100', body);
 }
 
@@ -6129,7 +6172,7 @@ function buildMilestones(){
     ['Créer votre première analyse', cs.length >= 1, 'Bouton « Nouvelle analyse ».'],
     ['Renseigner le ticker d\'une entreprise', has(c => String((c.fields.identite || {}).ticker || '').trim()), 'Section Identité : le ticker aide aussi à retrouver le logo.'],
     ['Compléter une fiche à plus de 70 %', has(c => companyCompletion(c).pct >= 70), 'Remplissez les cinq sections.'],
-    ['Obtenir un score composite', has(c => computeGlobalScore(c) !== null), 'ROE ou ROIC, croissance, dette, PEG et MOAT alimentent le score.'],
+    ['Obtenir un score composite', has(c => computeGlobalScore(c) !== null), 'MOAT, marge nette, ROIC ou ROE, croissance, dette, FCF, PEG, valeur intrinsèque et PE / secteur alimentent le score.'],
     ['Choisir une décision et une conviction', has(c => pers(c).decision && parseFloat(pers(c).conviction) > 0), 'Section Décision.'],
     ['Fixer un prix d\'achat cible', has(c => num(pers(c).prixAchatCible) !== null), 'Section Décision.'],
     ['Utiliser la checklist Buffett', has(c => Object.keys(pers(c).regleBuffett || {}).length > 0), 'Cochez ou décochez un critère.'],
@@ -6503,7 +6546,7 @@ const LEARN_CHAPTERS = [
       { t:'buffett' },
       LP(`Les critères marqués « auto » se cochent tout seuls quand les chiffres saisis le justifient ; vous pouvez toujours cliquer pour corriger. Un score de 8/10 ou plus est un très bon signe, mais la checklist ne remplace jamais votre jugement.`),
       LH(`Le score composite sur 100`),
-      LP(`La synthèse combine cinq axes en une note moyenne pondérée : <strong>Qualité 25 %</strong>, <strong>Rentabilité 25 %</strong>, <strong>Solidité 20 %</strong>, <strong>Croissance 15 %</strong> et <strong>Valorisation 15 %</strong>. Le radar montre en un coup d'œil où l'entreprise est forte ou faible. Le score est un repère pour comparer vos analyses entre elles, pas une recommandation.`),
+      LP(`La synthèse combine cinq axes en une note moyenne pondérée : <strong>Qualité 25 %</strong>, <strong>Rentabilité 25 %</strong>, <strong>Solidité 20 %</strong>, <strong>Croissance 15 %</strong> et <strong>Valorisation 15 %</strong>. Chaque axe est lui-même la moyenne de ses indicateurs : <strong>Qualité</strong> (MOAT et marge nette), <strong>Rentabilité</strong> (ROIC, ou ROE à défaut, et CAGR du bénéfice net), <strong>Solidité</strong> (dette nette sur FCF et conversion du FCF), <strong>Croissance</strong> (CAGR du chiffre d'affaires et croissance attendue du CA sur 3 ans) et <strong>Valorisation</strong> (PEG, marge de sécurité par rapport à votre valeur intrinsèque et PE relatif au secteur). Les indicateurs non renseignés sont simplement ignorés. La note est marquée <strong>provisoire</strong> tant que moins de 3 axes sur 5 sont renseignés : une note fondée sur un seul chiffre ne dit presque rien. Le radar montre en un coup d'œil où l'entreprise est forte ou faible, et au survol d'un axe vous voyez le détail de ses indicateurs. Le score est un repère pour comparer vos analyses entre elles, pas une recommandation.`),
       LTIP('attention', `Un score élevé avec peu de données saisies n'est pas fiable. Regardez la progression de chaque section : plus la fiche est complète, plus le score a de sens.`),
     ],
   },
