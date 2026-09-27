@@ -1835,6 +1835,7 @@ const FIELD_DESCRIPTIONS = {
   paysSiege: "Le pays d'origine et le lieu où se trouve le siège social de l'entreprise.",
   secteur: "Le secteur d'activité large, et l'industrie précise dans laquelle elle opère.",
   marketCap: "La valeur totale de l'entreprise en bourse (prix de l'action × nombre d'actions).",
+  tailleCapi: "La catégorie de taille de l'entreprise en bourse (méga, grande, moyenne ou petite capitalisation), déduite automatiquement du Market Cap. Les grandes entreprises sont généralement plus stables. Calculée automatiquement.",
   ceo: "Le dirigeant principal de l'entreprise, et s'il en est aussi le fondateur.",
   nbEmployes: "Le nombre total de salariés, et le chiffre d'affaires généré par employé.",
   dateCreation: "L'année de fondation de l'entreprise.",
@@ -2038,6 +2039,7 @@ const SECTIONS = [
       {key:'secteur', label:'Secteur', type:'duo', span:6, autoWidth:true, subs:[{key:'secteur',label:''},{key:'industrie',label:'Industrie'}]},
       {key:'marketCap', label:'Market Cap', type:'text', money:true, span:6},
       {key:'nbEmployes', label:"Nb d'employés", type:'computed-revenu-employe', span:6},
+      {key:'tailleCapi', label:"Taille de l'entreprise", type:'computed-taille-capi', span:6},
       {key:'dateIPO', label:'Date IPO', type:'duo', span:6, subs:[{key:'date',label:''},{key:'prixInitial',label:'Prix initial', money:true}]},
       {key:'ceo', label:'CEO', type:'ceoFondateur', span:6},
       {key:'activitePrincipale', label:'Activité principale', type:'textarea', span:6, group:'Activité et avantage concurrentiel'},
@@ -3381,6 +3383,8 @@ const SCALE_CONFIG = {
   tresorerieDette:{ thresholds:[100,50,25], inverse:false },
   scoreSolvabilite:{ thresholds:[75,50,25], inverse:false },
   probaFaillite:  { thresholds:[1,5,20], inverse:true, inclusive:true },
+  // Taille de l'entreprise en Md de capitalisation : méga-cap ≥ 200 Md, grande cap 10 à 200 Md, moyenne cap 2 à 10 Md, petite cap < 2 Md.
+  tailleCapi:     { thresholds:[200,10,2], inverse:false },
   // Croissance du dividende, en taux ANNUEL déduit du total sur 5 ans saisi (voir computeDividendGrowthCagr) : seuils plus bas que croissanceBenef,
   // un dividende progresse en général moins vite qu'un bénéfice (demande de Nolan le 2026-09-27).
   croissanceDividende: { thresholds:[10,5,0], inverse:false },
@@ -3397,7 +3401,7 @@ const SCALE_CONFIG = {
 };
 const BADGE_UNITS = {
   croissanceCA:'%', croissanceBenef:'%', margeBrute:'%', margeNette:'%', roe:'%', roic:'%', roa:'%', margeFcf:'%',
-  detteActif:'', detteTotalActif:'%', tresorerieDette:'%', scoreSolvabilite:'/100', probaFaillite:'%', croissanceEstimeeEps:'%', conversionFcf:'%', positionShort:'%', ratioVenteADecouvert:' j', capexRatio:'%',
+  detteActif:'', detteTotalActif:'%', tresorerieDette:'%', scoreSolvabilite:'/100', probaFaillite:'%', croissanceEstimeeEps:'%', conversionFcf:'%', positionShort:'%', ratioVenteADecouvert:' j', capexRatio:'%', tailleCapi:' Md',
   peg:'', croissanceAttendueCA:'%', croissanceAttendueBenef:'%', peRelatifSecteur:'', moatNote:'/10', croissanceDividende:'&nbsp;%/an',
 };
 const TOOLTIP_TIER_COLORS = { tresbon:'#22c55e', bon:'#c2f5d0', moyen:'#fde047', mauvais:'#f87171' };
@@ -3760,6 +3764,7 @@ function refreshAllBadges(){
     { section:'financier', key:'tresorerieDette', val: computeTresorerieDette(c) },
     { section:'financier', key:'scoreSolvabilite', val: num(c.fields.financier.scoreSolvabilite) },
     { section:'financier', key:'probaFaillite', val: num(c.fields.financier.probaFaillite) },
+    { section:'identite', key:'tailleCapi', val: computeTailleCapiMd(c) },
     { section:'valorisation', key:'croissanceEstimeeEps', val: num(c.fields.valorisation.croissanceEstimeeEps && c.fields.valorisation.croissanceEstimeeEps.cagr) },
     { section:'financier', key:'conversionFcf', val: computeConversionFcf(c) },
     { section:'financier', key:'capexRatio', val: computeCapexRatio(c) },
@@ -3817,6 +3822,9 @@ function refreshAllComputed(){
   setText('computed-financier-capexRatio', capexR === null ? '—' : capexR.toFixed(1) + '%', tipCapexRatio(c));
   const margeFcfV = computeMargeFcf(c);
   setText('computed-financier-margeFcf', margeFcfV === null ? '—' : margeFcfV.toFixed(1) + '%', tipMargeFcf(c));
+  const tailleMd = computeTailleCapiMd(c);
+  const tailleTier = getScaleTier('tailleCapi', tailleMd);
+  setText('computed-identite-tailleCapi', tailleTier ? TAILLE_CAPI_LABELS[tailleTier] : '—', tipTailleCapi(c));
   const dy = computeDividendYield(c);
   setText('computed-identite-politiqueDividende-yield', dy === null ? '—' : fmtNum(dy, 2) + ' %', tipDividendYield(c));
   refreshPositionDividend();
@@ -4676,7 +4684,7 @@ const SCORE_AXES = [
   { id:'qualite', label:'Qualité', weight:0.25, parts:['moatNote', 'margeBrute', 'margeNette', 'buffett'] },
   { id:'rentabilite', label:'Rentabilité', weight:0.25, parts:['roic', 'roe', 'roa', 'margeFcf', 'croissanceBenef'] },
   { id:'croissance', label:'Croissance', weight:0.15, parts:['croissanceCA', 'croissanceAttendueCA', 'croissanceAttendueBenef', 'croissanceEstimeeEps', 'croissanceDividende'] },
-  { id:'solidite', label:'Solidité', weight:0.20, parts:['detteActif', 'conversionFcf', 'detteTotalActif', 'tresorerieDette', 'scoreSolvabilite', 'probaFaillite'] },
+  { id:'solidite', label:'Solidité', weight:0.20, parts:['detteActif', 'conversionFcf', 'detteTotalActif', 'tresorerieDette', 'scoreSolvabilite', 'probaFaillite', 'tailleCapi'] },
   { id:'valorisation', label:'Valorisation', weight:0.15, parts:['peg', 'margeSecurite', 'peRelatifSecteur', 'consensus'] },
 ];
 const SCORE_MIN_AXES = 3;
@@ -4684,8 +4692,8 @@ const SCORE_MIN_AXES = 3;
 const MARGE_SECURITE_SCALE = { thresholds:[30, 15, 0], inverse:false };
 // Checklist Buffett : notation LINÉAIRE (demande de Nolan le 2026-09-26) : chaque critère validé vaut 10 points sur 10 critères, donc 7/10 = 70 points.
 // (Les couleurs de la checklist ailleurs dans l'app gardent leurs propres seuils 80 / 60 / 40.)
-const SCORE_PART_LABELS = { moatNote:'MOAT', consensus:'Consensus des analystes', buffett:'Checklist Buffett', margeBrute:'Marge brute', croissanceDividende:'Croissance du dividende (annualisée)', croissanceEstimeeEps:'Croissance estimée du BPA (3 ans)', margeNette:'Marge nette', roic:'ROIC', roe:'ROE', roa:'ROA', margeFcf:'Marge FCF (FCF / CA)', croissanceBenef:'CAGR du bénéfice net', croissanceCA:'CAGR du CA', croissanceAttendueCA:'Croissance attendue du CA (3 ans)', croissanceAttendueBenef:'Croissance attendue du bénéfice net (3 ans)', detteActif:'Dette nette / FCF', detteTotalActif:'Dette totale / Total actif', tresorerieDette:'Trésorerie / Dette totale', scoreSolvabilite:'Score de solvabilité', probaFaillite:'Probabilité de faillite', conversionFcf:'Conversion du FCF', peg:'PEG', margeSecurite:'Marge de sécurité', peRelatifSecteur:'PE / Secteur' };
-const SCORE_PART_UNITS = { moatNote:'/10', consensus:'/5', buffett:' %', margeBrute:' %', croissanceDividende:' %/an', croissanceEstimeeEps:' %', margeNette:' %', roic:' %', roe:' %', roa:' %', margeFcf:' %', croissanceBenef:' %', croissanceCA:' %', croissanceAttendueCA:' %', croissanceAttendueBenef:' %', detteActif:'', detteTotalActif:' %', tresorerieDette:' %', scoreSolvabilite:'/100', probaFaillite:' %', conversionFcf:' %', peg:'', margeSecurite:' %', peRelatifSecteur:'' };
+const SCORE_PART_LABELS = { moatNote:'MOAT', consensus:'Consensus des analystes', buffett:'Checklist Buffett', margeBrute:'Marge brute', croissanceDividende:'Croissance du dividende (annualisée)', croissanceEstimeeEps:'Croissance estimée du BPA (3 ans)', margeNette:'Marge nette', roic:'ROIC', roe:'ROE', roa:'ROA', margeFcf:'Marge FCF (FCF / CA)', croissanceBenef:'CAGR du bénéfice net', croissanceCA:'CAGR du CA', croissanceAttendueCA:'Croissance attendue du CA (3 ans)', croissanceAttendueBenef:'Croissance attendue du bénéfice net (3 ans)', detteActif:'Dette nette / FCF', detteTotalActif:'Dette totale / Total actif', tresorerieDette:'Trésorerie / Dette totale', scoreSolvabilite:'Score de solvabilité', probaFaillite:'Probabilité de faillite', tailleCapi:'Taille (capitalisation boursière)', conversionFcf:'Conversion du FCF', peg:'PEG', margeSecurite:'Marge de sécurité', peRelatifSecteur:'PE / Secteur' };
+const SCORE_PART_UNITS = { moatNote:'/10', consensus:'/5', buffett:' %', margeBrute:' %', croissanceDividende:' %/an', croissanceEstimeeEps:' %', margeNette:' %', roic:' %', roe:' %', roa:' %', margeFcf:' %', croissanceBenef:' %', croissanceCA:' %', croissanceAttendueCA:' %', croissanceAttendueBenef:' %', detteActif:'', detteTotalActif:' %', tresorerieDette:' %', scoreSolvabilite:'/100', probaFaillite:' %', tailleCapi:' Md', conversionFcf:' %', peg:'', margeSecurite:' %', peRelatifSecteur:'' };
 // Barème de couleurs de la NOTE GLOBALE (demande de Nolan le 2026-09-26) : 5 paliers de 20 points, rouge (0 à 20), orange (20 à 40), jaune (40 à 60),
 // vert clair (60 à 80), vert foncé (80 à 100). Distinct du barème à 4 paliers des indicateurs (TIER_COLORS), qui reste inchangé.
 // scoreColor5(note, true) donne les teintes vives pour les cartes à fond marine.
@@ -4721,6 +4729,7 @@ function scorePartValue(c, key){
   if(key === 'tresorerieDette') return computeTresorerieDette(c);
   if(key === 'scoreSolvabilite') return num(c.fields.financier.scoreSolvabilite);
   if(key === 'probaFaillite') return num(c.fields.financier.probaFaillite);
+  if(key === 'tailleCapi') return computeTailleCapiMd(c);
   if(key === 'conversionFcf') return computeConversionFcf(c);
   if(key === 'peg') return computePeg(c);
   if(key === 'peRelatifSecteur') return computePeRelatif(c);
@@ -4938,6 +4947,7 @@ function buildKeyHighlights(c){
     { key:'roic', label:'ROIC', val: num(c.fields.financier.roic) },
     { key:'roa', label:'ROA', val: num(c.fields.financier.roa) },
     { key:'margeFcf', label:'Marge FCF', val: computeMargeFcf(c) },
+    { key:'tailleCapi', label:'Taille (capitalisation)', val: computeTailleCapiMd(c) },
     { key:'croissanceCA', label:'Croissance du CA', val: num(c.fields.financier.croissanceCA && c.fields.financier.croissanceCA.cagr) },
     { key:'croissanceBenef', label:'Croissance des bénéfices', val: num(c.fields.financier.croissanceBenef && c.fields.financier.croissanceBenef.cagr) },
     { key:'capexRatio', label:'Capex / CA', val: computeCapexRatio(c) },
@@ -5198,6 +5208,21 @@ function computeConversionFcf(c){
   const benef = parseMoney(c.fields.financier.beneficeNet);
   if(fcf === null || benef === null || benef === 0) return null;
   return (fcf / benef) * 100;
+}
+// Taille de l'entreprise (capitalisation boursière), en Md (milliards, même seuil pour $ et € : pas de conversion, juste le même repère de grandeur)
+// : les très grandes entreprises sont généralement plus stables (accès aux marchés de capitaux, activité diversifiée, risque de faillite plus faible),
+// demande de Nolan le 2026-09-27 pour renforcer l'axe Solidité avec un indicateur qui favorise les grosses capitalisations.
+const TAILLE_CAPI_LABELS = { tresbon:'Méga-capitalisation', bon:'Grande capitalisation', moyen:'Capitalisation moyenne', mauvais:'Petite capitalisation' };
+function computeTailleCapiMd(c){
+  const mc = parseMoney((c.fields.identite || {}).marketCap) ?? parseMoney((c.fields.financier || {}).marketCap);
+  return mc === null ? null : mc / 1e9;
+}
+function tipTailleCapi(c){
+  const mc = parseMoney((c.fields.identite || {}).marketCap) ?? parseMoney((c.fields.financier || {}).marketCap);
+  const md = computeTailleCapiMd(c);
+  const tier = getScaleTier('tailleCapi', md);
+  const label = tier ? TAILLE_CAPI_LABELS[tier] : '—';
+  return `<div class='tt-formula'>Market Cap ${mc === null ? '?' : formatMoneyDisplay(mc, c.currency)}</div>${tipRes(label)}<div class='tt-desc'>Les très grandes entreprises sont généralement plus stables (accès aux marchés de capitaux, activité diversifiée), même si elles croissent souvent moins vite que les petites.</div>`;
 }
 function computeCapexRatio(c){
   const capex = parseMoney(c.fields.financier.capex);
@@ -6099,7 +6124,7 @@ function buildGlobalRecap(c){
 // ============================================================
 const FIELD_LABELS = {};
 SECTIONS.forEach(s => s.fields.forEach(f => { FIELD_LABELS[f.key] = f.label; }));
-const TIP_KEYS = ['peg','roic','roe','roa','margeFcf','fcf','conversionFcf','detteActif','margeBrute','margeNette','peRelatifSecteur','valeurIntrinseque','bearCase','bullCase','beta','positionShort','capexRatio','croissanceBenef','peActuel','peForward']
+const TIP_KEYS = ['peg','roic','roe','roa','margeFcf','tailleCapi','fcf','conversionFcf','detteActif','margeBrute','margeNette','peRelatifSecteur','valeurIntrinseque','bearCase','bullCase','beta','positionShort','capexRatio','croissanceBenef','peActuel','peForward']
   .filter(k => FIELD_DESCRIPTIONS[k] && FIELD_LABELS[k]);
 let spaceTipIdx = Math.floor(Date.now() / 86400000) % TIP_KEYS.length;
 
@@ -7069,6 +7094,7 @@ const LEARN_INDICATORS = {
   paysSiege: { how:`Le pays de cotation et le siège social. Utile pour la répartition géographique de vos analyses dans Mon espace.` },
   secteur: { how:`Le secteur et l'industrie précise. Ils servent à comparer l'entreprise à ses vraies concurrentes et à répartir vos analyses.`, warn:`Comparez toujours les ratios entre entreprises du même secteur.` },
   marketCap: { how:`La taille de l'entreprise en bourse. Les très grandes entreprises sont généralement plus stables, mais croissent souvent moins vite que les petites.`, ex:`Cours de 190 $ × 15 Md d'actions = 2 850 Md$, soit 2,85 T$.` },
+  tailleCapi: { how:`Classe l'entreprise par taille de capitalisation boursière (Market Cap), calculée automatiquement : méga-capitalisation à partir de 200 Md, grande capitalisation de 10 à 200 Md, capitalisation moyenne de 2 à 10 Md, petite capitalisation en dessous.`, ex:`Un Market Cap de 2,85 T$ (2 850 Md$) : méga-capitalisation.`, warn:`Une grande taille rassure sur la stabilité mais ne garantit ni une bonne valorisation ni une forte croissance future.` },
   ceo: { how:`Le dirigeant et son statut de fondateur ou non. Un dirigeant fondateur est souvent vu comme un signe d'engagement à long terme.` },
   nbEmployes: { how:`Le nombre de salariés. L'application en déduit le chiffre d'affaires par employé, un indicateur de productivité.`, ex:`Un chiffre d'affaires de 391 Md$ pour 160 000 employés : environ 2,4 M$ par employé.` },
   dateCreation: { how:`L'année de fondation. Une entreprise ancienne a traversé plusieurs cycles économiques, ce qui rassure sur sa résilience.` },
@@ -8251,6 +8277,14 @@ function render(){
         const cr = computeCapexRatio(c);
         html += `<div class="field-row"><div class="field-label" data-tooltip="${fieldDescTooltip(field.key)}">${field.label}</div>
           <div class="field-value"><div class="value-with-badge"><span class="computed" id="computed-${section.key}-${field.key}" data-tooltip="${tipCapexRatio(c)}">${cr === null ? '—' : cr.toFixed(1) + '%'}</span>${renderBadge(field.key, cr, `badge-${section.key}-${field.key}`)}</div></div></div>`;
+        return;
+      }
+      if(field.type === 'computed-taille-capi'){
+        const md = computeTailleCapiMd(c);
+        const tier = getScaleTier('tailleCapi', md);
+        const label = tier ? TAILLE_CAPI_LABELS[tier] : '—';
+        html += `<div class="field-row"><div class="field-label" data-tooltip="${fieldDescTooltip(field.key)}">${field.label}</div>
+          <div class="field-value"><div class="value-with-badge"><span class="computed" id="computed-${section.key}-${field.key}" data-tooltip="${tipTailleCapi(c)}">${label}</span>${renderBadge(field.key, md, `badge-${section.key}-${field.key}`)}</div></div></div>`;
         return;
       }
       if(field.type === 'computed-marge-fcf'){
