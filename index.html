@@ -1149,6 +1149,10 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; font-family:
 .val-marker{ position:absolute; top:0; transform:translateX(-50%); }
 .val-dot{ width:13px; height:13px; border-radius:50%; margin:0 auto; box-shadow:0 0 0 3px var(--paper-line); }
 .val-marker.val-ref .val-dot{ background:var(--ink-soft); }
+.val-marker.val-bear .val-dot{ background:var(--red); }
+.val-marker.val-bear .val-marker-label{ color:var(--red); }
+.val-marker.val-bull .val-dot{ background:var(--green); }
+.val-marker.val-bull .val-marker-label{ color:var(--green); }
 .val-marker.val-price .val-dot{ background:var(--blue); width:16px; height:16px; }
 .val-marker-label{ position:absolute; bottom:16px; left:50%; transform:translateX(-50%); font-size:13px; color:var(--ink-soft); white-space:nowrap; text-align:center; line-height:1.3; }
 .val-marker.val-price .val-marker-label{ color:var(--blue); font-weight:600; }
@@ -1868,8 +1872,9 @@ const FIELD_DESCRIPTIONS = {
   peRelatifSecteur: "Le PE comparé à celui du secteur : en dessous de 1, décote ; au-dessus, prime.",
   croissanceEstimeeEps: "Le taux de croissance annuel moyen (CAGR) du bénéfice par action attendu par les analystes sur 3 ans, que vous saisissez. La croissance totale sur 3 ans est calculée automatiquement. Le PEG utilise le CAGR.",
   peg: "Le PE ajusté de la croissance : sous 1, le titre est plutôt bon marché vu sa croissance.",
-  valorisationDcf: "La valeur théorique de l'action selon un modèle d'actualisation des flux futurs.",
-  valeurIntrinseque: "Ta propre estimation de la vraie valeur de l'entreprise.",
+  valeurIntrinseque: "Ta propre estimation de la vraie valeur de l'entreprise, ton scénario central.",
+  bearCase: "Ta valeur estimée dans un scénario pessimiste (Bear case) : si les choses tournent mal (croissance plus faible, marges qui se dégradent, concurrence...).",
+  bullCase: "Ta valeur estimée dans un scénario optimiste (Bull case) : si les choses se passent bien (croissance plus forte que prévu, gain de parts de marché...).",
   beta: "La volatilité du titre par rapport au marché : au-dessus de 1, il bouge plus fort que le marché.",
   positionShort: "La part du flottant vendue à découvert par les investisseurs qui parient sur une baisse.",
   ratioVenteADecouvert: "Le nombre de jours de volume moyen pour que les vendeurs à découvert rachètent leurs positions.",
@@ -2087,8 +2092,9 @@ const SECTIONS = [
       {key:'peRelatifSecteur', label:'PE relatif au secteur', type:'computed-pe-relatif', span:3},
       {key:'croissanceEstimeeEps', label:'Croissance estimée EPS (3 ans)', type:'growthDuo', years:3, span:6},
       {key:'peg', label:'PEG', type:'computed-peg', span:6},
-      {key:'valorisationDcf', label:'Valorisation DCF', type:'number-ecart', money:true, span:6, group:'Valeur estimée'},
-      {key:'valeurIntrinseque', label:'Valeur intrinsèque', type:'number-ecart', money:true, span:6},
+      {key:'valeurIntrinseque', label:'Valeur intrinsèque', type:'number-ecart', money:true, span:6, group:'Valeur estimée'},
+      {key:'bearCase', label:'Bear case (pessimiste)', type:'number-ecart', money:true, span:3},
+      {key:'bullCase', label:'Bull case (optimiste)', type:'number-ecart', money:true, span:3},
       {key:'beta', label:'Beta', type:'number', suffix:'β', group:'Risque de marché'},
       {key:'positionShort', label:'Position short', type:'text', percent:true},
       {key:'ratioVenteADecouvert', label:'Ratio de vente à découvert', type:'text'},
@@ -3764,12 +3770,13 @@ function refreshAllComputed(){
   setText('computed-valorisation-peForward', peFwd === null ? '—' : peFwd.toFixed(2), tipPeForward(c));
   const peRel = computePeRelatif(c);
   setText('computed-valorisation-peRelatifSecteur', peRel === null ? '—' : peRel.toFixed(2), tipPeRelatif(c));
-  const eDcf = computeEcart(c, 'valorisationDcf');
-  const slotDcf = document.getElementById('ecart-valorisation-valorisationDcf');
-  if(slotDcf){ slotDcf.innerHTML = ecartMarkup(eDcf); slotDcf.dataset.tooltip = tipEcart(c, 'valorisationDcf', 'Valorisation DCF'); }
-  const eIntr = computeEcart(c, 'valeurIntrinseque');
-  const slotIntr = document.getElementById('ecart-valorisation-valeurIntrinseque');
-  if(slotIntr){ slotIntr.innerHTML = ecartMarkup(eIntr); slotIntr.dataset.tooltip = tipEcart(c, 'valeurIntrinseque', 'Valeur intrinsèque'); }
+  // Valeur intrinsèque + fourchette Bear/Bull (2026-09-27, remplace la Valorisation DCF, retirée car trop sensible aux hypothèses) :
+  // même mécanique `number-ecart` générique pour les trois, un seul écart par rapport au cours actuel.
+  [['valeurIntrinseque', 'Valeur intrinsèque'], ['bearCase', 'Bear case'], ['bullCase', 'Bull case']].forEach(([k, label]) => {
+    const e = computeEcart(c, k);
+    const slot = document.getElementById('ecart-valorisation-' + k);
+    if(slot){ slot.innerHTML = ecartMarkup(e); slot.dataset.tooltip = tipEcart(c, k, label); }
+  });
   const tres = computeTresorerie(c);
   setText('computed-financier-tresorerie', formatMoneyDisplay(tres, c.currency), tipTresorerie(c));
   const dette = computeDetteActif(c);
@@ -4771,13 +4778,18 @@ function computeGlobalScoreFromAxesLocal(axes){
   if(totalWeight === 0) return null;
   return weightedSum / totalWeight;
 }
+// Fourchette de valorisation Bear / Valeur intrinsèque / Bull, situées sur une même ligne avec le prix actuel (2026-09-27, remplace
+// la ligne DCF/Intrinsèque : la Valorisation DCF a été retirée, trop sensible aux hypothèses ; le Bear/Bull case donne un repère de risque
+// et de potentiel sans complexité supplémentaire, à partir des mêmes champs simples que la Valeur intrinsèque).
 function buildValuationLine(c){
   const prix = num(c.fields.valorisation.prixActuel);
-  const dcf = num(c.fields.valorisation.valorisationDcf);
+  const bear = num(c.fields.valorisation.bearCase);
   const intrinsic = num(c.fields.valorisation.valeurIntrinseque);
+  const bull = num(c.fields.valorisation.bullCase);
   const points = [];
-  if(dcf !== null) points.push({ label:'DCF', val:dcf, cls:'val-ref' });
-  if(intrinsic !== null) points.push({ label:'Intrinsèque', val:intrinsic, cls:'val-ref' });
+  if(bear !== null) points.push({ label:'Bear case', val:bear, cls:'val-ref val-bear' });
+  if(intrinsic !== null) points.push({ label:'Valeur intrinsèque', val:intrinsic, cls:'val-ref' });
+  if(bull !== null) points.push({ label:'Bull case', val:bull, cls:'val-ref val-bull' });
   if(prix !== null) points.push({ label:'Prix actuel', val:prix, cls:'val-price' });
   if(points.length < 2) return '';
   const vals = points.map(p => p.val);
@@ -4904,6 +4916,7 @@ function buildInsightsSection(c){
   const synthesis = buildSynthesisText(c);
 
   const riskHtml = buildRiskCard(c);
+  const valLineHtml = buildValuationLine(c);
   const sideHtml = [
     targetCardHtml ? `<div class="insight-card">${targetCardHtml}</div>` : '',
     riskHtml ? `<div class="insight-card">${riskHtml}</div>` : '',
@@ -4922,6 +4935,7 @@ function buildInsightsSection(c){
         </div>
         ${sideHtml ? `<div class="insights-side">${sideHtml}</div>` : ''}
       </div>
+      ${valLineHtml ? `<div class="synthesis-box"><div class="insight-card-title">Fourchette de valorisation</div>${valLineHtml}</div>` : ''}
       ${(() => { const hl = buildKeyHighlights(c); return hl ? `<div class="synthesis-box highlights-box">${hl}</div>` : ''; })()}
       <div class="synthesis-box">
         <div class="insight-card-title">Résumé rédigé</div>
@@ -6020,7 +6034,7 @@ function buildGlobalRecap(c){
 // ============================================================
 const FIELD_LABELS = {};
 SECTIONS.forEach(s => s.fields.forEach(f => { FIELD_LABELS[f.key] = f.label; }));
-const TIP_KEYS = ['peg','roic','roe','fcf','conversionFcf','detteActif','margeBrute','margeNette','peRelatifSecteur','valeurIntrinseque','valorisationDcf','beta','positionShort','capexRatio','croissanceBenef','peActuel','peForward']
+const TIP_KEYS = ['peg','roic','roe','fcf','conversionFcf','detteActif','margeBrute','margeNette','peRelatifSecteur','valeurIntrinseque','bearCase','bullCase','beta','positionShort','capexRatio','croissanceBenef','peActuel','peForward']
   .filter(k => FIELD_DESCRIPTIONS[k] && FIELD_LABELS[k]);
 let spaceTipIdx = Math.floor(Date.now() / 86400000) % TIP_KEYS.length;
 
@@ -6794,7 +6808,7 @@ const LEARN_CHAPTERS = [
       LP(`<strong>Objectif</strong> : juger si l'entreprise peut encore grandir. Décrivez la croissance de son marché, sa part de marché, ses innovations, sa diversification, ses catalyseurs (événements qui pourraient faire monter l'action) et ses risques. Chiffrez enfin la croissance attendue du chiffre d'affaires sur 3 ans.`),
       LTIP('astuce', `Une bonne croissance passée n'est pas une garantie : demandez-vous toujours ce qui pourrait la freiner.`),
       LH(`Section 4, Valorisation`),
-      LP(`<strong>Objectif</strong> : savoir si le prix demandé est justifié. Renseignez le cours (automatique si possible), le bénéfice par action actuel et estimé, le PE du secteur et la croissance estimée du bénéfice. L'application en déduit le PE, le PEG et l'écart avec vos estimations de valeur (DCF et valeur intrinsèque). Les prévisions des analystes de Wall Street s'affichent dans un graphique en éventail.`),
+      LP(`<strong>Objectif</strong> : savoir si le prix demandé est justifié. Renseignez le cours (automatique si possible), le bénéfice par action actuel et estimé, le PE du secteur et la croissance estimée du bénéfice. L'application en déduit le PE, le PEG et l'écart avec vos estimations de valeur (valeur intrinsèque, avec un Bear case et un Bull case si vous le souhaitez). Les prévisions des analystes de Wall Street s'affichent dans un graphique en éventail.`),
       LH(`Section 5, Décision`),
       LP(`<strong>Objectif</strong> : trancher, par écrit. Cochez la checklist, listez points forts et points faibles, rédigez votre thèse d'investissement (les raisons pour lesquelles vous investissez et ce qui vous ferait changer d'avis), notez votre conviction et fixez un prix d'achat cible.`),
       LTIP('retenir', `Écrire sa thèse avant d'acheter est la meilleure protection contre les décisions émotionnelles : quand le cours chute, vous relisez vos raisons initiales au lieu de paniquer.`),
@@ -7039,7 +7053,8 @@ const LEARN_INDICATORS = {
   peRelatifSecteur: { how:`PE de l'entreprise ÷ PE du secteur. Inférieur à 1, elle est moins chère que son secteur ; supérieur à 1, plus chère.`, ex:`PE de 25 et PE sectoriel de 20 : 1,25, soit 25 % plus cher que le secteur.` },
   croissanceEstimeeEps: { how:`Le rythme de croissance annuel (CAGR) attendu du bénéfice par action sur 3 ans. Vous saisissez ce taux annuel, la croissance totale sur 3 ans se calcule toute seule. Le PEG est le PE divisé par ce CAGR.`, ex:`Un bénéfice par action attendu en hausse de 50 % au total sur 3 ans correspond à un CAGR d'environ 14,5 % par an : c'est 14,5 que vous saisissez, pas 50.` },
   peg: { how:`Le PE divisé par la croissance des bénéfices (en %). Il permet de savoir si l'on paie cher ou non la croissance.`, ex:`PE de 20 et croissance de 15 % : PEG de 1,33.`, warn:`Le PEG dépend d'une prévision de croissance : plus elle est incertaine, moins le PEG est fiable.` },
-  valorisationDcf: { how:`La valeur d'aujourd'hui de tout l'argent que l'entreprise va générer, calculée à partir de vos hypothèses de croissance. L'écart avec le cours s'affiche à droite.`, warn:`Très sensible aux hypothèses : changer légèrement la croissance ou le taux d'actualisation modifie beaucoup le résultat.` },
+  bearCase: { how:`Une deuxième estimation, plus prudente que votre valeur intrinsèque : ce que vaudrait l'entreprise si les choses tournaient mal. Elle donne une idée du risque de baisse.`, ex:`Valeur intrinsèque de 125 $, Bear case de 90 $ : si les hypothèses optimistes ne se réalisent pas, la valeur pourrait être bien plus basse.`, warn:`Ce n'est pas une prévision de krach, juste un scénario prudent parmi d'autres.` },
+  bullCase: { how:`Une troisième estimation, plus optimiste que votre valeur intrinsèque : ce que vaudrait l'entreprise si tout se passait bien. Elle donne une idée du potentiel de hausse.`, ex:`Valeur intrinsèque de 125 $, Bull case de 170 $ : c'est le potentiel si la croissance dépasse vos attentes.`, warn:`À utiliser avec prudence : un écart trop grand entre Bear et Bull signale une entreprise difficile à évaluer.` },
   valeurIntrinseque: { how:`Votre estimation de ce que vaut réellement une action, indépendamment du cours du jour. Elle sert de référence pour la marge de sécurité.`, ex:`Valeur estimée de 125 $ pour un cours de 100 $ : sous-évaluation de 20 % ((125 − 100) ÷ 125). Valeur de 100 $ pour un cours de 150 $ : surévaluation de 33,3 % ((150 − 100) ÷ 150), le cours devrait baisser d'un tiers pour rejoindre la valeur.` },
   beta: { how:`La sensibilité de l'action aux mouvements du marché. 1 : évolue comme le marché ; plus de 1 : plus volatile ; moins de 1 : plus stable.`, ex:`Avec un bêta de 1,3, si le marché baisse de 10 %, l'action baisse en moyenne de 13 %.` },
   positionShort: { how:`La part des actions vendues à découvert (pari à la baisse). Un pourcentage élevé signifie que beaucoup d'investisseurs parient contre l'entreprise.` },
@@ -7840,7 +7855,7 @@ function renderHomeView(){
     ['method', "Une méthode éprouvée", "Un cadre value et quality inspiré de Warren Buffett et Peter Lynch : qualité de l'activité, rentabilité, solidité financière, croissance et prix. Chaque entreprise est passée au même crible."],
     ['ratios', "Des ratios lus en un coup d'œil", "Marges, ROE, ROIC, dette, conversion du cash : chaque indicateur clé est noté sur 4 paliers colorés, du très bon au mauvais, avec le barème exact au survol."],
     ['score', "Un score qui résume tout", "Un score composite pondéré (Qualité 25&nbsp;%, Rentabilité 25&nbsp;%, Solidité 20&nbsp;%, Croissance 15&nbsp;%, Valorisation 15&nbsp;%) et un radar de profil pour comparer vos idées d'un regard."],
-    ['value', "Une valorisation sans angle mort", "PE, PE forward, PEG, DCF, valeur intrinsèque et consensus de Wall Street : mesurez précisément l'écart entre le prix du marché et la valeur de l'entreprise."],
+    ['value', "Une valorisation sans angle mort", "PE, PE forward, PEG, valeur intrinsèque (avec un Bear case et un Bull case) et consensus de Wall Street : mesurez précisément l'écart entre le prix du marché et la valeur de l'entreprise."],
     ['decide', "Décidez avec discipline", "Checklist Buffett en 10 critères, thèse d'investissement, niveau de conviction, prix d'achat cible et suivi de votre position : chaque décision est argumentée et traçable."],
     ['lock', "Vos données vous appartiennent", "Sans compte, tout reste enregistré sur votre appareil. Avec un compte gratuit, vos analyses vous suivent sur tous vos appareils, et vous pouvez les télécharger ou supprimer votre compte à tout moment."],
   ].map(f => `<div class="feature"><div class="feature-ico">${svgIcon(HOME_ICONS[f[0]])}</div><h3>${f[1]}</h3><p>${f[2]}</p></div>`).join('');
@@ -8130,7 +8145,7 @@ function render(){
       }
       if(field.type === 'number-ecart'){
         const e = computeEcart(c, field.key);
-        const ecartLabel = field.key === 'valorisationDcf' ? 'Valorisation DCF' : 'Valeur intrinsèque';
+        const ecartLabel = field.label;
         html += `<div class="field-row"><div class="field-label" data-tooltip="${fieldDescTooltip(field.key)}">${field.label}</div>
           <div class="field-value"><div class="value-with-ecart">${fieldInput(section.key, field, value)}<span class="value-suffix">${escapeHtml(c.currency)}</span><span class="ecart-slot" id="ecart-${section.key}-${field.key}" data-tooltip="${tipEcart(c, field.key, ecartLabel)}">${ecartMarkup(e)}</span></div></div></div>`;
         return;
