@@ -972,6 +972,10 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; font-family:
 .ws-needle{ transform-origin:150px 150px; transition:transform .14s ease, opacity .14s ease; }
 .ws-reco-label{ grid-area:label; font-size:24px; font-weight:800; line-height:1.15; margin-top:2px; font-family:var(--font-ui); text-align:left; }
 .ws-reco-sub{ grid-area:sub; font-size:12.5px; line-height:1.4; color:rgba(255,255,255,.62); margin-top:3px; }
+#wsGaugeWrap input.ws-reco-input{ width:42px; text-align:center; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.28); border-radius:6px; color:#fff; font:inherit; font-size:13.5px; font-weight:700; padding:2px 3px; margin:0 3px; line-height:1.3; }
+#wsGaugeWrap input.ws-reco-input::placeholder{ color:rgba(255,255,255,.4); font-weight:400; }
+#wsGaugeWrap input.ws-reco-input:focus{ outline:2px solid #5b8cf7; outline-offset:1px; border-color:#5b8cf7; background:rgba(255,255,255,.16); box-shadow:none; }
+.ws-reco-hint{ margin-top:2px; opacity:.75; }
 .ws-legacy{ margin-top:10px; font-size:13px; line-height:1.5; color:var(--ink-soft); max-width:680px; }
 .trio-row{ flex-wrap:wrap; gap:14px 22px; }
 .trio-row .duo-item{ flex:0 0 auto; }
@@ -4373,26 +4377,27 @@ function buildWsGauge(c){
     <div class="ws-reco-title">Consensus des analystes</div>
     <svg viewBox="0 0 300 172" class="ws-gauge" role="slider" tabindex="0" aria-label="Recommandation moyenne des analystes" aria-valuemin="1" aria-valuemax="5">${segs}<g class="ws-needle"><path d="M150 143 L264 150 L150 157 Z" fill="#e4e4e4"/><circle cx="150" cy="150" r="9" fill="#e4e4e4"/></g></svg>
     <div class="ws-reco-label"></div>
-    <div class="ws-reco-sub"></div>
+    <div class="ws-reco-sub">Moyenne <input type="text" inputmode="decimal" id="wsRecoInput" class="ws-reco-input" placeholder="—" aria-label="Moyenne des analystes, note sur 5"> / 5
+      <div class="ws-reco-hint">Ou faites glisser l'aiguille</div>
+    </div>
   </div>`;
 }
 function paintWsGauge(){
   const c = getActive(), wrap = document.getElementById('wsGaugeWrap');
   if(!c || !wrap) return;
   const v = wsRecoValue(c);
-  const svg = wrap.querySelector('svg'), label = wrap.querySelector('.ws-reco-label'), sub = wrap.querySelector('.ws-reco-sub');
+  const svg = wrap.querySelector('svg'), label = wrap.querySelector('.ws-reco-label'), input = wrap.querySelector('#wsRecoInput');
   const angle = v === null ? 90 : (5 - v) / 4 * 180;
   const needle = wrap.querySelector('.ws-needle');
   needle.style.transform = `rotate(${-angle}deg)`;
   needle.style.opacity = v === null ? '.35' : '1';
+  if(document.activeElement !== input) input.value = v === null ? '' : fmtNum(v, 1);
   if(v === null){
     label.textContent = 'Non renseigné'; label.style.color = 'rgba(255,255,255,.55)';
-    sub.textContent = "Cliquez sur la jauge ou faites glisser l'aiguille";
     svg.removeAttribute('aria-valuenow'); svg.setAttribute('aria-valuetext', 'Non renseigné');
   }else{
     const s = WS_RECO[wsRecoIndex(v)];
     label.textContent = s.label; label.style.color = s.color;   // fond marine : teinte vive
-    sub.textContent = 'Moyenne ' + fmtNum(v, 1) + ' / 5';
     svg.setAttribute('aria-valuenow', String(v)); svg.setAttribute('aria-valuetext', s.label);
   }
 }
@@ -4410,6 +4415,7 @@ function bindWsGauge(){
   const wrap = document.getElementById('wsGaugeWrap');
   if(!wrap) return;
   const svg = wrap.querySelector('svg');
+  const input = wrap.querySelector('#wsRecoInput');
   paintWsGauge();
   const fromEvent = e => {
     const r = svg.getBoundingClientRect();
@@ -4418,7 +4424,10 @@ function bindWsGauge(){
     return 5 - a / 180 * 4;
   };
   let drag = false;
-  svg.addEventListener('pointerdown', e => { drag = true; try{ svg.setPointerCapture(e.pointerId); }catch(err){} setWsReco(fromEvent(e), false); e.preventDefault(); });
+  // Si la case de saisie manuelle a le focus, on la sort du focus avant de démarrer le glisser : sinon `document.activeElement` reste
+  // la case (le pointerdown plus bas fait preventDefault, qui empêche le transfert de focus par défaut du navigateur) et paintWsGauge
+  // continue de croire qu'il ne faut pas toucher à sa valeur, donc l'aiguille bouge mais le chiffre affiché reste figé.
+  svg.addEventListener('pointerdown', e => { if(input && document.activeElement === input) input.blur(); drag = true; try{ svg.setPointerCapture(e.pointerId); }catch(err){} setWsReco(fromEvent(e), false); e.preventDefault(); });
   svg.addEventListener('pointermove', e => { if(drag) setWsReco(fromEvent(e), false); });
   const end = () => { if(drag){ drag = false; setWsReco(wsRecoValue(getActive()), true); } };
   svg.addEventListener('pointerup', end);
@@ -4437,6 +4446,12 @@ function bindWsGauge(){
     e.preventDefault();
     setWsReco(next, true);
   });
+  // Saisie manuelle de la moyenne (note sur 5) en plus du glisser-déposer de l'aiguille : mêmes règles d'arrondi/bornage que le drag (demande de Nolan le 2026-09-27).
+  if(input){
+    input.addEventListener('input', () => setWsReco(num(input.value), false));
+    input.addEventListener('blur', () => setWsReco(num(input.value), true));
+    input.addEventListener('keydown', e => { if(e.key === 'Enter') input.blur(); });
+  }
 }
 
 // Anciennes données : les cases contenaient des POURCENTAGES. On les convertit en prix cibles (prix actuel × (1 + %)) dès que le prix actuel est connu ;
