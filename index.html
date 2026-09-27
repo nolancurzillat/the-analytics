@@ -810,7 +810,7 @@ input.company-name:focus{ outline:none; border-bottom-color:var(--blue); }
 .star-fill{ overflow:hidden; color:var(--star); pointer-events:none; }
 .star-empty svg, .star-fill svg{ display:block; width:28px; height:28px; max-width:none; }
 
-input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; font-family:var(--font-mono) !important; font-weight:500 !important; width:auto !important; min-width:56px; max-width:220px; }
+input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !important; min-width:56px; max-width:220px; }
 
 /* Note /10 (MOAT) */
 .note10-box{
@@ -867,9 +867,10 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; font-family:
 .value-with-suffix{ display:inline-flex; align-items:stretch; gap:0; max-width:100%; }
 .value-with-suffix input{ width:auto !important; min-width:56px; flex:0 0 auto; }
 .value-suffix{ color:var(--ink); font-size:15px; font-weight:700; white-space:nowrap; flex:0 0 auto; align-self:center; margin-left:6px; }
-.value-with-ecart{ display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+.value-with-ecart{ display:flex; align-items:center; gap:8px 16px; flex-wrap:wrap; }
 .value-with-ecart .value-suffix{ margin-left:0; }
 .value-with-ecart input{ width:auto !important; min-width:56px; flex:0 0 auto; }
+.value-with-ecart .ecart-slot{ flex-basis:100%; }
 .value-with-badge .value-suffix{ margin-left:-6px; }
 .duo-item .value-suffix{ margin-left:0; }
 .price-auto-row{ display:flex; align-items:center; gap:12px; margin-top:10px; flex-wrap:wrap; }
