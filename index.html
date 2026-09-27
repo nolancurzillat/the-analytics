@@ -184,6 +184,11 @@ svg{display:block;}
 .sort-opt.current{ color:#fff; font-weight:600; }
 .sort-opt .sort-check{ width:14px; flex:0 0 14px; color:var(--accent); font-weight:700; }
 .sort-sep{ height:1px; background:rgba(255,255,255,.1); margin:6px 4px; }
+/* Tri de "Toutes vos analyses" (2026-09-27) : même bouton/menu que la barre latérale, réutilise .sort-btn/.sort-menu/.sort-opt, juste une nouvelle ancre positionnée. */
+.scard-s-row{ display:flex; align-items:center; gap:8px; }
+.table-sort-wrap{ position:relative; display:inline-flex; align-items:center; }
+.table-sort-wrap .sort-btn{ color:var(--ink-soft); }
+.table-sort-wrap .sort-btn:hover, .table-sort-wrap .sort-btn[aria-expanded="true"]{ background:var(--field); color:var(--ink); }
 .side-item{
   display:flex; align-items:center; gap:11px;
   padding:9px 10px;
@@ -2821,10 +2826,13 @@ if(!state.deleted || typeof state.deleted !== 'object' || Array.isArray(state.de
 if(!state.history || typeof state.history !== 'object' || Array.isArray(state.history)) state.history = {};
 state.companies.forEach(migrateCompany);
 // Préférences personnelles (ajoutées après la V1, sans effet sur les analyses existantes)
-state.settings = Object.assign({ autoLogos:true, firstName:'', defaultCurrency:'$', twelveDataApiKey:'', sortKey:'created', sortDir:'asc', learnRead:[], lastBackupAt:0, backupSnoozeUntil:0 },(state.settings && typeof state.settings === 'object') ? state.settings : {});
+state.settings = Object.assign({ autoLogos:true, firstName:'', defaultCurrency:'$', twelveDataApiKey:'', sortKey:'created', sortDir:'asc', tableSortKey:'created', tableSortDir:'asc', learnRead:[], lastBackupAt:0, backupSnoozeUntil:0 },(state.settings && typeof state.settings === 'object') ? state.settings : {});
 if(state.settings.tourDone === undefined) state.settings.tourDone = state.companies.length > 0;
-if(['created','name','stars','updated'].indexOf(state.settings.sortKey) < 0) state.settings.sortKey = 'created';
+if(['created','name','stars','updated','marketCap'].indexOf(state.settings.sortKey) < 0) state.settings.sortKey = 'created';
 if(state.settings.sortDir !== 'desc') state.settings.sortDir = 'asc';
+// Tri de "Toutes vos analyses" (Mon espace), indépendant du tri de la barre latérale (demande de Nolan le 2026-09-27) : mêmes critères, plus le Score composite.
+if(['created','name','stars','updated','marketCap','score'].indexOf(state.settings.tableSortKey) < 0) state.settings.tableSortKey = 'created';
+if(state.settings.tableSortDir !== 'desc') state.settings.tableSortDir = 'asc';
 if(state.settings.defaultCurrency !== '€') state.settings.defaultCurrency = '$';
 let currentView = 'home';
 
@@ -5726,35 +5734,67 @@ const SORT_KEYS = [
   { key:'name', label:'Ordre alphabétique', natural:'asc', dirs:['A → Z', 'Z → A'] },
   { key:'stars', label:'Note (étoiles)', natural:'desc', dirs:['Moins bien notées d\'abord', 'Mieux notées d\'abord'] },
   { key:'updated', label:'Dernière modification', natural:'desc', dirs:['Moins récentes d\'abord', 'Plus récentes d\'abord'] },
+  { key:'marketCap', label:'Capitalisation boursière', natural:'desc', dirs:['Petites capitalisations d\'abord', 'Grandes capitalisations d\'abord'] },
 ];
+// "Toutes vos analyses" (Mon espace) reprend les mêmes critères que la barre latérale, plus le Score composite (demande de Nolan le 2026-09-27).
+const TABLE_SORT_KEYS = SORT_KEYS.concat([
+  { key:'score', label:'Score composite', natural:'desc', dirs:['Moins bien notées d\'abord', 'Mieux notées d\'abord'] },
+]);
+// Comparateur partagé entre la barre latérale et "Toutes vos analyses" : seule la clé/le sens/la liste changent selon l'appelant.
+function sortCompare(a, b, key, sign, idx){
+  const stars = c => parseFloat(c.fields.personnelle && c.fields.personnelle.conviction) || 0;
+  const upd = c => c.updatedTs || Date.parse(c.updatedAt || c.createdAt || '') || 0;
+  const tie = (idx.get(a.id) - idx.get(b.id)) * ((key === 'created' || key === 'updated') ? sign : 1);
+  if(key === 'name') return sign * String(a.name || '').localeCompare(String(b.name || ''), 'fr', { sensitivity:'base' }) || tie;
+  if(key === 'stars'){
+    const sa = stars(a), sb = stars(b);
+    if(!sa && !sb) return tie;
+    if(!sa) return 1;
+    if(!sb) return -1;
+    return sign * (sa - sb) || tie;
+  }
+  if(key === 'marketCap'){
+    const ma = computeTailleCapiMd(a), mb = computeTailleCapiMd(b);
+    if(ma === null && mb === null) return tie;
+    if(ma === null) return 1;
+    if(mb === null) return -1;
+    return sign * (ma - mb) || tie;
+  }
+  if(key === 'score'){
+    const sa = computeGlobalScore(a), sb = computeGlobalScore(b);
+    if(sa === null && sb === null) return tie;
+    if(sa === null) return 1;
+    if(sb === null) return -1;
+    return sign * (sa - sb) || tie;
+  }
+  if(key === 'updated') return sign * (upd(a) - upd(b)) || tie;
+  return sign * String(a.createdAt || '').localeCompare(String(b.createdAt || '')) || tie;
+}
 function sortedForSidebar(){
   const key = state.settings.sortKey, sign = state.settings.sortDir === 'desc' ? -1 : 1;
   const idx = new Map(state.companies.map((c, i) => [c.id, i]));
-  const stars = c => parseFloat(c.fields.personnelle && c.fields.personnelle.conviction) || 0;
-  const upd = c => c.updatedTs || Date.parse(c.updatedAt || c.createdAt || '') || 0;
-  return state.companies.slice().sort((a, b) => {
-    const tie = (idx.get(a.id) - idx.get(b.id)) * ((key === 'created' || key === 'updated') ? sign : 1);
-    if(key === 'name') return sign * String(a.name || '').localeCompare(String(b.name || ''), 'fr', { sensitivity:'base' }) || tie;
-    if(key === 'stars'){
-      const sa = stars(a), sb = stars(b);
-      if(!sa && !sb) return tie;
-      if(!sa) return 1;
-      if(!sb) return -1;
-      return sign * (sa - sb) || tie;
-    }
-    if(key === 'updated') return sign * (upd(a) - upd(b)) || tie;
-    return sign * String(a.createdAt || '').localeCompare(String(b.createdAt || '')) || tie;
-  });
+  return state.companies.slice().sort((a, b) => sortCompare(a, b, key, sign, idx));
+}
+function sortedForTable(){
+  const key = state.settings.tableSortKey, sign = state.settings.tableSortDir === 'desc' ? -1 : 1;
+  const idx = new Map(state.companies.map((c, i) => [c.id, i]));
+  return state.companies.slice().sort((a, b) => sortCompare(a, b, key, sign, idx));
+}
+function sortMenuHtml(keys, curKey, curDir){
+  const cur = keys.find(k => k.key === curKey) || keys[0];
+  const check = on => `<span class="sort-check">${on ? '&#10003;' : ''}</span>`;
+  return `<div class="sort-title">Trier par</div>`
+    + keys.map(k => `<button type="button" class="sort-opt${k.key === cur.key ? ' current' : ''}" data-sort-key="${k.key}" role="menuitemradio" aria-checked="${k.key === cur.key}">${check(k.key === cur.key)}${k.label}</button>`).join('')
+    + `<div class="sort-sep"></div><div class="sort-title">Sens</div>`
+    + cur.dirs.map((label, i) => { const d = i === 0 ? 'asc' : 'desc'; const arrow = i === 0 ? '&uarr;' : '&darr;'; return `<button type="button" class="sort-opt${curDir === d ? ' current' : ''}" data-sort-dir="${d}" role="menuitemradio" aria-checked="${curDir === d}">${check(curDir === d)}<span>${arrow} ${label}</span></button>`; }).join('');
 }
 function paintSortMenu(){
   const menu = document.getElementById('sortMenu');
-  const cur = SORT_KEYS.find(k => k.key === state.settings.sortKey) || SORT_KEYS[0];
-  const dir = state.settings.sortDir;
-  const check = on => `<span class="sort-check">${on ? '&#10003;' : ''}</span>`;
-  menu.innerHTML = `<div class="sort-title">Trier par</div>`
-    + SORT_KEYS.map(k => `<button type="button" class="sort-opt${k.key === cur.key ? ' current' : ''}" data-sort-key="${k.key}" role="menuitemradio" aria-checked="${k.key === cur.key}">${check(k.key === cur.key)}${k.label}</button>`).join('')
-    + `<div class="sort-sep"></div><div class="sort-title">Sens</div>`
-    + cur.dirs.map((label, i) => { const d = i === 0 ? 'asc' : 'desc'; const arrow = i === 0 ? '&uarr;' : '&darr;'; return `<button type="button" class="sort-opt${dir === d ? ' current' : ''}" data-sort-dir="${d}" role="menuitemradio" aria-checked="${dir === d}">${check(dir === d)}<span>${arrow} ${label}</span></button>`; }).join('');
+  if(menu) menu.innerHTML = sortMenuHtml(SORT_KEYS, state.settings.sortKey, state.settings.sortDir);
+}
+function paintTableSortMenu(){
+  const menu = document.getElementById('tableSortMenu');
+  if(menu) menu.innerHTML = sortMenuHtml(TABLE_SORT_KEYS, state.settings.tableSortKey, state.settings.tableSortDir);
 }
 function setSidebarSort(key, dir){
   if(key && key !== state.settings.sortKey){
@@ -5766,10 +5806,31 @@ function setSidebarSort(key, dir){
   renderTabs();
   paintSortMenu();
 }
+// Ne remplace que le tableau (#companiesTableWrap), jamais l'en-tête de la carte : sinon le menu de tri, recréé fermé, se refermerait à chaque choix.
+function setTableSort(key, dir){
+  if(key && key !== state.settings.tableSortKey){
+    state.settings.tableSortKey = key;
+    state.settings.tableSortDir = (TABLE_SORT_KEYS.find(k => k.key === key) || TABLE_SORT_KEYS[0]).natural;
+  }
+  if(dir) state.settings.tableSortDir = dir;
+  saveState();
+  const wrap = document.getElementById('companiesTableWrap');
+  if(wrap) wrap.outerHTML = buildCompaniesTableRows();
+  paintTableSortMenu();
+}
 function toggleSortMenu(open){
   const menu = document.getElementById('sortMenu'), btn = document.getElementById('sortBtn');
+  if(!menu || !btn) return;
   const show = open === undefined ? menu.classList.contains('hidden') : open;
   if(show) paintSortMenu();
+  menu.classList.toggle('hidden', !show);
+  btn.setAttribute('aria-expanded', String(show));
+}
+function toggleTableSortMenu(open){
+  const menu = document.getElementById('tableSortMenu'), btn = document.getElementById('tableSortBtn');
+  if(!menu || !btn) return;
+  const show = open === undefined ? menu.classList.contains('hidden') : open;
+  if(show) paintTableSortMenu();
   menu.classList.toggle('hidden', !show);
   btn.setAttribute('aria-expanded', String(show));
 }
@@ -5781,8 +5842,20 @@ function bindSortMenu(){
     if(!o) return;
     setSidebarSort(o.dataset.sortKey || null, o.dataset.sortDir || null);
   });
-  document.addEventListener('click', () => toggleSortMenu(false));
-  document.addEventListener('keydown', e => { if(e.key === 'Escape') toggleSortMenu(false); });
+  document.addEventListener('click', () => { toggleSortMenu(false); toggleTableSortMenu(false); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape'){ toggleSortMenu(false); toggleTableSortMenu(false); } });
+}
+// Rappelée à chaque ouverture de Mon espace (bindSpace) : les éléments #tableSortBtn/#tableSortMenu sont recréés à chaque rendu de la page.
+function bindTableSortMenu(){
+  const btn = document.getElementById('tableSortBtn'), menu = document.getElementById('tableSortMenu');
+  if(!btn || !menu) return;
+  btn.addEventListener('click', e => { e.stopPropagation(); toggleTableSortMenu(); });
+  menu.addEventListener('click', e => {
+    e.stopPropagation();
+    const o = e.target.closest('[data-sort-key],[data-sort-dir]');
+    if(!o) return;
+    setTableSort(o.dataset.sortKey || null, o.dataset.sortDir || null);
+  });
 }
 
 function renderTabs(){
@@ -6427,7 +6500,8 @@ function buildSectorsCard(){
   return spaceCard('s7', 'Répartition de vos analyses', 'Par secteur et par pays du siège', `<div class="dn-two"><div><div class="dn-title">Secteurs</div>${sec}</div><div><div class="dn-title">Pays</div>${cty}</div></div>`);
 }
 
-function buildCompaniesTable(){
+// Le tableau lui-même (#companiesTableWrap) : reconstruit seul à chaque changement de tri, sans toucher à l'en-tête de la carte (bouton + menu de tri).
+function buildCompaniesTableRows(){
   // Valeurs chiffrées mises en valeur (demande de Nolan le 2026-09-26) : une pastille teintée à la couleur du palier, chiffre en gras ; la note globale en plus grand,
   // avec un contour en pointillés quand elle est provisoire.
   const chip = (val, color, text, opt) => {
@@ -6435,7 +6509,7 @@ function buildCompaniesTable(){
     const o = opt || {};
     return `<span class="vchip${o.lg ? ' vchip-lg' : ''}${o.prov ? ' is-prov' : ''}" style="--c:${color}"${o.prov ? ` data-tooltip="<div class='tt-desc'>Note provisoire : moins de ${SCORE_MIN_AXES} axes renseignés</div>"` : ''}>${text}</span>`;
   };
-  const rows = state.companies.map(c => {
+  const rows = sortedForTable().map(c => {
     const idn = c.fields.identite || {};
     const ticker = idn.ticker || '';
     const sect = (idn.secteur && idn.secteur.secteur) || '';
@@ -6467,7 +6541,12 @@ function buildCompaniesTable(){
       <td class="home-updated">${formatDateFrShort(c.updatedAt || c.createdAt)}</td>
     </tr>`;
   }).join('');
-  return spaceCard('s12', 'Toutes vos analyses', `${state.companies.length} au total`, `<div class="home-table-wrap home-table-wrap--tight"><table class="home-table home-table--tight"><thead><tr><th>Entreprise</th><th>Score</th><th>PEG</th><th>MOAT</th><th>Buffett</th><th>Décision</th><th data-tooltip="<div class='tt-desc'>Conviction</div>">Conv.</th><th data-tooltip="<div class='tt-desc'>Fiche complétée</div>">Progrès</th><th data-tooltip="<div class='tt-desc'>Dernière mise à jour</div>">Date</th></tr></thead><tbody>${rows}</tbody></table></div>`);
+  return `<div class="home-table-wrap home-table-wrap--tight" id="companiesTableWrap"><table class="home-table home-table--tight"><thead><tr><th>Entreprise</th><th>Score</th><th>PEG</th><th>MOAT</th><th>Buffett</th><th>Décision</th><th data-tooltip="<div class='tt-desc'>Conviction</div>">Conv.</th><th data-tooltip="<div class='tt-desc'>Fiche complétée</div>">Progrès</th><th data-tooltip="<div class='tt-desc'>Dernière mise à jour</div>">Date</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function buildCompaniesTable(){
+  const sortCtrl = `<span class="table-sort-wrap"><button type="button" class="sort-btn" id="tableSortBtn" aria-label="Trier les analyses" aria-haspopup="true" aria-expanded="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20V4M7 4L3.5 7.5M7 4l3.5 3.5"/><path d="M17 4v16M17 20l-3.5-3.5M17 20l3.5-3.5"/></svg></button><div class="sort-menu hidden" id="tableSortMenu" role="menu">${sortMenuHtml(TABLE_SORT_KEYS, state.settings.tableSortKey, state.settings.tableSortDir)}</div></span>`;
+  const sub = `<span class="scard-s-row">${state.companies.length} au total${sortCtrl}</span>`;
+  return spaceCard('s12', 'Toutes vos analyses', sub, buildCompaniesTableRows());
 }
 
 function buildMilestones(){
@@ -6647,6 +6726,7 @@ function renderSpaceView(){
 }
 function bindSpace(){
   const main = document.getElementById('main');
+  bindTableSortMenu();
   main.querySelectorAll('[data-new-analysis]').forEach(el => el.addEventListener('click', openNewCompanyModal));
   main.querySelectorAll('[data-open-company]').forEach(el => el.addEventListener('click', () => selectCompany(el.dataset.openCompany)));
   main.querySelectorAll('[data-rename-id]').forEach(el => el.addEventListener('click', e => openRenameModal(el.dataset.renameId, e)));
