@@ -1854,6 +1854,7 @@ const FIELD_DESCRIPTIONS = {
   partMarche: "La proportion du marché total captée par l'entreprise face à ses concurrents.",
   innovationTech: "Les innovations technologiques qui soutiennent la croissance future.",
   croissanceAttendueCA: "La croissance du chiffre d'affaires anticipée par les analystes sur 3 ans.",
+  croissanceAttendueBenef: "La croissance du bénéfice net anticipée par les analystes sur 3 ans.",
   diversificationSecteur: "Les différents secteurs ou marchés sur lesquels l'entreprise est positionnée.",
   catalyseurs: "Les événements ou tendances qui pourraient accélérer la croissance future.",
   risque: "Les principaux risques qui pourraient freiner ou menacer l'entreprise.",
@@ -2065,7 +2066,8 @@ const SECTIONS = [
       {key:'partMarche', label:'Part de marché', type:'textarea', span:6},
       {key:'innovationTech', label:'Innovation tech', type:'textarea', span:6},
       {key:'diversificationSecteur', label:'Diversification de secteur', type:'textarea', span:6},
-      {key:'croissanceAttendueCA', label:'Croissance attendue du CA (3 ans)', type:'growthDuo', years:3, span:12, group:'Perspectives chiffrées'},
+      {key:'croissanceAttendueCA', label:'Croissance attendue du CA (3 ans)', type:'growthDuo', years:3, span:6, group:'Perspectives chiffrées'},
+      {key:'croissanceAttendueBenef', label:'Croissance attendue du bénéfice net (3 ans)', type:'growthDuo', years:3, span:6},
       {key:'catalyseurs', label:'Catalyseurs potentiels', type:'textarea', span:6, group:'Leviers et risques'},
       {key:'risque', label:'Risque', type:'textarea', span:6},
     ]
@@ -3363,13 +3365,14 @@ const SCALE_CONFIG = {
   capexRatio:     { thresholds:[8,15,20], inverse:true },
   peg:            { thresholds:[1,1.5,2], inverse:true },
   croissanceAttendueCA: { thresholds:[20,10,3], inverse:false },
+  croissanceAttendueBenef: { thresholds:[20,10,0], inverse:false },   // mêmes seuils que croissanceBenef (5 ans) : le bénéfice net est plus variable que le CA
   peRelatifSecteur: { thresholds:[0.7,1,1.3], inverse:true },
   moatNote: { thresholds:[8,6,4], inverse:false },
 };
 const BADGE_UNITS = {
   croissanceCA:'%', croissanceBenef:'%', margeBrute:'%', margeNette:'%', roe:'%', roic:'%',
   detteActif:'', detteTotalActif:'%', tresorerieDette:'%', scoreSolvabilite:'/100', probaFaillite:'%', croissanceEstimeeEps:'%', conversionFcf:'%', positionShort:'%', ratioVenteADecouvert:' j', capexRatio:'%',
-  peg:'', croissanceAttendueCA:'%', peRelatifSecteur:'', moatNote:'/10', croissanceDividende:'&nbsp;%/an',
+  peg:'', croissanceAttendueCA:'%', croissanceAttendueBenef:'%', peRelatifSecteur:'', moatNote:'/10', croissanceDividende:'&nbsp;%/an',
 };
 const TOOLTIP_TIER_COLORS = { tresbon:'#22c55e', bon:'#c2f5d0', moyen:'#fde047', mauvais:'#f87171' };
 function scaleTooltip(fieldKey, currentTier){
@@ -3733,6 +3736,7 @@ function refreshAllBadges(){
     { section:'valorisation', key:'peg', val: computePeg(c) },
     { section:'valorisation', key:'peRelatifSecteur', val: computePeRelatif(c) },
     { section:'croissance', key:'croissanceAttendueCA', val: num(c.fields.croissance.croissanceAttendueCA && c.fields.croissance.croissanceAttendueCA.cagr) },
+    { section:'croissance', key:'croissanceAttendueBenef', val: num(c.fields.croissance.croissanceAttendueBenef && c.fields.croissance.croissanceAttendueBenef.cagr) },
   ];
   defs.forEach(d => {
     const el = document.getElementById(`badge-${d.section}-${d.key}`);
@@ -4617,7 +4621,7 @@ function continuousScore(val, thresholds, inverse){
 // 5 axes ; chaque axe est la MOYENNE des notes (0 à 100, calculées en continu avec les barèmes de l'app) de ses indicateurs disponibles :
 //   Qualité (25 %)      MOAT + marge brute + marge nette + checklist Buffett (part de critères validés, ignorée tant qu'aucun n'est validé)
 //   Rentabilité (25 %)  ROIC + ROE + CAGR du bénéfice net
-//   Croissance (15 %)   CAGR du CA + croissance attendue du CA sur 3 ans + croissance estimée du BPA (EPS) sur 3 ans + croissance du dividende (annualisée, si l'entreprise en verse)
+//   Croissance (15 %)   CAGR du CA + croissance attendue du CA sur 3 ans + croissance attendue du bénéfice net sur 3 ans + croissance estimée du BPA (EPS) sur 3 ans + croissance du dividende (annualisée, si l'entreprise en verse)
 // (Depuis le 2026-09-26, chaque axe compte au moins 3 indicateurs, demande de Nolan.)
 //   Solidité (20 %)     dette nette / FCF + conversion du FCF + dette totale / total actif + trésorerie / dette totale + score de solvabilité + probabilité de faillite
 //   Valorisation (15 %) PEG + marge de sécurité (écart avec la valeur intrinsèque) + PE relatif au secteur + consensus des analystes (jauge, de 1 à 5, note linéaire : Hold = 50)
@@ -4625,7 +4629,7 @@ function continuousScore(val, thresholds, inverse){
 const SCORE_AXES = [
   { id:'qualite', label:'Qualité', weight:0.25, parts:['moatNote', 'margeBrute', 'margeNette', 'buffett'] },
   { id:'rentabilite', label:'Rentabilité', weight:0.25, parts:['roic', 'roe', 'croissanceBenef'] },
-  { id:'croissance', label:'Croissance', weight:0.15, parts:['croissanceCA', 'croissanceAttendueCA', 'croissanceEstimeeEps', 'croissanceDividende'] },
+  { id:'croissance', label:'Croissance', weight:0.15, parts:['croissanceCA', 'croissanceAttendueCA', 'croissanceAttendueBenef', 'croissanceEstimeeEps', 'croissanceDividende'] },
   { id:'solidite', label:'Solidité', weight:0.20, parts:['detteActif', 'conversionFcf', 'detteTotalActif', 'tresorerieDette', 'scoreSolvabilite', 'probaFaillite'] },
   { id:'valorisation', label:'Valorisation', weight:0.15, parts:['peg', 'margeSecurite', 'peRelatifSecteur', 'consensus'] },
 ];
@@ -4634,8 +4638,8 @@ const SCORE_MIN_AXES = 3;
 const MARGE_SECURITE_SCALE = { thresholds:[30, 15, 0], inverse:false };
 // Checklist Buffett : notation LINÉAIRE (demande de Nolan le 2026-09-26) : chaque critère validé vaut 10 points sur 10 critères, donc 7/10 = 70 points.
 // (Les couleurs de la checklist ailleurs dans l'app gardent leurs propres seuils 80 / 60 / 40.)
-const SCORE_PART_LABELS = { moatNote:'MOAT', consensus:'Consensus des analystes', buffett:'Checklist Buffett', margeBrute:'Marge brute', croissanceDividende:'Croissance du dividende (annualisée)', croissanceEstimeeEps:'Croissance estimée du BPA (3 ans)', margeNette:'Marge nette', roic:'ROIC', roe:'ROE', croissanceBenef:'CAGR du bénéfice net', croissanceCA:'CAGR du CA', croissanceAttendueCA:'Croissance attendue du CA (3 ans)', detteActif:'Dette nette / FCF', detteTotalActif:'Dette totale / Total actif', tresorerieDette:'Trésorerie / Dette totale', scoreSolvabilite:'Score de solvabilité', probaFaillite:'Probabilité de faillite', conversionFcf:'Conversion du FCF', peg:'PEG', margeSecurite:'Marge de sécurité', peRelatifSecteur:'PE / Secteur' };
-const SCORE_PART_UNITS = { moatNote:'/10', consensus:'/5', buffett:' %', margeBrute:' %', croissanceDividende:' %/an', croissanceEstimeeEps:' %', margeNette:' %', roic:' %', roe:' %', croissanceBenef:' %', croissanceCA:' %', croissanceAttendueCA:' %', detteActif:'', detteTotalActif:' %', tresorerieDette:' %', scoreSolvabilite:'/100', probaFaillite:' %', conversionFcf:' %', peg:'', margeSecurite:' %', peRelatifSecteur:'' };
+const SCORE_PART_LABELS = { moatNote:'MOAT', consensus:'Consensus des analystes', buffett:'Checklist Buffett', margeBrute:'Marge brute', croissanceDividende:'Croissance du dividende (annualisée)', croissanceEstimeeEps:'Croissance estimée du BPA (3 ans)', margeNette:'Marge nette', roic:'ROIC', roe:'ROE', croissanceBenef:'CAGR du bénéfice net', croissanceCA:'CAGR du CA', croissanceAttendueCA:'Croissance attendue du CA (3 ans)', croissanceAttendueBenef:'Croissance attendue du bénéfice net (3 ans)', detteActif:'Dette nette / FCF', detteTotalActif:'Dette totale / Total actif', tresorerieDette:'Trésorerie / Dette totale', scoreSolvabilite:'Score de solvabilité', probaFaillite:'Probabilité de faillite', conversionFcf:'Conversion du FCF', peg:'PEG', margeSecurite:'Marge de sécurité', peRelatifSecteur:'PE / Secteur' };
+const SCORE_PART_UNITS = { moatNote:'/10', consensus:'/5', buffett:' %', margeBrute:' %', croissanceDividende:' %/an', croissanceEstimeeEps:' %', margeNette:' %', roic:' %', roe:' %', croissanceBenef:' %', croissanceCA:' %', croissanceAttendueCA:' %', croissanceAttendueBenef:' %', detteActif:'', detteTotalActif:' %', tresorerieDette:' %', scoreSolvabilite:'/100', probaFaillite:' %', conversionFcf:' %', peg:'', margeSecurite:' %', peRelatifSecteur:'' };
 // Barème de couleurs de la NOTE GLOBALE (demande de Nolan le 2026-09-26) : 5 paliers de 20 points, rouge (0 à 20), orange (20 à 40), jaune (40 à 60),
 // vert clair (60 à 80), vert foncé (80 à 100). Distinct du barème à 4 paliers des indicateurs (TIER_COLORS), qui reste inchangé.
 // scoreColor5(note, true) donne les teintes vives pour les cartes à fond marine.
@@ -4664,6 +4668,7 @@ function scorePartValue(c, key){
   if(key === 'croissanceBenef') return num(fin.croissanceBenef && fin.croissanceBenef.cagr);
   if(key === 'croissanceCA') return num(fin.croissanceCA && fin.croissanceCA.cagr);
   if(key === 'croissanceAttendueCA') return num(c.fields.croissance && c.fields.croissance.croissanceAttendueCA && c.fields.croissance.croissanceAttendueCA.cagr);
+  if(key === 'croissanceAttendueBenef') return num(c.fields.croissance && c.fields.croissance.croissanceAttendueBenef && c.fields.croissance.croissanceAttendueBenef.cagr);
   if(key === 'croissanceDividende'){ const d = c.fields.identite.politiqueDividende; return (d && d.mode === 'verse') ? computeDividendGrowthCagr(c) : null; }   // seulement si l'entreprise verse un dividende
   if(key === 'detteActif') return computeDetteActif(c);
   if(key === 'detteTotalActif') return computeDetteTotalActif(c);
@@ -6743,7 +6748,7 @@ const LEARN_CHAPTERS = [
       { t:'buffett' },
       LP(`Les critères marqués « auto » se cochent tout seuls quand les chiffres saisis le justifient ; vous pouvez toujours cliquer pour corriger. Un score de 8/10 ou plus est un très bon signe, mais la checklist ne remplace jamais votre jugement.`),
       LH(`Le score composite sur 100`),
-      LP(`La synthèse combine cinq axes en une note moyenne pondérée : <strong>Qualité 25 %</strong>, <strong>Rentabilité 25 %</strong>, <strong>Solidité 20 %</strong>, <strong>Croissance 15 %</strong> et <strong>Valorisation 15 %</strong>. Chaque axe est lui-même la moyenne de ses indicateurs : <strong>Qualité</strong> (MOAT, marge brute, marge nette et checklist Buffett), <strong>Rentabilité</strong> (ROIC, ROE et CAGR du bénéfice net), <strong>Solidité</strong> (dette nette sur FCF, conversion du FCF, dette totale sur total actif, trésorerie sur dette totale, score de solvabilité et probabilité de faillite), <strong>Croissance</strong> (CAGR du chiffre d'affaires, croissance attendue du CA sur 3 ans et croissance estimée du bénéfice par action sur 3 ans) et <strong>Valorisation</strong> (PEG, marge de sécurité par rapport à votre valeur intrinsèque PE relatif au secteur et consensus des analystes). Les indicateurs non renseignés sont simplement ignorés. La note est marquée <strong>provisoire</strong> tant que moins de 3 axes sur 5 sont renseignés : une note fondée sur un seul chiffre ne dit presque rien. Sa couleur suit cinq paliers de 20 points : rouge (moins de 20), orange (20 à 40), jaune (40 à 60), vert clair (60 à 80) et vert foncé (80 et plus). Le radar montre en un coup d'œil où l'entreprise est forte ou faible, et au survol d'un axe vous voyez le détail de ses indicateurs. Le score est un repère pour comparer vos analyses entre elles, pas une recommandation.`),
+      LP(`La synthèse combine cinq axes en une note moyenne pondérée : <strong>Qualité 25 %</strong>, <strong>Rentabilité 25 %</strong>, <strong>Solidité 20 %</strong>, <strong>Croissance 15 %</strong> et <strong>Valorisation 15 %</strong>. Chaque axe est lui-même la moyenne de ses indicateurs : <strong>Qualité</strong> (MOAT, marge brute, marge nette et checklist Buffett), <strong>Rentabilité</strong> (ROIC, ROE et CAGR du bénéfice net), <strong>Solidité</strong> (dette nette sur FCF, conversion du FCF, dette totale sur total actif, trésorerie sur dette totale, score de solvabilité et probabilité de faillite), <strong>Croissance</strong> (CAGR du chiffre d'affaires, croissance attendue du CA sur 3 ans, croissance attendue du bénéfice net sur 3 ans et croissance estimée du bénéfice par action sur 3 ans) et <strong>Valorisation</strong> (PEG, marge de sécurité par rapport à votre valeur intrinsèque PE relatif au secteur et consensus des analystes). Les indicateurs non renseignés sont simplement ignorés. La note est marquée <strong>provisoire</strong> tant que moins de 3 axes sur 5 sont renseignés : une note fondée sur un seul chiffre ne dit presque rien. Sa couleur suit cinq paliers de 20 points : rouge (moins de 20), orange (20 à 40), jaune (40 à 60), vert clair (60 à 80) et vert foncé (80 et plus). Le radar montre en un coup d'œil où l'entreprise est forte ou faible, et au survol d'un axe vous voyez le détail de ses indicateurs. Le score est un repère pour comparer vos analyses entre elles, pas une recommandation.`),
       LTIP('attention', `Un score élevé avec peu de données saisies n'est pas fiable. Regardez la progression de chaque section : plus la fiche est complète, plus le score a de sens.`),
     ],
   },
@@ -7024,6 +7029,7 @@ const LEARN_INDICATORS = {
   catalyseurs: { how:`Les événements à venir qui pourraient faire monter l'action : nouveau produit, expansion, acquisition, changement de réglementation.` },
   risque: { how:`Ce qui pourrait mal tourner : concurrence, réglementation, dépendance à un client, dette, technologie.` },
   croissanceAttendueCA: { how:`La croissance annuelle du chiffre d'affaires que vous attendez sur 3 ans (CAGR), et le total calculé.`, ex:`8 % par an pendant 3 ans donne environ +26 % au total (1,08 puissance 3 = 1,26).` },
+  croissanceAttendueBenef: { how:`La croissance annuelle du bénéfice net que vous attendez sur 3 ans (CAGR), et le total calculé. À côté de la croissance attendue du CA : si le bénéfice croît plus vite que le CA, c'est que les marges s'améliorent.`, ex:`10 % par an pendant 3 ans donne environ +33 % au total (1,10 puissance 3 = 1,33).` },
   prixActuel: { how:`Le cours de l'action. Il se met à jour automatiquement avec une clé Twelve Data (actions américaines) ou se saisit à la main.` },
   epsActuel: { how:`Bénéfice par action des 12 derniers mois : bénéfice net ÷ nombre d'actions.`, ex:`Bénéfice net de 100 M$ pour 20 M d'actions : EPS de 5 $.` },
   epsEstime1an: { how:`Bénéfice par action attendu dans 12 mois (estimation des analystes ou la vôtre).` },
