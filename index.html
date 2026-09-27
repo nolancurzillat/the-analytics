@@ -891,6 +891,8 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; font-family:
 .notes-row{ display:flex; align-items:center; gap:8px; }
 .notes-row input{ flex:1 1 auto; min-width:0; }
 .notes-row .field-remove{ margin-top:0; flex:0 0 auto; }
+.div-cagr{ margin-top:8px; display:flex; align-items:center; gap:10px; font-size:13.5px; color:var(--ink-soft); min-height:20px; }
+.div-cagr:empty{ display:none; }
 .div-cell select{ max-width:100%; }
 .value-with-note{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
 .value-with-note input{ width:170px !important; flex:0 0 auto; }
@@ -3351,6 +3353,9 @@ const SCALE_CONFIG = {
   tresorerieDette:{ thresholds:[100,50,25], inverse:false },
   scoreSolvabilite:{ thresholds:[75,50,25], inverse:false },
   probaFaillite:  { thresholds:[1,5,20], inverse:true, inclusive:true },
+  // Croissance du dividende, en taux ANNUEL déduit du total sur 5 ans saisi (voir computeDividendGrowthCagr) : seuils plus bas que croissanceBenef,
+  // un dividende progresse en général moins vite qu'un bénéfice (demande de Nolan le 2026-09-27).
+  croissanceDividende: { thresholds:[10,5,0], inverse:false },
   croissanceEstimeeEps: { thresholds:[20,10,0], inverse:false },
   conversionFcf:  { thresholds:[90,70,50], inverse:false },
   positionShort:  { thresholds:[2,5,10], inverse:true },
@@ -3364,7 +3369,7 @@ const SCALE_CONFIG = {
 const BADGE_UNITS = {
   croissanceCA:'%', croissanceBenef:'%', margeBrute:'%', margeNette:'%', roe:'%', roic:'%',
   detteActif:'', detteTotalActif:'%', tresorerieDette:'%', scoreSolvabilite:'/100', probaFaillite:'%', croissanceEstimeeEps:'%', conversionFcf:'%', positionShort:'%', ratioVenteADecouvert:' j', capexRatio:'%',
-  peg:'', croissanceAttendueCA:'%', peRelatifSecteur:'', moatNote:'/10',
+  peg:'', croissanceAttendueCA:'%', peRelatifSecteur:'', moatNote:'/10', croissanceDividende:'&nbsp;%/an',
 };
 const TOOLTIP_TIER_COLORS = { tresbon:'#22c55e', bon:'#c2f5d0', moyen:'#fde047', mauvais:'#f87171' };
 function scaleTooltip(fieldKey, currentTier){
@@ -3490,6 +3495,21 @@ function computeDividendPayout(c){
   const dpa = num(d && d.dividendeAction), eps = num(c.fields.valorisation.epsActuel);
   if(dpa === null || eps === null || eps <= 0) return null;
   return dpa / eps * 100;
+}
+// Croissance du dividende : l'utilisateur saisit le TOTAL sur 5 ans (pas un CAGR, demande de Nolan le 2026-09-27, source de confusion sinon).
+// On en déduit le taux annuel moyen pour la note et pour le barème, comme pour les champs growthDuo mais dans l'autre sens (total -> CAGR au lieu de CAGR -> total).
+function computeDividendGrowthCagr(c){
+  const d = c.fields.identite.politiqueDividende;
+  const total = num(d && d.croissance);
+  if(total === null) return null;
+  const base = 1 + total / 100;
+  if(base <= 0) return null;   // un dividende ne peut pas baisser de 100 % ou plus (racine d'un nombre négatif)
+  return (Math.pow(base, 1 / 5) - 1) * 100;
+}
+function tipDividendGrowthCagr(c){
+  const d = c.fields.identite.politiqueDividende || {};
+  const cagr = computeDividendGrowthCagr(c);
+  return `<div class='tt-formula'>(1 + ${n(raw(d.croissance) + '%')})^(1/5) − 1</div>${tipRes('= ' + (cagr === null ? '—' : fmtNum(cagr, 1) + ' %/an'))}<div class='tt-desc'>Taux de croissance annuel moyen déduit du total sur 5 ans que vous avez saisi.</div>`;
 }
 function tipDividendPayout(c){
   const d = c.fields.identite.politiqueDividende || {};
@@ -3761,6 +3781,12 @@ function refreshAllComputed(){
   const dy = computeDividendYield(c);
   setText('computed-identite-politiqueDividende-yield', dy === null ? '—' : fmtNum(dy, 2) + ' %', tipDividendYield(c));
   refreshPositionDividend();
+  const cagrCell = document.getElementById('computed-identite-politiqueDividende-croissanceCagr');
+  if(cagrCell){
+    const g = computeDividendGrowthCagr(c);
+    cagrCell.innerHTML = (g === null ? '' : '≈ ' + (g > 0 ? '+' : '') + fmtNum(g, 1) + ' %/an') + renderBadge('croissanceDividende', g, 'badge-identite-croissanceDividendeCagr');
+    cagrCell.dataset.tooltip = tipDividendGrowthCagr(c);
+  }
   const secBadge = document.getElementById('div-secu-badge');
   if(secBadge){
     const sv = num((c.fields.identite.politiqueDividende || {}).securite), st = dividendSecurityTier(sv);
@@ -4548,7 +4574,7 @@ function continuousScore(val, thresholds, inverse){
 // 5 axes ; chaque axe est la MOYENNE des notes (0 à 100, calculées en continu avec les barèmes de l'app) de ses indicateurs disponibles :
 //   Qualité (25 %)      MOAT + marge brute + marge nette + checklist Buffett (part de critères validés, ignorée tant qu'aucun n'est validé)
 //   Rentabilité (25 %)  ROIC + ROE + CAGR du bénéfice net
-//   Croissance (15 %)   CAGR du CA + croissance attendue du CA sur 3 ans + croissance estimée du BPA (EPS) sur 3 ans
+//   Croissance (15 %)   CAGR du CA + croissance attendue du CA sur 3 ans + croissance estimée du BPA (EPS) sur 3 ans + croissance du dividende (annualisée, si l'entreprise en verse)
 // (Depuis le 2026-09-26, chaque axe compte au moins 3 indicateurs, demande de Nolan.)
 //   Solidité (20 %)     dette nette / FCF + conversion du FCF + dette totale / total actif + trésorerie / dette totale + score de solvabilité + probabilité de faillite
 //   Valorisation (15 %) PEG + marge de sécurité (écart avec la valeur intrinsèque) + PE relatif au secteur + consensus des analystes (jauge, de 1 à 5, note linéaire : Hold = 50)
@@ -4556,7 +4582,7 @@ function continuousScore(val, thresholds, inverse){
 const SCORE_AXES = [
   { id:'qualite', label:'Qualité', weight:0.25, parts:['moatNote', 'margeBrute', 'margeNette', 'buffett'] },
   { id:'rentabilite', label:'Rentabilité', weight:0.25, parts:['roic', 'roe', 'croissanceBenef'] },
-  { id:'croissance', label:'Croissance', weight:0.15, parts:['croissanceCA', 'croissanceAttendueCA', 'croissanceEstimeeEps'] },
+  { id:'croissance', label:'Croissance', weight:0.15, parts:['croissanceCA', 'croissanceAttendueCA', 'croissanceEstimeeEps', 'croissanceDividende'] },
   { id:'solidite', label:'Solidité', weight:0.20, parts:['detteActif', 'conversionFcf', 'detteTotalActif', 'tresorerieDette', 'scoreSolvabilite', 'probaFaillite'] },
   { id:'valorisation', label:'Valorisation', weight:0.15, parts:['peg', 'margeSecurite', 'peRelatifSecteur', 'consensus'] },
 ];
@@ -4565,8 +4591,8 @@ const SCORE_MIN_AXES = 3;
 const MARGE_SECURITE_SCALE = { thresholds:[30, 15, 0], inverse:false };
 // Checklist Buffett : notation LINÉAIRE (demande de Nolan le 2026-09-26) : chaque critère validé vaut 10 points sur 10 critères, donc 7/10 = 70 points.
 // (Les couleurs de la checklist ailleurs dans l'app gardent leurs propres seuils 80 / 60 / 40.)
-const SCORE_PART_LABELS = { moatNote:'MOAT', consensus:'Consensus des analystes', buffett:'Checklist Buffett', margeBrute:'Marge brute', croissanceEstimeeEps:'Croissance estimée du BPA (3 ans)', margeNette:'Marge nette', roic:'ROIC', roe:'ROE', croissanceBenef:'CAGR du bénéfice net', croissanceCA:'CAGR du CA', croissanceAttendueCA:'Croissance attendue du CA (3 ans)', detteActif:'Dette nette / FCF', detteTotalActif:'Dette totale / Total actif', tresorerieDette:'Trésorerie / Dette totale', scoreSolvabilite:'Score de solvabilité', probaFaillite:'Probabilité de faillite', conversionFcf:'Conversion du FCF', peg:'PEG', margeSecurite:'Marge de sécurité', peRelatifSecteur:'PE / Secteur' };
-const SCORE_PART_UNITS = { moatNote:'/10', consensus:'/5', buffett:' %', margeBrute:' %', croissanceEstimeeEps:' %', margeNette:' %', roic:' %', roe:' %', croissanceBenef:' %', croissanceCA:' %', croissanceAttendueCA:' %', detteActif:'', detteTotalActif:' %', tresorerieDette:' %', scoreSolvabilite:'/100', probaFaillite:' %', conversionFcf:' %', peg:'', margeSecurite:' %', peRelatifSecteur:'' };
+const SCORE_PART_LABELS = { moatNote:'MOAT', consensus:'Consensus des analystes', buffett:'Checklist Buffett', margeBrute:'Marge brute', croissanceDividende:'Croissance du dividende (annualisée)', croissanceEstimeeEps:'Croissance estimée du BPA (3 ans)', margeNette:'Marge nette', roic:'ROIC', roe:'ROE', croissanceBenef:'CAGR du bénéfice net', croissanceCA:'CAGR du CA', croissanceAttendueCA:'Croissance attendue du CA (3 ans)', detteActif:'Dette nette / FCF', detteTotalActif:'Dette totale / Total actif', tresorerieDette:'Trésorerie / Dette totale', scoreSolvabilite:'Score de solvabilité', probaFaillite:'Probabilité de faillite', conversionFcf:'Conversion du FCF', peg:'PEG', margeSecurite:'Marge de sécurité', peRelatifSecteur:'PE / Secteur' };
+const SCORE_PART_UNITS = { moatNote:'/10', consensus:'/5', buffett:' %', margeBrute:' %', croissanceDividende:' %/an', croissanceEstimeeEps:' %', margeNette:' %', roic:' %', roe:' %', croissanceBenef:' %', croissanceCA:' %', croissanceAttendueCA:' %', detteActif:'', detteTotalActif:' %', tresorerieDette:' %', scoreSolvabilite:'/100', probaFaillite:' %', conversionFcf:' %', peg:'', margeSecurite:' %', peRelatifSecteur:'' };
 // Barème de couleurs de la NOTE GLOBALE (demande de Nolan le 2026-09-26) : 5 paliers de 20 points, rouge (0 à 20), orange (20 à 40), jaune (40 à 60),
 // vert clair (60 à 80), vert foncé (80 à 100). Distinct du barème à 4 paliers des indicateurs (TIER_COLORS), qui reste inchangé.
 // scoreColor5(note, true) donne les teintes vives pour les cartes à fond marine.
@@ -4595,6 +4621,7 @@ function scorePartValue(c, key){
   if(key === 'croissanceBenef') return num(fin.croissanceBenef && fin.croissanceBenef.cagr);
   if(key === 'croissanceCA') return num(fin.croissanceCA && fin.croissanceCA.cagr);
   if(key === 'croissanceAttendueCA') return num(c.fields.croissance && c.fields.croissance.croissanceAttendueCA && c.fields.croissance.croissanceAttendueCA.cagr);
+  if(key === 'croissanceDividende'){ const d = c.fields.identite.politiqueDividende; return (d && d.mode === 'verse') ? computeDividendGrowthCagr(c) : null; }   // seulement si l'entreprise verse un dividende
   if(key === 'detteActif') return computeDetteActif(c);
   if(key === 'detteTotalActif') return computeDetteTotalActif(c);
   if(key === 'tresorerieDette') return computeTresorerieDette(c);
@@ -8163,7 +8190,7 @@ function render(){
             <div class="div-cell"><span class="duo-label">Rendement du dividende</span><span class="computed" id="computed-identite-politiqueDividende-yield" data-tooltip="${tipDividendYield(c)}">${y === null ? '—' : fmtNum(y, 2) + ' %'}</span></div>
             <div class="div-cell"><span class="duo-label">Fréquence de versement</span><select ${sub('frequence')}>${freqOpts}</select></div>
             <div class="div-cell"><span class="duo-label">Taux de distribution</span><span class="computed" id="computed-identite-politiqueDividende-payout" data-tooltip="${tipDividendPayout(c)}">${po === null ? '—' : fmtNum(po, 1) + ' %'}</span></div>
-            <div class="div-cell"><span class="duo-label">Croissance du dividende (5 ans)</span><div class="value-with-suffix">${numIn('croissance', 2)}<span class="value-suffix">%</span></div></div>
+            <div class="div-cell"><span class="duo-label">Croissance du dividende, total sur 5 ans</span><div class="value-with-suffix">${numIn('croissance', 2)}<span class="value-suffix">%</span></div><div class="div-cagr" id="computed-identite-politiqueDividende-croissanceCagr" data-tooltip="${tipDividendGrowthCagr(c)}">${(() => { const g = computeDividendGrowthCagr(c); return g === null ? '' : '≈ ' + (g > 0 ? '+' : '') + fmtNum(g, 1) + ' %/an'; })()}${renderBadge('croissanceDividende', computeDividendGrowthCagr(c), 'badge-identite-croissanceDividendeCagr')}</div></div>
             <div class="div-cell"><span class="duo-label">Sécurité du dividende</span><div class="value-with-badge">${numIn('securite', 2)}<span class="value-suffix">/100</span>${dividendSecurityBadge(num(obj.securite))}</div></div>
             ${notesCell('Précisions (historique, dates, particularités)')}
           </div>` : (mode === 'aucun' ? `<div class="div-grid">${notesCell("Précisions (ex : réinvestit ses bénéfices, rachats d'actions)")}</div>` : (obj.notes ? `<div class="div-grid"><div class="div-cell div-wide"><span class="duo-label">Ancien texte conservé, choisissez une option ci-dessus</span><input type="text" ${sub('notes')} value="${escapeHtml(obj.notes || '')}"></div></div>` : ''));
