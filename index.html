@@ -1144,18 +1144,27 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; font-family:
 .highlight-group{ flex:1; min-width:200px; }
 .highlight-group-title{ font-size:13px; letter-spacing:.06em; text-transform:uppercase; font-weight:700; margin-bottom:8px; }
 .highlight-row{ font-size:14.5px; color:var(--ink); padding:4px 0; }
-.valuation-line{ padding:26px 12px 40px 12px; width:100%; }
-.val-track{ position:relative; height:5px; background:var(--border); border-radius:3px; }
+.valuation-line{ padding:4px 20px 8px 20px; width:100%; }
+.val-track-wrap{ position:relative; height:90px; }
+.val-track{ position:absolute; left:0; right:0; top:78px; height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
+.val-range-fill{ position:absolute; top:0; bottom:0; background:linear-gradient(90deg, color-mix(in srgb, var(--red) 55%, transparent), color-mix(in srgb, var(--green) 55%, transparent)); }
 .val-marker{ position:absolute; top:0; transform:translateX(-50%); }
-.val-dot{ width:13px; height:13px; border-radius:50%; margin:0 auto; box-shadow:0 0 0 3px var(--paper-line); }
+.val-marker-tick{ position:absolute; left:50%; top:34px; height:46px; width:1px; background:var(--border-strong); transform:translateX(-50%); }
+.val-marker.row0 .val-marker-tick{ top:70px; height:10px; }
+.val-marker.val-price .val-marker-tick{ background:var(--blue); width:2px; opacity:.6; }
+.val-dot{ position:absolute; left:50%; top:78px; width:12px; height:12px; border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 0 0 3px var(--paper-line); }
 .val-marker.val-ref .val-dot{ background:var(--ink-soft); }
 .val-marker.val-bear .val-dot{ background:var(--red); }
 .val-marker.val-bear .val-marker-label{ color:var(--red); }
 .val-marker.val-bull .val-dot{ background:var(--green); }
 .val-marker.val-bull .val-marker-label{ color:var(--green); }
-.val-marker.val-price .val-dot{ background:var(--blue); width:16px; height:16px; }
-.val-marker-label{ position:absolute; bottom:16px; left:50%; transform:translateX(-50%); font-size:13px; color:var(--ink-soft); white-space:nowrap; text-align:center; line-height:1.3; }
+.val-marker.val-price .val-dot{ background:var(--blue); width:15px; height:15px; z-index:2; }
+.val-marker-label{ position:absolute; left:50%; top:0; transform:translateX(-50%); font-size:12.5px; color:var(--ink-soft); white-space:nowrap; text-align:center; line-height:1.3; }
+.val-marker.row0 .val-marker-label{ top:38px; }
+.val-marker-label b{ display:block; font-size:13.5px; color:var(--ink); margin-top:1px; }
 .val-marker.val-price .val-marker-label{ color:var(--blue); font-weight:600; }
+.val-marker.val-price .val-marker-label b{ color:var(--blue); }
+.valuation-line-note{ font-size:12.5px; color:var(--ink-soft); text-align:center; margin-top:2px; }
 
 /* Position : section d'analyse à part entière, colorée en vert (plus-value) ou rouge (moins-value) via --sec-c posé en ligne */
 .position-section{ margin-bottom:26px; }
@@ -4782,6 +4791,7 @@ function computeGlobalScoreFromAxesLocal(axes){
 // la ligne DCF/Intrinsèque : la Valorisation DCF a été retirée, trop sensible aux hypothèses ; le Bear/Bull case donne un repère de risque
 // et de potentiel sans complexité supplémentaire, à partir des mêmes champs simples que la Valeur intrinsèque).
 function buildValuationLine(c){
+  const cur = c.currency;
   const prix = num(c.fields.valorisation.prixActuel);
   const bear = num(c.fields.valorisation.bearCase);
   const intrinsic = num(c.fields.valorisation.valeurIntrinseque);
@@ -4796,14 +4806,28 @@ function buildValuationLine(c){
   const min = Math.min(...vals) * 0.9;
   const max = Math.max(...vals) * 1.1;
   const range = (max - min) || 1;
-  const markers = points.map(p => {
-    const pct = Math.max(2, Math.min(98, ((p.val - min) / range) * 100));
-    return `<div class="val-marker ${p.cls}" style="left:${pct}%">
-      <div class="val-marker-label">${p.label}<br><b>${p.val}</b></div>
+  const pctOf = v => Math.max(4, Math.min(96, ((v - min) / range) * 100));
+  const sorted = points.map(p => ({ ...p, pct: pctOf(p.val) })).sort((a, b) => a.pct - b.pct);
+  // Étiquettes réparties sur deux hauteurs pour ne jamais se chevaucher quand deux valeurs sont proches (même principe que le graphique Wall Street).
+  const MIN_GAP = 16;
+  const lastInRow = [-999, -999];
+  sorted.forEach(p => {
+    let row = (p.pct - lastInRow[0] >= MIN_GAP) ? 0 : (p.pct - lastInRow[1] >= MIN_GAP ? 1 : 0);
+    p.row = row;
+    lastInRow[row] = p.pct;
+  });
+  const rangeFillHtml = (bear !== null && bull !== null) ? (() => {
+    const a = pctOf(bear), b = pctOf(bull), l = Math.min(a, b), r = Math.max(a, b);
+    return `<div class="val-range-fill" style="left:${l}%; right:${100 - r}%"></div>`;
+  })() : '';
+  const markers = sorted.map(p => {
+    return `<div class="val-marker row${p.row} ${p.cls}" style="left:${p.pct}%">
+      <div class="val-marker-label">${p.label}<br><b>${fmtMoney(p.val, cur)}</b></div>
+      <div class="val-marker-tick"></div>
       <div class="val-dot"></div>
     </div>`;
   }).join('');
-  return `<div class="valuation-line"><div class="val-track">${markers}</div></div>`;
+  return `<div class="valuation-line"><div class="val-track-wrap"><div class="val-track">${rangeFillHtml}</div>${markers}</div></div>`;
 }
 function buildRiskCard(c){
   const betaRaw = c.fields.valorisation.beta;
