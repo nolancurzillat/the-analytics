@@ -3846,6 +3846,49 @@ function refreshMoatColor(){
 
 // Collage et glisser-déposer dans les zones de texte riche : on ne garde que le texte brut,
 // qui prend alors automatiquement le formatage de l'application (police, taille, couleur).
+// Majuscule automatique sur la première lettre saisie dans une case (demande de Nolan le 2026-09-27) : seulement au moment précis où
+// une case VIDE reçoit son premier caractère (valeur ou texte de longueur 1), jamais en cours de saisie plus loin, pour ne jamais forcer
+// une majuscule que l'utilisateur choisirait de retirer ensuite. N'agit que sur les champs de texte libre repérés ci-dessous
+// (jamais un e-mail, un mot de passe, une clé API, un champ de recherche ou un champ numérique/ticker : ceux-ci n'ont aucun des
+// attributs `data-*` recherchés par `shouldAutoCapitalize`, donc ils sont exclus sans liste noire à tenir à jour).
+function shouldAutoCapitalize(el){
+  if(el.dataset.type === 'text') return true;              // fieldInput() : champs texte libre, monétaires, courts, CEO...
+  if(el.hasAttribute('data-duo-sub')) return true;          // sous-champs "duo" (industrie, siège social, précisions du dividende...)
+  if(el.dataset.pieProp === 'label') return true;           // nom d'un segment de camembert
+  if(el.hasAttribute('data-client-idx')) return true;       // ligne de la liste "Clients"
+  if(el.dataset.customProp === 'label' || el.dataset.customProp === 'value') return true;   // champ personnalisé ajouté par l'utilisateur
+  return false;
+}
+function autoCapitalizeFirst(el){
+  if(el.isContentEditable){
+    if(el.textContent.length !== 1) return;
+    const ch = el.textContent;
+    if(ch === ch.toUpperCase() || !/[a-zà-ÿ]/i.test(ch)) return;
+    el.textContent = ch.toUpperCase();
+    const sel = window.getSelection(), range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    return;
+  }
+  const v = el.value;
+  if(v.length !== 1 || v === v.toUpperCase() || !/[a-zà-ÿ]/i.test(v)) return;
+  const pos = el.selectionStart;
+  el.value = v.toUpperCase();
+  if(pos !== null) el.setSelectionRange(pos, pos);
+}
+function initAutoCapitalize(){
+  document.addEventListener('input', e => {
+    const el = e.target;
+    if(!el) return;
+    if(el.tagName === 'INPUT' && el.type === 'text'){
+      if(shouldAutoCapitalize(el)) autoCapitalizeFirst(el);
+    }else if(el.isContentEditable && el.classList.contains('rich-textarea')){
+      autoCapitalizeFirst(el);
+    }
+  });
+}
 function initPlainTextPaste(){
   const toHtml = text => escapeToHtml(String(text).replace(/\r\n?/g, '\n').replace(/ /g, ' ').replace(/\n{3,}/g, '\n\n').trim());
   document.addEventListener('paste', e => {
@@ -8668,6 +8711,7 @@ render();
 initCustomTooltips();
 initFormatToolbar();
 initPlainTextPaste();
+initAutoCapitalize();
 ensureLogos();
 ensurePrices();
 scheduleSnapshot(6000);
