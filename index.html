@@ -1854,7 +1854,6 @@ const FIELD_DESCRIPTIONS = {
   roic: "Le rendement sur l'ensemble du capital investi, neutre par rapport à l'endettement.",
   roa: "Le rendement généré sur l'ensemble des actifs de l'entreprise, dette comprise.",
   margeFcf: "La part du chiffre d'affaires qui se transforme réellement en cash disponible (FCF ÷ CA). Calculée automatiquement.",
-  efficaciteCapex: "La croissance du chiffre d'affaires obtenue pour chaque % de CA réinvesti en capex (croissance du CA ÷ Capex/CA). Récompense un réinvestissement qui produit vraiment de la croissance, pas seulement un gros capex en soi. Calculée automatiquement.",
   fcf: "L'argent réellement disponible après dépenses opérationnelles et investissements.",
   capex: "Les dépenses d'investissement dans les actifs long terme (usines, équipements...).",
   capexRatio: "Le poids du Capex par rapport au chiffre d'affaires : plus bas, plus l'activité est capital-light.",
@@ -2067,7 +2066,6 @@ const SECTIONS = [
       {key:'capex', label:'Capex', type:'text', money:true, span:3},
       {key:'capexRatio', label:'Capex / CA', type:'computed-capex-ratio', span:3},
       {key:'conversionFcf', label:'Conversion FCF', type:'computed-conversion-fcf', span:3},
-      {key:'efficaciteCapex', label:'Efficacité du capex', type:'computed-efficacite-capex', span:12},
       {key:'totalActif', label:'Total actif', type:'text', money:true, group:'Bilan et endettement'},
       {key:'detteTotal', label:'Dette totale', type:'text', money:true},
       {key:'detteNette', label:'Dette nette', type:'text', money:true},
@@ -3378,8 +3376,6 @@ const SCALE_CONFIG = {
   roic:           { thresholds:[20,15,8], inverse:false },
   roa:            { thresholds:[10,5,2], inverse:false },   // seuils plus bas que ROE/ROIC : le ROA divise par le total actif, pas les seuls capitaux propres
   margeFcf:       { thresholds:[15,8,0], inverse:false },
-  // Efficacité du capex = CAGR du CA ÷ (Capex/CA) : au-dessus de 2, chaque % de CA réinvesti rapporte plus de 2 % de croissance annuelle (très efficace) ; en dessous de 0 (CA en recul malgré le capex), mauvais.
-  efficaciteCapex: { thresholds:[2,1,0], inverse:false },
   detteActif:     { thresholds:[1,2,4], inverse:true },
   detteTotalActif:{ thresholds:[20,35,50], inverse:true },
   tresorerieDette:{ thresholds:[100,50,25], inverse:false },
@@ -3400,7 +3396,7 @@ const SCALE_CONFIG = {
   moatNote: { thresholds:[8,6,4], inverse:false },
 };
 const BADGE_UNITS = {
-  croissanceCA:'%', croissanceBenef:'%', margeBrute:'%', margeNette:'%', roe:'%', roic:'%', roa:'%', margeFcf:'%', efficaciteCapex:'×',
+  croissanceCA:'%', croissanceBenef:'%', margeBrute:'%', margeNette:'%', roe:'%', roic:'%', roa:'%', margeFcf:'%',
   detteActif:'', detteTotalActif:'%', tresorerieDette:'%', scoreSolvabilite:'/100', probaFaillite:'%', croissanceEstimeeEps:'%', conversionFcf:'%', positionShort:'%', ratioVenteADecouvert:' j', capexRatio:'%',
   peg:'', croissanceAttendueCA:'%', croissanceAttendueBenef:'%', peRelatifSecteur:'', moatNote:'/10', croissanceDividende:'&nbsp;%/an',
 };
@@ -3472,12 +3468,6 @@ function tipCapexRatio(c){
 function tipMargeFcf(c){
   const v = computeMargeFcf(c);
   return `<div class='tt-formula'>Free Cash Flow ${n(raw(c.fields.financier.fcf))} ÷ Chiffre d'affaires ${n(raw(c.fields.financier.chiffreAffaires))} × 100</div>${tipRes('= '+(v===null?'—':v.toFixed(1)+'%'))}<div class='tt-desc'>La part du chiffre d'affaires qui se transforme réellement en cash disponible.</div>`;
-}
-function tipEfficaciteCapex(c){
-  const v = computeEfficaciteCapex(c);
-  const cagr = n(raw(c.fields.financier.croissanceCA && c.fields.financier.croissanceCA.cagr));
-  const capexR = computeCapexRatio(c);
-  return `<div class='tt-formula'>Croissance du CA ${cagr}% ÷ Capex/CA ${capexR === null ? '?' : capexR.toFixed(1) + '%'}</div>${tipRes('= '+(v===null?'—':v.toFixed(1)+'×'))}<div class='tt-desc'>Combien de croissance du chiffre d'affaires est obtenue pour chaque % de CA réinvesti en capex : récompense un investissement qui produit vraiment de la croissance, pas seulement un gros capex en soi.</div>`;
 }
 function tipRevenuEmploye(c){
   const v = computeRevenuEmploye(c);
@@ -3765,7 +3755,6 @@ function refreshAllBadges(){
     { section:'financier', key:'roic', val: num(c.fields.financier.roic) },
     { section:'financier', key:'roa', val: num(c.fields.financier.roa) },
     { section:'financier', key:'margeFcf', val: computeMargeFcf(c) },
-    { section:'financier', key:'efficaciteCapex', val: computeEfficaciteCapex(c) },
     { section:'financier', key:'detteActif', val: computeDetteActif(c) },
     { section:'financier', key:'detteTotalActif', val: computeDetteTotalActif(c) },
     { section:'financier', key:'tresorerieDette', val: computeTresorerieDette(c) },
@@ -3828,8 +3817,6 @@ function refreshAllComputed(){
   setText('computed-financier-capexRatio', capexR === null ? '—' : capexR.toFixed(1) + '%', tipCapexRatio(c));
   const margeFcfV = computeMargeFcf(c);
   setText('computed-financier-margeFcf', margeFcfV === null ? '—' : margeFcfV.toFixed(1) + '%', tipMargeFcf(c));
-  const efficaciteCapexV = computeEfficaciteCapex(c);
-  setText('computed-financier-efficaciteCapex', efficaciteCapexV === null ? '—' : efficaciteCapexV.toFixed(1) + '×', tipEfficaciteCapex(c));
   const dy = computeDividendYield(c);
   setText('computed-identite-politiqueDividende-yield', dy === null ? '—' : fmtNum(dy, 2) + ' %', tipDividendYield(c));
   refreshPositionDividend();
@@ -4687,7 +4674,7 @@ function continuousScore(val, thresholds, inverse){
 // La note globale est la moyenne pondérée des axes renseignés (poids réajustés). Elle est "provisoire" tant que moins de 3 axes sur 5 sont renseignés.
 const SCORE_AXES = [
   { id:'qualite', label:'Qualité', weight:0.25, parts:['moatNote', 'margeBrute', 'margeNette', 'buffett'] },
-  { id:'rentabilite', label:'Rentabilité', weight:0.25, parts:['roic', 'roe', 'roa', 'margeFcf', 'croissanceBenef', 'efficaciteCapex'] },
+  { id:'rentabilite', label:'Rentabilité', weight:0.25, parts:['roic', 'roe', 'roa', 'margeFcf', 'croissanceBenef'] },
   { id:'croissance', label:'Croissance', weight:0.15, parts:['croissanceCA', 'croissanceAttendueCA', 'croissanceAttendueBenef', 'croissanceEstimeeEps', 'croissanceDividende'] },
   { id:'solidite', label:'Solidité', weight:0.20, parts:['detteActif', 'conversionFcf', 'detteTotalActif', 'tresorerieDette', 'scoreSolvabilite', 'probaFaillite'] },
   { id:'valorisation', label:'Valorisation', weight:0.15, parts:['peg', 'margeSecurite', 'peRelatifSecteur', 'consensus'] },
@@ -4697,8 +4684,8 @@ const SCORE_MIN_AXES = 3;
 const MARGE_SECURITE_SCALE = { thresholds:[30, 15, 0], inverse:false };
 // Checklist Buffett : notation LINÉAIRE (demande de Nolan le 2026-09-26) : chaque critère validé vaut 10 points sur 10 critères, donc 7/10 = 70 points.
 // (Les couleurs de la checklist ailleurs dans l'app gardent leurs propres seuils 80 / 60 / 40.)
-const SCORE_PART_LABELS = { moatNote:'MOAT', consensus:'Consensus des analystes', buffett:'Checklist Buffett', margeBrute:'Marge brute', croissanceDividende:'Croissance du dividende (annualisée)', croissanceEstimeeEps:'Croissance estimée du BPA (3 ans)', margeNette:'Marge nette', roic:'ROIC', roe:'ROE', roa:'ROA', margeFcf:'Marge FCF (FCF / CA)', efficaciteCapex:'Efficacité du capex', croissanceBenef:'CAGR du bénéfice net', croissanceCA:'CAGR du CA', croissanceAttendueCA:'Croissance attendue du CA (3 ans)', croissanceAttendueBenef:'Croissance attendue du bénéfice net (3 ans)', detteActif:'Dette nette / FCF', detteTotalActif:'Dette totale / Total actif', tresorerieDette:'Trésorerie / Dette totale', scoreSolvabilite:'Score de solvabilité', probaFaillite:'Probabilité de faillite', conversionFcf:'Conversion du FCF', peg:'PEG', margeSecurite:'Marge de sécurité', peRelatifSecteur:'PE / Secteur' };
-const SCORE_PART_UNITS = { moatNote:'/10', consensus:'/5', buffett:' %', margeBrute:' %', croissanceDividende:' %/an', croissanceEstimeeEps:' %', margeNette:' %', roic:' %', roe:' %', roa:' %', margeFcf:' %', efficaciteCapex:'×', croissanceBenef:' %', croissanceCA:' %', croissanceAttendueCA:' %', croissanceAttendueBenef:' %', detteActif:'', detteTotalActif:' %', tresorerieDette:' %', scoreSolvabilite:'/100', probaFaillite:' %', conversionFcf:' %', peg:'', margeSecurite:' %', peRelatifSecteur:'' };
+const SCORE_PART_LABELS = { moatNote:'MOAT', consensus:'Consensus des analystes', buffett:'Checklist Buffett', margeBrute:'Marge brute', croissanceDividende:'Croissance du dividende (annualisée)', croissanceEstimeeEps:'Croissance estimée du BPA (3 ans)', margeNette:'Marge nette', roic:'ROIC', roe:'ROE', roa:'ROA', margeFcf:'Marge FCF (FCF / CA)', croissanceBenef:'CAGR du bénéfice net', croissanceCA:'CAGR du CA', croissanceAttendueCA:'Croissance attendue du CA (3 ans)', croissanceAttendueBenef:'Croissance attendue du bénéfice net (3 ans)', detteActif:'Dette nette / FCF', detteTotalActif:'Dette totale / Total actif', tresorerieDette:'Trésorerie / Dette totale', scoreSolvabilite:'Score de solvabilité', probaFaillite:'Probabilité de faillite', conversionFcf:'Conversion du FCF', peg:'PEG', margeSecurite:'Marge de sécurité', peRelatifSecteur:'PE / Secteur' };
+const SCORE_PART_UNITS = { moatNote:'/10', consensus:'/5', buffett:' %', margeBrute:' %', croissanceDividende:' %/an', croissanceEstimeeEps:' %', margeNette:' %', roic:' %', roe:' %', roa:' %', margeFcf:' %', croissanceBenef:' %', croissanceCA:' %', croissanceAttendueCA:' %', croissanceAttendueBenef:' %', detteActif:'', detteTotalActif:' %', tresorerieDette:' %', scoreSolvabilite:'/100', probaFaillite:' %', conversionFcf:' %', peg:'', margeSecurite:' %', peRelatifSecteur:'' };
 // Barème de couleurs de la NOTE GLOBALE (demande de Nolan le 2026-09-26) : 5 paliers de 20 points, rouge (0 à 20), orange (20 à 40), jaune (40 à 60),
 // vert clair (60 à 80), vert foncé (80 à 100). Distinct du barème à 4 paliers des indicateurs (TIER_COLORS), qui reste inchangé.
 // scoreColor5(note, true) donne les teintes vives pour les cartes à fond marine.
@@ -4742,7 +4729,6 @@ function scorePartValue(c, key){
   if(key === 'roe') return num(fin.roe);
   if(key === 'roa') return num(fin.roa);
   if(key === 'margeFcf') return computeMargeFcf(c);
-  if(key === 'efficaciteCapex') return computeEfficaciteCapex(c);
   return null;
 }
 function scorePartScore(key, val){
@@ -4952,7 +4938,6 @@ function buildKeyHighlights(c){
     { key:'roic', label:'ROIC', val: num(c.fields.financier.roic) },
     { key:'roa', label:'ROA', val: num(c.fields.financier.roa) },
     { key:'margeFcf', label:'Marge FCF', val: computeMargeFcf(c) },
-    { key:'efficaciteCapex', label:'Efficacité du capex', val: computeEfficaciteCapex(c) },
     { key:'croissanceCA', label:'Croissance du CA', val: num(c.fields.financier.croissanceCA && c.fields.financier.croissanceCA.cagr) },
     { key:'croissanceBenef', label:'Croissance des bénéfices', val: num(c.fields.financier.croissanceBenef && c.fields.financier.croissanceBenef.cagr) },
     { key:'capexRatio', label:'Capex / CA', val: computeCapexRatio(c) },
@@ -5226,15 +5211,6 @@ function computeMargeFcf(c){
   const ca = parseMoney(c.fields.financier.chiffreAffaires);
   if(fcf === null || ca === null || ca === 0) return null;
   return (fcf / ca) * 100;
-}
-// Efficacité du capex = croissance du CA (CAGR) ÷ (Capex ÷ CA), en "fois" (x) : combien de % de croissance annuelle sont obtenus pour chaque % de CA réinvesti en capex.
-// Répond à la remarque de Nolan le 2026-09-27 : un hyperscaler qui réinvestit énormément (FCF comprimé, déjà pénalisé ailleurs dans le score) doit aussi pouvoir être récompensé si ce capex produit réellement de la croissance,
-// pas seulement sanctionné parce que le capex est élevé. Un capex élevé SANS croissance en face reste correctement mal noté.
-function computeEfficaciteCapex(c){
-  const cagr = num(c.fields.financier.croissanceCA && c.fields.financier.croissanceCA.cagr);
-  const capexR = computeCapexRatio(c);
-  if(cagr === null || capexR === null || capexR <= 0) return null;
-  return cagr / capexR;
 }
 
 // ---------- Identité visuelle : barre latérale, pastilles, thème ----------
@@ -6123,7 +6099,7 @@ function buildGlobalRecap(c){
 // ============================================================
 const FIELD_LABELS = {};
 SECTIONS.forEach(s => s.fields.forEach(f => { FIELD_LABELS[f.key] = f.label; }));
-const TIP_KEYS = ['peg','roic','roe','roa','margeFcf','efficaciteCapex','fcf','conversionFcf','detteActif','margeBrute','margeNette','peRelatifSecteur','valeurIntrinseque','bearCase','bullCase','beta','positionShort','capexRatio','croissanceBenef','peActuel','peForward']
+const TIP_KEYS = ['peg','roic','roe','roa','margeFcf','fcf','conversionFcf','detteActif','margeBrute','margeNette','peRelatifSecteur','valeurIntrinseque','bearCase','bullCase','beta','positionShort','capexRatio','croissanceBenef','peActuel','peForward']
   .filter(k => FIELD_DESCRIPTIONS[k] && FIELD_LABELS[k]);
 let spaceTipIdx = Math.floor(Date.now() / 86400000) % TIP_KEYS.length;
 
@@ -7111,7 +7087,6 @@ const LEARN_INDICATORS = {
   roic: { how:`Le rendement de tout le capital investi (actionnaires et prêteurs). Il ne se laisse pas gonfler par la dette.`, ex:`Un ROIC de 22 % signifie que 100 $ investis dans l'activité rapportent 22 $ de profit d'exploitation après impôts par an.` },
   roa: { how:`Le rendement généré sur l'ensemble des actifs de l'entreprise (bénéfice net ÷ total actif), dette comprise. Il est en général plus bas que le ROE, puisqu'il divise par un total plus grand.`, ex:`Bénéfice net de 10 pour 100 de total actif : ROA de 10 %.`, warn:`Deux entreprises très différentes en intensité capitalistique (une banque, une usine) ne se comparent pas bien sur ce seul indicateur.` },
   margeFcf: { how:`La part du chiffre d'affaires qui se transforme réellement en cash disponible (FCF ÷ CA). Calculée automatiquement à partir du FCF et du chiffre d'affaires déjà saisis.`, ex:`FCF de 12 pour un chiffre d'affaires de 100 : marge FCF de 12 %.`, warn:`À ne pas confondre avec la conversion du FCF (FCF ÷ bénéfice net), qui répond à une autre question : le bénéfice comptable se transforme-t-il en cash ?` },
-  efficaciteCapex: { how:`Combien de croissance du chiffre d'affaires est obtenue pour chaque % de CA réinvesti en capex (croissance du CA ÷ Capex/CA). Calculée automatiquement.`, ex:`Croissance du CA de 20 % pour un Capex/CA de 10 % : efficacité de 2×.`, warn:`Pensé pour ne pas pénaliser une entreprise qui investit massivement (un hyperscaler par exemple) si cet investissement produit vraiment de la croissance : un gros capex SANS croissance en face reste mal noté.` },
   fcf: { how:`L'argent réellement disponible après les dépenses courantes et les investissements : il permet de rembourser la dette, verser des dividendes ou racheter des actions.`, ex:`Flux d'exploitation de 120 Md$, investissements (capex) de 12 Md$ : FCF de 108 Md$.` },
   capex: { how:`Les dépenses d'investissement dans les usines, équipements et infrastructures.` },
   capexRatio: { how:`La part du chiffre d'affaires réinvestie dans l'outil de production. Un ratio faible signale une activité qui demande peu de capital.`, ex:`Capex de 8 pour 100 de chiffre d'affaires : 8 %.` },
@@ -8282,12 +8257,6 @@ function render(){
         const mf = computeMargeFcf(c);
         html += `<div class="field-row"><div class="field-label" data-tooltip="${fieldDescTooltip(field.key)}">${field.label}</div>
           <div class="field-value"><div class="value-with-badge"><span class="computed" id="computed-${section.key}-${field.key}" data-tooltip="${tipMargeFcf(c)}">${mf === null ? '—' : mf.toFixed(1) + '%'}</span>${renderBadge(field.key, mf, `badge-${section.key}-${field.key}`)}</div></div></div>`;
-        return;
-      }
-      if(field.type === 'computed-efficacite-capex'){
-        const ec = computeEfficaciteCapex(c);
-        html += `<div class="field-row"><div class="field-label" data-tooltip="${fieldDescTooltip(field.key)}">${field.label}</div>
-          <div class="field-value"><div class="value-with-badge"><span class="computed" id="computed-${section.key}-${field.key}" data-tooltip="${tipEfficaciteCapex(c)}">${ec === null ? '—' : ec.toFixed(1) + '×'}</span>${renderBadge(field.key, ec, `badge-${section.key}-${field.key}`)}</div></div></div>`;
         return;
       }
       if(field.type === 'computed-revenu-employe'){
