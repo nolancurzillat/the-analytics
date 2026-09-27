@@ -1410,24 +1410,8 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; font-family:
 .rec-text{ font-size:14px; line-height:1.55; color:var(--ink-soft); }
 .rec .btn{ flex:0 0 auto; align-self:center; }
 
-.resume{ display:flex; align-items:center; gap:14px; margin-bottom:14px; }
-.resume-av{
-  width:56px; height:56px; flex:0 0 56px; border-radius:14px; background:var(--navy); color:#fff;
-  display:flex; align-items:center; justify-content:center; font-family:var(--font-serif); font-weight:700; font-size:20px;
-}
-.resume-av.has-logo{ padding:2px; }
-.resume-name{ font-family:var(--font-serif); font-weight:700; font-size:20px; line-height:1.2; }
-.resume-sub{ font-size:13.5px; color:var(--ink-soft); margin-top:2px; }
-.resume-prog{ display:flex; align-items:center; gap:12px; font-size:13.5px; color:var(--ink-soft); margin-bottom:14px; white-space:nowrap; }
-.resume-prog .hbar-track{ flex:1; }
-.resume-btn{ width:100%; }
-.act-title{ margin:20px 0 6px 0; font-size:13px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); }
-.act-list{ display:flex; flex-direction:column; }
-.act-row, .hbar, .dv-row, .tg-row, .pipe-item{ font-family:inherit; color:inherit; text-align:left; background:none; border:none; cursor:pointer; }
-.act-row{ display:flex; align-items:center; gap:10px; padding:8px 8px; margin:0 -8px; border-radius:9px; }
-.act-row:hover, .hbar:hover, .dv-row:hover, .tg-row:hover, .pipe-item:hover{ background:var(--paper-line); }
-.act-name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:500; font-size:14.5px; }
-.act-date{ font-size:13px; color:var(--ink-soft); font-family:var(--font-mono); }
+.hbar, .dv-row, .tg-row, .pipe-item{ font-family:inherit; color:inherit; text-align:left; background:none; border:none; cursor:pointer; }
+.hbar:hover, .dv-row:hover, .tg-row:hover, .pipe-item:hover{ background:var(--paper-line); }
 
 .pipe{ display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:14px; }
 .pipe-col{ background:var(--paper-line); border:1px solid var(--border); border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:6px; min-width:0; }
@@ -6178,21 +6162,29 @@ function buildRecsCard(){
   return spaceCard('s7', 'Recommandations', sub, body + `<div class="s-note">Les analyses les plus anciennes et pas encore terminées passent en premier. Simples rappels calculés à partir de vos saisies, sans conseil en investissement.</div>`);
 }
 
-function buildResumeCard(){
-  const list = sortedByRecent();
-  const last = list[0];
-  const comp = companyCompletion(last);
-  const w = weakestSection(last);
-  const a = avatarInner(last);
-  const gs = computeGlobalScore(last);
-  const hero = `<div class="resume">
-    <span class="resume-av${a.cls}">${a.html}</span>
-    <div class="resume-id"><div class="resume-name">${escapeHtml(last.name || 'Sans nom')}</div><div class="resume-sub">Modifiée le ${formatDateFr(last.updatedAt || last.createdAt)}${gs !== null ? ' · score ' + Math.round(gs) + '/100' : ''}</div></div>
-  </div>
-  <div class="resume-prog"><div class="hbar-track"><i style="width:${comp.pct}%;background:var(--accent)"></i></div><span>${comp.pct}&nbsp;% complétée</span></div>
-  <button class="btn btn-primary btn-sm resume-btn" data-rec-open="${last.id}" data-rec-jump="${comp.pct < 100 ? 'sec-' + w.key : ''}">${comp.pct < 100 ? 'Continuer : ' + w.label : 'Ouvrir l\'analyse'}</button>`;
-  const rest = list.slice(0, 5).map(c => `<button class="act-row" data-open-company="${c.id}">${miniAv(c)}<span class="act-name">${escapeHtml(c.name || 'Sans nom')}</span><span class="act-date">${formatDateFr(c.updatedAt || c.createdAt)}</span></button>`).join('');
-  return spaceCard('s5', 'Reprendre', '', hero + `<div class="act-title">Activité récente</div><div class="act-list">${rest}</div>`);
+// "Reprendre" faisait presque la même chose que "Recommandations" (rouvrir une fiche sur sa section la plus faible) :
+// remplacée par ce classement du rendement du dividende, une information absente du reste de Mon espace
+// (demande de Nolan le 2026-09-27). Seules les analyses en mode "Verse des dividendes" avec un rendement calculable apparaissent.
+function buildDividendsCard(){
+  const rows = state.companies.map(c => {
+    const d = c.fields.identite && c.fields.identite.politiqueDividende;
+    if(!d || d.mode !== 'verse') return null;
+    const y = computeDividendYield(c);
+    if(y === null) return null;
+    return { c, y, tier: dividendSecurityTier(num(d.securite)) };
+  }).filter(Boolean).sort((a, b) => b.y - a.y);
+  let body;
+  if(rows.length){
+    const maxY = Math.max(6, ...rows.map(r => r.y));
+    body = `<div class="hbar-list">` + rows.slice(0, 8).map(r => {
+      const w = Math.min(100, r.y / maxY * 100);
+      const color = r.tier ? r.tier.color : 'var(--accent)';
+      return `<button class="hbar" data-open-company="${r.c.id}">${miniAv(r.c)}<span class="hbar-name">${escapeHtml(r.c.name || 'Sans nom')}</span><span class="hbar-track"><i style="width:${w}%;background:${color}"></i></span><span class="hbar-val">${fmtNum(r.y, 2)}&nbsp;%</span></button>`;
+    }).join('') + `</div>`;
+  }else{
+    body = `<div class="s-empty">Indiquez qu'une entreprise verse des dividendes (section Identité, Politique de dividende) et son montant annuel par action : le classement par rendement apparaîtra ici.</div>`;
+  }
+  return spaceCard('s5', 'Rendement du dividende', 'Classement de vos analyses', body);
 }
 
 function buildPipeline(){
@@ -6468,7 +6460,7 @@ function renderSpaceView(){
     </section>`;
   }else{
     html += buildSpaceKpis();
-    html += `<div class="sgrid">${buildRecsCard()}${buildResumeCard()}${buildPipeline()}${buildScoreBars()}${buildValueGap()}${buildTargets()}${buildSectorsCard()}${buildCompaniesTable()}</div>`;
+    html += `<div class="sgrid">${buildRecsCard()}${buildDividendsCard()}${buildPipeline()}${buildScoreBars()}${buildValueGap()}${buildTargets()}${buildSectorsCard()}${buildCompaniesTable()}</div>`;
   }
   html += `<div class="sgrid">${buildMilestones()}${buildTipCard()}${buildPrefsCard()}</div></div>`;
   main.innerHTML = html;
