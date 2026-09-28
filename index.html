@@ -2240,9 +2240,11 @@ function touchUpdated(c){
 // La clé API n'est jamais écrite dans un fichier de sauvegarde. On n'écrit jamais un état vide par-dessus une sauvegarde existante.
 const fileBackup = { supported: typeof window.showSaveFilePicker === 'function', handle:null, perm:'none', timer:null, busy:false, again:false, error:'' };
 const BACKUP_REMIND_MS = 7 * 24 * 3600 * 1000;
-function buildBackupPayload(){
+// `forCloud` (demande de Nolan le 2026-09-29) : la clé API Twelve Data est exclue par défaut (fichier de sauvegarde et export manuel, plus faciles à partager ou égarer par erreur),
+// mais conservée quand le payload part vers Supabase (`syncNow`), protégé par les règles RLS de `user_data`, pour ne pas avoir à la ressaisir sur chaque appareil.
+function buildBackupPayload(forCloud){
   const settings = Object.assign({}, state.settings);
-  delete settings.twelveDataApiKey;
+  if(!forCloud) delete settings.twelveDataApiKey;
   return { app:'the-analytics', version:1, exportedAt:new Date().toISOString(), settings, companies:state.companies, deleted:state.deleted || {}, history:state.history || {} };
 }
 function backupKv(mode, fn){
@@ -2509,6 +2511,12 @@ function mergeRemote(remote){
   if(mergeHistory(remote.history).push) push = true;
   const rs = remote.settings || {};
   if(!String(state.settings.firstName || '').trim() && typeof rs.firstName === 'string' && rs.firstName.trim()){ state.settings.firstName = rs.firstName.slice(0, 30); changed = true; }
+  // Clé API Twelve Data : adoptée seulement si CET appareil n'en a pas encore (jamais d'écrasement d'une clé déjà collée ici), pour ne pas la ressaisir sur un nouvel appareil.
+  if(!String(state.settings.twelveDataApiKey || '').trim() && typeof rs.twelveDataApiKey === 'string' && rs.twelveDataApiKey.trim()){
+    state.settings.twelveDataApiKey = rs.twelveDataApiKey.trim();
+    changed = true;
+    ensurePrices();
+  }
   if(Array.isArray(rs.learnRead)){
     const merged = Array.from(new Set((state.settings.learnRead || []).concat(rs.learnRead.filter(x => typeof x === 'string').slice(0, 60))));
     if(merged.length !== (state.settings.learnRead || []).length){ state.settings.learnRead = merged; changed = true; }
@@ -2552,7 +2560,7 @@ async function syncNow(){
     const nothingToSend = !state.companies.length && !Object.keys(state.deleted).length;
     if((res.push || dirty || !row) && !(nothingToSend && !row)){
       const w = await sbFetch('/rest/v1/user_data', { method:'POST', token, headers:{ Prefer:'resolution=merge-duplicates,return=minimal' },
-        body:{ user_id:cloud.session.user_id, data:buildBackupPayload(), updated_at:new Date().toISOString() } });
+        body:{ user_id:cloud.session.user_id, data:buildBackupPayload(true), updated_at:new Date().toISOString() } });
       if(!w.ok) throw new Error((w.data && (w.data.message || w.data.hint)) || "écriture refusée");
     }
     try{
