@@ -2655,8 +2655,8 @@ function paintAuthModal(){
     ${signup ? '' : '<div class="auth-forgot"><button type="button" class="link-btn" data-auth="mode-forgot">Mot de passe oublié ?</button></div>'}
     ${signup ? `<label class="auth-consent"><input type="checkbox" id="authConsent"><span>J'ai lu et j'accepte la <button type="button" class="link-btn" data-legal="confidentialite">politique de confidentialité</button> et les <button type="button" class="link-btn" data-legal="conditions">conditions d'utilisation</button>.</span></label>` : ''}
     ${res}
-    <div class="modal-hint">Vos analyses sont enregistrées en ligne, liées à votre compte, et visibles uniquement par vous. Vous pouvez aussi continuer sans compte : tout reste alors sur cet appareil.</div>
-    <div class="modal-actions" style="margin-top:16px"><button data-auth="close">Continuer sans compte</button><button class="primary" data-auth="submit">${signup ? 'Créer mon compte' : 'Se connecter'}</button></div>
+    <div class="modal-hint">Vos analyses sont enregistrées en ligne, liées à votre compte, et visibles uniquement par vous.${signup ? '' : ' Vous pouvez aussi continuer sans compte : tout reste alors sur cet appareil.'}</div>
+    <div class="modal-actions" style="margin-top:16px">${signup ? '' : '<button data-auth="close">Continuer sans compte</button>'}<button class="primary" data-auth="submit">${signup ? 'Créer mon compte' : 'Se connecter'}</button></div>
     <div class="modal-hint" style="text-align:center;margin-top:14px">${signup ? 'Déjà un compte ? <button class="link-btn" data-auth="mode-login">Se connecter</button>' : 'Pas encore de compte ? <button class="link-btn" data-auth="mode-signup">Créer un compte</button>'}</div>`;
 }
 async function cloudRecover(email){
