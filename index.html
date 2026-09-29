@@ -489,6 +489,12 @@ main{ display:block; }
 .home-rename-btn:hover{ opacity:1; color:var(--blue); background:var(--paper-line); }
 .home-stars{ color:var(--star); letter-spacing:1px; font-family:var(--font-mono); font-size:13.5px; }
 .home-updated{ font-family:var(--font-mono); font-size:13px; color:var(--ink-soft); }
+.home-td-cap{ font-family:var(--font-mono); font-size:13px; color:var(--ink-soft); }
+/* En-têtes cliquables de "Toutes vos analyses" (2026-09-29) : premier clic décroissant, reclic sur la même colonne croissant */
+.th-sort{ cursor:pointer; }
+.th-sort:hover{ color:var(--ink); }
+.th-sort-active{ color:var(--ink); }
+.th-sort-arrow{ margin-left:4px; }
 .score-chip{ font-family:var(--font-mono); font-weight:600; font-size:14px; display:inline-flex; align-items:center; gap:8px; }
 .score-chip i{ width:9px; height:9px; border-radius:50%; display:inline-block; }
 .ct-empty{ color:var(--ink-soft); }
@@ -508,6 +514,8 @@ main{ display:block; }
 /* "Toutes vos analyses" : version compacte, sans barre de défilement horizontale sur un écran normal */
 .home-table--tight td{ padding:9px 6px; }
 .home-table--tight thead th{ padding:9px 6px; font-size:11px; letter-spacing:.02em; cursor:default; }
+.home-table--tight thead th.th-sort{ cursor:pointer; }
+.home-table--tight .home-td-cap{ font-size:12px; }
 .home-table--tight .ht-co{ min-width:0; gap:7px; }
 .home-table--tight .ht-id{ min-width:0; flex:1 1 auto; }
 .home-table--tight .home-td-name{ display:flex; align-items:baseline; gap:0; min-width:0; }
@@ -5766,9 +5774,15 @@ const SORT_KEYS = [
   { key:'updated', label:'Dernière modification', natural:'desc', dirs:['Moins récentes d\'abord', 'Plus récentes d\'abord'] },
   { key:'marketCap', label:'Capitalisation boursière', natural:'desc', dirs:['Petites capitalisations d\'abord', 'Grandes capitalisations d\'abord'] },
 ];
-// "Toutes vos analyses" (Mon espace) reprend les mêmes critères que la barre latérale, plus le Score composite (demande de Nolan le 2026-09-27).
+// "Toutes vos analyses" (Mon espace) reprend les mêmes critères que la barre latérale, plus ceux propres au tableau
+// (demande de Nolan le 2026-09-27 pour le Score composite, le 2026-09-29 pour PEG/MOAT/Buffett/Décision/Progrès, en plus du clic direct sur l'en-tête de colonne).
 const TABLE_SORT_KEYS = SORT_KEYS.concat([
   { key:'score', label:'Score composite', natural:'desc', dirs:['Moins bien notées d\'abord', 'Mieux notées d\'abord'] },
+  { key:'peg', label:'PEG', natural:'desc', dirs:['PEG croissant', 'PEG décroissant'] },
+  { key:'moat', label:'MOAT', natural:'desc', dirs:['MOAT croissant', 'MOAT décroissant'] },
+  { key:'buffett', label:'Checklist Buffett', natural:'desc', dirs:['Moins de critères d\'abord', 'Plus de critères d\'abord'] },
+  { key:'decision', label:'Décision', natural:'desc', dirs:['A → Z', 'Z → A'] },
+  { key:'progress', label:'Progrès', natural:'desc', dirs:['Moins avancées d\'abord', 'Plus avancées d\'abord'] },
 ]);
 // Comparateur partagé entre la barre latérale et "Toutes vos analyses" : seule la clé/le sens/la liste changent selon l'appelant.
 function sortCompare(a, b, key, sign, idx){
@@ -5797,6 +5811,38 @@ function sortCompare(a, b, key, sign, idx){
     if(sb === null) return -1;
     return sign * (sa - sb) || tie;
   }
+  if(key === 'peg'){
+    const pa = computePeg(a), pb = computePeg(b);
+    if(pa === null && pb === null) return tie;
+    if(pa === null) return 1;
+    if(pb === null) return -1;
+    return sign * (pa - pb) || tie;
+  }
+  if(key === 'moat'){
+    const ma = num((a.fields.identite || {}).moatNote), mb = num((b.fields.identite || {}).moatNote);
+    if(ma === null && mb === null) return tie;
+    if(ma === null) return 1;
+    if(mb === null) return -1;
+    return sign * (ma - mb) || tie;
+  }
+  if(key === 'buffett'){
+    // Comme l'affichage : une checklist jamais commencée (0 critère coché) n'est pas notée, elle passe toujours en dernier.
+    const ba = computeBuffettScore(a), bb = computeBuffettScore(b);
+    const pa = (ba.total && ba.checked > 0) ? ba.checked / ba.total : null;
+    const pb = (bb.total && bb.checked > 0) ? bb.checked / bb.total : null;
+    if(pa === null && pb === null) return tie;
+    if(pa === null) return 1;
+    if(pb === null) return -1;
+    return sign * (pa - pb) || tie;
+  }
+  if(key === 'decision'){
+    const da = (a.fields.personnelle && a.fields.personnelle.decision) || '', db = (b.fields.personnelle && b.fields.personnelle.decision) || '';
+    if(!da && !db) return tie;
+    if(!da) return 1;
+    if(!db) return -1;
+    return sign * da.localeCompare(db, 'fr', { sensitivity:'base' }) || tie;
+  }
+  if(key === 'progress') return sign * (companyCompletion(a).pct - companyCompletion(b).pct) || tie;
   if(key === 'updated') return sign * (upd(a) - upd(b)) || tie;
   return sign * String(a.createdAt || '').localeCompare(String(b.createdAt || '')) || tie;
 }
@@ -5836,6 +5882,12 @@ function setSidebarSort(key, dir){
   renderTabs();
   paintSortMenu();
 }
+// Clic direct sur un en-tête de colonne du tableau "Toutes vos analyses" (demande de Nolan le 2026-09-29) : premier clic sur une
+// colonne = ordre décroissant, reclic sur la MÊME colonne = ordre croissant, reclic à nouveau = décroissant, etc.
+function sortByHeader(key){
+  const dir = (state.settings.tableSortKey === key && state.settings.tableSortDir === 'desc') ? 'asc' : 'desc';
+  setTableSort(key, dir);
+}
 // Ne remplace que le tableau (#companiesTableWrap), jamais l'en-tête de la carte : sinon le menu de tri, recréé fermé, se refermerait à chaque choix.
 function setTableSort(key, dir){
   if(key && key !== state.settings.tableSortKey){
@@ -5874,6 +5926,12 @@ function bindSortMenu(){
   });
   document.addEventListener('click', () => { toggleSortMenu(false); toggleTableSortMenu(false); });
   document.addEventListener('keydown', e => { if(e.key === 'Escape'){ toggleSortMenu(false); toggleTableSortMenu(false); } });
+  // En-têtes cliquables du tableau "Toutes vos analyses" : #companiesTableWrap (donc son <thead>) est recréé à chaque tri,
+  // un écouteur délégué posé une seule fois évite de le relier à chaque fois.
+  document.addEventListener('click', e => {
+    const th = e.target.closest('[data-sort-th]');
+    if(th) sortByHeader(th.dataset.sortTh);
+  });
 }
 // Rappelée à chaque ouverture de Mon espace (bindSpace) : les éléments #tableSortBtn/#tableSortMenu sont recréés à chaque rendu de la page.
 function bindTableSortMenu(){
@@ -6563,6 +6621,8 @@ function buildCompaniesTableRows(){
     const decision = (c.fields.personnelle && c.fields.personnelle.decision) || '';
     const conviction = parseFloat(c.fields.personnelle && c.fields.personnelle.conviction) || 0;
     const comp = companyCompletion(c);
+    // Capitalisation boursière : purement informative, jamais de pastille de couleur (demande de Nolan le 2026-09-29).
+    const mc = parseMoney(idn.marketCap) ?? parseMoney((c.fields.financier || {}).marketCap);
     return `<tr data-open-company="${c.id}">
       <td><div class="ht-co">${miniAv(c)}<div class="ht-id">
         <div class="home-td-name"><span class="home-td-name-txt">${escapeHtml(c.name || 'Sans nom')}</span>${ticker ? `<span class="home-ticker">${escapeHtml(ticker)}</span>` : ''}</div>
@@ -6575,10 +6635,19 @@ function buildCompaniesTableRows(){
       <td>${decisionPill(decision)}</td>
       <td>${conviction ? starsRowHtml(conviction, 'ct-stars') : '<span class="ct-empty">—</span>'}</td>
       <td><span class="comp-cell"><span class="hbar-track"><i style="width:${comp.pct}%;background:${comp.pct >= 100 ? 'var(--green)' : 'var(--accent)'}"></i></span><b>${comp.pct}&nbsp;%</b></span></td>
+      <td class="home-td-cap">${mc === null ? '<span class="ct-empty">—</span>' : compactMoney(mc, c.currency)}</td>
       <td class="home-updated">${formatDateFrShort(c.updatedAt || c.createdAt)}</td>
     </tr>`;
   }).join('');
-  return `<div class="home-table-wrap home-table-wrap--tight" id="companiesTableWrap"><table class="home-table home-table--tight"><thead><tr><th>Entreprise</th><th>Score</th><th>PEG</th><th>MOAT</th><th>Buffett</th><th>Décision</th><th data-tooltip="<div class='tt-desc'>Conviction</div>">Conv.</th><th data-tooltip="<div class='tt-desc'>Fiche complétée</div>">Progrès</th><th data-tooltip="<div class='tt-desc'>Dernière mise à jour</div>">Date</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  // En-têtes cliquables (demande de Nolan le 2026-09-29) : `sortByHeader` (écouteur délégué posé une seule fois, voir bindSortMenu)
+  // gère le premier clic en décroissant, un reclic sur la même colonne en croissant. `th()` affiche la flèche du sens courant.
+  const th = (key, label, tooltip) => {
+    const active = state.settings.tableSortKey === key;
+    const arrow = active ? `<span class="th-sort-arrow">${state.settings.tableSortDir === 'desc' ? '&darr;' : '&uarr;'}</span>` : '';
+    return `<th class="th-sort${active ? ' th-sort-active' : ''}" data-sort-th="${key}"${tooltip ? ` data-tooltip="${tooltip}"` : ''}>${label}${arrow}</th>`;
+  };
+  const head = `<th>Entreprise</th>${th('score', 'Score')}${th('peg', 'PEG')}${th('moat', 'MOAT')}${th('buffett', 'Buffett')}${th('decision', 'Décision')}${th('stars', 'Conv.', "<div class='tt-desc'>Conviction</div>")}${th('progress', 'Progrès', "<div class='tt-desc'>Fiche complétée</div>")}${th('marketCap', 'Cap.', "<div class='tt-desc'>Capitalisation boursière</div>")}${th('updated', 'Date', "<div class='tt-desc'>Dernière mise à jour</div>")}`;
+  return `<div class="home-table-wrap home-table-wrap--tight" id="companiesTableWrap"><table class="home-table home-table--tight"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 function buildCompaniesTable(){
   const sortCtrl = `<span class="table-sort-wrap"><button type="button" class="sort-btn" id="tableSortBtn" aria-label="Trier les analyses" aria-haspopup="true" aria-expanded="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20V4M7 4L3.5 7.5M7 4l3.5 3.5"/><path d="M17 4v16M17 20l-3.5-3.5M17 20l3.5-3.5"/></svg></button><div class="sort-menu hidden" id="tableSortMenu" role="menu">${sortMenuHtml(TABLE_SORT_KEYS, state.settings.tableSortKey, state.settings.tableSortDir)}</div></span>`;
