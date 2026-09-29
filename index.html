@@ -6308,7 +6308,7 @@ function buildRecommendations(){
     const price = num(val.prixActuel), target = num(pers.prixAchatCible);
     const eIntr = computeEcart(c, 'valeurIntrinseque');
     const days = daysSince(c.updatedAt || c.createdAt);
-    const sect = idn.secteur && idn.secteur.secteur;
+    const sect = normSector(idn.secteur && idn.secteur.secteur);
     if(sect) sectorCount[sect] = (sectorCount[sect] || 0) + 1;
     const pm = positionMetrics(c);
 
@@ -6385,6 +6385,13 @@ function buildDonut(items){
 }
 function countItems(map, labelFn){
   return Object.keys(map).sort((a, b) => map[b] - map[a]).map((k, i) => ({ label: labelFn ? labelFn(k) : escapeHtml(k), value: map[k], color: PIE_COLORS[i % PIE_COLORS.length] }));
+}
+// Le secteur est un texte saisi librement (contrairement au pays, choisi dans une liste) : deux orthographes qui ne diffèrent
+// que par la casse ou des espaces ("Service technologique" / "Service Technologique") doivent compter comme UN SEUL secteur
+// partout où on les regroupe (Mon espace, Portefeuille, recommandations).
+function normSector(s){
+  const t = String(s || '').trim().replace(/\s+/g, ' ');
+  return t ? t.charAt(0).toUpperCase() + t.slice(1).toLowerCase() : '';
 }
 
 function buildSpaceKpis(){
@@ -6512,7 +6519,7 @@ function buildSectorsCard(){
   const sectors = {}, countries = {};
   cs.forEach(c => {
     const idn = c.fields.identite || {};
-    const s = idn.secteur && idn.secteur.secteur, p = idn.paysSiege && idn.paysSiege.pays;
+    const s = normSector(idn.secteur && idn.secteur.secteur), p = idn.paysSiege && idn.paysSiege.pays;
     if(s) sectors[s] = (sectors[s] || 0) + 1;
     if(p) countries[p] = (countries[p] || 0) + 1;
   });
@@ -7294,7 +7301,7 @@ function pfInfo(c){
   const idn = c.fields.identite || {}, per = c.fields.personnelle || {};
   return {
     ticker: idn.ticker || '',
-    sector: (idn.secteur && idn.secteur.secteur) || '',
+    sector: normSector(idn.secteur && idn.secteur.secteur),
     country: (idn.paysSiege && idn.paysSiege.pays) || '',
     decision: per.decision || '',
     thesis: String(per.these || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').trim(),
