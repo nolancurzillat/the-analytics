@@ -1,4 +1,4 @@
-const CACHE_NAME = 'carnet-analyse-v104';
+const CACHE_NAME = 'carnet-analyse-v105';
 const ASSETS = [
   './index.html',
   './manifest.json',
@@ -6,7 +6,7 @@ const ASSETS = [
   './icon-512.png'
 ];
 // Seules les polices Google sont mises en cache hors du site. Les appels de recherche de logos
-// (Wikidata, Wikimedia, Google favicon, Parqet) passent directement par le navigateur, sans Ãªtre conservÃ©s.
+// (Wikidata, Wikimedia, Google favicon, Clearbit) passent directement par le navigateur, sans être conservés.
 const CACHEABLE_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 
 self.addEventListener('install', (event) => {

@@ -2847,7 +2847,7 @@ if(!state.deleted || typeof state.deleted !== 'object' || Array.isArray(state.de
 if(!state.history || typeof state.history !== 'object' || Array.isArray(state.history)) state.history = {};
 state.companies.forEach(migrateCompany);
 // Préférences personnelles (ajoutées après la V1, sans effet sur les analyses existantes)
-state.settings = Object.assign({ autoLogos:true, firstName:'', defaultCurrency:'$', twelveDataApiKey:'', sortKey:'created', sortDir:'asc', tableSortKey:'created', tableSortDir:'asc', learnRead:[], lastBackupAt:0, backupSnoozeUntil:0 },(state.settings && typeof state.settings === 'object') ? state.settings : {});
+state.settings = Object.assign({ firstName:'', defaultCurrency:'$', twelveDataApiKey:'', sortKey:'created', sortDir:'asc', tableSortKey:'created', tableSortDir:'asc', learnRead:[], lastBackupAt:0, backupSnoozeUntil:0 },(state.settings && typeof state.settings === 'object') ? state.settings : {});
 if(state.settings.tourDone === undefined) state.settings.tourDone = state.companies.length > 0;
 if(['created','name','stars','updated','marketCap'].indexOf(state.settings.sortKey) < 0) state.settings.sortKey = 'created';
 if(state.settings.sortDir !== 'desc') state.settings.sortDir = 'asc';
@@ -5362,14 +5362,17 @@ async function findLogo(name, ticker){
   const variants = [name];
   const stripped = name.replace(/([\s,]+(inc|corp|corporation|co|company|ltd|limited|plc|sa|se|ag|nv|spa|holdings?|group|groupe)\.?)+$/i, '').trim();
   if(stripped && stripped.toLowerCase() !== name.toLowerCase()) variants.push(stripped);
+  // Une recherche en français rate parfois une entreprise dont Wikidata n'a pas de libellé/alias français (surtout hors zone francophone) : on retente en anglais avant d'abandonner cette variante du nom.
   for(const v of variants){
-    const url = await findLogoByName(v, ticker);
-    if(url) return url;
+    for(const lang of ['fr', 'en']){
+      const url = await findLogoByName(v, ticker, lang);
+      if(url) return url;
+    }
   }
   return null;
 }
-async function findLogoByName(name, ticker){
-  const s = await wdJson({ action:'wbsearchentities', search:name, language:'fr', uselang:'fr', type:'item', limit:'8' });
+async function findLogoByName(name, ticker, lang){
+  const s = await wdJson({ action:'wbsearchentities', search:name, language:lang || 'fr', uselang:lang || 'fr', type:'item', limit:'8' });
   const found = s.search || [];
   if(!found.length) return null;
   const e = await wdJson({ action:'wbgetentities', ids:found.map(x => x.id).join('|'), props:'claims|descriptions', languages:'fr|en' });
@@ -5394,13 +5397,20 @@ async function findLogoByName(name, ticker){
     return { en, sc, idx };
   }).filter(x => x && x.sc >= 4);
   cands.sort((a, b) => (b.sc - a.sc) || (a.idx - b.idx));
-  for(const cand of cands.slice(0, 2)){
+  // 4 candidats plutôt que 2 : pour un nom ambigu, la bonne entreprise n'est pas toujours la mieux notée par wbsearchentities.
+  for(const cand of cands.slice(0, 4)){
     const icon = vals(cand.en, 'P8972')[0];
     if(icon){ const u = commonsUrl(icon, 160); if(await imgProbe(u, 24)) return u; }
-    const dom = domainOf(vals(cand.en, 'P856')[0] || '');
-    if(dom){ const u = 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(dom) + '&sz=128'; if(await imgProbe(u, 32)) return u; }
     const logo = vals(cand.en, 'P154')[0];
     if(logo){ const u = commonsUrl(logo, 200); if(await imgProbe(u, 24)) return u; }
+    const dom = domainOf(vals(cand.en, 'P856')[0] || '');
+    if(dom){
+      const fav = 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(dom) + '&sz=128';
+      if(await imgProbe(fav, 32)) return fav;
+      // Repli Clearbit : un vrai logo plutôt qu'un favicon, réussit parfois là où Google renvoie une icône générique.
+      const cb = 'https://logo.clearbit.com/' + encodeURIComponent(dom);
+      if(await imgProbe(cb, 32)) return cb;
+    }
   }
   return null;
 }
@@ -5408,7 +5418,6 @@ async function findLogoByName(name, ticker){
 async function resolveLogo(id, force){
   const c0 = state.companies.find(x => x.id === id);
   if(!c0 || !logoWorthLooking(c0)) return;
-  if(!force && !state.settings.autoLogos) return;
   if(c0.logo && c0.logo.src && c0.logo.src !== 'auto') return;
   const q = logoQuery(c0);
   if(!force && c0.logo && c0.logo.q === q) return;
@@ -6616,8 +6625,8 @@ function buildPrefsCard(){
       <div class="pref-h">Utilisé uniquement pour personnaliser cet espace, il reste sur votre appareil.</div>
     </div>
     <div class="pref">
-      <label class="pref-toggle"><input type="checkbox" id="prefLogos" ${s.autoLogos ? 'checked' : ''}><span>Trouver automatiquement le logo des entreprises</span></label>
-      <div class="pref-h">Envoie uniquement le nom de l'entreprise à Wikidata, Wikimedia et Google (favicon du site officiel) pour récupérer une image. Le contenu de vos analyses n'est jamais envoyé.</div>
+      <div class="pref-l">Logo automatique des entreprises</div>
+      <div class="pref-h">Le logo de chaque entreprise est recherché automatiquement (Wikidata, Wikimedia, favicon du site officiel, Clearbit). Envoie uniquement le nom de l'entreprise, jamais le contenu de vos analyses. Vous pouvez toujours le remplacer ou le retirer sur une analyse précise, dans son en-tête.</div>
       <button class="btn btn-outline btn-sm" id="prefRefreshLogos">Relancer la recherche de logos</button>
     </div>
     <div class="pref">
@@ -6776,13 +6785,6 @@ function bindSpace(){
   });
   const ask = document.getElementById('askName');
   if(ask) ask.addEventListener('click', () => { nameInput.scrollIntoView({ behavior:'smooth', block:'center' }); setTimeout(() => nameInput.focus(), 350); });
-  const logos = document.getElementById('prefLogos');
-  if(logos) logos.addEventListener('change', e => {
-    state.settings.autoLogos = e.target.checked;
-    saveState();
-    if(e.target.checked) ensureLogos();
-    showToast(e.target.checked ? 'Recherche automatique des logos activée.' : 'Recherche automatique des logos désactivée.');
-  });
   const priceKey = document.getElementById('prefPriceKey');
   if(priceKey) priceKey.addEventListener('change', e => {
     state.settings.twelveDataApiKey = e.target.value.trim();
@@ -6798,8 +6800,6 @@ function bindSpace(){
   if(refresh) refresh.addEventListener('click', () => {
     state.companies.forEach(c => { if(!c.logo || c.logo.src === 'auto') c.logo = null; });
     saveState();
-    state.settings.autoLogos = true;
-    if(logos) logos.checked = true;
     state.companies.forEach((c, i) => setTimeout(() => resolveLogo(c.id, true), i * 350));
     showToast('Recherche des logos relancée.');
   });
