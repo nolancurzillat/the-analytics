@@ -254,6 +254,17 @@ svg{display:block;}
 .contact-email{ display:inline-flex; align-items:center; flex-wrap:wrap; gap:12px; padding:12px 16px; border-radius:10px; background:var(--field); border:1px solid var(--border); }
 .contact-email b{ font-family:var(--font-mono); font-size:15px; }
 .contact-copied{ font-size:13px; color:var(--green); font-weight:600; }
+.contact-form{ display:flex; flex-direction:column; gap:16px; max-width:520px; margin:18px 0; }
+.contact-field{ display:flex; flex-direction:column; gap:6px; }
+.contact-field label{ font-size:14px; font-weight:600; color:var(--ink); }
+.contact-req{ color:var(--red); margin-left:3px; }
+.contact-field input, .contact-field textarea{
+  padding:10px 13px; border:1px solid var(--border); border-radius:9px;
+  background:var(--field); color:var(--ink); font-size:var(--fs-value); font-family:var(--font-ui); resize:vertical;
+}
+.contact-field input:focus, .contact-field textarea:focus{ outline:none; border-color:var(--blue); box-shadow:0 0 0 3px var(--ring); }
+.contact-form .btn{ align-self:flex-start; }
+.contact-form .btn:disabled{ opacity:.6; cursor:default; }
 .legal-tabs{ display:flex; gap:8px; flex-wrap:wrap; margin:18px 0 8px 0; }
 .legal-tab{ padding:9px 16px; border:1px solid var(--border); border-radius:999px; background:var(--card); color:var(--ink); font:inherit; font-size:14px; font-weight:600; cursor:pointer; }
 .legal-tab:hover{ background:var(--paper-line); }
@@ -7745,10 +7756,52 @@ function bindPortfolio(){
   bindHistoryHover();
 }
 
+// ---------- Formulaire "Nous contacter" (Web3Forms) ----------
+// Clé PUBLIQUE, faite pour être visible dans le code (comme SUPABASE_KEY) : elle ne fait que désigner l'adresse de RÉCEPTION
+// des messages, elle n'est pas propre à chaque visiteur et ne donne accès à rien de sensible.
+const WEB3FORMS_ACCESS_KEY = 'REMPLACER_PAR_LA_CLE_WEB3FORMS';
+async function submitContactForm(e){
+  e.preventDefault();
+  const name = document.getElementById('contactName').value.trim();
+  const email = document.getElementById('contactFromEmail').value.trim();
+  const message = document.getElementById('contactMessage').value.trim();
+  const res = document.getElementById('contactFormResult');
+  const say = (t, cls) => { res.textContent = t; res.className = 'guide-result ' + cls; };
+  if(!/^\S+@\S+\.\S+$/.test(email)){ say('Saisissez une adresse e-mail valide.', 'ko'); return; }
+  if(!message){ say('Écrivez votre message.', 'ko'); return; }
+  const btn = document.getElementById('contactSendBtn');
+  btn.disabled = true;
+  say('Envoi...', '');
+  try{
+    const r = await fetch('https://api.web3forms.com/submit', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', Accept:'application/json' },
+      body: JSON.stringify({ access_key:WEB3FORMS_ACCESS_KEY, name:name || 'Visiteur The Analytics', email, message, subject:'Nouveau message depuis The Analytics', from_name:'The Analytics' })
+    });
+    const data = await r.json().catch(() => ({}));
+    if(r.ok && data.success){
+      say('Message envoyé, merci ! Nous vous répondrons à ' + email + '.', 'ok');
+      document.getElementById('contactForm').reset();
+    }else{
+      say(data.message || "L'envoi a échoué. Réessayez, ou écrivez-nous directement à l'adresse ci-dessous.", 'ko');
+    }
+  }catch(err){
+    say("Connexion impossible. Réessayez, ou écrivez-nous directement à l'adresse ci-dessous.", 'ko');
+  }
+  btn.disabled = false;
+}
+const CONTACT_FORM_HTML = `<form id="contactForm" class="contact-form" novalidate>
+  <div class="contact-field"><label for="contactName">Votre nom (facultatif)</label><input type="text" id="contactName" maxlength="80" autocomplete="name"></div>
+  <div class="contact-field"><label for="contactFromEmail">Votre e-mail<span class="contact-req">*</span></label><input type="email" id="contactFromEmail" maxlength="200" autocomplete="email" required></div>
+  <div class="contact-field"><label for="contactMessage">Votre message<span class="contact-req">*</span></label><textarea id="contactMessage" rows="6" maxlength="4000" required></textarea></div>
+  <div id="contactFormResult" class="guide-result" role="status"></div>
+  <button type="submit" class="btn btn-primary" id="contactSendBtn">Envoyer le message</button>
+</form>`;
+
 // ---------- Informations légales : confidentialité, conditions, mentions légales ----------
 // Textes rédigés comme base de travail, à faire relire avant une ouverture large au public. Pas de `${` ni de guillemet oblique dans les textes.
-const LEGAL_VERSION = '2026-09-25';
-const LEGAL_DATE_TXT = '25 septembre 2026';
+const LEGAL_VERSION = '2026-09-29';
+const LEGAL_DATE_TXT = '29 septembre 2026';
 const LEGAL_PUBLISHER = 'Nolan Curzillat';
 const LEGAL_CONTACT = `<a href="mailto:the.analytics.app@gmail.com">the.analytics.app@gmail.com</a>`;
 const LEGAL_TABS = [
@@ -7777,8 +7830,9 @@ const LEGAL_CONTENT = {
       `<strong>Supabase</strong> (base de données et authentification, serveurs situés en Europe) : reçoit votre adresse e-mail, votre mot de passe chiffré et vos analyses, si vous avez un compte.`,
       `<strong>GitHub Pages</strong> (hébergement du site) : comme tout site web, reçoit votre adresse IP quand vous ouvrez l'application.`,
       `<strong>Google Fonts</strong> : les polices d'écriture sont chargées depuis Google, qui reçoit votre adresse IP.`,
-      `<strong>Wikidata, Wikimedia et le service d'icônes de Google</strong> (logos des entreprises) : reçoivent uniquement le nom de l'entreprise analysée, si l'option de recherche automatique des logos est activée. Vous pouvez la désactiver dans Mon espace, Préférences.`,
+      `<strong>Wikidata, Wikimedia, le service d'icônes de Google et Clearbit</strong> (logos des entreprises) : reçoivent uniquement le nom de l'entreprise analysée, pour retrouver son logo automatiquement.`,
       `<strong>Twelve Data</strong> (prix actuels) : reçoit uniquement le ticker de l'action, si vous avez renseigné votre propre clé API.`,
+      `<strong>Web3Forms</strong> (formulaire « Nous contacter ») : reçoit votre nom (si indiqué), votre adresse e-mail et le contenu de votre message, uniquement si vous utilisez ce formulaire, pour nous transmettre votre message par e-mail.`,
     ]),
     LP(`Hors Supabase, aucun de ces services ne reçoit le contenu de vos analyses. Certains prestataires sont des sociétés américaines : les éventuels transferts de données hors de l'Union européenne sont encadrés par les mécanismes prévus par le règlement européen (RGPD), comme les clauses contractuelles types.`),
     LH('Durée de conservation'),
@@ -7836,7 +7890,9 @@ const LEGAL_CONTENT = {
   ],
   contact: [
     LH('Une question, une suggestion, un problème ?'),
-    LP(`Écrivez-nous directement à cette adresse, nous répondons personnellement à chaque message.`),
+    LP(`Écrivez-nous directement depuis cette page, nous répondons personnellement à chaque message.`),
+    { t:'raw', x:CONTACT_FORM_HTML },
+    LH('Ou directement par e-mail'),
     LP(`<span class="contact-email"><b id="contactEmailText">the.analytics.app@gmail.com</b><button type="button" class="btn btn-outline btn-sm" id="contactCopyBtn" data-copy-email="the.analytics.app@gmail.com">Copier l'adresse</button><span class="contact-copied" id="contactCopiedMsg" hidden>Adresse copiée</span></span>`),
     LP(`Si votre appareil a une messagerie par défaut, vous pouvez aussi ouvrir directement un nouveau message : ${LEGAL_CONTACT}.`),
   ],
@@ -7872,6 +7928,8 @@ function renderLegalView(){
       if(msg){ msg.hidden = false; clearTimeout(copyBtn._t); copyBtn._t = setTimeout(() => { msg.hidden = true; }, 2500); }
     }catch(e){ showToast("Impossible de copier automatiquement : sélectionnez l'adresse à la main."); }
   });
+  const contactForm = document.getElementById('contactForm');
+  if(contactForm) contactForm.addEventListener('submit', submitContactForm);
 }
 
 // ---------- Visite guidée du premier lancement ----------
@@ -7993,6 +8051,7 @@ function learnBlocksHtml(blocks){
     if(b.t === 'formula') return `<div class="lr-formula">${b.x}${b.note ? `<small>${b.note}</small>` : ''}</div>`;
     if(b.t === 'steps') return `<ol class="lr-steps">${b.x.map(s => `<li><div><b>${s[0]}</b>${s[1]}</div></li>`).join('')}</ol>`;
     if(b.t === 'btn') return `<button type="button" class="btn btn-primary lr-cta" ${b.a}>${b.x}</button>`;
+    if(b.t === 'raw') return b.x;
     if(b.t === 'buffett') return `<div class="lr-defs lr-defs-2">${BUFFETT_RULES.map((r, i) => `<div class="lr-def"><b>${i + 1}. ${r.label}</b><span>${LEARN_RULE_TEXT[r.key] || ''}</span></div>`).join('')}</div>`;
     return '';
   }).join('');
