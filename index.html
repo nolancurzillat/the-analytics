@@ -248,8 +248,12 @@ svg{display:block;}
 .tour-btns{ display:flex; gap:8px; }
 /* Liens légaux : uniquement en pied de l'accueil depuis le 2026-09-29 (demande de Nolan), plus dans la barre latérale */
 .home-legal-links{ display:flex; flex-wrap:wrap; justify-content:center; gap:6px 18px; margin-top:14px; }
-.home-legal-links button, .home-legal-links a{ background:none; border:none; padding:0; cursor:pointer; font:inherit; font-size:12.5px; color:var(--ink-soft); text-decoration:underline; text-underline-offset:3px; }
-.home-legal-links button:hover, .home-legal-links a:hover{ color:var(--ink); }
+.home-legal-links button{ background:none; border:none; padding:0; cursor:pointer; font:inherit; font-size:12.5px; color:var(--ink-soft); text-decoration:underline; text-underline-offset:3px; }
+.home-legal-links button:hover{ color:var(--ink); }
+/* Page "Nous contacter" (2026-09-29) : adresse en clair + bouton copier, pour éviter la fenêtre "choisir une application" du lien mailto quand il n'y a pas de messagerie par défaut */
+.contact-email{ display:inline-flex; align-items:center; flex-wrap:wrap; gap:12px; padding:12px 16px; border-radius:10px; background:var(--field); border:1px solid var(--border); }
+.contact-email b{ font-family:var(--font-mono); font-size:15px; }
+.contact-copied{ font-size:13px; color:var(--green); font-weight:600; }
 .legal-tabs{ display:flex; gap:8px; flex-wrap:wrap; margin:18px 0 8px 0; }
 .legal-tab{ padding:9px 16px; border:1px solid var(--border); border-radius:999px; background:var(--card); color:var(--ink); font:inherit; font-size:14px; font-weight:600; cursor:pointer; }
 .legal-tab:hover{ background:var(--paper-line); }
@@ -7751,6 +7755,7 @@ const LEGAL_TABS = [
   { id:'confidentialite', label:'Confidentialité', title:'Politique de confidentialité' },
   { id:'conditions', label:"Conditions d'utilisation", title:"Conditions d'utilisation" },
   { id:'mentions', label:'Mentions légales', title:'Mentions légales' },
+  { id:'contact', label:'Nous contacter', title:'Nous contacter' },
 ];
 const LEGAL_CONTENT = {
   confidentialite: [
@@ -7829,6 +7834,12 @@ const LEGAL_CONTENT = {
     LH('Signaler un contenu ou un problème'),
     LP(`Pour signaler un problème, un contenu illicite ou une erreur : ${LEGAL_CONTACT}.`),
   ],
+  contact: [
+    LH('Une question, une suggestion, un problème ?'),
+    LP(`Écrivez-nous directement à cette adresse, nous répondons personnellement à chaque message.`),
+    LP(`<span class="contact-email"><b id="contactEmailText">the.analytics.app@gmail.com</b><button type="button" class="btn btn-outline btn-sm" id="contactCopyBtn" data-copy-email="the.analytics.app@gmail.com">Copier l'adresse</button><span class="contact-copied" id="contactCopiedMsg" hidden>Adresse copiée</span></span>`),
+    LP(`Si votre appareil a une messagerie par défaut, vous pouvez aussi ouvrir directement un nouveau message : ${LEGAL_CONTACT}.`),
+  ],
 };
 let legalTab = 'confidentialite';
 function goLegal(tab){
@@ -7851,6 +7862,16 @@ function renderLegalView(){
     <p class="legal-date">Dernière mise à jour : ${LEGAL_DATE_TXT}.</p>
   </div>`;
   main.querySelectorAll('[data-legal-tab]').forEach(b => b.addEventListener('click', () => goLegal(b.dataset.legalTab)));
+  const copyBtn = document.getElementById('contactCopyBtn');
+  if(copyBtn) copyBtn.addEventListener('click', async () => {
+    // Si l'accès au presse-papiers reste en attente (autorisation refusée sans réponse claire du navigateur), on ne laisse pas le bouton sans réaction.
+    const timeout = new Promise((res, rej) => setTimeout(() => rej(new Error('timeout')), 2500));
+    try{
+      await Promise.race([navigator.clipboard.writeText(copyBtn.dataset.copyEmail), timeout]);
+      const msg = document.getElementById('contactCopiedMsg');
+      if(msg){ msg.hidden = false; clearTimeout(copyBtn._t); copyBtn._t = setTimeout(() => { msg.hidden = true; }, 2500); }
+    }catch(e){ showToast("Impossible de copier automatiquement : sélectionnez l'adresse à la main."); }
+  });
 }
 
 // ---------- Visite guidée du premier lancement ----------
@@ -8285,7 +8306,7 @@ function renderHomeView(){
     </section>
 
     <div class="legal">The Analytics est un outil d'aide à l'analyse fondamentale, à but pédagogique et informatif. Il ne constitue ni un conseil en investissement, ni une recommandation d'achat ou de vente. Investir comporte un risque de perte en capital.</div>
-    <div class="home-legal-links"><button type="button" data-legal="confidentialite">Confidentialité</button><button type="button" data-legal="conditions">Conditions</button><button type="button" data-legal="mentions">Mentions légales</button><a href="mailto:the.analytics.app@gmail.com">Nous contacter</a></div>
+    <div class="home-legal-links"><button type="button" data-legal="confidentialite">Confidentialité</button><button type="button" data-legal="conditions">Conditions</button><button type="button" data-legal="mentions">Mentions légales</button><button type="button" data-legal="contact">Nous contacter</button></div>
   `;
 
   main.querySelectorAll('[data-open-company]').forEach(el => {
