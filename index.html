@@ -248,8 +248,8 @@ svg{display:block;}
 .tour-btns{ display:flex; gap:8px; }
 /* Liens légaux : uniquement en pied de l'accueil depuis le 2026-09-29 (demande de Nolan), plus dans la barre latérale */
 .home-legal-links{ display:flex; flex-wrap:wrap; justify-content:center; gap:6px 18px; margin-top:14px; }
-.home-legal-links button{ background:none; border:none; padding:0; cursor:pointer; font:inherit; font-size:12.5px; color:var(--ink-soft); text-decoration:underline; text-underline-offset:3px; }
-.home-legal-links button:hover{ color:var(--ink); }
+.home-legal-links button, .home-legal-links a{ background:none; border:none; padding:0; cursor:pointer; font:inherit; font-size:12.5px; color:var(--ink-soft); text-decoration:underline; text-underline-offset:3px; }
+.home-legal-links button:hover, .home-legal-links a:hover{ color:var(--ink); }
 .legal-tabs{ display:flex; gap:8px; flex-wrap:wrap; margin:18px 0 8px 0; }
 .legal-tab{ padding:9px 16px; border:1px solid var(--border); border-radius:999px; background:var(--card); color:var(--ink); font:inherit; font-size:14px; font-weight:600; cursor:pointer; }
 .legal-tab:hover{ background:var(--paper-line); }
@@ -8285,7 +8285,7 @@ function renderHomeView(){
     </section>
 
     <div class="legal">The Analytics est un outil d'aide à l'analyse fondamentale, à but pédagogique et informatif. Il ne constitue ni un conseil en investissement, ni une recommandation d'achat ou de vente. Investir comporte un risque de perte en capital.</div>
-    <div class="home-legal-links"><button type="button" data-legal="confidentialite">Confidentialité</button><button type="button" data-legal="conditions">Conditions</button><button type="button" data-legal="mentions">Mentions légales</button></div>
+    <div class="home-legal-links"><button type="button" data-legal="confidentialite">Confidentialité</button><button type="button" data-legal="conditions">Conditions</button><button type="button" data-legal="mentions">Mentions légales</button><a href="mailto:the.analytics.app@gmail.com">Nous contacter</a></div>
   `;
 
   main.querySelectorAll('[data-open-company]').forEach(el => {
