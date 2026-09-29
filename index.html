@@ -1578,6 +1578,9 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
 .pf-stat-v{ font-family:var(--font-mono); font-weight:600; font-size:20px; margin-top:2px; }
 .pf-two{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:28px; }
 .home-table tr.pf-total td{ border-top:2px solid var(--border-strong); background:var(--paper-line); }
+.pf-table-block{ margin-bottom:24px; }
+.pf-table-block:last-child{ margin-bottom:0; }
+.pf-table-dev-title{ font-weight:700; font-size:15px; margin-bottom:10px; color:var(--ink); }
 .pf-res{ display:block; font-weight:600; }
 .pf-res-s{ display:block; font-size:12.5px; opacity:.85; }
 .pf-empty-steps{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:14px; margin:16px 0 20px 0; }
@@ -7358,12 +7361,12 @@ function pfKpis(pf){
   </div>`;
 }
 
-function pfTable(pf){
-  const devOrder = Object.keys(pf.byDev).sort((a, b) => (a === pf.main ? -1 : 0) - (b === pf.main ? -1 : 0));
-  const rows = pf.rows.slice().sort((a, b) => devOrder.indexOf(a.m.devise) - devOrder.indexOf(b.m.devise) || (b.m.invested || 0) - (a.m.invested || 0));
+// Une table par devise (demande de Nolan le 2026-09-29 : séparer les positions dollar et euro plutôt qu'une table mélangée avec des lignes de total intercalées).
+function pfTableForDev(pf, d){
+  const rows = pf.rows.filter(r => r.m.devise === d).sort((a, b) => (b.m.invested || 0) - (a.m.invested || 0));
   const body = rows.map(({ c, m }) => {
     const info = pfInfo(c);
-    const tot = pf.byDev[m.devise].invested;
+    const tot = pf.byDev[d].invested;
     const w = (m.invested !== null && tot > 0) ? fmtNum(m.invested / tot * 100) + '&nbsp;%' : '—';
     const res = m.gain === null ? '—' : `<span class="pf-res" style="color:${pfColor(m.gain)}">${pfSigned(m.gain, m.devise)}</span>${m.gainPct !== null ? `<span class="pf-res-s" style="color:${pfColor(m.gainPct)}">${pfPct(m.gainPct)}</span>` : ''}`;
     const dec = info.decision ? `<span class="pill ${PF_DECISION_PILL[info.decision] || 'pill-none'}">${escapeHtml(info.decision)}</span>` : '<span style="color:var(--ink-soft)">—</span>';
@@ -7380,12 +7383,14 @@ function pfTable(pf){
       <td>${info.score === null ? '—' : Math.round(info.score)}</td>
     </tr>`;
   }).join('');
-  const foot = devOrder.filter(d => pf.byDev[d].nInv).map(d => {
-    const x = pf.byDev[d];
-    const base = x.value - x.gain;
-    return `<tr class="pf-total"><td colspan="4"><strong>Total ${d === '$' ? 'en dollars' : 'en euros'}</strong></td><td><strong>${fmtMoney(x.invested, d)}</strong></td><td><strong>${x.nGain ? fmtMoney(x.value, d) : '—'}</strong></td><td>${x.nGain ? `<span class="pf-res" style="color:${pfColor(x.gain)}">${pfSigned(x.gain, d)}</span>${base > 0 ? `<span class="pf-res-s" style="color:${pfColor(x.gain)}">${pfPct(x.gain / base * 100)}</span>` : ''}` : '—'}</td><td>100&nbsp;%</td><td></td><td></td></tr>`;
-  }).join('');
+  const x = pf.byDev[d];
+  const base = x.value - x.gain;
+  const foot = `<tr class="pf-total"><td colspan="4"><strong>Total</strong></td><td><strong>${fmtMoney(x.invested, d)}</strong></td><td><strong>${x.nGain ? fmtMoney(x.value, d) : '—'}</strong></td><td>${x.nGain ? `<span class="pf-res" style="color:${pfColor(x.gain)}">${pfSigned(x.gain, d)}</span>${base > 0 ? `<span class="pf-res-s" style="color:${pfColor(x.gain)}">${pfPct(x.gain / base * 100)}</span>` : ''}` : '—'}</td><td>100&nbsp;%</td><td></td><td></td></tr>`;
   return `<div class="home-table-wrap"><table class="home-table"><thead><tr><th>Entreprise</th><th>Quantité</th><th>Prix d'achat</th><th>Cours</th><th>Investi</th><th>Valeur</th><th>Résultat</th><th>Poids</th><th>Décision</th><th>Score</th></tr></thead><tbody>${body}${foot}</tbody></table></div>`;
+}
+function pfTable(pf){
+  const devOrder = Object.keys(pf.byDev).filter(d => pf.byDev[d].nInv).sort((a, b) => (a === pf.main ? -1 : 0) - (b === pf.main ? -1 : 0));
+  return devOrder.map(d => `<div class="pf-table-block">${devOrder.length > 1 ? `<div class="pf-table-dev-title">Positions en ${d === '$' ? 'dollars' : 'euros'}</div>` : ''}${pfTableForDev(pf, d)}</div>`).join('');
 }
 
 function pfPerformance(pf){
