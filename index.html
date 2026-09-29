@@ -235,12 +235,6 @@ svg{display:block;}
   transition:background .12s ease, border-color .12s ease;
 }
 .side-new:hover{ background:var(--accent); border-color:var(--accent); }
-.side-foot{
-  padding:14px 20px 18px 20px;
-  border-top:1px solid rgba(255,255,255,.07);
-  display:flex; align-items:center; justify-content:space-between; gap:10px;
-  font-size:12.5px; color:#7f8fae; line-height:1.4;
-}
 .tour-layer{ position:fixed; inset:0; z-index:9000; }
 .tour-layer.dim{ background:rgba(7,12,24,.62); }
 .tour-hi{ position:fixed; border-radius:12px; box-shadow:0 0 0 9999px rgba(7,12,24,.62), 0 0 0 3px #5b8cf7; pointer-events:none; transition:all .22s ease; }
@@ -252,21 +246,22 @@ svg{display:block;}
 .tour-pop p{ font-size:14.5px; line-height:1.6; margin:0 0 16px 0; color:var(--ink); }
 .tour-actions{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .tour-btns{ display:flex; gap:8px; }
-.side-legal{ display:flex; flex-wrap:wrap; gap:2px 12px; padding:0 20px 14px 20px; }
-.side-legal button{ background:none; border:none; padding:0; cursor:pointer; font:inherit; font-size:11.5px; color:#7f8fae; text-decoration:underline; text-underline-offset:3px; }
-.side-legal button:hover{ color:#c6d1e6; }
+/* Liens légaux : uniquement en pied de l'accueil depuis le 2026-09-29 (demande de Nolan), plus dans la barre latérale */
+.home-legal-links{ display:flex; flex-wrap:wrap; justify-content:center; gap:6px 18px; margin-top:14px; }
+.home-legal-links button{ background:none; border:none; padding:0; cursor:pointer; font:inherit; font-size:12.5px; color:var(--ink-soft); text-decoration:underline; text-underline-offset:3px; }
+.home-legal-links button:hover{ color:var(--ink); }
 .legal-tabs{ display:flex; gap:8px; flex-wrap:wrap; margin:18px 0 8px 0; }
 .legal-tab{ padding:9px 16px; border:1px solid var(--border); border-radius:999px; background:var(--card); color:var(--ink); font:inherit; font-size:14px; font-weight:600; cursor:pointer; }
 .legal-tab:hover{ background:var(--paper-line); }
 .legal-tab.active{ background:var(--accent); border-color:var(--accent); color:#fff; }
 .legal-date{ margin:26px 0 40px 0; font-size:13px; color:var(--ink-soft); }
 .acct-btn{
-  flex:1 1 auto; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:2px;
+  flex:0 1 auto; min-width:0; max-width:200px; display:flex; flex-direction:column; align-items:flex-start; gap:2px;
   background:none; border:none; padding:0; text-align:left; cursor:pointer; font:inherit; color:inherit;
 }
 .acct-l1{ max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; font-weight:600; color:#c6d1e6; }
 .acct-btn:hover .acct-l1{ color:#fff; }
-.acct-l2{ font-size:12px; color:#7f8fae; }
+.acct-l2{ max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; color:#7f8fae; }
 .acct-l2.acct-ok{ color:#8fd3a8; }
 .acct-l2.acct-error{ color:#f2994a; }
 .theme-btn{
@@ -279,18 +274,28 @@ svg{display:block;}
 .theme-btn:hover{ background:rgba(255,255,255,.08); color:#fff; }
 
 .content{ margin-left:var(--side-w); min-width:0; }
-.mobile-bar{
-  display:none;
+/* Barre du haut, toujours visible (2026-09-29, demande de Nolan : compte/synchronisation et mode sombre passent du bas de la barre latérale à cet endroit, en haut à droite du contenu) */
+.topbar{
+  display:flex;
   position:sticky; top:0; z-index:50;
   align-items:center; gap:12px;
   padding:12px 16px;
   background:var(--navy); color:#fff;
 }
-.mobile-bar .brand-name{ font-size:18px; }
+.topbar .brand-name{ font-size:18px; }
+.topbar-actions{ display:flex; align-items:center; gap:10px; margin-left:auto; }
 .menu-btn{
   width:38px; height:38px; border-radius:9px;
   border:1px solid rgba(255,255,255,.18);
   background:transparent; color:#fff; cursor:pointer; font-size:18px;
+}
+@media (min-width:901px){
+  .topbar .menu-btn, .topbar .brand-name{ display:none; }
+}
+@media (max-width:480px){
+  /* Hamburger + nom + compte + thème ne tiennent pas tous sur une largeur de téléphone étroite : le bloc compte se réduit, les deux lignes restent lisibles grâce à l'ellipse déjà posée sur .acct-l1/.acct-l2 */
+  .topbar{ padding:10px 12px; gap:8px; }
+  .acct-btn{ max-width:110px; }
 }
 .side-overlay{ display:none; }
 
@@ -669,7 +674,7 @@ input.company-name:focus{ outline:none; border-bottom-color:var(--blue); }
 }
 
 .snav{
-  position:sticky; top:0; z-index:30;
+  position:sticky; top:62px; z-index:30;
   display:flex; gap:8px; overflow-x:auto;
   margin:18px 0 24px 0; padding:12px 0;
   background:color-mix(in srgb, var(--bg) 90%, transparent);
@@ -692,7 +697,7 @@ input.company-name:focus{ outline:none; border-bottom-color:var(--blue); }
   --sec-c: var(--accent);
   background:var(--card); border:1px solid var(--border); border-top:4px solid var(--sec-c);
   border-radius:16px; box-shadow:var(--shadow); margin-bottom:40px; overflow:hidden;
-  scroll-margin-top:76px;
+  scroll-margin-top:136px;
 }
 .section-title{
   display:flex; align-items:center; gap:18px;
@@ -1324,15 +1329,12 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
   body.menu-open .sidebar{ transform:none; box-shadow:var(--shadow-lg); }
   body.menu-open .side-overlay{ display:block; position:fixed; inset:0; background:rgba(7,12,24,.5); z-index:55; }
   .content{ margin-left:0; }
-  .mobile-bar{ display:flex; }
   .wrap, .hsec, .stats, .hero-inner{ padding-left:20px; padding-right:20px; }
   .stats-grid{ grid-template-columns:repeat(2,1fr); }
   .stat:nth-child(2){ border-right:none; }
   .stat:nth-child(-n+2){ border-bottom:1px solid var(--border); }
   .dash-kpis{ grid-template-columns:repeat(2,1fr); }
   .steps{ grid-template-columns:1fr; }
-  .snav{ top:62px; }
-  .section, .position-card{ scroll-margin-top:136px; }
 }
 @media (max-width:640px){
   .feature-grid{ grid-template-columns:1fr; }
@@ -1614,9 +1616,9 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
 .lr-progress-bar i{ display:block; height:100%; background:var(--green); border-radius:4px; transition:width .25s ease; }
 .lr-layout{ display:grid; grid-template-columns:276px minmax(0,1fr); gap:28px; align-items:start; }
 .lr-nav{
-  position:sticky; top:16px; display:flex; flex-direction:column; gap:2px;
+  position:sticky; top:78px; display:flex; flex-direction:column; gap:2px;
   background:var(--card); border:1px solid var(--border); border-radius:16px; padding:10px;
-  max-height:calc(100vh - 32px); overflow-y:auto; box-shadow:var(--shadow);
+  max-height:calc(100vh - 94px); overflow-y:auto; box-shadow:var(--shadow);
 }
 .lr-nav-item{
   display:flex; gap:12px; align-items:flex-start; text-align:left; width:100%; padding:10px 12px;
@@ -1761,18 +1763,17 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
     <div id="tabs"></div>
   </div>
   <button class="side-new" id="sideNewBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Nouvelle analyse</button>
-  <div class="side-foot">
-    <button type="button" class="acct-btn" id="accountBtn" aria-label="Compte et synchronisation"></button>
-    <button class="theme-btn" id="themeBtn" title="Changer de thème" aria-label="Changer de thème"></button>
-  </div>
-  <div class="side-legal"><button type="button" data-legal="confidentialite">Confidentialité</button><button type="button" data-legal="conditions">Conditions</button><button type="button" data-legal="mentions">Mentions légales</button></div>
 </aside>
 <div class="side-overlay" id="sideOverlay"></div>
 
 <div class="content">
-  <div class="mobile-bar">
+  <div class="topbar">
     <button class="menu-btn" id="menuBtn" aria-label="Ouvrir le menu">&#9776;</button>
     <div class="brand-name">The Analytics</div>
+    <div class="topbar-actions">
+      <button type="button" class="acct-btn" id="accountBtn" aria-label="Compte et synchronisation"></button>
+      <button class="theme-btn" id="themeBtn" title="Changer de thème" aria-label="Changer de thème"></button>
+    </div>
   </div>
   <main id="main"></main>
 </div>
@@ -7848,12 +7849,13 @@ function renderLegalView(){
 
 // ---------- Visite guidée du premier lancement ----------
 // Affichée une seule fois (state.settings.tourDone, propre à l'appareil) ; les utilisateurs qui ont déjà des analyses ne la voient pas
-// automatiquement. Relançable depuis Mon espace, Préférences (bouton [data-start-tour]). Sur mobile, le menu latéral est ouvert le temps de la visite.
+// automatiquement. Relançable depuis Mon espace, Préférences (bouton [data-start-tour]). Sur mobile, le menu latéral est ouvert le temps des étapes marquées `inSidebar` (les seules dont la cible vit dans la barre latérale).
 const TOUR_STEPS = [
   { sel:null, title:'Bienvenue sur The Analytics', text:"Une visite rapide, 30 secondes : voici où trouver l'essentiel. Vous pouvez la passer et la relancer plus tard depuis Mon espace, Préférences." },
-  { sel:'#sideNewBtn', title:'Créez votre première analyse', text:"Commencez ici : nommez une entreprise et remplissez sa fiche, section par section. Les ratios se calculent et se colorent tout seuls." },
-  { sel:'#navSpace', title:'Mon espace et Portefeuille', text:"Mon espace résume vos analyses et vous suggère quoi faire ensuite. Le Portefeuille, juste en dessous, suit vos vrais investissements : résultat, dividendes et évolution dans le temps." },
-  { sel:'#navLearn', title:'Apprentissage', text:"Débutant ? Cette section explique chaque indicateur avec des exemples et un quiz. Vous n'avez rien à savoir avant de commencer." },
+  { sel:'#sideNewBtn', inSidebar:true, title:'Créez votre première analyse', text:"Commencez ici : nommez une entreprise et remplissez sa fiche, section par section. Les ratios se calculent et se colorent tout seuls." },
+  { sel:'#navSpace', inSidebar:true, title:'Mon espace et Portefeuille', text:"Mon espace résume vos analyses et vous suggère quoi faire ensuite. Le Portefeuille, juste en dessous, suit vos vrais investissements : résultat, dividendes et évolution dans le temps." },
+  { sel:'#navLearn', inSidebar:true, title:'Apprentissage', text:"Débutant ? Cette section explique chaque indicateur avec des exemples et un quiz. Vous n'avez rien à savoir avant de commencer." },
+  // #accountBtn vit désormais dans la barre du haut, toujours visible (2026-09-29) : pas besoin d'ouvrir le tiroir mobile pour cette étape.
   { sel:'#accountBtn', title:'Un compte, si vous le souhaitez', text:"Sans compte, tout reste sur cet appareil. Avec un compte gratuit, vos analyses vous suivent sur tous vos appareils." },
 ];
 const tour = { i:0, active:false, timer:null };
@@ -7884,7 +7886,7 @@ function showTourStep(){
   document.getElementById('tourText').textContent = step.text;
   document.getElementById('tourPrev').style.visibility = tour.i === 0 ? 'hidden' : 'visible';
   document.getElementById('tourNext').textContent = tour.i === 0 ? 'Commencer' : (tour.i === TOUR_STEPS.length - 1 ? 'Terminer' : 'Suivant');
-  if(tourMobile()) document.body.classList.toggle('menu-open', !!step.sel);
+  if(tourMobile()) document.body.classList.toggle('menu-open', !!step.inSidebar);
   // sur mobile le menu glisse pendant ~0,3 s : on mesure une fois qu'il est en place
   tour.timer = setTimeout(placeTour, tourMobile() ? 340 : 30);
   document.getElementById('tourNext').focus();
@@ -8277,6 +8279,7 @@ function renderHomeView(){
     </section>
 
     <div class="legal">The Analytics est un outil d'aide à l'analyse fondamentale, à but pédagogique et informatif. Il ne constitue ni un conseil en investissement, ni une recommandation d'achat ou de vente. Investir comporte un risque de perte en capital.</div>
+    <div class="home-legal-links"><button type="button" data-legal="confidentialite">Confidentialité</button><button type="button" data-legal="conditions">Conditions</button><button type="button" data-legal="mentions">Mentions légales</button></div>
   `;
 
   main.querySelectorAll('[data-open-company]').forEach(el => {
