@@ -297,8 +297,8 @@ svg{display:block;}
   padding:12px 16px;
   background:var(--navy); color:#fff;
 }
-.topbar .brand-name{ font-size:18px; }
-.topbar-actions{ display:flex; align-items:center; gap:10px; margin-left:auto; }
+.topbar .brand-name{ font-size:18px; flex:0 0 auto; }
+.topbar-actions{ display:flex; align-items:center; gap:10px; margin-left:auto; flex:0 0 auto; }
 .menu-btn{
   width:38px; height:38px; border-radius:9px;
   border:1px solid rgba(255,255,255,.18);
@@ -308,29 +308,32 @@ svg{display:block;}
   .topbar .menu-btn, .topbar .brand-name{ display:none; }
 }
 @media (max-width:480px){
-  /* Hamburger + nom + compte + thème ne tiennent pas tous sur une largeur de téléphone étroite : le bloc compte se réduit, les deux lignes restent lisibles grâce à l'ellipse déjà posée sur .acct-l1/.acct-l2 */
+  /* Hamburger + nom + onglets + compte + thème ne tiennent pas tous sur une largeur de téléphone étroite : le bloc compte se réduit, les onglets défilent, les deux lignes du compte restent lisibles grâce à l'ellipse déjà posée sur .acct-l1/.acct-l2 */
   .topbar{ padding:10px 12px; gap:8px; }
   .acct-btn{ max-width:110px; }
 }
-/* Navigation principale (Accueil, Mon espace, Portefeuille, Apprentissage) : barre à part sous .topbar (2026-09-29, essai demandé par
-   Nolan après l'avoir vue dans la barre latérale), collante elle aussi, visible sur toutes les tailles d'écran. */
-.main-nav{
-  position:sticky; top:62px; z-index:45;
-  display:flex; gap:8px; overflow-x:auto;
-  padding:10px 24px;
-  background:var(--card); border-bottom:1px solid var(--border);
+@media (max-width:640px){
+  /* Avec le nom de marque ET les 4 onglets ET le compte, il ne reste presque plus de place sous 640px : le nom (déjà redondant
+     à côté du hamburger et des onglets) disparaît, et les onglets passent en icône seule pour tenir sans avoir à défiler. */
+  .topbar .brand-name{ display:none; }
+  .main-nav-item{ padding:8px 10px; }
+  .main-nav-item span:not(.mn-ico){ display:none; }
 }
+/* Navigation principale (Accueil, Mon espace, Portefeuille, Apprentissage) : sur la même ligne que compte/thème dans .topbar
+   (2026-09-29, demande de Nolan après un premier essai en barre séparée juste en dessous). `.topbar-nav` prend toute la place
+   restante entre la marque et les actions (`flex:1 1 auto`) et défile horizontalement si ça ne tient pas, sans jamais pousser
+   `.topbar-actions` hors de l'écran (compte/thème restent toujours accessibles, quitte à faire défiler les onglets). */
+.topbar-nav{ display:flex; align-items:center; gap:6px; overflow-x:auto; flex:1 1 auto; min-width:0; }
 .main-nav-item{
-  display:inline-flex; align-items:center; gap:8px; flex:0 0 auto;
-  padding:8px 16px; border-radius:999px; border:1px solid transparent;
-  background:transparent; color:var(--ink-soft); font:inherit; font-size:14px; font-weight:600; cursor:pointer; white-space:nowrap;
+  display:inline-flex; align-items:center; gap:7px; flex:0 0 auto;
+  padding:8px 14px; border-radius:999px; border:1px solid transparent;
+  background:transparent; color:#c6d1e6; font:inherit; font-size:13.5px; font-weight:600; cursor:pointer; white-space:nowrap;
   transition:background .12s ease, color .12s ease, border-color .12s ease;
 }
-.main-nav-item:hover{ color:var(--ink); background:var(--paper-line); }
-.main-nav-item.active{ color:var(--ink); background:color-mix(in srgb, var(--accent) 14%, var(--card)); border-color:var(--accent); }
-.mn-ico{ display:flex; color:var(--ink-soft); }
-.main-nav-item.active .mn-ico, .main-nav-item:hover .mn-ico{ color:var(--accent); }
-@media (max-width:640px){ .main-nav{ padding:10px 16px; } }
+.main-nav-item:hover{ color:#fff; background:rgba(255,255,255,.08); }
+.main-nav-item.active{ color:#fff; background:var(--accent); }
+.mn-ico{ display:flex; }
+.mn-ico svg{ width:15px; height:15px; }
 .side-overlay{ display:none; }
 
 main{ display:block; }
@@ -711,7 +714,7 @@ input.company-name:focus{ outline:none; border-bottom-color:var(--blue); }
 }
 
 .snav{
-  position:sticky; top:124px; z-index:30;
+  position:sticky; top:62px; z-index:30;
   display:flex; gap:8px; overflow-x:auto;
   margin:18px 0 24px 0; padding:12px 0;
   background:color-mix(in srgb, var(--bg) 90%, transparent);
@@ -734,7 +737,7 @@ input.company-name:focus{ outline:none; border-bottom-color:var(--blue); }
   --sec-c: var(--accent);
   background:var(--card); border:1px solid var(--border); border-top:4px solid var(--sec-c);
   border-radius:16px; box-shadow:var(--shadow); margin-bottom:40px; overflow:hidden;
-  scroll-margin-top:198px;
+  scroll-margin-top:136px;
 }
 .section-title{
   display:flex; align-items:center; gap:18px;
@@ -1653,9 +1656,9 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
 .lr-progress-bar i{ display:block; height:100%; background:var(--green); border-radius:4px; transition:width .25s ease; }
 .lr-layout{ display:grid; grid-template-columns:276px minmax(0,1fr); gap:28px; align-items:start; }
 .lr-nav{
-  position:sticky; top:140px; display:flex; flex-direction:column; gap:2px;
+  position:sticky; top:78px; display:flex; flex-direction:column; gap:2px;
   background:var(--card); border:1px solid var(--border); border-radius:16px; padding:10px;
-  max-height:calc(100vh - 156px); overflow-y:auto; box-shadow:var(--shadow);
+  max-height:calc(100vh - 94px); overflow-y:auto; box-shadow:var(--shadow);
 }
 .lr-nav-item{
   display:flex; gap:12px; align-items:flex-start; text-align:left; width:100%; padding:10px 12px;
@@ -1803,16 +1806,16 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
   <div class="topbar">
     <button class="menu-btn" id="menuBtn" aria-label="Ouvrir le menu">&#9776;</button>
     <div class="brand-name">The Analytics</div>
+    <div class="topbar-nav">
+      <button type="button" class="main-nav-item" id="navHome" aria-label="Accueil"><span class="mn-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></span><span>Accueil</span></button>
+      <button type="button" class="main-nav-item" id="navSpace" aria-label="Mon espace"><span class="mn-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span><span>Mon espace</span></button>
+      <button type="button" class="main-nav-item" id="navPortfolio" aria-label="Portefeuille"><span class="mn-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v9h9"/><path d="M20.5 15A9 9 0 1 1 9 3.5"/></svg></span><span>Portefeuille</span></button>
+      <button type="button" class="main-nav-item" id="navLearn" aria-label="Apprentissage"><span class="mn-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 21.5V5.5"/><path d="M9 8h7M9 12h5"/></svg></span><span>Apprentissage</span></button>
+    </div>
     <div class="topbar-actions">
       <button type="button" class="acct-btn" id="accountBtn" aria-label="Compte et synchronisation"></button>
       <button class="theme-btn" id="themeBtn" title="Changer de thème" aria-label="Changer de thème"></button>
     </div>
-  </div>
-  <div class="main-nav">
-    <button type="button" class="main-nav-item" id="navHome"><span class="mn-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></span><span>Accueil</span></button>
-    <button type="button" class="main-nav-item" id="navSpace"><span class="mn-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span><span>Mon espace</span></button>
-    <button type="button" class="main-nav-item" id="navPortfolio"><span class="mn-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v9h9"/><path d="M20.5 15A9 9 0 1 1 9 3.5"/></svg></span><span>Portefeuille</span></button>
-    <button type="button" class="main-nav-item" id="navLearn"><span class="mn-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 21.5V5.5"/><path d="M9 8h7M9 12h5"/></svg></span><span>Apprentissage</span></button>
   </div>
   <main id="main"></main>
 </div>
