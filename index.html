@@ -7439,7 +7439,13 @@ function pfKpis(pf){
 
 // Une table par devise (demande de Nolan le 2026-09-29 : séparer les positions dollar et euro plutôt qu'une table mélangée avec des lignes de total intercalées).
 function pfTableForDev(pf, d){
-  const rows = pf.rows.filter(r => r.m.devise === d).sort((a, b) => (b.m.invested || 0) - (a.m.invested || 0));
+  // Triée par résultat en % décroissant (demande de Nolan le 2026-09-29) : les positions sans résultat calculable restent en dernier, quel que soit leur investi.
+  const rows = pf.rows.filter(r => r.m.devise === d).sort((a, b) => {
+    if(a.m.gainPct === null && b.m.gainPct === null) return 0;
+    if(a.m.gainPct === null) return 1;
+    if(b.m.gainPct === null) return -1;
+    return b.m.gainPct - a.m.gainPct;
+  });
   const body = rows.map(({ c, m }) => {
     const info = pfInfo(c);
     const tot = pf.byDev[d].invested;
@@ -7572,7 +7578,7 @@ function scheduleSnapshot(delay){
   clearTimeout(snapshotTimer);
   snapshotTimer = setTimeout(recordPortfolioSnapshot, delay || 4000);
 }
-const PF_RANGES = [['m1', '1 mois', 31], ['m3', '3 mois', 92], ['y1', '1 an', 366], ['all', 'Tout', 36500]];
+const PF_RANGES = [['s1', '1 semaine', 8], ['m1', '1 mois', 31], ['m3', '3 mois', 92], ['y1', '1 an', 366], ['all', 'Tout', 36500]];
 function pfHistory(cur){
   const chips = `<div class="pf-chips" style="margin-bottom:14px"><span class="pf-chips-l">Période :</span>${PF_RANGES.map(r => `<button class="lr-chip${r[0] === portfolioRange ? ' on' : ''}" data-pf-range="${r[0]}">${r[1]}</button>`).join('')}</div>`;
   const days = Object.keys(state.history).filter(d => state.history[d].c[cur]).sort();
@@ -7631,10 +7637,14 @@ function bindHistoryHover(){
     tip.style.left = best[3] > 60 ? 'auto' : (best[3] + 2) + '%';
     tip.style.right = best[3] > 60 ? (100 - best[3] + 2) + '%' : 'auto';
   };
+  const hide = () => { tip.hidden = true; cursor.hidden = true; };
   plot.addEventListener('mousemove', show);
   plot.addEventListener('touchstart', e => { if(e.touches[0]) show(e.touches[0]); }, { passive:true });
   plot.addEventListener('touchmove', e => { if(e.touches[0]) show(e.touches[0]); }, { passive:true });
-  plot.addEventListener('mouseleave', () => { tip.hidden = true; cursor.hidden = true; });
+  plot.addEventListener('mouseleave', hide);
+  // Sur un écran tactile, il n'y a pas de curseur qui "sort" du graphique : sans ceci, l'infobulle restait affichée après avoir levé le doigt.
+  plot.addEventListener('touchend', hide);
+  plot.addEventListener('touchcancel', hide);
 }
 
 function pfIdeas(){
