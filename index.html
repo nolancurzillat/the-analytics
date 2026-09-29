@@ -638,6 +638,9 @@ input.company-name:focus{ outline:none; border-bottom-color:var(--blue); }
   font-size:13px; font-weight:500;
 }
 .chip.mono{ font-family:var(--font-mono); color:var(--blue); background:var(--blue-soft); font-weight:600; }
+.chip-progress{ gap:8px; }
+.chip-progress .hbar-track{ width:56px; height:7px; }
+.chip-progress b{ font-family:var(--font-mono); font-size:12.5px; color:var(--ink); }
 .chead-side{ flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-end; gap:10px; }
 .company-dates{
   display:flex; flex-direction:column; gap:2px; text-align:right;
@@ -6046,7 +6049,10 @@ function buildCompanyMeta(c){
   if(sect) out += `<span class="chip">${escapeHtml(sect)}${indus ? ' · ' + escapeHtml(indus) : ''}</span>`;
   if(pays) out += `<span class="chip">${flagIcon(pays)}${escapeHtml(pays)}</span>`;
   if(!out) out = `<span class="chip">Renseignez le ticker, le secteur et le pays dans la section Identité</span>`;
-  return out;
+  // Complétion de la fiche, en haut de la page (demande de Nolan le 2026-09-29) : même calcul que "Toutes vos analyses" (companyCompletion), même composant barre+pourcentage.
+  const comp = companyCompletion(c);
+  const progressChip = `<span class="chip chip-progress" data-tooltip="<div class='tt-desc'>Fiche complétée à ${comp.pct}&nbsp;% · ${comp.filled} champ${comp.filled > 1 ? 's' : ''} sur ${comp.total} renseigné${comp.filled > 1 ? 's' : ''}</div>"><span class="hbar-track"><i style="width:${comp.pct}%;background:${comp.pct >= 100 ? 'var(--green)' : 'var(--accent)'}"></i></span><b>${comp.pct}&nbsp;%</b></span>`;
+  return progressChip + out;
 }
 function buildCompanyKpis(c){
   const sinfo = computeScoreInfo(c);
@@ -6069,7 +6075,7 @@ function buildCompanyKpis(c){
   const kpi = (label, inner, sub) => `<div class="kpi"><div class="kpi-l">${label}</div>${inner}${sub !== undefined ? `<div class="kpi-s">${sub}</div>` : ''}</div>`;
   return [
     `<div class="kpi kpi-score kpi-link" data-goto="insights-section" role="button" tabindex="0" aria-label="Voir le détail du score composite"><div class="kpi-ring" data-tooltip="<div class='tt-desc'>Score composite sur 100 : moyenne pondérée des 5 axes du profil global. Cliquez pour voir le détail.</div>${scoreScaleTooltip()}"><svg viewBox="0 0 54 54" width="54" height="54"><circle cx="27" cy="27" r="23" fill="none" stroke="var(--border)" stroke-width="6"/><circle cx="27" cy="27" r="23" fill="none" stroke="${gs === null ? 'transparent' : gsColor}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 27 27)"/></svg><span style="color:${gsColor}">${gs === null ? '—' : Math.round(gs)}</span></div><div><div class="kpi-l">Score composite</div><div class="kpi-s">${gs === null ? 'sur 100' : (sinfo.provisional ? 'provisoire · ' : 'sur 100 · ') + sinfo.filled + '/' + sinfo.total + ' axes'}</div></div></div>`,
-    kpi('Décision', `<div style="margin-top:9px">${decisionPill(pers.decision || '')}</div>`, pers.prixAchatCible ? 'Cible d\'achat : ' + escapeHtml(String(pers.prixAchatCible)) : 'Aucun prix cible'),
+    kpi('Décision', `<div style="margin-top:9px">${decisionPill(pers.decision || '')}</div>`, pers.prixAchatCible ? 'Cible d\'achat : ' + escapeHtml(String(pers.prixAchatCible)) + ' ' + devise : 'Aucun prix cible'),
     kpi('Conviction', `<div class="kpi-v" style="color:var(--star)">${conviction ? '★ ' + String(conviction).replace('.', ',') : '—'}<small> / 5</small></div>`, conviction ? 'Votre niveau de conviction' : 'À renseigner'),
     kpi('PEG', `<div class="kpi-v" style="color:${pegColor}">${peg === null ? '—' : peg.toFixed(2)}</div>`, pegTier ? TIER_LABELS[pegTier] : 'Pas assez de données'),
     kpi('Checklist Buffett', `<div class="kpi-v" style="color:${buffColor}">${buff.checked}<small> / ${buff.total}</small></div>`, buffTier ? `critères validés · ${TIER_LABELS[buffTier]}` : 'critères validés'),
