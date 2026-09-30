@@ -1,9 +1,9 @@
-const CACHE_NAME = 'carnet-analyse-v122';
+const CACHE_NAME = 'carnet-analyse-v123';
 const ASSETS = [
   './index.html',
   './manifest.json',
-  './icon-192.png',
-  './icon-512.png',
+  './icon-192.png?v=2',
+  './icon-512.png?v=2',
   './logo-full.png'
 ];
 // Seules les polices Google sont mises en cache hors du site. Les appels de recherche de logos
