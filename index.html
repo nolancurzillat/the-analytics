@@ -5150,6 +5150,33 @@ function refreshPositionDividend(){
   if(!c || !el || !c.position || !c.position.active) return;
   el.outerHTML = positionDividendHtml(c);
 }
+// Montant investi : calculé automatiquement (quantité × prix d'achat) dès que les deux sont renseignés, comme les autres
+// cases calculées de l'app (fond bleu, `.computed`) ; reste une case à saisir SEULEMENT en repli, pour qui préfère indiquer
+// directement un montant total sans connaître sa quantité ou son prix d'achat exact (demande de Nolan le 2026-09-30,
+// même repli déjà utilisé par `positionMetrics` : ne rien casser pour les analyses qui s'appuient sur cette saisie).
+function positionMontantHtml(c){
+  const pos = (c.position && typeof c.position === 'object') ? c.position : {};
+  const qty = num(pos.quantite), buy = num(pos.prixAchat);
+  const computed = qty !== null && buy !== null;
+  const value = computed
+    ? `<span class="computed" id="posMontantComputed" data-tooltip="<div class='tt-formula'>${fmtNum(qty, 4)} × ${fmtMoney(buy, c.currency)}</div><div class='tt-desc'>Calculé à partir de la quantité et du prix d'achat.</div>">${fmtMoney(qty * buy, c.currency)}</span>`
+    : `<div class="value-with-suffix"><input type="text" id="posMontant" size="${Math.max(String(pos.montantInvesti || '').length, 2) + 1}" value="${escapeHtml(pos.montantInvesti || '')}"><span class="value-suffix">${escapeHtml(c.currency)}</span></div>`;
+  return `<div class="field-row" id="posMontantRow"><div class="field-label">Montant investi</div><div class="field-value">${value}</div></div>`;
+}
+function refreshPositionMontant(){
+  const row = document.getElementById('posMontantRow');
+  const c = getActive();
+  if(!row || !c) return;
+  row.outerHTML = positionMontantHtml(c);
+  bindPosMontantInput();
+}
+function bindPosMontantInput(){
+  const posMontant = document.getElementById('posMontant');
+  if(posMontant) posMontant.addEventListener('input', e => {
+    updatePositionField('montantInvesti', e.target.value);
+    e.target.size = Math.max(e.target.value.length, 2) + 1;
+  });
+}
 function buildPositionBlock(c){
   const pos = (c.position && typeof c.position === 'object') ? c.position : { active:false, quantite:'', prixAchat:'', montantInvesti:'' };
   let inner;
@@ -5160,10 +5187,7 @@ function buildPositionBlock(c){
         <input type="text" id="posPrixAchat" size="${Math.max(String(pos.prixAchat||'').length,2)+1}" value="${escapeHtml(pos.prixAchat || '')}">
         <span class="value-suffix">${escapeHtml(c.currency)}</span>
       </div></div></div>
-      <div class="field-row"><div class="field-label">Montant investi</div><div class="field-value"><div class="value-with-suffix">
-        <input type="text" id="posMontant" size="${Math.max(String(pos.montantInvesti||'').length,2)+1}" value="${escapeHtml(pos.montantInvesti || '')}">
-        <span class="value-suffix">${escapeHtml(c.currency)}</span>
-      </div></div></div>
+      ${positionMontantHtml(c)}
       <div class="field-row"><div class="field-label" id="posResultLabel">${positionResultInfo(c).label}</div><div class="field-value"><div class="pos-result" id="posResult">${positionResultInfo(c).html}</div></div></div>
     </div>${positionDividendHtml(c)}`;
   } else {
@@ -5226,6 +5250,9 @@ function updatePositionField(key, value){
   refreshPositionDividend();
   refreshPositionHeader();
   refreshSectionNavPosition();
+  // Uniquement quand la quantité ou le prix d'achat changent : le champ Montant investi lui-même n'a pas besoin d'être
+  // re-rendu à chaque frappe, ça lui ferait perdre le focus pendant la saisie.
+  if(key === 'quantite' || key === 'prixAchat') refreshPositionMontant();
 }
 function togglePositionActive(checked){
   updatePositionField('active', checked);
@@ -5241,11 +5268,7 @@ function bindPositionEvents(){
     updatePositionField('prixAchat', e.target.value);
     e.target.size = Math.max(e.target.value.length, 2) + 1;
   });
-  const posMontant = document.getElementById('posMontant');
-  if(posMontant) posMontant.addEventListener('input', e => {
-    updatePositionField('montantInvesti', e.target.value);
-    e.target.size = Math.max(e.target.value.length, 2) + 1;
-  });
+  bindPosMontantInput();
 }
 function updateWallStreetField(sectionKey, fieldKey, subKey, value){
   const c = getActive();
