@@ -138,12 +138,14 @@ svg{display:block;}
   cursor:pointer;
 }
 .brand-mark{
-  width:38px; height:38px; flex:0 0 38px;
+  width:46px; height:46px; flex:0 0 46px;
   border-radius:10px;
   background:var(--navy-3);
   border:1px solid rgba(255,255,255,.12);
   display:flex; align-items:center; justify-content:center;
+  overflow:hidden;
 }
+.brand-mark img{ width:100%; height:100%; object-fit:cover; display:block; }
 .brand-name{
   font-family:var(--font-serif);
   font-weight:700; font-size:21px; line-height:1.1;
@@ -1805,7 +1807,7 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
 <aside class="sidebar" id="sidebar">
   <div class="brand" id="brandHome" title="Accueil">
     <div class="brand-mark" aria-hidden="true">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c9a24a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V11"/><path d="M10 19V6"/><path d="M16 19v-7"/><path d="M3 20h18"/><path d="M4 8l6-4 6 5 4-4" stroke="#8fb1ff"/></svg>
+      <img src="icon-192.png" alt="">
     </div>
     <div>
       <div class="brand-name">The Analytics</div>
