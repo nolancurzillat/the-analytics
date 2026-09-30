@@ -1591,23 +1591,41 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
    PORTEFEUILLE (page dédiée, classes préfixées pf-)
    ============================================================ */
 .pf-chips{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+/* En-tête "hero" : grosse valeur du jour + badge de résultat latent, au-dessus du graphique (2026-09-30, demande de Nolan) */
+.pf-hist-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:18px; }
+.pf-hist-head-l{ font-size:13px; color:var(--ink-soft); }
+.pf-hist-head-v{ font-family:var(--font-mono); font-weight:700; font-size:34px; line-height:1.15; margin-top:2px; }
+.pf-hist-fresh{ font-size:12px; color:var(--ink-soft); margin-top:4px; }
+.pf-hist-badge{ display:inline-flex; align-items:center; gap:7px; padding:8px 14px; border-radius:12px; font-family:var(--font-mono); font-weight:700; font-size:16px; }
+.pf-hist-badge svg{ width:14px; height:14px; }
+.pf-hist-badge span{ font-family:var(--font-ui); font-weight:500; font-size:12.5px; opacity:.85; margin-left:2px; }
+.pf-hist-badge.pf-up{ background:color-mix(in srgb, var(--green) 14%, transparent); color:var(--green); }
+.pf-hist-badge.pf-down{ background:color-mix(in srgb, var(--red) 14%, transparent); color:var(--red); }
+.pf-hist-badge.pf-down svg{ transform:rotate(180deg); }
+.pf-hist-badge.pf-flat{ background:var(--paper-line); color:var(--ink-soft); }
 .pf-hist-legend{ display:flex; gap:18px; flex-wrap:wrap; font-size:13px; color:var(--ink-soft); margin-bottom:12px; }
 .pf-hist-legend span{ display:inline-flex; align-items:center; gap:7px; }
 .pf-hist-sw{ display:inline-block; width:20px; height:0; border-top:3px solid var(--blue); }
 .pf-hist-sw-i{ border-top:2px dashed var(--ink-soft); }
-.pf-hist{ margin-bottom:16px; }
-.pf-hist-plot{ position:relative; height:250px; margin-left:62px; margin-right:10px; touch-action:pan-y; cursor:crosshair; }
+.pf-hist{ margin-bottom:12px; padding:18px 18px 10px 18px; background:var(--field); border:1px solid var(--border); border-radius:14px; }
+.pf-hist-plot{ position:relative; height:250px; margin-left:58px; margin-right:6px; touch-action:pan-y; cursor:crosshair; }
 .pf-hist-plot svg{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
 .pf-hist-grid{ stroke:var(--border); stroke-width:1; }
-.pf-hist-area{ fill:var(--blue); opacity:.10; }
+.pf-hist-area{ fill:url(#pfHistGradient); }
 .pf-hist-v{ fill:none; stroke:var(--blue); stroke-width:2.5; stroke-linejoin:round; stroke-linecap:round; }
-.pf-hist-i{ fill:none; stroke:var(--ink-soft); stroke-width:1.75; stroke-dasharray:5 4; }
+.pf-hist-i{ fill:none; stroke:var(--ink-soft); stroke-width:1.5; stroke-dasharray:4 4; }
 .pf-hist-y{ position:absolute; right:100%; margin-right:8px; transform:translateY(-50%); font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); white-space:nowrap; }
-.pf-hist-dot{ position:absolute; width:11px; height:11px; margin:-5.5px 0 0 -5.5px; border-radius:50%; background:var(--blue); border:2px solid var(--card); }
+.pf-hist-dot{ position:absolute; width:11px; height:11px; margin:-5.5px 0 0 -5.5px; border-radius:50%; background:var(--blue); border:2px solid var(--field); }
 .pf-hist-cursor{ position:absolute; top:0; bottom:0; width:0; border-left:1px dashed var(--ink-soft); pointer-events:none; }
-.pf-hist-tip{ position:absolute; top:6px; display:flex; flex-direction:column; gap:3px; padding:10px 12px; border-radius:10px; background:var(--card); border:1px solid var(--border-strong); box-shadow:var(--shadow); font-size:12.5px; line-height:1.4; pointer-events:none; white-space:nowrap; z-index:2; }
-.pf-hist-tip b{ font-size:13px; }
-.pf-hist-x{ display:flex; justify-content:space-between; margin:10px 10px 0 62px; font-size:12.5px; color:var(--ink-soft); }
+.pf-hist-tip{ position:absolute; top:6px; display:flex; flex-direction:column; gap:5px; padding:10px 13px; border-radius:10px; background:var(--card); border:1px solid var(--border-strong); box-shadow:var(--shadow); font-size:12.5px; line-height:1.3; pointer-events:none; white-space:nowrap; z-index:2; }
+.pf-hist-tip b{ font-size:12.5px; font-weight:600; color:var(--ink); margin-bottom:2px; }
+.pf-hist-tip-row{ display:flex; align-items:center; gap:7px; }
+.pf-hist-tip-key{ display:inline-block; width:12px; height:0; border-top:2.5px solid var(--blue); flex:0 0 auto; }
+.pf-hist-tip-key.pf-hist-tip-key-i{ border-top:2px dashed var(--ink-soft); }
+.pf-hist-tip-row span{ color:var(--ink-soft); font-size:11.5px; }
+.pf-hist-tip-row b{ margin:0 0 0 auto; padding-left:10px; font-family:var(--font-mono); font-size:13px; color:var(--ink); }
+.pf-hist-x{ display:flex; justify-content:space-between; margin:10px 6px 0 58px; font-size:12px; color:var(--ink-soft); }
+.pf-hist-compare{ font-size:13px; color:var(--ink-soft); margin-top:14px; }
 .pf-chips-l{ font-size:13px; color:var(--ink-soft); margin-right:4px; }
 .pf-perf-row{
   display:flex; align-items:center; gap:12px; padding:8px 8px; margin:0 -8px; border-radius:10px; width:calc(100% + 16px);
@@ -7624,7 +7642,8 @@ function scheduleSnapshot(delay){
   snapshotTimer = setTimeout(recordPortfolioSnapshot, delay || 4000);
 }
 const PF_RANGES = [['s1', '1 semaine', 8], ['m1', '1 mois', 31], ['m3', '3 mois', 92], ['y1', '1 an', 366], ['all', 'Tout', 36500]];
-function pfHistory(cur){
+const PF_ARROW_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M12 5l-6 6M12 5l6 6"/></svg>`;
+function pfHistory(pf, cur){
   const chips = `<div class="pf-chips" style="margin-bottom:14px"><span class="pf-chips-l">Période :</span>${PF_RANGES.map(r => `<button class="lr-chip${r[0] === portfolioRange ? ' on' : ''}" data-pf-range="${r[0]}">${r[1]}</button>`).join('')}</div>`;
   const days = Object.keys(state.history).filter(d => state.history[d].c[cur]).sort();
   if(days.length < 2) return `<div class="s-empty">La courbe se construit au fil des jours : l'application enregistre la valeur de votre portefeuille chaque jour où vous l'ouvrez. Revenez demain pour voir apparaître les premiers points.</div>`;
@@ -7648,20 +7667,34 @@ function pfHistory(cur){
   const perf = p => p.i > 0 ? (p.v - p.i) / p.i * 100 : null;
   const fd = d => new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'2-digit' });
   const pp = p => { const x = perf(p); return x === null ? '—' : `<span style="color:${pfColor(x)}">${pfPct(x)}</span>`; };
-  const st = (l, v) => `<div><div class="pf-stat-l">${l}</div><div class="pf-stat-v">${v}</div></div>`;
   const dataPts = JSON.stringify(pts.map(p => [p.d, p.v, p.i, Number(X(p.d).toFixed(2)), Number(Y(p.v).toFixed(2))]));
-  return chips + `<div class="pf-hist-legend"><span><i class="pf-hist-sw pf-hist-sw-v"></i>Valeur du portefeuille</span><span><i class="pf-hist-sw pf-hist-sw-i"></i>Capital investi</span></div>
+  // En-tête "hero" (2026-09-30, demande de Nolan) : valeur EN DIRECT (pas seulement le dernier point enregistré), pour ne
+  // jamais afficher un chiffre périmé même si la photo du jour n'a pas pu être enregistrée (ex. cours manquant).
+  const dev = pf.byDev[cur] || {};
+  const liveBase = dev.value - dev.gain;
+  const liveGainPct = (dev.nGain && liveBase > 0) ? dev.gain / liveBase * 100 : null;
+  const badgeCls = liveGainPct === null ? 'pf-flat' : (liveGainPct >= 0 ? 'pf-up' : 'pf-down');
+  const badge = liveGainPct === null ? '' : `<div class="pf-hist-badge ${badgeCls}">${PF_ARROW_SVG}${pfPct(liveGainPct)}<span>résultat latent</span></div>`;
+  const todayStr = new Date().toLocaleDateString('sv-SE');
+  const fresh = last.d < todayStr ? `<div class="pf-hist-fresh">Dernière photo le ${fd(last.d)} : ouvrez l'app un jour normal pour ajouter le point du jour.</div>` : '';
+  const head = `<div class="pf-hist-head"><div><div class="pf-hist-head-l">Valeur du portefeuille</div><div class="pf-hist-head-v">${fmtMoney(dev.value || 0, cur)}</div>${fresh}</div>${badge}</div>`;
+  // Une 3e étiquette de date au milieu de la période aide à se repérer sans devoir survoler le graphique (2026-09-30, demande de Nolan : "plus lisible").
+  const mid = pts[Math.round((pts.length - 1) / 2)];
+  const xLabels = (mid && mid.d !== first.d && mid.d !== last.d) ? `<span>${fd(first.d)}</span><span>${fd(mid.d)}</span><span>${fd(last.d)}</span>` : `<span>${fd(first.d)}</span><span>${fd(last.d)}</span>`;
+  return chips + head + `<div class="pf-hist-legend"><span><i class="pf-hist-sw pf-hist-sw-v"></i>Valeur du portefeuille</span><span><i class="pf-hist-sw pf-hist-sw-i"></i>Capital investi</span></div>
     <div class="pf-hist">
       <div class="pf-hist-plot" data-pts='${escapeHtml(dataPts)}' data-cur="${escapeHtml(cur)}">
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${grid}<polygon points="${area}" class="pf-hist-area"/><polyline points="${line('i')}" class="pf-hist-i" vector-effect="non-scaling-stroke"/><polyline points="${line('v')}" class="pf-hist-v" vector-effect="non-scaling-stroke"/></svg>
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <defs><linearGradient id="pfHistGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--blue)" stop-opacity="0.22"/><stop offset="100%" stop-color="var(--blue)" stop-opacity="0"/></linearGradient></defs>
+          ${grid}<polygon points="${area}" class="pf-hist-area"/><polyline points="${line('i')}" class="pf-hist-i" vector-effect="non-scaling-stroke"/><polyline points="${line('v')}" class="pf-hist-v" vector-effect="non-scaling-stroke"/></svg>
         ${ylab}
         <span class="pf-hist-dot" style="left:${X(last.d).toFixed(2)}%;top:${Y(last.v).toFixed(2)}%"></span>
         <span class="pf-hist-cursor" hidden></span>
         <div class="pf-hist-tip" hidden></div>
       </div>
-      <div class="pf-hist-x"><span>${fd(first.d)}</span><span>${fd(last.d)}</span></div>
+      <div class="pf-hist-x">${xLabels}</div>
     </div>
-    <div class="pf-stats">${st('Valeur aujourd\'hui', fmtMoney(last.v, cur))}${st('Performance au ' + fd(first.d), pp(first))}${st('Performance au ' + fd(last.d), pp(last))}</div>
+    <div class="pf-hist-compare">Au ${fd(first.d)} : ${pp(first)}</div>
     <div class="s-note">Une photo de la valeur est enregistrée chaque jour où vous ouvrez l'application. Un saut de la courbe peut venir d'un achat ou d'une vente : le capital investi bouge alors aussi. Calculé uniquement à partir de vos positions et de leurs cours saisis ou mis à jour automatiquement, sans conversion de devise.</div>`;
 }
 function bindHistoryHover(){
@@ -7676,7 +7709,12 @@ function bindHistoryHover(){
     let best = pts[0];
     pts.forEach(p => { if(Math.abs(p[3] - x) < Math.abs(best[3] - x)) best = p; });
     const gain = best[1] - best[2];
-    tip.innerHTML = `<b>${new Date(best[0] + 'T12:00:00').toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' })}</b><span>Valeur : ${fmtMoney(best[1], cur)}</span><span>Investi : ${fmtMoney(best[2], cur)}</span><span style="color:${pfColor(gain)}">Résultat : ${pfSigned(gain, cur)}</span>`;
+    // La valeur mène, le libellé suit (contraste fort sur le chiffre, texte secondaire pour dire quoi) ; une clé de couleur
+    // (trait plein/pointillé) plutôt qu'une pastille, pour rester léger à cette densité de texte.
+    tip.innerHTML = `<b>${new Date(best[0] + 'T12:00:00').toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' })}</b>`
+      + `<div class="pf-hist-tip-row"><span class="pf-hist-tip-key"></span><span>Valeur</span><b>${fmtMoney(best[1], cur)}</b></div>`
+      + `<div class="pf-hist-tip-row"><span class="pf-hist-tip-key pf-hist-tip-key-i"></span><span>Investi</span><b>${fmtMoney(best[2], cur)}</b></div>`
+      + `<div class="pf-hist-tip-row"><span class="pf-hist-tip-key" style="border-top-color:transparent"></span><span>Résultat</span><b style="color:${pfColor(gain)}">${pfSigned(gain, cur)}</b></div>`;
     tip.hidden = false; cursor.hidden = false;
     cursor.style.left = best[3] + '%';
     tip.style.left = best[3] > 60 ? 'auto' : (best[3] + 2) + '%';
@@ -7754,7 +7792,7 @@ function renderPortfolioView(){
   const chipsH = devs.length > 1 ? `<div class="pf-chips" style="margin-bottom:14px"><span class="pf-chips-l">Devise :</span>${devs.map(d => `<button class="lr-chip${d === cur ? ' on' : ''}" data-pf-cur="${d}">${d === '$' ? 'Dollars' : 'Euros'}</button>`).join('')}</div>` : '';
   html += `<div class="sgrid">
     ${spaceCard('s12', 'Vos positions', `${n} position${n > 1 ? 's' : ''}`, pfTable(pf) + multi)}
-    ${spaceCard('s7', 'Évolution de la valeur' + (cur ? ` (${cur})` : ''), 'Valeur du portefeuille et capital investi, jour après jour', chipsH + pfHistory(cur))}
+    ${spaceCard('s7', 'Évolution de la valeur' + (cur ? ` (${cur})` : ''), 'Valeur du portefeuille et capital investi, jour après jour', chipsH + pfHistory(pf, cur))}
     ${spaceCard('s5', 'Dividendes attendus', 'Revenu annuel estimé de vos positions', pfDividends(pf))}
     ${spaceCard('s7', 'Performance par position', 'Écart entre le cours et votre prix d\'achat', pfPerformance(pf))}
     ${spaceCard('s5', 'Allocation du capital investi' + (cur ? ` (${cur})` : ''), 'Poids de chaque position', chips + pfAllocation(rowsCur, cur) + pfDiversification(rowsCur, total))}
