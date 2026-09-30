@@ -7721,13 +7721,15 @@ function bindHistoryHover(){
     tip.style.right = best[3] > 60 ? (100 - best[3] + 2) + '%' : 'auto';
   };
   const hide = () => { tip.hidden = true; cursor.hidden = true; };
-  plot.addEventListener('mousemove', show);
-  plot.addEventListener('touchstart', e => { if(e.touches[0]) show(e.touches[0]); }, { passive:true });
-  plot.addEventListener('touchmove', e => { if(e.touches[0]) show(e.touches[0]); }, { passive:true });
-  plot.addEventListener('mouseleave', hide);
-  // Sur un écran tactile, il n'y a pas de curseur qui "sort" du graphique : sans ceci, l'infobulle restait affichée après avoir levé le doigt.
-  plot.addEventListener('touchend', hide);
-  plot.addEventListener('touchcancel', hide);
+  // Pointer Events (pas mousemove/touchstart séparés) : sur un écran tactile ou un pavé tactile précis, le navigateur
+  // envoie souvent un événement souris "de compatibilité" juste après l'événement tactile, à retardement. Avec deux
+  // écouteurs séparés, ce mousemove tardif pouvait réafficher l'infobulle juste après qu'elle se soit bien cachée,
+  // et sans souris réelle il n'y a alors plus jamais de mouseleave pour la recacher (demande de Nolan le 2026-09-30,
+  // capture à l'appui : l'infobulle restait coincée après avoir retiré le doigt/curseur). Un seul flux d'événements
+  // unifié (souris, tactile, stylet) supprime ce doublon ; même mécanisme déjà utilisé pour la jauge Wall Street.
+  plot.addEventListener('pointermove', show);
+  plot.addEventListener('pointerleave', hide);
+  plot.addEventListener('pointercancel', hide);
 }
 
 function pfIdeas(){
