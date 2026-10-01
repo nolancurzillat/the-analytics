@@ -3196,8 +3196,8 @@ function createAndOpenCompany(name, currency, extra){
   const c = newCompany(name, currency);
   state.settings.defaultCurrency = currency;
   if(extra && extra.ticker) c.fields.identite.ticker = extra.ticker;
+  if(extra && extra.exchange) c.fields.identite.cotation = extra.exchange;
   if(extra && extra.country){ c.fields.identite.paysSiege = c.fields.identite.paysSiege || {}; c.fields.identite.paysSiege.pays = extra.country; }
-  if(extra && extra.sector){ c.fields.identite.secteur = c.fields.identite.secteur || {}; c.fields.identite.secteur.secteur = extra.sector; }
   if(extra && extra.logoUrl) c.logo = { url: extra.logoUrl, src:'auto', q: logoQuery(c) };
   state.companies.push(c);
   state.activeId = c.id;
@@ -3293,24 +3293,22 @@ async function searchCompanies(query){
         });
         const usd = pairs.find(p => p.exId && WD_USD_EXCHANGES.indexOf(p.exId) >= 0);
         const eur = pairs.find(p => p.exId && WD_EUR_EXCHANGES.indexOf(p.exId) >= 0);
-        return (usd || eur || {}).ticker || '';
+        const pick = usd || eur;
+        return pick ? { ticker: pick.ticker, exchange: WD_EXCHANGE_LABELS[pick.exId] || '' } : { ticker: '', exchange: '' };
       })();
       const icon = vals('P8972')[0], logo = vals('P154')[0], site = vals('P856')[0];
       const name = f.label || (f.match && f.match.text) || q;
       const sc = (listed ? 4 : 0) + (isCompany ? 2 : 0) + (normName(name) === qn ? 3 : 0);
       const logoUrl = icon ? commonsUrl(icon, 80) : (logo ? commonsUrl(logo, 80) : (site ? ('https://www.google.com/s2/favicons?domain=' + encodeURIComponent(domainOf(site)) + '&sz=64') : ''));
-      return { name, desc, ticker: tickerPref.toUpperCase(), logoUrl, countryId: entId('P17'), industryId: entId('P452'), sc, idx };
+      return { name, desc, ticker: tickerPref.ticker.toUpperCase(), exchange: tickerPref.exchange, logoUrl, countryId: entId('P17'), sc, idx };
     }).filter(Boolean);
     cands.sort((a, b) => (b.sc - a.sc) || (a.idx - b.idx));
     const top = cands.slice(0, 6);
     const idSet = [];
-    top.forEach(r => { if(r.countryId) idSet.push(r.countryId); if(r.industryId) idSet.push(r.industryId); });
+    top.forEach(r => { if(r.countryId) idSet.push(r.countryId); });
     if(idSet.length){
       const labels = await resolveWikidataLabels(idSet);
-      top.forEach(r => {
-        r.country = r.countryId ? matchKnownCountry(labels[r.countryId]) : '';
-        r.sector = r.industryId ? (labels[r.industryId] || '') : '';
-      });
+      top.forEach(r => { r.country = r.countryId ? matchKnownCountry(labels[r.countryId]) : ''; });
     }
     return { seq, results: top };
   }catch(err){
@@ -3373,7 +3371,7 @@ function scheduleCompanySearch(){
   }, 350);
 }
 function pickCompanySearchResult(r){
-  createAndOpenCompany(r.name, newCompanyCurrency, { ticker: r.ticker, logoUrl: r.logoUrl, country: r.country, sector: r.sector });
+  createAndOpenCompany(r.name, newCompanyCurrency, { ticker: r.ticker, exchange: r.exchange, logoUrl: r.logoUrl, country: r.country });
 }
 
 // ============================================================
@@ -5770,11 +5768,16 @@ function normName(s){
   return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
 const COMPANY_DESC_RE = /entreprise|société|compagnie|groupe|multinationale|constructeur|fabricant|banque|holding|assureur|conglom|company|corporation|manufacturer|bank/i;
-// Bourses Wikidata (P414) dont la cotation est en dollar ou en euro (mêmes bourses que EXCHANGES ci-dessus, identifiants
-// vérifiés sur wikidata.org), utilisées pour choisir le ticker à préremplir à la création d'une analyse (2026-10-01,
-// demande de Nolan) : une entreprise cotée hors zone $/€ (ex. SK Hynix, cotée seulement à la bourse de Séoul) ne doit
-// JAMAIS préremplir un ticker d'une autre devise, inutilisable avec le prix automatique Twelve Data et trompeur à côté
-// de la devise $/€ choisie pour l'analyse. Mieux vaut laisser la case vide que remplir un ticker dans la mauvaise devise.
+// Bourses Wikidata (P414) reconnues par l'app, identifiants vérifiés sur wikidata.org, correspondance directe vers le
+// libellé EXCHANGES (même chaîne que fields.identite.cotation, voir findExchange ci-dessus). Utilisées à la création
+// d'une analyse (2026-10-01, demande de Nolan) pour préremplir le ticker ET la Cotation ensemble, jamais l'un sans
+// l'autre : une entreprise cotée hors zone $/€ (ex. SK Hynix, cotée seulement à la bourse de Séoul) ne doit JAMAIS
+// préremplir un ticker d'une autre devise, inutilisable avec le prix automatique Twelve Data et trompeur à côté de la
+// devise $/€ choisie pour l'analyse. Mieux vaut laisser les deux cases vides que remplir un ticker dans la mauvaise devise.
+const WD_EXCHANGE_LABELS = {
+  Q82059:'NASDAQ', Q13677:'NYSE',
+  Q2385849:'Euronext Paris', Q478720:'Euronext Amsterdam', Q819468:'Xetra', Q936563:'Borsa Italiana', Q617426:'Bolsa de Madrid',
+};
 const WD_USD_EXCHANGES = ['Q82059', 'Q13677']; // Nasdaq, New York Stock Exchange
 const WD_EUR_EXCHANGES = ['Q2385849', 'Q478720', 'Q819468', 'Q936563', 'Q617426']; // Euronext Paris/Amsterdam, Xetra, Borsa Italiana, Bolsa de Madrid
 
@@ -9576,7 +9579,7 @@ document.getElementById('globalSearchInput').addEventListener('keydown', e => {
   if(e.key !== 'Enter') return;
   // Entrée = résultat le plus utile : une analyse existante en priorité, sinon la première suggestion, sinon création manuelle.
   if(globalSearchExisting.length){ const c = globalSearchExisting[0]; closeGlobalSearch(); selectCompany(c.id); return; }
-  if(globalSearchWikiResults.length){ const r = globalSearchWikiResults[0]; closeGlobalSearch(); createAndOpenCompany(r.name, state.settings.defaultCurrency, { ticker: r.ticker, logoUrl: r.logoUrl, country: r.country, sector: r.sector }); return; }
+  if(globalSearchWikiResults.length){ const r = globalSearchWikiResults[0]; closeGlobalSearch(); createAndOpenCompany(r.name, state.settings.defaultCurrency, { ticker: r.ticker, exchange: r.exchange, logoUrl: r.logoUrl, country: r.country }); return; }
   const q = document.getElementById('globalSearchInput').value.trim();
   if(q){ closeGlobalSearch(); createAndOpenCompany(q, state.settings.defaultCurrency); }
 });
@@ -9595,7 +9598,7 @@ document.getElementById('globalSearchResults').addEventListener('click', e => {
   const wikiBtn = e.target.closest('[data-pick-wiki]');
   if(wikiBtn){
     const r = globalSearchWikiResults[Number(wikiBtn.dataset.pickWiki)];
-    if(r){ closeGlobalSearch(); createAndOpenCompany(r.name, state.settings.defaultCurrency, { ticker: r.ticker, logoUrl: r.logoUrl, country: r.country, sector: r.sector }); }
+    if(r){ closeGlobalSearch(); createAndOpenCompany(r.name, state.settings.defaultCurrency, { ticker: r.ticker, exchange: r.exchange, logoUrl: r.logoUrl, country: r.country }); }
   }
 });
 document.getElementById('deleteCompanyCancel').addEventListener('click', closeDeleteModal);
