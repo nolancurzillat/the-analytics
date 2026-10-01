@@ -1322,6 +1322,33 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
 .modal-field{ margin:-6px 0 20px 0; }
 .modal-label{ display:block; font-size:13px; font-weight:600; color:var(--ink-soft); margin-bottom:8px; }
 .modal-hint{ font-size:12.5px; color:var(--ink-soft); margin-top:8px; line-height:1.5; }
+/* Recherche d'entreprise à la création (2026-10-01, demande de Nolan "comme sur TradingView") : liste déroulante posée
+   en absolu sous la case, même principe que .pw-wrap pour l'oeil du mot de passe. */
+.company-search-wrap{ position:relative; margin-bottom:20px; }
+.company-search-wrap input{ margin-bottom:0; }
+.company-search-results{
+  position:absolute; left:0; right:0; top:calc(100% + 6px); z-index:5;
+  background:var(--card); border:1px solid var(--border); border-radius:12px;
+  box-shadow:var(--shadow-lg); max-height:300px; overflow-y:auto; padding:6px;
+}
+.company-search-results.hidden{ display:none; }
+.company-search-item{
+  width:100%; display:flex; align-items:center; gap:10px; padding:9px 10px; border:none; border-radius:9px;
+  background:transparent; color:var(--ink); font:inherit; text-align:left; cursor:pointer;
+}
+.company-search-item:hover{ background:var(--field); }
+.company-search-avatar{
+  width:30px; height:30px; flex:0 0 30px; border-radius:8px; background:var(--navy);
+  display:flex; align-items:center; justify-content:center; overflow:hidden;
+  font-size:11px; font-weight:700; color:#fff; font-family:var(--font-mono);
+}
+.company-search-avatar img{ width:100%; height:100%; object-fit:cover; }
+.company-search-text{ flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
+.company-search-name{ font-size:14px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.company-search-desc{ font-size:12px; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.company-search-ticker{ font-family:var(--font-mono); font-size:11.5px; font-weight:600; color:var(--ink-soft); flex:0 0 auto; }
+.company-search-state{ padding:12px 10px; font-size:13px; color:var(--ink-soft); }
+.company-search-manual{ border-top:1px solid var(--border); margin-top:4px; padding-top:11px; font-size:13px; color:var(--accent); font-weight:600; }
 .guide-box{ max-width:520px; }
 .guide-lead{ font-size:14px; color:var(--ink-soft); margin:-6px 0 14px 0; line-height:1.5; }
 .guide-steps{ list-style:none; counter-reset:gs; margin:0 0 16px 0; padding:0; display:flex; flex-direction:column; gap:10px; }
@@ -1845,7 +1872,10 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
 <div class="modal-overlay hidden" id="newCompanyModal">
   <div class="modal-box">
     <h2>Nouvelle analyse</h2>
-    <input type="text" id="newCompanyInput" placeholder="Nom de l'entreprise">
+    <div class="company-search-wrap">
+      <input type="text" id="newCompanyInput" placeholder="Nom de l'entreprise" autocomplete="off">
+      <div class="company-search-results hidden" id="companySearchResults"></div>
+    </div>
     <div class="modal-field" id="newCompanyCurrencyField">
       <label class="modal-label">Devise de l'analyse</label>
       <div class="currency-toggle" id="newCompanyCurrencyToggle">
@@ -3098,11 +3128,13 @@ function openNewCompanyModal(){
   const overlay = document.getElementById('newCompanyModal');
   const input = document.getElementById('newCompanyInput');
   overlay.querySelector('h2').textContent = 'Nouvelle analyse';
+  input.placeholder = "Rechercher une entreprise (ex. Nvidia, LVMH…)";
   document.getElementById('newCompanyConfirm').textContent = 'Créer';
   document.getElementById('newCompanyCurrencyField').style.display = '';
   newCompanyCurrency = state.settings.defaultCurrency === '€' ? '€' : '$';
   paintNewCompanyCurrency();
   input.value = '';
+  paintCompanySearch([], '');
   overlay.classList.remove('hidden');
   setTimeout(() => input.focus(), 0);
 }
@@ -3114,15 +3146,37 @@ function openRenameModal(id, evt){
   const overlay = document.getElementById('newCompanyModal');
   const input = document.getElementById('newCompanyInput');
   overlay.querySelector('h2').textContent = "Renommer l'analyse";
+  input.placeholder = "Nom de l'entreprise";
   document.getElementById('newCompanyConfirm').textContent = 'Renommer';
   document.getElementById('newCompanyCurrencyField').style.display = 'none';
   input.value = c.name;
+  paintCompanySearch([], '');
   overlay.classList.remove('hidden');
   setTimeout(() => { input.focus(); input.select(); }, 0);
 }
 function closeNewCompanyModal(){
   document.getElementById('newCompanyModal').classList.add('hidden');
   renameTargetId = null;
+  clearTimeout(companySearchTimer);
+  paintCompanySearch([], '');
+}
+// Crée l'analyse puis l'ouvre tout de suite, que le nom vienne d'une suggestion (ticker/logo déjà connus)
+// ou d'une saisie manuelle (repli si l'entreprise n'est pas sur Wikidata, voir plus bas) : un seul chemin de création,
+// `extra` apporte juste ce que la recherche a trouvé en plus.
+function createAndOpenCompany(name, currency, extra){
+  const c = newCompany(name, currency);
+  state.settings.defaultCurrency = currency;
+  if(extra && extra.ticker) c.fields.identite.ticker = extra.ticker;
+  if(extra && extra.logoUrl) c.logo = { url: extra.logoUrl, src:'auto', q: logoQuery(c) };
+  state.companies.push(c);
+  state.activeId = c.id;
+  currentView = 'company';
+  saveState();
+  closeNewCompanyModal();
+  render();
+  window.scrollTo(0, 0);
+  if(!(extra && extra.logoUrl)) resolveLogo(c.id);
+  return c;
 }
 function confirmNewCompany(){
   const input = document.getElementById('newCompanyInput');
@@ -3140,16 +3194,113 @@ function confirmNewCompany(){
     render();
     return;
   }
-  const c = newCompany(name, newCompanyCurrency);
-  state.settings.defaultCurrency = newCompanyCurrency;
-  state.companies.push(c);
-  state.activeId = c.id;
-  currentView = 'company';
-  saveState();
-  closeNewCompanyModal();
-  render();
-  window.scrollTo(0, 0);
-  resolveLogo(c.id);
+  createAndOpenCompany(name, newCompanyCurrency);
+}
+
+// ============================================================
+// RECHERCHE D'ENTREPRISE À LA CRÉATION (2026-10-01, demande de Nolan "comme sur TradingView")
+// Réutilise Wikidata (gratuit, sans clé API, déjà la source des logos automatiques) mais dans une fonction séparée
+// de findLogo/findLogoByName : ici on classe plusieurs candidats pour une liste déroulante pendant la frappe, pas
+// une seule meilleure image pour une entreprise déjà nommée. Choisir une suggestion crée et ouvre l'analyse tout de
+// suite (ticker et logo déjà pré-remplis quand Wikidata les connaît), sans étape supplémentaire.
+// ============================================================
+let companySearchSeq = 0;
+let companySearchTimer = null;
+let companySearchResults = [];
+async function searchCompanies(query){
+  const seq = ++companySearchSeq;
+  const q = String(query || '').trim();
+  if(q.length < 2) return { seq, results: [] };
+  let s, e;
+  try{
+    s = await wdJson({ action:'wbsearchentities', search:q, language:'fr', uselang:'fr', type:'item', limit:'8' });
+    const found = s.search || [];
+    if(!found.length) return { seq, results: [] };
+    e = await wdJson({ action:'wbgetentities', ids:found.map(x => x.id).join('|'), props:'claims|descriptions', languages:'fr|en' });
+    const qn = normName(q);
+    const cands = found.map((f, idx) => {
+      const en = e.entities && e.entities[f.id];
+      if(!en) return null;
+      const cl = en.claims || {};
+      const vals = p => (cl[p] || []).map(x => x.mainsnak && x.mainsnak.datavalue && x.mainsnak.datavalue.value).filter(v => typeof v === 'string');
+      const desc = ((en.descriptions && (en.descriptions.fr || en.descriptions.en)) || {}).value || '';
+      const isCompany = COMPANY_DESC_RE.test(desc);
+      const listed = !!(cl.P946 || cl.P414 || cl.P249);
+      if(!isCompany && !listed) return null;
+      const tickers = (() => {
+        const list = vals('P249');
+        (cl.P414 || []).forEach(c2 => ((c2.qualifiers || {}).P249 || []).forEach(qq => { if(qq.datavalue && typeof qq.datavalue.value === 'string') list.push(qq.datavalue.value); }));
+        return list;
+      })();
+      const icon = vals('P8972')[0], logo = vals('P154')[0], site = vals('P856')[0];
+      const name = f.label || (f.match && f.match.text) || q;
+      const sc = (listed ? 4 : 0) + (isCompany ? 2 : 0) + (normName(name) === qn ? 3 : 0);
+      const logoUrl = icon ? commonsUrl(icon, 80) : (logo ? commonsUrl(logo, 80) : (site ? ('https://www.google.com/s2/favicons?domain=' + encodeURIComponent(domainOf(site)) + '&sz=64') : ''));
+      return { name, desc, ticker: (tickers[0] || '').toUpperCase(), logoUrl, sc, idx };
+    }).filter(Boolean);
+    cands.sort((a, b) => (b.sc - a.sc) || (a.idx - b.idx));
+    return { seq, results: cands.slice(0, 6) };
+  }catch(err){
+    return { seq, results: [], failed: true };
+  }
+}
+function companyAvatarHtml(name, url){
+  const ini = escapeHtml(initialsOf(name));
+  if(!url) return ini;
+  return `<img src="${escapeHtml(url)}" alt="" referrerpolicy="no-referrer" data-ini="${ini}" onerror="this.style.display='none'; this.parentElement.textContent=this.dataset.ini;">`;
+}
+function paintCompanySearch(results, query){
+  const box = document.getElementById('companySearchResults');
+  if(!box) return;
+  const qTrim = String(query || '').trim();
+  const q = escapeHtml(qTrim);
+  if(results === null){
+    box.innerHTML = `<div class="company-search-state">Recherche…</div>`;
+    box.classList.remove('hidden');
+    return;
+  }
+  if(qTrim.length < 2){
+    box.classList.add('hidden');
+    box.innerHTML = '';
+    return;
+  }
+  const manualRow = `<button type="button" class="company-search-item company-search-manual" data-pick-manual="1">Créer « ${q} » sans recherche</button>`;
+  if(results === 'error'){
+    box.innerHTML = `<div class="company-search-state">Recherche indisponible pour le moment.</div>${manualRow}`;
+    box.classList.remove('hidden');
+    return;
+  }
+  if(!results.length){
+    box.innerHTML = `<div class="company-search-state">Aucun résultat pour « ${q} ».</div>${manualRow}`;
+    box.classList.remove('hidden');
+    return;
+  }
+  box.innerHTML = results.map((r, i) => `
+    <button type="button" class="company-search-item" data-pick-idx="${i}">
+      <span class="company-search-avatar">${companyAvatarHtml(r.name, r.logoUrl)}</span>
+      <span class="company-search-text">
+        <span class="company-search-name">${escapeHtml(r.name)}</span>
+        ${r.desc ? `<span class="company-search-desc">${escapeHtml(r.desc)}</span>` : ''}
+      </span>
+      ${r.ticker ? `<span class="company-search-ticker">${escapeHtml(r.ticker)}</span>` : ''}
+    </button>`).join('') + manualRow;
+  box.classList.remove('hidden');
+}
+function scheduleCompanySearch(){
+  clearTimeout(companySearchTimer);
+  const input = document.getElementById('newCompanyInput');
+  const q = input.value.trim();
+  if(q.length < 2){ paintCompanySearch([], q); return; }
+  paintCompanySearch(null, q);
+  companySearchTimer = setTimeout(async () => {
+    const { seq, results, failed } = await searchCompanies(q);
+    if(seq !== companySearchSeq) return; // une frappe plus récente a déjà relancé une recherche
+    companySearchResults = results;
+    paintCompanySearch(failed ? 'error' : results, q);
+  }, 350);
+}
+function pickCompanySearchResult(r){
+  createAndOpenCompany(r.name, newCompanyCurrency, { ticker: r.ticker, logoUrl: r.logoUrl });
 }
 
 let pendingDeleteId = null;
@@ -9226,6 +9377,17 @@ document.querySelectorAll('#newCompanyCurrencyToggle .cur-opt').forEach(b => {
 document.getElementById('newCompanyInput').addEventListener('keydown', e => {
   if(e.key === 'Enter') confirmNewCompany();
   if(e.key === 'Escape') closeNewCompanyModal();
+});
+document.getElementById('newCompanyInput').addEventListener('input', () => {
+  if(renameTargetId) return;
+  scheduleCompanySearch();
+});
+document.getElementById('companySearchResults').addEventListener('click', e => {
+  if(e.target.closest('[data-pick-manual]')){ confirmNewCompany(); return; }
+  const btn = e.target.closest('[data-pick-idx]');
+  if(!btn) return;
+  const r = companySearchResults[Number(btn.dataset.pickIdx)];
+  if(r) pickCompanySearchResult(r);
 });
 document.getElementById('deleteCompanyCancel').addEventListener('click', closeDeleteModal);
 document.getElementById('deleteCompanyConfirm').addEventListener('click', confirmDeleteCompany);
