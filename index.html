@@ -3282,8 +3282,6 @@ async function searchCompanies(query){
       const entId = p => { const v = (cl[p] || []).map(x => x.mainsnak && x.mainsnak.datavalue && x.mainsnak.datavalue.value); const first = v.find(x => x && typeof x === 'object' && x.id); return first ? first.id : ''; };
       const desc = ((en.descriptions && (en.descriptions.fr || en.descriptions.en)) || {}).value || '';
       const isCompany = COMPANY_DESC_RE.test(desc);
-      const listed = !!(cl.P946 || cl.P414 || cl.P249);
-      if(!isCompany && !listed) return null;
       // Ticker préféré en dollar, sinon en euro, sinon vide (jamais une bourse hors zone $/€, voir WD_USD_EXCHANGES ci-dessus).
       const tickerPref = (() => {
         const pairs = [];
@@ -3296,9 +3294,14 @@ async function searchCompanies(query){
         const pick = usd || eur;
         return pick ? { ticker: pick.ticker, exchange: WD_EXCHANGE_LABELS[pick.exId] || '' } : { ticker: '', exchange: '' };
       })();
+      // Un candidat n'apparaît dans la liste QUE s'il a un ticker $/€ résolu (2026-10-01, demande de Nolan : des fiches
+      // sans rapport comme une filiale non cotée — ex. « Boeing Commercial Airplanes » à côté de Boeing/BA — se glissaient
+      // dans les suggestions simplement parce que leur description ressemblait à une entreprise). Avoir un ticker $/€
+      // garantit à la fois que c'est une action réelle ET qu'elle est utilisable avec le prix automatique de l'app.
+      if(!tickerPref.ticker) return null;
       const icon = vals('P8972')[0], logo = vals('P154')[0], site = vals('P856')[0];
       const name = f.label || (f.match && f.match.text) || q;
-      const sc = (listed ? 4 : 0) + (isCompany ? 2 : 0) + (normName(name) === qn ? 3 : 0);
+      const sc = (isCompany ? 2 : 0) + (normName(name) === qn ? 3 : 0);
       const logoUrl = icon ? commonsUrl(icon, 80) : (logo ? commonsUrl(logo, 80) : (site ? ('https://www.google.com/s2/favicons?domain=' + encodeURIComponent(domainOf(site)) + '&sz=64') : ''));
       return { name, desc, ticker: tickerPref.ticker.toUpperCase(), exchange: tickerPref.exchange, logoUrl, countryId: entId('P17'), sc, idx };
     }).filter(Boolean);
