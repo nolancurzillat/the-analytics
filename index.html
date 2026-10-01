@@ -5954,6 +5954,13 @@ function ensureLogos(){
 const priceInFlight = {};
 const priceTimers = {};
 const PRICE_REFRESH_MIN_INTERVAL_MS = 5 * 60 * 1000;
+// Après un ÉCHEC (contrairement à un succès), on retente bien plus vite : 2026-10-01, Nolan a vu l'erreur brute de
+// Twelve Data ("symbol or figi parameter is missing or invalid") rester affichée alors que "tout est en ordre"
+// (ticker PLTR correct). Avant ce correctif, priceUpdatedAt était posé même sur un échec, donc un raté ponctuel et
+// transitoire (API, réseau, ticker à peine modifié) restait affiché jusqu'à 5 minutes avant la prochaine tentative,
+// sans aucun bouton "Actualiser" pour forcer la main (retiré à la demande de Nolan le 2026-09-23). Avec 60 secondes,
+// rouvrir l'analyse ou juste attendre un peu suffit à se corriger tout seul.
+const PRICE_RETRY_AFTER_ERROR_MS = 60 * 1000;
 const TWELVE_DATA_CURRENCY_MAP = { USD:'$', EUR:'€' };
 const CURRENCY_TO_TWELVE_DATA_CODE = { '$':'USD', '€':'EUR' };
 
@@ -5974,13 +5981,25 @@ async function resolveTwelveDataMicCode(ticker, currencyCode, apiKey){
   return match ? match.mic_code : null;
 }
 
-async function fetchTwelveDataQuote(ticker, apiKey, currencyCode, knownMicCode){
-  let micCode = knownMicCode || null;
-  if(!micCode) micCode = await resolveTwelveDataMicCode(ticker, currencyCode, apiKey);
+async function twelveDataQuoteRequest(ticker, apiKey, micCode){
   let url = `https://api.twelvedata.com/quote?symbol=${encodeURIComponent(ticker)}&apikey=${encodeURIComponent(apiKey)}`;
   if(micCode) url += `&mic_code=${encodeURIComponent(micCode)}`;
   const res = await fetch(url);
-  const data = await res.json();
+  return res.json();
+}
+async function fetchTwelveDataQuote(ticker, apiKey, currencyCode, knownMicCode){
+  let micCode = knownMicCode || null;
+  if(!micCode) micCode = await resolveTwelveDataMicCode(ticker, currencyCode, apiKey);
+  let data = await twelveDataQuoteRequest(ticker, apiKey, micCode);
+  // Filet de sécurité (2026-10-01, demande de Nolan, vu sur Palantir/PLTR) : si la combinaison symbole + bourse est
+  // refusée par Twelve Data alors qu'un mic_code était fourni (cache, ou Cotation choisie à la main), on retente UNE
+  // fois sans bourse précise avant d'abandonner — Twelve Data retrouve alors tout seul la cotation la plus évidente,
+  // ce qui suffit pour un ticker $/€ sans homonyme. Le mic_code n'est alors plus renvoyé : l'appelant ne le remet
+  // pas en cache, pour ne pas retenter indéfiniment la même combinaison qui a échoué.
+  if(micCode && data && data.status === 'error' && /symbol|figi/i.test(data.message || '')){
+    data = await twelveDataQuoteRequest(ticker, apiKey, null);
+    micCode = null;
+  }
   if(data && data.status === 'error'){
     throw new Error(data.message || "Le service de cours de bourse n'a pas pu répondre.");
   }
@@ -6026,7 +6045,10 @@ async function refreshCurrentPrice(id, force){
   if(!ticker || !apiKey) return;
   const storedPrice = String((c0.fields.valorisation && c0.fields.valorisation.prixActuel) || '');
   const needsRounding = !c0.priceError && /[.,]\d{2,}$/.test(storedPrice);
-  if(!force && !needsRounding && c0.priceUpdatedAt && (Date.now() - new Date(c0.priceUpdatedAt).getTime()) < PRICE_REFRESH_MIN_INTERVAL_MS) return;
+  if(!force && !needsRounding && c0.priceUpdatedAt){
+    const minInterval = c0.priceError ? PRICE_RETRY_AFTER_ERROR_MS : PRICE_REFRESH_MIN_INTERVAL_MS;
+    if((Date.now() - new Date(c0.priceUpdatedAt).getTime()) < minInterval) return;
+  }
   if(priceInFlight[id]) return;
   const chosenExchange = findExchange(c0.fields.identite && c0.fields.identite.cotation);
   if(chosenExchange && chosenExchange.cur !== c0.currency){
@@ -6055,7 +6077,13 @@ async function refreshCurrentPrice(id, force){
   const c = state.companies.find(x => x.id === id);
   if(!c) return;
   if(result){
-    if(result.micCode && !chosenExchange){ c.priceMicCode = result.micCode; c.priceMicCodeFor = micCacheKey; }
+    if(!chosenExchange){
+      if(result.micCode){ c.priceMicCode = result.micCode; c.priceMicCodeFor = micCacheKey; }
+      // Le mic_code mis en cache a été essayé et refusé (filet de sécurité de fetchTwelveDataQuote) : on l'oublie,
+      // pour qu'une prochaine actualisation reparte d'une recherche de bourse fraîche plutôt que de retomber sur le
+      // même mic_code invalide à chaque fois.
+      else if(knownMicCode && c0.priceMicCodeFor === micCacheKey){ c.priceMicCode = ''; c.priceMicCodeFor = ''; }
+    }
     const sym = TWELVE_DATA_CURRENCY_MAP[result.currency];
     if(!sym){
       c.priceError = `Devise reçue (${result.currency || '?'}) non prise en charge automatiquement par l'application. Mettez à jour le prix manuellement.`;
