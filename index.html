@@ -3196,6 +3196,8 @@ function createAndOpenCompany(name, currency, extra){
   const c = newCompany(name, currency);
   state.settings.defaultCurrency = currency;
   if(extra && extra.ticker) c.fields.identite.ticker = extra.ticker;
+  if(extra && extra.country){ c.fields.identite.paysSiege = c.fields.identite.paysSiege || {}; c.fields.identite.paysSiege.pays = extra.country; }
+  if(extra && extra.sector){ c.fields.identite.secteur = c.fields.identite.secteur || {}; c.fields.identite.secteur.secteur = extra.sector; }
   if(extra && extra.logoUrl) c.logo = { url: extra.logoUrl, src:'auto', q: logoQuery(c) };
   state.companies.push(c);
   state.activeId = c.id;
@@ -3236,6 +3238,31 @@ function confirmNewCompany(){
 let companySearchSeq = 0;
 let companySearchTimer = null;
 let companySearchResults = [];
+// Pays et secteur (2026-10-01, demande de Nolan) : P17 (pays) et P452 (industrie) sur Wikidata ne donnent qu'un
+// identifiant Q (ex. Q30), pas un libellé lisible : il faut un second appel wbgetentities pour le résoudre, fait en
+// UNE SEULE requête groupée pour tous les candidats affichés (pas un appel par candidat, et pas au clic non plus :
+// ainsi choisir une suggestion reste instantané, le pays/secteur est déjà résolu pendant la frappe comme le ticker).
+async function resolveWikidataLabels(ids){
+  const list = ids.filter(Boolean);
+  if(!list.length) return {};
+  try{
+    const e = await wdJson({ action:'wbgetentities', ids:list.join('|'), props:'labels', languages:'fr|en' });
+    const out = {};
+    list.forEach(id => {
+      const lbls = e.entities && e.entities[id] && e.entities[id].labels;
+      out[id] = (lbls && (lbls.fr || lbls.en) && (lbls.fr || lbls.en).value) || '';
+    });
+    return out;
+  }catch(err){ return {}; }
+}
+// Le champ Pays est un sélecteur à liste fermée (COUNTRIES_DEVELOPED/COUNTRIES_OTHER, pour le drapeau) : on ne
+// préremplit que si le libellé Wikidata correspond exactement à un pays de cette liste, sinon la case reste vide
+// plutôt que d'y mettre un nom de pays que le sélecteur ne reconnaît pas.
+function matchKnownCountry(label){
+  if(!label) return '';
+  const target = normName(label);
+  return COUNTRIES_DEVELOPED.concat(COUNTRIES_OTHER).find(n => normName(n) === target) || '';
+}
 async function searchCompanies(query){
   const seq = ++companySearchSeq;
   const q = String(query || '').trim();
@@ -3252,6 +3279,7 @@ async function searchCompanies(query){
       if(!en) return null;
       const cl = en.claims || {};
       const vals = p => (cl[p] || []).map(x => x.mainsnak && x.mainsnak.datavalue && x.mainsnak.datavalue.value).filter(v => typeof v === 'string');
+      const entId = p => { const v = (cl[p] || []).map(x => x.mainsnak && x.mainsnak.datavalue && x.mainsnak.datavalue.value); const first = v.find(x => x && typeof x === 'object' && x.id); return first ? first.id : ''; };
       const desc = ((en.descriptions && (en.descriptions.fr || en.descriptions.en)) || {}).value || '';
       const isCompany = COMPANY_DESC_RE.test(desc);
       const listed = !!(cl.P946 || cl.P414 || cl.P249);
@@ -3265,10 +3293,20 @@ async function searchCompanies(query){
       const name = f.label || (f.match && f.match.text) || q;
       const sc = (listed ? 4 : 0) + (isCompany ? 2 : 0) + (normName(name) === qn ? 3 : 0);
       const logoUrl = icon ? commonsUrl(icon, 80) : (logo ? commonsUrl(logo, 80) : (site ? ('https://www.google.com/s2/favicons?domain=' + encodeURIComponent(domainOf(site)) + '&sz=64') : ''));
-      return { name, desc, ticker: (tickers[0] || '').toUpperCase(), logoUrl, sc, idx };
+      return { name, desc, ticker: (tickers[0] || '').toUpperCase(), logoUrl, countryId: entId('P17'), industryId: entId('P452'), sc, idx };
     }).filter(Boolean);
     cands.sort((a, b) => (b.sc - a.sc) || (a.idx - b.idx));
-    return { seq, results: cands.slice(0, 6) };
+    const top = cands.slice(0, 6);
+    const idSet = [];
+    top.forEach(r => { if(r.countryId) idSet.push(r.countryId); if(r.industryId) idSet.push(r.industryId); });
+    if(idSet.length){
+      const labels = await resolveWikidataLabels(idSet);
+      top.forEach(r => {
+        r.country = r.countryId ? matchKnownCountry(labels[r.countryId]) : '';
+        r.sector = r.industryId ? (labels[r.industryId] || '') : '';
+      });
+    }
+    return { seq, results: top };
   }catch(err){
     return { seq, results: [], failed: true };
   }
@@ -3329,7 +3367,7 @@ function scheduleCompanySearch(){
   }, 350);
 }
 function pickCompanySearchResult(r){
-  createAndOpenCompany(r.name, newCompanyCurrency, { ticker: r.ticker, logoUrl: r.logoUrl });
+  createAndOpenCompany(r.name, newCompanyCurrency, { ticker: r.ticker, logoUrl: r.logoUrl, country: r.country, sector: r.sector });
 }
 
 // ============================================================
@@ -9525,7 +9563,7 @@ document.getElementById('globalSearchInput').addEventListener('keydown', e => {
   if(e.key !== 'Enter') return;
   // Entrée = résultat le plus utile : une analyse existante en priorité, sinon la première suggestion, sinon création manuelle.
   if(globalSearchExisting.length){ const c = globalSearchExisting[0]; closeGlobalSearch(); selectCompany(c.id); return; }
-  if(globalSearchWikiResults.length){ const r = globalSearchWikiResults[0]; closeGlobalSearch(); createAndOpenCompany(r.name, state.settings.defaultCurrency, { ticker: r.ticker, logoUrl: r.logoUrl }); return; }
+  if(globalSearchWikiResults.length){ const r = globalSearchWikiResults[0]; closeGlobalSearch(); createAndOpenCompany(r.name, state.settings.defaultCurrency, { ticker: r.ticker, logoUrl: r.logoUrl, country: r.country, sector: r.sector }); return; }
   const q = document.getElementById('globalSearchInput').value.trim();
   if(q){ closeGlobalSearch(); createAndOpenCompany(q, state.settings.defaultCurrency); }
 });
@@ -9544,7 +9582,7 @@ document.getElementById('globalSearchResults').addEventListener('click', e => {
   const wikiBtn = e.target.closest('[data-pick-wiki]');
   if(wikiBtn){
     const r = globalSearchWikiResults[Number(wikiBtn.dataset.pickWiki)];
-    if(r){ closeGlobalSearch(); createAndOpenCompany(r.name, state.settings.defaultCurrency, { ticker: r.ticker, logoUrl: r.logoUrl }); }
+    if(r){ closeGlobalSearch(); createAndOpenCompany(r.name, state.settings.defaultCurrency, { ticker: r.ticker, logoUrl: r.logoUrl, country: r.country, sector: r.sector }); }
   }
 });
 document.getElementById('deleteCompanyCancel').addEventListener('click', closeDeleteModal);
