@@ -289,6 +289,14 @@ svg{display:block;}
   display:flex; align-items:center; justify-content:center;
 }
 .theme-btn:hover{ background:rgba(255,255,255,.08); color:#fff; }
+.search-btn{
+  flex:0 0 auto;
+  width:34px; height:34px; border-radius:9px;
+  border:1px solid rgba(255,255,255,.14);
+  background:transparent; color:#c6d1e6; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+}
+.search-btn:hover{ background:rgba(255,255,255,.08); color:#fff; }
 
 .content{ margin-left:var(--side-w); min-width:0; }
 /* Barre du haut, toujours visible (2026-09-29, demande de Nolan : compte/synchronisation et mode sombre passent du bas de la barre latérale à cet endroit, en haut à droite du contenu) */
@@ -1349,6 +1357,15 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
 .company-search-ticker{ font-family:var(--font-mono); font-size:11.5px; font-weight:600; color:var(--ink-soft); flex:0 0 auto; }
 .company-search-state{ padding:12px 10px; font-size:13px; color:var(--ink-soft); }
 .company-search-manual{ border-top:1px solid var(--border); margin-top:4px; padding-top:11px; font-size:13px; color:var(--accent); font-weight:600; }
+/* Recherche globale, bouton loupe de .topbar (2026-10-01, demande de Nolan) : modale à part plutôt qu'une case en
+   permanence dans .topbar, déjà très à l'étroit sous 900px (voir plus haut). La liste de résultats est ici en flux
+   normal sous la case (pas en superposition comme .company-search-results de "Nouvelle analyse") car la modale
+   EST l'expérience de recherche, rien d'autre ne vit dessous à couvrir. */
+.search-modal-box{ width:480px; }
+.search-modal-box input#globalSearchInput{ margin-bottom:0; }
+.search-modal-results{ max-height:420px; overflow-y:auto; margin:10px -8px 16px -8px; padding:0 8px; }
+.search-modal-group-title{ padding:12px 10px 6px 10px; font-size:11.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); }
+.search-modal-group-title:first-child{ padding-top:2px; }
 .guide-box{ max-width:520px; }
 .guide-lead{ font-size:14px; color:var(--ink-soft); margin:-6px 0 14px 0; line-height:1.5; }
 .guide-steps{ list-style:none; counter-reset:gs; margin:0 0 16px 0; padding:0; display:flex; flex-direction:column; gap:10px; }
@@ -1862,6 +1879,7 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
       <button type="button" class="main-nav-item" id="navLearn" aria-label="Apprentissage"><span class="mn-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 21.5V5.5"/><path d="M9 8h7M9 12h5"/></svg></span><span>Apprentissage</span></button>
     </div>
     <div class="topbar-actions">
+      <button type="button" class="search-btn" id="globalSearchBtn" title="Rechercher une entreprise" aria-label="Rechercher une entreprise"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>
       <button type="button" class="acct-btn" id="accountBtn" aria-label="Compte et synchronisation"></button>
       <button class="theme-btn" id="themeBtn" title="Changer de thème" aria-label="Changer de thème"></button>
     </div>
@@ -1887,6 +1905,17 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
     <div class="modal-actions">
       <button id="newCompanyCancel">Annuler</button>
       <button class="primary" id="newCompanyConfirm">Créer</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="globalSearchModal">
+  <div class="modal-box search-modal-box">
+    <h2>Rechercher une entreprise</h2>
+    <input type="text" id="globalSearchInput" placeholder="Nom ou ticker : vos analyses, ou une nouvelle entreprise" autocomplete="off">
+    <div class="search-modal-results" id="globalSearchResults"></div>
+    <div class="modal-actions">
+      <button id="globalSearchCancel">Fermer</button>
     </div>
   </div>
 </div>
@@ -3301,6 +3330,102 @@ function scheduleCompanySearch(){
 }
 function pickCompanySearchResult(r){
   createAndOpenCompany(r.name, newCompanyCurrency, { ticker: r.ticker, logoUrl: r.logoUrl });
+}
+
+// ============================================================
+// RECHERCHE GLOBALE (bouton loupe de .topbar, 2026-10-01, demande de Nolan)
+// Une seule liste qui combine vos analyses déjà créées (recherche locale sur le nom et le ticker) et des suggestions
+// Wikidata pour en créer une nouvelle (même mécanique que searchCompanies ci-dessus, séquence anti-réponse-obsolète
+// partagée avec elle) : on n'a pas besoin de savoir d'avance si une entreprise est déjà dans l'app pour la chercher.
+// Cliquer une analyse existante l'ouvre (selectCompany) ; cliquer une suggestion Wikidata crée l'analyse directement
+// avec la devise par défaut mémorisée (state.settings.defaultCurrency, changeable ensuite comme partout dans l'app),
+// sans étape de confirmation. Les suggestions Wikidata qui correspondent à une analyse déjà listée sont filtrées,
+// inutile de proposer deux fois la même entreprise.
+// ============================================================
+let globalSearchTimer = null;
+let globalSearchExisting = [];
+let globalSearchWikiResults = [];
+function matchExistingCompanies(query){
+  const qn = normName(query);
+  const qt = query.trim().toUpperCase();
+  if(!qn) return [];
+  return state.companies.filter(c => {
+    const name = normName(c.name);
+    const ticker = String((c.fields.identite || {}).ticker || '').toUpperCase();
+    return name.indexOf(qn) >= 0 || (qt && ticker.indexOf(qt) >= 0);
+  }).slice(0, 6);
+}
+function globalSearchExistingItemHtml(c, idx){
+  const av = avatarInner(c);
+  const ticker = (c.fields.identite || {}).ticker || '';
+  return `<button type="button" class="company-search-item" data-pick-existing="${idx}">
+    <span class="company-search-avatar${av.cls}">${av.html}</span>
+    <span class="company-search-text">
+      <span class="company-search-name">${escapeHtml(c.name || 'Sans nom')}</span>
+      <span class="company-search-desc">Déjà dans vos analyses</span>
+    </span>
+    ${ticker ? `<span class="company-search-ticker">${escapeHtml(ticker)}</span>` : ''}
+  </button>`;
+}
+function paintGlobalSearch(existing, wikiState, query){
+  const box = document.getElementById('globalSearchResults');
+  if(!box) return;
+  const qTrim = String(query || '').trim();
+  if(!qTrim){
+    box.innerHTML = `<div class="company-search-state">Tapez un nom ou un ticker.</div>`;
+    return;
+  }
+  let html = '';
+  if(existing.length){
+    html += `<div class="search-modal-group-title">Vos analyses</div>` + existing.map((c, i) => globalSearchExistingItemHtml(c, i)).join('');
+  }
+  html += `<div class="search-modal-group-title">Créer une nouvelle analyse</div>`;
+  if(wikiState === null){
+    html += `<div class="company-search-state">Recherche…</div>`;
+  }else if(wikiState === 'error'){
+    html += `<div class="company-search-state">Recherche indisponible pour le moment.</div>`;
+  }else if(!wikiState.length){
+    html += `<div class="company-search-state">Aucune suggestion pour « ${escapeHtml(qTrim)} ».</div>`;
+  }else{
+    html += wikiState.map((r, i) => `
+      <button type="button" class="company-search-item" data-pick-wiki="${i}">
+        <span class="company-search-avatar">${companyAvatarHtml(r.name, r.logoUrl)}</span>
+        <span class="company-search-text">
+          <span class="company-search-name">${escapeHtml(r.name)}</span>
+          ${r.desc ? `<span class="company-search-desc">${escapeHtml(r.desc)}</span>` : ''}
+        </span>
+        ${r.ticker ? `<span class="company-search-ticker">${escapeHtml(r.ticker)}</span>` : ''}
+      </button>`).join('');
+  }
+  html += `<button type="button" class="company-search-item company-search-manual" data-pick-manual="1">Créer « ${escapeHtml(qTrim)} » sans recherche</button>`;
+  box.innerHTML = html;
+}
+function scheduleGlobalSearch(){
+  clearTimeout(globalSearchTimer);
+  const q = document.getElementById('globalSearchInput').value.trim();
+  if(!q){ globalSearchExisting = []; globalSearchWikiResults = []; paintGlobalSearch([], [], ''); return; }
+  globalSearchExisting = matchExistingCompanies(q);
+  paintGlobalSearch(globalSearchExisting, null, q);
+  globalSearchTimer = setTimeout(async () => {
+    const { seq, results, failed } = await searchCompanies(q);
+    if(seq !== companySearchSeq) return; // une frappe plus récente a déjà relancé une recherche
+    const existingNames = globalSearchExisting.map(c => normName(c.name));
+    globalSearchWikiResults = (results || []).filter(r => existingNames.indexOf(normName(r.name)) < 0);
+    paintGlobalSearch(globalSearchExisting, failed ? 'error' : globalSearchWikiResults, q);
+  }, 350);
+}
+function openGlobalSearch(){
+  const overlay = document.getElementById('globalSearchModal');
+  const input = document.getElementById('globalSearchInput');
+  input.value = '';
+  globalSearchExisting = []; globalSearchWikiResults = [];
+  paintGlobalSearch([], [], '');
+  overlay.classList.remove('hidden');
+  setTimeout(() => input.focus(), 0);
+}
+function closeGlobalSearch(){
+  document.getElementById('globalSearchModal').classList.add('hidden');
+  clearTimeout(globalSearchTimer);
 }
 
 let pendingDeleteId = null;
@@ -9388,6 +9513,39 @@ document.getElementById('companySearchResults').addEventListener('click', e => {
   if(!btn) return;
   const r = companySearchResults[Number(btn.dataset.pickIdx)];
   if(r) pickCompanySearchResult(r);
+});
+document.getElementById('globalSearchBtn').addEventListener('click', openGlobalSearch);
+document.getElementById('globalSearchCancel').addEventListener('click', closeGlobalSearch);
+document.getElementById('globalSearchModal').addEventListener('click', e => {
+  if(e.target.id === 'globalSearchModal') closeGlobalSearch();
+});
+document.getElementById('globalSearchInput').addEventListener('input', scheduleGlobalSearch);
+document.getElementById('globalSearchInput').addEventListener('keydown', e => {
+  if(e.key === 'Escape') closeGlobalSearch();
+  if(e.key !== 'Enter') return;
+  // Entrée = résultat le plus utile : une analyse existante en priorité, sinon la première suggestion, sinon création manuelle.
+  if(globalSearchExisting.length){ const c = globalSearchExisting[0]; closeGlobalSearch(); selectCompany(c.id); return; }
+  if(globalSearchWikiResults.length){ const r = globalSearchWikiResults[0]; closeGlobalSearch(); createAndOpenCompany(r.name, state.settings.defaultCurrency, { ticker: r.ticker, logoUrl: r.logoUrl }); return; }
+  const q = document.getElementById('globalSearchInput').value.trim();
+  if(q){ closeGlobalSearch(); createAndOpenCompany(q, state.settings.defaultCurrency); }
+});
+document.getElementById('globalSearchResults').addEventListener('click', e => {
+  if(e.target.closest('[data-pick-manual]')){
+    const q = document.getElementById('globalSearchInput').value.trim();
+    if(q){ closeGlobalSearch(); createAndOpenCompany(q, state.settings.defaultCurrency); }
+    return;
+  }
+  const exBtn = e.target.closest('[data-pick-existing]');
+  if(exBtn){
+    const c = globalSearchExisting[Number(exBtn.dataset.pickExisting)];
+    if(c){ closeGlobalSearch(); selectCompany(c.id); }
+    return;
+  }
+  const wikiBtn = e.target.closest('[data-pick-wiki]');
+  if(wikiBtn){
+    const r = globalSearchWikiResults[Number(wikiBtn.dataset.pickWiki)];
+    if(r){ closeGlobalSearch(); createAndOpenCompany(r.name, state.settings.defaultCurrency, { ticker: r.ticker, logoUrl: r.logoUrl }); }
+  }
 });
 document.getElementById('deleteCompanyCancel').addEventListener('click', closeDeleteModal);
 document.getElementById('deleteCompanyConfirm').addEventListener('click', confirmDeleteCompany);
