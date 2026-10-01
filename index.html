@@ -3215,7 +3215,6 @@ function createAndOpenCompany(name, currency, extra){
   if(extra && extra.ticker) c.fields.identite.ticker = extra.ticker;
   if(extra && extra.exchange) c.fields.identite.cotation = extra.exchange;
   if(extra && extra.country){ c.fields.identite.paysSiege = c.fields.identite.paysSiege || {}; c.fields.identite.paysSiege.pays = extra.country; }
-  if(extra && extra.logoUrl) c.logo = { url: extra.logoUrl, src:'auto', q: logoQuery(c) };
   state.companies.push(c);
   state.activeId = c.id;
   currentView = 'company';
@@ -3223,7 +3222,13 @@ function createAndOpenCompany(name, currency, extra){
   closeNewCompanyModal();
   render();
   window.scrollTo(0, 0);
-  if(!(extra && extra.logoUrl)) resolveLogo(c.id);
+  // Ne pas reprendre directement extra.logoUrl comme logo définitif (2026-10-02, demande de Nolan : logos "pas bons"
+  // dans Recherches récentes, ex. TSMC/ASML) : c'est la première icône/favicon trouvée pendant la frappe, jamais
+  // vérifiée (pas de imgProbe, contrairement à findLogo/findLogoByName ci-dessous) — juste de quoi illustrer la liste
+  // déroulante, pas la qualité attendue pour le logo définitif de l'analyse. On passe systématiquement par
+  // resolveLogo(c.id), le même circuit validé (plusieurs candidats, plusieurs sources, chaque image vérifiée avant
+  // d'être retenue) que pour une création manuelle ou le bouton "Relancer la recherche de logos".
+  resolveLogo(c.id);
   return c;
 }
 function confirmNewCompany(){
@@ -3453,7 +3458,7 @@ function globalSearchExistingItemHtml(c, idx){
   const ticker = (c.fields.identite || {}).ticker || '';
   const pays = (c.fields.identite.paysSiege || {}).pays || '';
   const cotation = c.fields.identite.cotation || '';
-  const sub = pays ? `${flagIcon(pays)}<span>${escapeHtml(pays)}</span>` : 'Déjà dans vos analyses';
+  const sub = pays ? `${flagIcon(pays)} <span>${escapeHtml(pays)}</span>` : 'Déjà dans vos analyses';
   return `<button type="button" class="company-search-item" data-pick-existing="${idx}">
     <span class="company-search-avatar${av.cls}">${av.html}</span>
     <span class="company-search-text">
@@ -3506,7 +3511,7 @@ function paintGlobalSearch(existing, wikiState, query){
         <span class="company-search-avatar">${companyAvatarHtml(r.name, r.logoUrl)}</span>
         <span class="company-search-text">
           <span class="company-search-name">${escapeHtml(r.name)}</span>
-          <span class="company-search-desc">${[r.desc ? escapeHtml(r.desc) : '', r.country ? `${flagIcon(r.country)}${escapeHtml(r.country)}` : ''].filter(Boolean).join(' · ')}</span>
+          <span class="company-search-desc">${[r.desc ? escapeHtml(r.desc) : '', r.country ? `${flagIcon(r.country)} ${escapeHtml(r.country)}` : ''].filter(Boolean).join(' · ')}</span>
         </span>
         ${r.ticker ? `<span class="company-search-ticker">${escapeHtml(r.ticker)}${r.exchange ? `<span class="company-search-exchange">${escapeHtml(r.exchange)}</span>` : ''}</span>` : ''}
       </button>`).join('');
