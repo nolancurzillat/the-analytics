@@ -414,6 +414,14 @@ main{ display:block; }
 }
 .hero h1 em{ font-style:normal; color:#8fb1ff; }
 .hero-sub{ font-size:17px; line-height:1.65; color:#b8c5de; max-width:580px; margin:0; }
+.hero-search{
+  display:flex; align-items:center; gap:12px; width:100%; max-width:460px; margin-top:24px;
+  padding:14px 18px; border-radius:12px; border:1px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.06); color:rgba(255,255,255,.6); cursor:pointer; font:inherit; font-size:15px;
+  text-align:left;
+}
+.hero-search:hover{ background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.3); color:rgba(255,255,255,.8); }
+.hero-search svg{ flex:0 0 auto; }
 .hero-cta{ display:flex; gap:12px; flex-wrap:wrap; margin-top:32px; }
 .hero-login{ margin-top:16px; font-size:14px; color:rgba(255,255,255,.72); }
 .hero-login .link-btn{ color:#fff; font-weight:600; }
@@ -1361,11 +1369,14 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
    permanence dans .topbar, déjà très à l'étroit sous 900px (voir plus haut). La liste de résultats est ici en flux
    normal sous la case (pas en superposition comme .company-search-results de "Nouvelle analyse") car la modale
    EST l'expérience de recherche, rien d'autre ne vit dessous à couvrir. */
-.search-modal-box{ width:480px; }
+.search-modal-box{ width:620px; max-width:94vw; }
 .search-modal-box input#globalSearchInput{ margin-bottom:0; }
-.search-modal-results{ max-height:420px; overflow-y:auto; margin:10px -8px 16px -8px; padding:0 8px; }
+.search-modal-results{ max-height:520px; overflow-y:auto; margin:10px -8px 14px -8px; padding:0 8px; }
 .search-modal-group-title{ padding:12px 10px 6px 10px; font-size:11.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); }
 .search-modal-group-title:first-child{ padding-top:2px; }
+.search-modal-empty{ padding:18px 10px; font-size:13.5px; line-height:1.55; color:var(--ink-soft); }
+.company-search-item .company-search-exchange{ font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); margin-left:6px; }
+.company-search-item .company-search-ticker{ display:flex; align-items:baseline; }
 .guide-box{ max-width:520px; }
 .guide-lead{ font-size:14px; color:var(--ink-soft); margin:-6px 0 14px 0; line-height:1.5; }
 .guide-steps{ list-style:none; counter-reset:gs; margin:0 0 16px 0; padding:0; display:flex; flex-direction:column; gap:10px; }
@@ -1912,6 +1923,7 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
 <div class="modal-overlay hidden" id="globalSearchModal">
   <div class="modal-box search-modal-box">
     <h2>Rechercher une entreprise</h2>
+    <div class="modal-hint" style="margin:-10px 0 14px 0">Retrouvez une analyse déjà créée, ou tapez le nom d'une entreprise cotée en dollar ou en euro pour en démarrer une nouvelle (logo, pays, ticker et bourse se remplissent automatiquement).</div>
     <input type="text" id="globalSearchInput" placeholder="Nom ou ticker : vos analyses, ou une nouvelle entreprise" autocomplete="off">
     <div class="search-modal-results" id="globalSearchResults"></div>
     <div class="modal-actions">
@@ -2979,7 +2991,8 @@ if(!state.deleted || typeof state.deleted !== 'object' || Array.isArray(state.de
 if(!state.history || typeof state.history !== 'object' || Array.isArray(state.history)) state.history = {};
 state.companies.forEach(migrateCompany);
 // Préférences personnelles (ajoutées après la V1, sans effet sur les analyses existantes)
-state.settings = Object.assign({ firstName:'', defaultCurrency:'$', twelveDataApiKey:'', sortKey:'created', sortDir:'asc', tableSortKey:'created', tableSortDir:'asc', learnRead:[], lastBackupAt:0, backupSnoozeUntil:0 },(state.settings && typeof state.settings === 'object') ? state.settings : {});
+state.settings = Object.assign({ firstName:'', defaultCurrency:'$', twelveDataApiKey:'', sortKey:'created', sortDir:'asc', tableSortKey:'created', tableSortDir:'asc', learnRead:[], lastBackupAt:0, backupSnoozeUntil:0, recentSearchIds:[] },(state.settings && typeof state.settings === 'object') ? state.settings : {});
+if(!Array.isArray(state.settings.recentSearchIds)) state.settings.recentSearchIds = [];
 if(state.settings.tourDone === undefined) state.settings.tourDone = state.companies.length > 0;
 if(['created','name','stars','updated','marketCap'].indexOf(state.settings.sortKey) < 0) state.settings.sortKey = 'created';
 if(state.settings.sortDir !== 'desc') state.settings.sortDir = 'asc';
@@ -3269,7 +3282,11 @@ async function searchCompanies(query){
   if(q.length < 2) return { seq, results: [] };
   let s, e;
   try{
-    s = await wdJson({ action:'wbsearchentities', search:q, language:'fr', uselang:'fr', type:'item', limit:'8' });
+    // limit:20 (au lieu de 8) : avec le filtre "ticker $/€ obligatoire" du 2026-10-01, une recherche courte comme
+    // "Ama" ou "Mc" a souvent ses vraies entreprises (Amazon, McDonald's) classées après des homonymes/lieux/personnes
+    // par le classement générique de Wikidata ; sans une marge plus large avant filtrage, elles disparaissaient des
+    // suggestions même si elles existent bien (demande de Nolan : "si on écrit que le début ... il trouve quand même").
+    s = await wdJson({ action:'wbsearchentities', search:q, language:'fr', uselang:'fr', type:'item', limit:'20' });
     const found = s.search || [];
     if(!found.length) return { seq, results: [] };
     e = await wdJson({ action:'wbgetentities', ids:found.map(x => x.id).join('|'), props:'claims|descriptions', languages:'fr|en' });
@@ -3306,7 +3323,7 @@ async function searchCompanies(query){
       return { name, desc, ticker: tickerPref.ticker.toUpperCase(), exchange: tickerPref.exchange, logoUrl, countryId: entId('P17'), sc, idx };
     }).filter(Boolean);
     cands.sort((a, b) => (b.sc - a.sc) || (a.idx - b.idx));
-    const top = cands.slice(0, 6);
+    const top = cands.slice(0, 8);
     const idSet = [];
     top.forEach(r => { if(r.countryId) idSet.push(r.countryId); });
     if(idSet.length){
@@ -3398,26 +3415,47 @@ function matchExistingCompanies(query){
     const name = normName(c.name);
     const ticker = String((c.fields.identite || {}).ticker || '').toUpperCase();
     return name.indexOf(qn) >= 0 || (qt && ticker.indexOf(qt) >= 0);
-  }).slice(0, 6);
+  }).slice(0, 8);
 }
 function globalSearchExistingItemHtml(c, idx){
   const av = avatarInner(c);
   const ticker = (c.fields.identite || {}).ticker || '';
+  const pays = (c.fields.identite.paysSiege || {}).pays || '';
+  const cotation = c.fields.identite.cotation || '';
+  const sub = pays ? `${flagIcon(pays)}<span>${escapeHtml(pays)}</span>` : 'Déjà dans vos analyses';
   return `<button type="button" class="company-search-item" data-pick-existing="${idx}">
     <span class="company-search-avatar${av.cls}">${av.html}</span>
     <span class="company-search-text">
       <span class="company-search-name">${escapeHtml(c.name || 'Sans nom')}</span>
-      <span class="company-search-desc">Déjà dans vos analyses</span>
+      <span class="company-search-desc">${sub}</span>
     </span>
-    ${ticker ? `<span class="company-search-ticker">${escapeHtml(ticker)}</span>` : ''}
+    ${ticker ? `<span class="company-search-ticker">${escapeHtml(ticker)}${cotation ? `<span class="company-search-exchange">${escapeHtml(cotation)}</span>` : ''}</span>` : ''}
   </button>`;
+}
+// Recherches récentes (2026-10-01, demande de Nolan) : pas les requêtes tapées, mais les analyses réellement ouvertes
+// ou créées depuis la recherche globale (plus utile qu'un historique de texte). ids seuls, résolus en companies au
+// moment d'afficher (une analyse supprimée depuis disparaît donc toute seule de la liste, pas de nettoyage à faire).
+function recentSearchCompanies(){
+  return (state.settings.recentSearchIds || []).map(id => state.companies.find(c => c.id === id)).filter(Boolean);
+}
+function pushRecentSearch(id){
+  if(!id) return;
+  const list = (state.settings.recentSearchIds || []).filter(x => x !== id);
+  list.unshift(id);
+  state.settings.recentSearchIds = list.slice(0, 8);
 }
 function paintGlobalSearch(existing, wikiState, query){
   const box = document.getElementById('globalSearchResults');
   if(!box) return;
   const qTrim = String(query || '').trim();
   if(!qTrim){
-    box.innerHTML = `<div class="company-search-state">Tapez un nom ou un ticker.</div>`;
+    const recents = recentSearchCompanies();
+    globalSearchExisting = recents; // même mécanisme de clic que "Vos analyses" (data-pick-existing)
+    if(recents.length){
+      box.innerHTML = `<div class="search-modal-group-title">Recherches récentes</div>` + recents.map((c, i) => globalSearchExistingItemHtml(c, i)).join('');
+    }else{
+      box.innerHTML = `<div class="search-modal-empty">Tapez un nom ou un ticker pour retrouver une analyse ou en démarrer une nouvelle.</div>`;
+    }
     return;
   }
   let html = '';
@@ -3430,16 +3468,16 @@ function paintGlobalSearch(existing, wikiState, query){
   }else if(wikiState === 'error'){
     html += `<div class="company-search-state">Recherche indisponible pour le moment.</div>`;
   }else if(!wikiState.length){
-    html += `<div class="company-search-state">Aucune suggestion pour « ${escapeHtml(qTrim)} ».</div>`;
+    html += `<div class="company-search-state">Aucune suggestion pour « ${escapeHtml(qTrim)} ». Essayez un nom plus complet, ou créez l'analyse sans recherche ci-dessous.</div>`;
   }else{
     html += wikiState.map((r, i) => `
       <button type="button" class="company-search-item" data-pick-wiki="${i}">
         <span class="company-search-avatar">${companyAvatarHtml(r.name, r.logoUrl)}</span>
         <span class="company-search-text">
           <span class="company-search-name">${escapeHtml(r.name)}</span>
-          ${r.desc ? `<span class="company-search-desc">${escapeHtml(r.desc)}</span>` : ''}
+          <span class="company-search-desc">${[r.desc ? escapeHtml(r.desc) : '', r.country ? `${flagIcon(r.country)}${escapeHtml(r.country)}` : ''].filter(Boolean).join(' · ')}</span>
         </span>
-        ${r.ticker ? `<span class="company-search-ticker">${escapeHtml(r.ticker)}</span>` : ''}
+        ${r.ticker ? `<span class="company-search-ticker">${escapeHtml(r.ticker)}${r.exchange ? `<span class="company-search-exchange">${escapeHtml(r.exchange)}</span>` : ''}</span>` : ''}
       </button>`).join('');
   }
   html += `<button type="button" class="company-search-item company-search-manual" data-pick-manual="1">Créer « ${escapeHtml(qTrim)} » sans recherche</button>`;
@@ -8731,6 +8769,10 @@ function renderHomeView(){
           <div class="eyebrow">Analyse fondamentale · Value &amp; Quality</div>
           <h1>Analysez les entreprises comme un <em>investisseur professionnel</em>.</h1>
           <p class="hero-sub">The Analytics est l'espace de travail qui structure votre recherche : qualité de l'activité, rentabilité, solidité financière, croissance et valorisation. Vous comprenez mieux chaque entreprise, et vous décidez avec méthode.</p>
+          <button type="button" class="hero-search" data-open-global-search aria-label="Rechercher une entreprise">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            <span>Rechercher une entreprise, un ticker…</span>
+          </button>
           <div class="hero-cta">
             ${state.companies.length
               ? `<button class="btn btn-primary" data-go-space>Ouvrir mon espace</button>
@@ -9572,6 +9614,11 @@ document.getElementById('companySearchResults').addEventListener('click', e => {
   if(r) pickCompanySearchResult(r);
 });
 document.getElementById('globalSearchBtn').addEventListener('click', openGlobalSearch);
+// Champ de recherche de l'accueil (2026-10-01, demande de Nolan) : écouteur délégué global, pas posé dans
+// renderHomeView, qui redessine #main à chaque appel et perdrait un écouteur direct.
+document.addEventListener('click', e => {
+  if(e.target.closest('[data-open-global-search]')) openGlobalSearch();
+});
 document.getElementById('globalSearchCancel').addEventListener('click', closeGlobalSearch);
 document.getElementById('globalSearchModal').addEventListener('click', e => {
   if(e.target.id === 'globalSearchModal') closeGlobalSearch();
@@ -9581,27 +9628,27 @@ document.getElementById('globalSearchInput').addEventListener('keydown', e => {
   if(e.key === 'Escape') closeGlobalSearch();
   if(e.key !== 'Enter') return;
   // Entrée = résultat le plus utile : une analyse existante en priorité, sinon la première suggestion, sinon création manuelle.
-  if(globalSearchExisting.length){ const c = globalSearchExisting[0]; closeGlobalSearch(); selectCompany(c.id); return; }
-  if(globalSearchWikiResults.length){ const r = globalSearchWikiResults[0]; closeGlobalSearch(); createAndOpenCompany(r.name, state.settings.defaultCurrency, { ticker: r.ticker, exchange: r.exchange, logoUrl: r.logoUrl, country: r.country }); return; }
+  if(globalSearchExisting.length){ const c = globalSearchExisting[0]; pushRecentSearch(c.id); closeGlobalSearch(); selectCompany(c.id); return; }
+  if(globalSearchWikiResults.length){ const r = globalSearchWikiResults[0]; closeGlobalSearch(); const c = createAndOpenCompany(r.name, state.settings.defaultCurrency, { ticker: r.ticker, exchange: r.exchange, logoUrl: r.logoUrl, country: r.country }); pushRecentSearch(c.id); saveState(); return; }
   const q = document.getElementById('globalSearchInput').value.trim();
-  if(q){ closeGlobalSearch(); createAndOpenCompany(q, state.settings.defaultCurrency); }
+  if(q){ closeGlobalSearch(); const c = createAndOpenCompany(q, state.settings.defaultCurrency); pushRecentSearch(c.id); saveState(); }
 });
 document.getElementById('globalSearchResults').addEventListener('click', e => {
   if(e.target.closest('[data-pick-manual]')){
     const q = document.getElementById('globalSearchInput').value.trim();
-    if(q){ closeGlobalSearch(); createAndOpenCompany(q, state.settings.defaultCurrency); }
+    if(q){ closeGlobalSearch(); const c = createAndOpenCompany(q, state.settings.defaultCurrency); pushRecentSearch(c.id); saveState(); }
     return;
   }
   const exBtn = e.target.closest('[data-pick-existing]');
   if(exBtn){
     const c = globalSearchExisting[Number(exBtn.dataset.pickExisting)];
-    if(c){ closeGlobalSearch(); selectCompany(c.id); }
+    if(c){ pushRecentSearch(c.id); closeGlobalSearch(); selectCompany(c.id); }
     return;
   }
   const wikiBtn = e.target.closest('[data-pick-wiki]');
   if(wikiBtn){
     const r = globalSearchWikiResults[Number(wikiBtn.dataset.pickWiki)];
-    if(r){ closeGlobalSearch(); createAndOpenCompany(r.name, state.settings.defaultCurrency, { ticker: r.ticker, exchange: r.exchange, logoUrl: r.logoUrl, country: r.country }); }
+    if(r){ closeGlobalSearch(); const c = createAndOpenCompany(r.name, state.settings.defaultCurrency, { ticker: r.ticker, exchange: r.exchange, logoUrl: r.logoUrl, country: r.country }); pushRecentSearch(c.id); saveState(); }
   }
 });
 document.getElementById('deleteCompanyCancel').addEventListener('click', closeDeleteModal);
