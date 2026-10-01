@@ -789,6 +789,24 @@ input.company-name:focus{ outline:none; border-bottom-color:var(--blue); }
   align-items:start;
 }
 .section-body > .add-field-btn{ grid-column:1 / -1; justify-self:start; margin-top:0; }
+/* Historique de thèse et journal de décisions (2026-10-02, demande de Nolan), section Décision uniquement : bloc à
+   part sous la grille de champs, pas un champ de plus dans .section-body. */
+.history-block{ border-top:1px solid var(--border); padding:24px 28px 28px 28px; }
+.history-title{ font-size:12.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--sec-c); margin-bottom:16px; }
+.history-grid{ display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+.hist-col-t{ font-size:13px; font-weight:600; color:var(--ink-soft); margin-bottom:10px; }
+.hist-list{ display:flex; flex-direction:column; gap:8px; max-height:280px; overflow-y:auto; }
+.hist-thesis{ border:1px solid var(--border); border-radius:10px; padding:10px 12px; background:var(--paper-line); }
+.hist-thesis summary{ cursor:pointer; font-size:13px; font-weight:600; color:var(--ink); list-style:none; }
+.hist-thesis summary::-webkit-details-marker{ display:none; }
+.hist-thesis summary:before{ content:'▸ '; color:var(--ink-soft); }
+.hist-thesis[open] summary:before{ content:'▾ '; }
+.hist-thesis-body{ margin-top:8px; font-size:13.5px; line-height:1.55; color:var(--ink); }
+.hist-decision{ display:flex; justify-content:space-between; gap:10px; padding:8px 10px; border-radius:8px; font-size:13px; }
+.hist-decision:nth-child(odd){ background:var(--paper-line); }
+.hist-decision-date{ color:var(--ink-soft); flex:0 0 auto; white-space:nowrap; }
+.hist-decision-text{ color:var(--ink); text-align:right; }
+.hist-empty{ font-size:13px; color:var(--ink-soft); }
 .field-group{
   grid-column:1 / -1; display:flex; align-items:center; gap:14px; margin-top:8px;
   font-size:12.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--sec-c);
@@ -1444,6 +1462,8 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
   input.company-name{ font-size:26px; }
   .section-title{ padding:18px 18px; flex-wrap:wrap; }
   .section-body{ padding:20px 18px 22px 18px; grid-template-columns:1fr; }
+  .history-block{ padding:20px 18px 22px 18px; }
+  .history-grid{ grid-template-columns:1fr; gap:20px; }
   .field-row, .field-row[data-span], .field-row.custom{ grid-column:1 / -1; }
   .st-name{ font-size:22px; }
   .section{ margin-bottom:30px; }
@@ -1541,6 +1561,13 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
 .onboard-grid div{ display:flex; flex-direction:column; gap:6px; padding:16px; background:var(--paper-line); border:1px solid var(--border); border-radius:12px; }
 .onboard-grid strong{ font-size:15px; }
 .onboard-grid span{ font-size:14px; line-height:1.55; color:var(--ink-soft); }
+/* Carte "Votre capital" (2026-10-02, demande de Nolan) : rend visible ce qui s'est déjà accumulé, pour que l'app se
+   ressente comme un historique qui se construit, pas juste un outil de calcul. */
+.capital-card{ margin-top:20px; }
+.cap-grid{ display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:16px; }
+.cap-tile{ padding:16px; background:var(--paper-line); border:1px solid var(--border); border-radius:12px; text-align:center; }
+.cap-v{ font-family:var(--font-serif); font-weight:700; font-size:28px; color:var(--accent); line-height:1.1; }
+.cap-l{ font-size:13px; color:var(--ink-soft); margin-top:6px; }
 
 .rec-list{ display:flex; flex-direction:column; }
 .rec{ display:flex; align-items:flex-start; gap:12px; padding:14px 0; border-bottom:1px solid var(--border); }
@@ -1632,12 +1659,14 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
   .pipe{ grid-template-columns:repeat(3, minmax(0,1fr)); }
   .pref-grid{ grid-template-columns:1fr; }
   .onboard-grid{ grid-template-columns:repeat(2, minmax(0,1fr)); }
+  .cap-grid{ grid-template-columns:repeat(2, minmax(0,1fr)); }
 }
 @media (max-width:640px){
   .space-kpis{ grid-template-columns:repeat(2, minmax(0,1fr)); }
   .pipe{ grid-template-columns:1fr; }
   .dn-two{ grid-template-columns:1fr; }
   .onboard-grid{ grid-template-columns:1fr; }
+  .cap-grid{ grid-template-columns:1fr; }
   .scard{ padding:18px; }
   .rec{ flex-wrap:wrap; }
   .rec .btn{ align-self:flex-start; margin-left:42px; }
@@ -2314,6 +2343,14 @@ function formatDateFr(iso){
   const monthIdx = parseInt(m, 10) - 1;
   const monthName = MOIS_FR[monthIdx] || m;
   return `${parseInt(d, 10)} ${monthName} ${y}`;
+}
+// Date + heure (journal de décisions, 2026-10-02) : decisionLog stocke un ISO complet (toISOString), pas juste
+// une date comme formatDateFr l'attend (découpage sur "-" sinon faussé par la partie heure).
+function formatDateTimeFr(iso){
+  if(!iso) return '';
+  const d = new Date(iso);
+  if(isNaN(d.getTime())) return '';
+  return `${formatDateFr(String(iso).slice(0, 10))} à ${d.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}`;
 }
 // Date compacte (jj/mm/aa) pour les tableaux serrés où la date complète ferait déborder le cadre
 function formatDateFrShort(iso){
@@ -3155,6 +3192,10 @@ function migrateCompany(c){
     });
     c._richSanitized = true;
   }
+  // Journal de thèse et journal de décisions (2026-10-02, demande de Nolan) : tableaux vides par défaut, remplis au fil
+  // des modifications (snapshotThesis, logDecisionEvent). Absents des analyses créées avant ce changement.
+  if(!Array.isArray(c.thesisHistory)) c.thesisHistory = [];
+  if(!Array.isArray(c.decisionLog)) c.decisionLog = [];
   return c;
 }
 
@@ -3596,6 +3637,59 @@ function goSpace(){
   closeMenu();
 }
 
+// ============================================================
+// JOURNAL DE THÈSE ET JOURNAL DE DÉCISIONS (2026-10-02, demande de Nolan : "1, 2 et 3" de la liste de pistes
+// discutée, pour que l'historique intellectuel de l'analyse devienne consultable au lieu d'être écrasé en silence)
+// ============================================================
+function richToPlain(html){
+  return String(html || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+}
+// Une entrée par JOUR (mise à jour tant qu'on retouche la thèse le même jour, nouvelle entrée le lendemain) plutôt
+// qu'à chaque frappe : un journal se relit par date ("ce que je pensais en mars 2026"), pas comme un historique Git
+// ligne à ligne. Appelée au blur du champ (voir bindFieldEvents), jamais sur l'évènement 'input' qui sert déjà à
+// l'enregistrement normal du champ.
+function snapshotThesis(c){
+  if(!c) return;
+  const html = (c.fields.personnelle && c.fields.personnelle.these) || '';
+  if(!richToPlain(html)) return;
+  if(!Array.isArray(c.thesisHistory)) c.thesisHistory = [];
+  const today = new Date().toISOString().slice(0, 10);
+  const last = c.thesisHistory[c.thesisHistory.length - 1];
+  if(last && last.date === today) last.html = html;
+  else if(!last || last.html !== html) c.thesisHistory.push({ date: today, html });
+}
+// Journal de décisions : une ligne horodatée à chaque changement RÉELLEMENT COMMIS (pas à chaque frappe) de
+// conviction, décision personnelle, prix d'achat cible ou ouverture/clôture de position. 200 entrées max par
+// analyse, un garde-fou large qui n'arrivera en pratique jamais à saturer pour un usage personnel.
+function logDecisionEvent(c, text){
+  if(!c || !text) return;
+  if(!Array.isArray(c.decisionLog)) c.decisionLog = [];
+  c.decisionLog.push({ date: new Date().toISOString(), text });
+  if(c.decisionLog.length > 200) c.decisionLog.splice(0, c.decisionLog.length - 200);
+}
+// Bloc "Historique" affiché sous la grille de champs de la section Décision, jamais si les deux journaux sont vides
+// (une analyse créée avant ce changement, ou jamais retouchée depuis, n'a juste pas encore d'historique à montrer).
+// `<details>` natif pour la thèse (repliée par défaut, peu d'intérêt à tout dérouler d'un coup) ; le journal de
+// décisions reste une simple liste, déjà courte par nature.
+function buildThesisDecisionHistory(c){
+  const thesisEntries = (c.thesisHistory || []).slice().reverse();
+  const decisionEntries = (c.decisionLog || []).slice().reverse();
+  if(!thesisEntries.length && !decisionEntries.length) return '';
+  const thesisHtml = thesisEntries.length
+    ? thesisEntries.map(e => `<details class="hist-thesis"><summary>${formatDateFr(e.date)}</summary><div class="hist-thesis-body">${sanitizeRichHtml(e.html)}</div></details>`).join('')
+    : `<div class="hist-empty">Rien pour l'instant : la thèse se journalise automatiquement dès que vous la modifiez.</div>`;
+  const decisionHtml = decisionEntries.length
+    ? decisionEntries.map(e => `<div class="hist-decision"><span class="hist-decision-date">${formatDateTimeFr(e.date)}</span><span class="hist-decision-text">${escapeHtml(e.text)}</span></div>`).join('')
+    : `<div class="hist-empty">Rien pour l'instant : conviction, décision, prix cible et position se journalisent dès que vous les modifiez.</div>`;
+  return `<div class="history-block">
+    <div class="history-title">Historique</div>
+    <div class="history-grid">
+      <div class="hist-col"><div class="hist-col-t">Thèse au fil du temps</div><div class="hist-list">${thesisHtml}</div></div>
+      <div class="hist-col"><div class="hist-col-t">Journal de décisions</div><div class="hist-list">${decisionHtml}</div></div>
+    </div>
+  </div>`;
+}
+
 function updateField(sectionKey, fieldKey, value, fieldType){
   const c = getActive();
   if(!c) return;
@@ -3604,7 +3698,11 @@ function updateField(sectionKey, fieldKey, value, fieldType){
   }else if(fieldType === 'text' || fieldType === 'textarea'){
     value = capitalizeFirst(value);
   }
+  const prevValue = c.fields[sectionKey][fieldKey];
   c.fields[sectionKey][fieldKey] = value;
+  if(sectionKey === 'personnelle' && fieldKey === 'decision' && prevValue !== value){
+    logDecisionEvent(c, value ? `Décision : ${value}` : 'Décision retirée');
+  }
   touchUpdated(c);
   saveState();
   refreshDerived();
@@ -3673,7 +3771,9 @@ function setCompanyCurrency(cur){
 function setStars(n){
   const c = getActive();
   if(!c) return;
+  const prev = parseFloat(c.fields.personnelle.conviction) || 0;
   c.fields.personnelle.conviction = n;
+  if(n !== prev) logDecisionEvent(c, `Conviction : ${prev || '—'} → ${n}/5`);
   touchUpdated(c);
   saveState();
   render();
@@ -5641,6 +5741,7 @@ function updatePositionField(key, value){
   const c = getActive();
   if(!c) return;
   if(!c.position || typeof c.position !== 'object') c.position = { active:false, quantite:'', prixAchat:'', montantInvesti:'' };
+  if(key === 'active' && value !== c.position.active) logDecisionEvent(c, value ? 'Position ouverte' : 'Position clôturée');
   c.position[key] = value;
   touchUpdated(c);
   saveState();
@@ -6987,6 +7088,36 @@ function normSector(s){
   return t ? t.charAt(0).toUpperCase() + t.slice(1).toLowerCase() : '';
 }
 
+// Ancienneté lisible ("8 mois", "2 ans") à partir d'une date ISO (jour) jusqu'à aujourd'hui.
+function ageText(iso){
+  const d = new Date(iso);
+  if(isNaN(d.getTime())) return null;
+  const days = Math.floor((Date.now() - d.getTime()) / 86400000);
+  if(days < 1) return "Aujourd'hui";
+  if(days < 31) return `${days} jour${days > 1 ? 's' : ''}`;
+  const months = Math.floor(days / 30.44);
+  if(months < 12) return `${months} mois`;
+  const years = Math.round(days / 365.25 * 10) / 10;
+  return `${fmtNum(years, years < 2 ? 1 : 0)} an${years >= 2 ? 's' : ''}`;
+}
+function buildCapitalCard(){
+  const cs = state.companies;
+  if(!cs.length) return '';
+  const nThese = cs.filter(c => richToPlain(c.fields.personnelle && c.fields.personnelle.these)).length;
+  const nDecisions = cs.reduce((s, c) => s + ((c.decisionLog && c.decisionLog.length) || 0), 0);
+  const firstDate = cs.map(c => c.createdAt).filter(Boolean).sort()[0];
+  const since = firstDate ? ageText(firstDate) : null;
+  const tile = (v, l) => `<div class="cap-tile"><div class="cap-v">${v}</div><div class="cap-l">${l}</div></div>`;
+  return `<section class="scard capital-card">
+    <div class="scard-t">Votre capital</div>
+    <div class="cap-grid">
+      ${tile(cs.length, cs.length > 1 ? 'analyses' : 'analyse')}
+      ${tile(nThese, nThese > 1 ? 'thèses rédigées' : 'thèse rédigée')}
+      ${tile(nDecisions, nDecisions > 1 ? 'décisions journalisées' : 'décision journalisée')}
+      ${tile(since || '—', since ? "d'historique" : 'historique')}
+    </div>
+  </section>`;
+}
 function buildSpaceKpis(){
   const cs = state.companies;
   const scores = cs.map(c => computeGlobalScore(c)).filter(s => s !== null);
@@ -7350,6 +7481,7 @@ function renderSpaceView(){
     </section>`;
   }else{
     html += buildSpaceKpis();
+    html += buildCapitalCard();
     html += `<div class="sgrid">${buildRecsCard()}${buildDividendsCard()}${buildPipeline()}${buildScoreBars()}${buildValueGap()}${buildTargets()}${buildSectorsCard()}${buildCompaniesTable()}</div>`;
   }
   html += `<div class="sgrid">${buildMilestones()}${buildTipCard()}${buildPrefsCard()}</div></div>`;
@@ -9401,7 +9533,9 @@ function render(){
     });
 
     html += `<button class="add-field-btn" data-add-section="${section.key}">+ Ajouter un champ</button>`;
-    html += `</div></div>`;
+    html += `</div>`;
+    if(section.key === 'personnelle') html += buildThesisDecisionHistory(c);
+    html += `</div>`;
   });
 
   html += buildInsightsSection(c);
@@ -9429,6 +9563,11 @@ function render(){
       el.addEventListener('input', () => {
         updateField(el.dataset.section, el.dataset.field, el.innerHTML, 'richtext');
       });
+      // Journal de thèse (2026-10-02) : un instantané par jour au moment où on QUITTE le champ, jamais à chaque
+      // frappe (déjà gérée ci-dessus pour l'enregistrement normal).
+      if(el.dataset.section === 'personnelle' && el.dataset.field === 'these'){
+        el.addEventListener('blur', () => snapshotThesis(getActive()));
+      }
       return;
     }
     if(el.tagName === 'TEXTAREA') autoGrow(el);
@@ -9443,6 +9582,18 @@ function render(){
       if(el.tagName === 'TEXTAREA') autoGrow(el);
       if(el.tagName === 'INPUT' && el.hasAttribute('size')) el.size = Math.max(e.target.value.length, 2) + 1;
     });
+    // Journal de décisions (2026-10-02) : le prix d'achat cible se tape caractère par caractère, donc on compare la
+    // valeur au moment du focus à celle au moment du blur plutôt que de journaliser à chaque frappe (comme pour la
+    // thèse ci-dessus, mais ici il faut comparer deux valeurs puisqu'il n'y a pas de notion de "jour" pertinente).
+    if(el.dataset.section === 'personnelle' && el.dataset.field === 'prixAchatCible'){
+      let focusValue = el.value;
+      el.addEventListener('focus', () => { focusValue = el.value; });
+      el.addEventListener('blur', () => {
+        if(el.value === focusValue) return;
+        const c = getActive();
+        if(c) logDecisionEvent(c, `Prix d'achat cible : ${focusValue || '—'} → ${el.value || '—'} ${c.currency}`);
+      });
+    }
   });
 
   main.querySelectorAll('[data-pie-idx]').forEach(el => {
