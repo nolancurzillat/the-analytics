@@ -289,14 +289,23 @@ svg{display:block;}
   display:flex; align-items:center; justify-content:center;
 }
 .theme-btn:hover{ background:rgba(255,255,255,.08); color:#fff; }
+/* Case de recherche du topbar, à côté du compte/thème (2026-10-01, demande de Nolan : "je veux qu'elle soit en haut
+   où il y a la loupe") : un vrai champ avec son placeholder sur desktop, qui redevient une icône seule en dessous de
+   1100px pour ne pas écraser .topbar-nav (déjà serré, voir plus haut dans ce fichier). */
 .search-btn{
-  flex:0 0 auto;
-  width:34px; height:34px; border-radius:9px;
+  flex:0 1 240px; min-width:0;
+  display:flex; align-items:center; gap:10px;
+  height:34px; padding:0 13px; border-radius:9px;
   border:1px solid rgba(255,255,255,.14);
-  background:transparent; color:#c6d1e6; cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
+  background:transparent; color:#c6d1e6; cursor:pointer; font:inherit;
 }
 .search-btn:hover{ background:rgba(255,255,255,.08); color:#fff; }
+.search-btn svg{ flex:0 0 auto; }
+.search-btn-label{ font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+@media (max-width:1100px){
+  .search-btn{ flex:0 0 34px; width:34px; padding:0; justify-content:center; }
+  .search-btn-label{ display:none; }
+}
 
 .content{ margin-left:var(--side-w); min-width:0; }
 /* Barre du haut, toujours visible (2026-09-29, demande de Nolan : compte/synchronisation et mode sombre passent du bas de la barre latérale à cet endroit, en haut à droite du contenu) */
@@ -414,14 +423,6 @@ main{ display:block; }
 }
 .hero h1 em{ font-style:normal; color:#8fb1ff; }
 .hero-sub{ font-size:17px; line-height:1.65; color:#b8c5de; max-width:580px; margin:0; }
-.hero-search{
-  display:flex; align-items:center; gap:12px; width:100%; max-width:460px; margin-top:24px;
-  padding:14px 18px; border-radius:12px; border:1px solid rgba(255,255,255,.18);
-  background:rgba(255,255,255,.06); color:rgba(255,255,255,.6); cursor:pointer; font:inherit; font-size:15px;
-  text-align:left;
-}
-.hero-search:hover{ background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.3); color:rgba(255,255,255,.8); }
-.hero-search svg{ flex:0 0 auto; }
 .hero-cta{ display:flex; gap:12px; flex-wrap:wrap; margin-top:32px; }
 .hero-login{ margin-top:16px; font-size:14px; color:rgba(255,255,255,.72); }
 .hero-login .link-btn{ color:#fff; font-weight:600; }
@@ -1890,7 +1891,10 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
       <button type="button" class="main-nav-item" id="navLearn" aria-label="Apprentissage"><span class="mn-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 21.5V5.5"/><path d="M9 8h7M9 12h5"/></svg></span><span>Apprentissage</span></button>
     </div>
     <div class="topbar-actions">
-      <button type="button" class="search-btn" id="globalSearchBtn" title="Rechercher une entreprise" aria-label="Rechercher une entreprise"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>
+      <button type="button" class="search-btn" id="globalSearchBtn" title="Rechercher une entreprise" aria-label="Rechercher une entreprise">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <span class="search-btn-label">Rechercher une entreprise, un ticker…</span>
+      </button>
       <button type="button" class="acct-btn" id="accountBtn" aria-label="Compte et synchronisation"></button>
       <button class="theme-btn" id="themeBtn" title="Changer de thème" aria-label="Changer de thème"></button>
     </div>
@@ -3276,28 +3280,55 @@ function matchKnownCountry(label){
   const target = normName(label);
   return COUNTRIES_DEVELOPED.concat(COUNTRIES_OTHER).find(n => normName(n) === target) || '';
 }
+// Recherche directe par ticker (2026-10-01, demande de Nolan : "si j'écris MU il ne trouve pas Micron Technology,
+// ni COKE, ni AVGO") : wbsearchentities ne cherche que des libellés/alias ("Micron Technology"), jamais la VALEUR
+// d'une propriété ("MU") — le ticker est un qualificatif de la cotation (P414/P249), invisible à une recherche de
+// texte classique. Seule l'API SPARQL (query.wikidata.org, service public, CORS ouvert) sait interroger une valeur
+// de propriété directement. `?item wdt:P249 "MU"` couvre un ticker posé en statement de premier niveau (rare) ;
+// `?item p:P414 ?stmt. ?stmt pq:P249 "MU"` couvre le cas courant, un ticker qualifiant une cotation précise (vu pour
+// NVDA/MU/AVGO/COKE en testant en direct). Lancée EN PARALLÈLE de la recherche par nom (Promise.all), jamais à la
+// place : qu'on tape un nom ou un ticker, les deux pistes sont tentées sans ralentir l'une pour l'autre.
+async function searchByTickerIds(query){
+  const tk = query.trim().toUpperCase();
+  if(!/^[A-Z][A-Z0-9.]{0,5}$/.test(tk)) return [];
+  const sparql = `SELECT ?item WHERE { { ?item wdt:P249 "${tk}". } UNION { ?item p:P414 ?stmt. ?stmt pq:P249 "${tk}". } } LIMIT 5`;
+  try{
+    const r = await fetch('https://query.wikidata.org/sparql?format=json&query=' + encodeURIComponent(sparql), { headers: { Accept: 'application/sparql-results+json' } });
+    if(!r.ok) return [];
+    const j = await r.json();
+    return ((j.results && j.results.bindings) || []).map(b => b.item.value.split('/').pop());
+  }catch(err){ return []; }
+}
 async function searchCompanies(query){
   const seq = ++companySearchSeq;
   const q = String(query || '').trim();
   if(q.length < 2) return { seq, results: [] };
-  let s, e;
+  let e;
   try{
     // limit:20 (au lieu de 8) : avec le filtre "ticker $/€ obligatoire" du 2026-10-01, une recherche courte comme
     // "Ama" ou "Mc" a souvent ses vraies entreprises (Amazon, McDonald's) classées après des homonymes/lieux/personnes
     // par le classement générique de Wikidata ; sans une marge plus large avant filtrage, elles disparaissaient des
     // suggestions même si elles existent bien (demande de Nolan : "si on écrit que le début ... il trouve quand même").
-    s = await wdJson({ action:'wbsearchentities', search:q, language:'fr', uselang:'fr', type:'item', limit:'20' });
-    const found = s.search || [];
-    if(!found.length) return { seq, results: [] };
-    e = await wdJson({ action:'wbgetentities', ids:found.map(x => x.id).join('|'), props:'claims|descriptions', languages:'fr|en' });
+    const [s, tickerIds] = await Promise.all([
+      wdJson({ action:'wbsearchentities', search:q, language:'fr', uselang:'fr', type:'item', limit:'20' }),
+      searchByTickerIds(q),
+    ]);
+    const nameIds = (s.search || []).map(x => x.id);
+    const ids = nameIds.concat(tickerIds.filter(id => nameIds.indexOf(id) < 0));
+    if(!ids.length) return { seq, results: [] };
+    // props inclut labels : un candidat trouvé par ticker n'a pas de .label tout prêt (contrairement à un résultat de
+    // wbsearchentities), il faut le lire sur l'entité elle-même, pour les deux pistes uniformément.
+    e = await wdJson({ action:'wbgetentities', ids:ids.join('|'), props:'claims|descriptions|labels', languages:'fr|en' });
     const qn = normName(q);
-    const cands = found.map((f, idx) => {
-      const en = e.entities && e.entities[f.id];
+    const qTicker = q.toUpperCase();
+    const cands = ids.map((id, idx) => {
+      const en = e.entities && e.entities[id];
       if(!en) return null;
       const cl = en.claims || {};
       const vals = p => (cl[p] || []).map(x => x.mainsnak && x.mainsnak.datavalue && x.mainsnak.datavalue.value).filter(v => typeof v === 'string');
       const entId = p => { const v = (cl[p] || []).map(x => x.mainsnak && x.mainsnak.datavalue && x.mainsnak.datavalue.value); const first = v.find(x => x && typeof x === 'object' && x.id); return first ? first.id : ''; };
       const desc = ((en.descriptions && (en.descriptions.fr || en.descriptions.en)) || {}).value || '';
+      const name = ((en.labels && (en.labels.fr || en.labels.en)) || {}).value || q;
       const isCompany = COMPANY_DESC_RE.test(desc);
       // Ticker préféré en dollar, sinon en euro, sinon vide (jamais une bourse hors zone $/€, voir WD_USD_EXCHANGES ci-dessus).
       const tickerPref = (() => {
@@ -3317,8 +3348,8 @@ async function searchCompanies(query){
       // garantit à la fois que c'est une action réelle ET qu'elle est utilisable avec le prix automatique de l'app.
       if(!tickerPref.ticker) return null;
       const icon = vals('P8972')[0], logo = vals('P154')[0], site = vals('P856')[0];
-      const name = f.label || (f.match && f.match.text) || q;
-      const sc = (isCompany ? 2 : 0) + (normName(name) === qn ? 3 : 0);
+      // Bonus de classement quand le texte tapé est exactement le ticker trouvé (recherche par ticker explicite).
+      const sc = (isCompany ? 2 : 0) + (normName(name) === qn ? 3 : 0) + (tickerPref.ticker.toUpperCase() === qTicker ? 5 : 0);
       const logoUrl = icon ? commonsUrl(icon, 80) : (logo ? commonsUrl(logo, 80) : (site ? ('https://www.google.com/s2/favicons?domain=' + encodeURIComponent(domainOf(site)) + '&sz=64') : ''));
       return { name, desc, ticker: tickerPref.ticker.toUpperCase(), exchange: tickerPref.exchange, logoUrl, countryId: entId('P17'), sc, idx };
     }).filter(Boolean);
@@ -8769,10 +8800,6 @@ function renderHomeView(){
           <div class="eyebrow">Analyse fondamentale · Value &amp; Quality</div>
           <h1>Analysez les entreprises comme un <em>investisseur professionnel</em>.</h1>
           <p class="hero-sub">The Analytics est l'espace de travail qui structure votre recherche : qualité de l'activité, rentabilité, solidité financière, croissance et valorisation. Vous comprenez mieux chaque entreprise, et vous décidez avec méthode.</p>
-          <button type="button" class="hero-search" data-open-global-search aria-label="Rechercher une entreprise">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-            <span>Rechercher une entreprise, un ticker…</span>
-          </button>
           <div class="hero-cta">
             ${state.companies.length
               ? `<button class="btn btn-primary" data-go-space>Ouvrir mon espace</button>
@@ -9614,11 +9641,6 @@ document.getElementById('companySearchResults').addEventListener('click', e => {
   if(r) pickCompanySearchResult(r);
 });
 document.getElementById('globalSearchBtn').addEventListener('click', openGlobalSearch);
-// Champ de recherche de l'accueil (2026-10-01, demande de Nolan) : écouteur délégué global, pas posé dans
-// renderHomeView, qui redessine #main à chaque appel et perdrait un écouteur direct.
-document.addEventListener('click', e => {
-  if(e.target.closest('[data-open-global-search]')) openGlobalSearch();
-});
 document.getElementById('globalSearchCancel').addEventListener('click', closeGlobalSearch);
 document.getElementById('globalSearchModal').addEventListener('click', e => {
   if(e.target.id === 'globalSearchModal') closeGlobalSearch();
