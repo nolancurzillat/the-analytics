@@ -791,6 +791,10 @@ input.company-name:focus{ outline:none; border-bottom-color:var(--blue); }
 .section-body > .add-field-btn{ grid-column:1 / -1; justify-self:start; margin-top:0; }
 /* Historique de thèse et journal de décisions (2026-10-02, demande de Nolan), section Décision uniquement : bloc à
    part sous la grille de champs, pas un champ de plus dans .section-body. */
+.thesis-actions{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; margin-top:8px; }
+.thesis-change-btn{ border:1px solid var(--border-strong); background:var(--paper-line); color:var(--ink); font:inherit; font-size:12.5px; font-weight:600; padding:5px 12px; border-radius:99px; cursor:pointer; }
+.thesis-change-btn:hover{ border-color:var(--sec-c); color:var(--sec-c); }
+.thesis-actions span{ font-size:12px; color:var(--ink-soft); line-height:1.45; flex:1 1 220px; }
 .history-block{ border-top:1px solid var(--border); padding:24px 28px 28px 28px; }
 .history-title{ font-size:12.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--sec-c); margin-bottom:16px; }
 .history-grid{ display:grid; grid-template-columns:1fr 1fr; gap:24px; }
@@ -3225,7 +3229,7 @@ function migrateCompany(c){
     c._richSanitized = true;
   }
   // Journal de thèse et journal de décisions (2026-10-02, demande de Nolan) : tableaux vides par défaut, remplis au fil
-  // des modifications (snapshotThesis, logDecisionEvent). Absents des analyses créées avant ce changement.
+  // des actions (archiveThesisAndClear, logDecisionEvent). Absents des analyses créées avant ce changement.
   if(!Array.isArray(c.thesisHistory)) c.thesisHistory = [];
   if(!Array.isArray(c.decisionLog)) c.decisionLog = [];
   return c;
@@ -3676,19 +3680,41 @@ function goSpace(){
 function richToPlain(html){
   return String(html || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
 }
-// Une entrée par JOUR (mise à jour tant qu'on retouche la thèse le même jour, nouvelle entrée le lendemain) plutôt
-// qu'à chaque frappe : un journal se relit par date ("ce que je pensais en mars 2026"), pas comme un historique Git
-// ligne à ligne. Appelée au blur du champ (voir bindFieldEvents), jamais sur l'évènement 'input' qui sert déjà à
-// l'enregistrement normal du champ.
-function snapshotThesis(c){
+// « Changement de thèse » (2026-10-02, demande de Nolan, remplace l'ancien instantané automatique au blur) : la
+// thèse n'est archivée QUE sur action volontaire. Modifier la thèse sans passer par ce bouton (corriger une faute,
+// préciser une phrase) ne crée aucune entrée : c'est la même thèse, retouchée. Le bouton archive la thèse actuelle
+// dans thesisHistory puis vide la case pour en écrire une nouvelle.
+function archiveThesisAndClear(){
+  const c = getActive();
   if(!c) return;
-  const html = (c.fields.personnelle && c.fields.personnelle.these) || '';
-  if(!richToPlain(html)) return;
+  const html = c.fields.personnelle.these || '';
+  if(!richToPlain(html)){ showToast("Aucune thèse à archiver : la case est déjà vide."); return; }
   if(!Array.isArray(c.thesisHistory)) c.thesisHistory = [];
-  const today = new Date().toISOString().slice(0, 10);
-  const last = c.thesisHistory[c.thesisHistory.length - 1];
-  if(last && last.date === today) last.html = html;
-  else if(!last || last.html !== html) c.thesisHistory.push({ date: today, html });
+  const now = new Date();
+  c.thesisHistory.push({ date: journalLocalDay(now), at: now.toISOString(), html });
+  c.fields.personnelle.these = '';
+  touchUpdated(c);
+  saveState();
+  render();
+  const el = document.querySelector('[data-section="personnelle"][data-field="these"]');
+  if(el) el.focus();
+  showToast("Ancienne thèse archivée dans le journal de bord. Vous pouvez en écrire une nouvelle.");
+}
+// Prix d'achat cible : journalisé au commit, pas à chaque frappe. Le blur du champ commite tout de suite ; la
+// temporisation de 4 s n'est qu'un filet de sécurité si le blur ne vient jamais (champ retiré de la page en cours de
+// frappe), assez longue pour ne pas créer de lignes parasites ("— → 1" puis "1 → 120") pendant une saisie normale.
+const prixCibleBase = {}, prixCibleTimers = {};
+function commitPrixCible(id){
+  clearTimeout(prixCibleTimers[id]);
+  if(!(id in prixCibleBase)) return;
+  const from = prixCibleBase[id];
+  delete prixCibleBase[id];
+  const c = state.companies.find(x => x.id === id);
+  if(!c) return;
+  const to = String(c.fields.personnelle.prixAchatCible || '');
+  if(String(from) === to) return;
+  logDecisionEvent(c, `Prix d'achat cible : ${from || '—'} → ${to || '—'} ${c.currency}`);
+  saveState();
 }
 // Journal de décisions : une ligne horodatée à chaque changement RÉELLEMENT COMMIS (pas à chaque frappe) de
 // conviction, décision personnelle, prix d'achat cible ou ouverture/clôture de position. 200 entrées max par
@@ -3709,14 +3735,14 @@ function buildThesisDecisionHistory(c){
   if(!thesisEntries.length && !decisionEntries.length) return '';
   const thesisHtml = thesisEntries.length
     ? thesisEntries.map(e => `<details class="hist-thesis"><summary>${formatDateFr(e.date)}</summary><div class="hist-thesis-body">${sanitizeRichHtml(e.html)}</div></details>`).join('')
-    : `<div class="hist-empty">Rien pour l'instant : la thèse se journalise automatiquement dès que vous la modifiez.</div>`;
+    : `<div class="hist-empty">Rien pour l'instant : le bouton « Changement de thèse » archive la thèse actuelle ici.</div>`;
   const decisionHtml = decisionEntries.length
     ? decisionEntries.map(e => `<div class="hist-decision"><span class="hist-decision-date">${formatDateTimeFr(e.date)}</span><span class="hist-decision-text">${escapeHtml(e.text)}</span></div>`).join('')
     : `<div class="hist-empty">Rien pour l'instant : conviction, décision, prix cible et position se journalisent dès que vous les modifiez.</div>`;
   return `<div class="history-block">
     <div class="history-title">Historique</div>
     <div class="history-grid">
-      <div class="hist-col"><div class="hist-col-t">Thèse au fil du temps</div><div class="hist-list">${thesisHtml}</div></div>
+      <div class="hist-col"><div class="hist-col-t">Anciennes thèses (archivées)</div><div class="hist-list">${thesisHtml}</div></div>
       <div class="hist-col"><div class="hist-col-t">Journal de décisions</div><div class="hist-list">${decisionHtml}</div></div>
     </div>
   </div>`;
@@ -3734,6 +3760,12 @@ function updateField(sectionKey, fieldKey, value, fieldType){
   c.fields[sectionKey][fieldKey] = value;
   if(sectionKey === 'personnelle' && fieldKey === 'decision' && prevValue !== value){
     logDecisionEvent(c, value ? `Décision : ${value}` : 'Décision retirée');
+  }
+  if(sectionKey === 'personnelle' && fieldKey === 'prixAchatCible'){
+    if(!(c.id in prixCibleBase)) prixCibleBase[c.id] = String(prevValue || '');
+    clearTimeout(prixCibleTimers[c.id]);
+    const cid = c.id;
+    prixCibleTimers[cid] = setTimeout(() => commitPrixCible(cid), 4000);
   }
   touchUpdated(c);
   saveState();
@@ -7135,7 +7167,7 @@ function ageText(iso){
 function buildCapitalCard(){
   const cs = state.companies;
   if(!cs.length) return '';
-  const nThese = cs.filter(c => richToPlain(c.fields.personnelle && c.fields.personnelle.these)).length;
+  const nThese = cs.reduce((s, c) => s + ((c.thesisHistory && c.thesisHistory.length) || 0) + (richToPlain(c.fields.personnelle && c.fields.personnelle.these) ? 1 : 0), 0);
   const nDecisions = cs.reduce((s, c) => s + ((c.decisionLog && c.decisionLog.length) || 0), 0);
   const firstDate = cs.map(c => c.createdAt).filter(Boolean).sort()[0];
   const since = firstDate ? ageText(firstDate) : null;
@@ -7554,8 +7586,8 @@ function journalDayLabel(day){
 function journalEntries(){
   const out = [];
   state.companies.forEach(c => {
-    (c.thesisHistory || []).forEach((e, i, arr) => {
-      out.push({ kind:'thesis', c, idx:i, day:e.date, sort:e.date + 'T12:00:00', html:e.html, prevHtml: i ? arr[i - 1].html : null });
+    (c.thesisHistory || []).forEach((e, i) => {
+      out.push({ kind:'thesis', c, idx:i, day:e.date, sort:e.at || (e.date + 'T12:00:00'), at:e.at || null, html:e.html });
     });
     (c.decisionLog || []).forEach((e, i) => {
       const d = new Date(e.date);
@@ -7573,14 +7605,11 @@ function journalItemHtml(en){
   if(en.kind === 'thesis'){
     const plain = richToPlain(en.html);
     const words = plain ? plain.split(' ').length : 0;
-    let meta = 'Première version';
-    if(en.prevHtml !== null){
-      const diff = words - (richToPlain(en.prevHtml).split(' ').filter(Boolean).length);
-      meta = `Thèse réécrite · ${words} mots (${diff >= 0 ? '+' : ''}${diff})`;
-    }else meta += ` · ${words} mots`;
+    const meta = `Thèse archivée · ${words} mot${words > 1 ? 's' : ''}`;
     const excerpt = plain.length > 170 ? plain.slice(0, 170).trim() + '…' : plain;
     main = `<div class="jr-meta">${escapeHtml(meta)}</div>
       <details class="jr-thesis"><summary>${escapeHtml(excerpt)}</summary><div class="jr-thesis-full">${sanitizeRichHtml(en.html)}</div></details>`;
+    if(en.at) time = `<span class="jr-time">${new Date(en.at).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' })}</span>`;
   }else{
     main = `<div class="jr-text">${escapeHtml(en.text)}</div>`;
     const t = new Date(en.date);
@@ -7604,7 +7633,7 @@ function journalFeedHtml(){
   else if(journalType === 'decision') list = list.filter(e => e.kind !== 'thesis');
   if(journalCompany) list = list.filter(e => e.c.id === journalCompany);
   if(!total){
-    return `<div class="s-empty jr-empty">Le journal se remplit tout seul, sans rien à faire de plus. Il garde une trace datée dès que vous réécrivez une thèse d'investissement, changez une conviction, une décision, un prix d'achat cible, ou ouvrez et clôturez une position. Au fil des mois, vous pourrez relire ici comment votre regard sur chaque entreprise a évolué.</div>`;
+    return `<div class="s-empty jr-empty">Le journal se remplit tout seul, sans rien à faire de plus. Il garde une trace datée dès que vous changez une conviction, une décision, un prix d'achat cible, ouvrez ou clôturez une position, ou archivez une thèse avec le bouton « Changement de thèse » (section Décision). Au fil des mois, vous pourrez relire ici comment votre regard sur chaque entreprise a évolué.</div>`;
   }
   if(!list.length) return `<div class="s-empty jr-empty">Aucune entrée pour ce filtre.</div>`;
   const shown = list.slice(0, journalLimit);
@@ -9700,9 +9729,12 @@ function render(){
         return;
       }
 
+      const thesisBtn = field.key === 'these' && section.key === 'personnelle'
+        ? `<div class="thesis-actions"><button type="button" class="thesis-change-btn" id="thesisChangeBtn">&#10003; Changement de thèse</button><span>Archive la thèse actuelle dans le journal de bord et vide la case pour en écrire une nouvelle. Une simple retouche, sans ce bouton, n'archive rien.</span></div>`
+        : '';
       html += `<div class="field-row">
         <div class="field-label" data-tooltip="${fieldDescTooltip(field.key)}">${field.label}</div>
-        <div class="field-value">${fieldInput(section.key, field, value)}</div>
+        <div class="field-value">${fieldInput(section.key, field, value)}${thesisBtn}</div>
       </div>`;
     };
     // `group` insère un sous-titre pleine largeur, `span` (3, 4, 6, 12 sur 12 colonnes) règle la largeur du champ
@@ -9749,17 +9781,14 @@ function render(){
     b.addEventListener('click', () => setCompanyCurrency(b.dataset.currency));
   });
   bindSectionNav();
+  const thesisChangeBtn = document.getElementById('thesisChangeBtn');
+  if(thesisChangeBtn) thesisChangeBtn.addEventListener('click', archiveThesisAndClear);
 
   main.querySelectorAll('[data-section][data-field]').forEach(el => {
     if(el.dataset.type === 'richtext'){
       el.addEventListener('input', () => {
         updateField(el.dataset.section, el.dataset.field, el.innerHTML, 'richtext');
       });
-      // Journal de thèse (2026-10-02) : un instantané par jour au moment où on QUITTE le champ, jamais à chaque
-      // frappe (déjà gérée ci-dessus pour l'enregistrement normal).
-      if(el.dataset.section === 'personnelle' && el.dataset.field === 'these'){
-        el.addEventListener('blur', () => snapshotThesis(getActive()));
-      }
       return;
     }
     if(el.tagName === 'TEXTAREA') autoGrow(el);
@@ -9774,17 +9803,10 @@ function render(){
       if(el.tagName === 'TEXTAREA') autoGrow(el);
       if(el.tagName === 'INPUT' && el.hasAttribute('size')) el.size = Math.max(e.target.value.length, 2) + 1;
     });
-    // Journal de décisions (2026-10-02) : le prix d'achat cible se tape caractère par caractère, donc on compare la
-    // valeur au moment du focus à celle au moment du blur plutôt que de journaliser à chaque frappe (comme pour la
-    // thèse ci-dessus, mais ici il faut comparer deux valeurs puisqu'il n'y a pas de notion de "jour" pertinente).
+    // Journal de décisions : le prix d'achat cible se tape caractère par caractère, donc la valeur d'avant la saisie
+    // est mémorisée par updateField (prixCibleBase) et la ligne n'est écrite qu'au blur (ou après 4 s sans frappe).
     if(el.dataset.section === 'personnelle' && el.dataset.field === 'prixAchatCible'){
-      let focusValue = el.value;
-      el.addEventListener('focus', () => { focusValue = el.value; });
-      el.addEventListener('blur', () => {
-        if(el.value === focusValue) return;
-        const c = getActive();
-        if(c) logDecisionEvent(c, `Prix d'achat cible : ${focusValue || '—'} → ${el.value || '—'} ${c.currency}`);
-      });
+      el.addEventListener('blur', () => { const c = getActive(); if(c) commitPrixCible(c.id); });
     }
   });
 
