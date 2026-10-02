@@ -724,6 +724,8 @@ input.company-name:focus{ outline:none; border-bottom-color:var(--blue); }
 .alerts-block{ margin:22px 28px 6px 28px; padding:18px 20px; border:1px solid var(--border); border-radius:14px; background:var(--paper-line); }
 .alt-title{ font-family:var(--font-serif); font-size:19px; font-weight:700; }
 .alt-sub{ font-size:12.5px; color:var(--ink-soft); margin-top:3px; }
+.pref-check{ display:flex; align-items:flex-start; gap:10px; font-size:14px; cursor:pointer; line-height:1.5; }
+.pref-check input{ width:18px; height:18px; flex:0 0 auto; margin:2px 0 0 0; accent-color:var(--accent); }
 .alt-list{ display:flex; flex-direction:column; margin-top:12px; }
 .alt-row{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; padding:10px 2px; border-bottom:1px solid var(--border); }
 .alt-row.is-active{ background:color-mix(in srgb, var(--accent) 8%, transparent); border-radius:10px; padding-left:10px; padding-right:10px; }
@@ -2934,6 +2936,9 @@ function mergeRemote(remote){
     changed = true;
     ensurePrices();
   }
+  // Alertes par e-mail : réglage adopté depuis le serveur seulement si CET appareil ne l'a jamais défini, sinon un second appareil (qui pousse
+  // ses propres réglages) le remettrait à « désactivé » sans que l'utilisateur l'ait voulu.
+  if(typeof state.settings.alertEmails !== 'boolean' && typeof rs.alertEmails === 'boolean'){ state.settings.alertEmails = rs.alertEmails; changed = true; }
   if(Array.isArray(rs.learnRead)){
     const merged = Array.from(new Set((state.settings.learnRead || []).concat(rs.learnRead.filter(x => typeof x === 'string').slice(0, 60))));
     if(merged.length !== (state.settings.learnRead || []).length){ state.settings.learnRead = merged; changed = true; }
@@ -7034,7 +7039,7 @@ function buildAlertsBlock(c){
   const rows = list.length ? list.map(a => alertRowHtml(c, a)).join('') : `<div class="alt-empty">Aucune alerte pour le moment. Choisissez une condition ci-dessous : un signalement apparaîtra à côté de l'entreprise quand elle sera remplie.</div>`;
   const opts = Object.keys(ALERT_TYPES).map(k => `<option value="${k}">${escapeHtml(ALERT_TYPES[k].label)}</option>`).join('');
   return `<div class="alerts-block" id="alertsBlock">
-    <div class="alt-head"><div class="alt-title">Alertes sur cette analyse</div><div class="alt-sub">Rappels dans l'application, calculés avec vos propres chiffres et le prix automatique : jamais un conseil d'achat ou de vente.</div></div>
+    <div class="alt-head"><div class="alt-title">Alertes sur cette analyse</div><div class="alt-sub">Calculées avec vos propres chiffres et le prix automatique : jamais un conseil d'achat ou de vente. ${(cloud.session && state.settings.alertEmails === true) ? 'E-mail activé : vous êtes aussi prévenu par e-mail pour les alertes liées au cours (toutes les 20 minutes environ en séance).' : `Dans l'application. <button type="button" class="alt-link" data-alt-prefs>Recevoir aussi un e-mail</button>`}</div></div>
     <div class="alt-list">${rows}</div>
     ${list.length >= ALERT_MAX ? `<div class="alt-empty">Maximum ${ALERT_MAX} alertes par analyse : supprimez-en une pour en ajouter.</div>` : `<div class="alt-form"><select id="altType" aria-label="Condition">${opts}</select><span class="alt-val" id="altValWrap"><input type="text" id="altValue" inputmode="decimal" placeholder="Valeur" aria-label="Valeur"><span class="alt-unit" id="altUnit">${escapeHtml(c.currency)}</span></span><button type="button" class="btn btn-primary btn-sm" id="altAdd">Ajouter l'alerte</button></div><div class="alt-err" id="altErr" role="alert"></div>`}
   </div>`;
@@ -7078,6 +7083,10 @@ function bindAlertsBlock(){
     refreshAlertsBlock();
     alertToast(c, ev.fresh);
   });
+  root.querySelectorAll('[data-alt-prefs]').forEach(b => b.addEventListener('click', () => {
+    goSpace();
+    setTimeout(() => { const t = document.getElementById('prefEmailBlock'); if(t) t.scrollIntoView({ behavior:'smooth', block:'center' }); }, 120);
+  }));
   const find = id => (c.alerts || []).find(x => x.id === id);
   const commit = () => { touchUpdated(c); saveState(); refreshAlertsBlock(); };
   root.querySelectorAll('[data-alt-ack]').forEach(b => b.addEventListener('click', () => { const a = find(b.dataset.altAck); if(a){ a.ack = true; commit(); } }));
@@ -7979,6 +7988,13 @@ function buildPrefsCard(){
       <div class="pref-h">Avec un ticker renseigné (section Identité) et une clé API personnelle, "Prix actuel" se met à jour tout seul, sans ressaisie quotidienne. Compte gratuit sur twelvedata.com, clé à coller ici ; seul le ticker est envoyé. Le compte gratuit couvre les actions américaines (NASDAQ, NYSE) : privilégiez le dollar. Pour les bourses européennes, payantes chez eux, saisissez le prix à la main. L'app ne convertit jamais les devises.</div>
       <button class="btn btn-outline btn-sm" data-open-price-guide>Guide pas à pas pour obtenir ma clé</button>
     </div>
+    <div class="pref" id="prefEmailBlock">
+      <div class="pref-l">Alertes par e-mail</div>
+      ${cloud.session
+        ? `<label class="pref-check"><input type="checkbox" id="prefAlertEmails"${s.alertEmails === true ? ' checked' : ''}><span>M'envoyer un e-mail à <strong>${escapeHtml(cloud.session.email)}</strong> quand une alerte de cours se déclenche</span></label>
+           <div class="pref-h">Une fonction de notre serveur vérifie vos alertes environ toutes les 20 minutes pendant les heures de la Bourse américaine (jours ouvrés), avec votre clé Twelve Data, synchronisée avec votre compte. Seules les alertes liées au cours sont concernées (cours, prix cible, marge de sécurité, gain ou recul d'une position), pour des actions NASDAQ ou NYSE en dollars. ${s.twelveDataApiKey ? '' : '<strong>Il vous faut aussi une clé Twelve Data</strong> (voir ci-dessus). '}Un e-mail n'est envoyé qu'une fois par déclenchement. Jamais un conseil d'achat ou de vente.</div>`
+        : `<div class="pref-h">Recevez un e-mail quand une alerte de cours se déclenche, même application fermée. Il faut un compte en ligne, car la vérification se fait sur nos serveurs.</div><button class="btn btn-outline btn-sm" data-auth-open="login">Se connecter ou créer un compte</button>`}
+    </div>
     <div class="pref">
       <div class="pref-l">Visite guidée</div>
       <div class="pref-h">Un tour de 30 secondes pour retrouver où se trouvent les fonctions principales.</div>
@@ -8688,6 +8704,13 @@ function bindSpace(){
     }else{
       showToast('Clé API retirée.');
     }
+  });
+  const alertEmails = document.getElementById('prefAlertEmails');
+  if(alertEmails) alertEmails.addEventListener('change', e => {
+    state.settings.alertEmails = e.target.checked;
+    saveState();   // part avec la synchronisation : c'est la fonction serveur qui lit ce réglage
+    showToast(e.target.checked ? (state.settings.twelveDataApiKey ? "Alertes par e-mail activées." : "Alertes par e-mail activées : ajoutez aussi votre clé Twelve Data pour que le cours soit vérifié.") : 'Alertes par e-mail désactivées.');
+    if(e.target.checked && !state.settings.twelveDataApiKey) renderSpaceView();
   });
   const refresh = document.getElementById('prefRefreshLogos');
   if(refresh) refresh.addEventListener('click', () => {
@@ -9836,8 +9859,8 @@ const CONTACT_FORM_HTML = `<form id="contactForm" class="contact-form" novalidat
 
 // ---------- Informations légales : confidentialité, conditions, mentions légales ----------
 // Textes rédigés comme base de travail, à faire relire avant une ouverture large au public. Pas de `${` ni de guillemet oblique dans les textes.
-const LEGAL_VERSION = '2026-09-29';
-const LEGAL_DATE_TXT = '29 septembre 2026';
+const LEGAL_VERSION = '2026-10-02';
+const LEGAL_DATE_TXT = '2 octobre 2026';
 const LEGAL_PUBLISHER = 'Nolan Curzillat';
 const LEGAL_CONTACT = `<a href="mailto:the.analytics.app@gmail.com">the.analytics.app@gmail.com</a>`;
 const LEGAL_TABS = [
@@ -9858,7 +9881,8 @@ const LEGAL_CONTENT = {
       `<strong>Adresse e-mail et mot de passe</strong> (avec un compte) : pour créer et protéger votre compte. Le mot de passe est stocké sous forme chiffrée par notre prestataire d'authentification, nous ne le voyons jamais. Base légale : l'exécution du service que vous demandez.`,
       `<strong>Vos analyses et préférences</strong> (avec un compte) : contenu de vos fiches, prénom facultatif, devise par défaut, ordre de tri, progression dans l'apprentissage. Elles servent uniquement à la synchronisation entre vos appareils. Base légale : l'exécution du service.`,
       `<strong>Date et version de votre acceptation</strong> de ces règles, enregistrées à la création du compte, pour pouvoir prouver votre accord. Base légale : notre intérêt légitime à conserver cette preuve.`,
-      `<strong>Votre clé API Twelve Data</strong>, si vous en utilisez une : elle reste sur votre appareil et n'est jamais envoyée à nos serveurs.`,
+      `<strong>Votre clé API Twelve Data</strong>, si vous en utilisez une : elle est stockée sur votre appareil. Avec un compte, elle est aussi synchronisée avec vos analyses pour que vous n'ayez pas à la ressaisir sur chaque appareil.`,
+      `<strong>Alertes par e-mail</strong> (facultatif, avec un compte, si vous cochez la case dans les préférences) : une fonction de notre serveur lit vos alertes, vos tickers, vos prix cibles et vos positions, et utilise votre clé Twelve Data pour vérifier les cours environ toutes les 20 minutes pendant les heures de la Bourse américaine. Quand une alerte se déclenche, elle vous envoie un e-mail à l'adresse de votre compte. Un petit enregistrement indique quelles alertes ont déjà été envoyées, pour ne pas vous prévenir deux fois. Vous pouvez décocher la case à tout moment. Base légale : l'exécution du service que vous demandez.`,
     ]),
     LP(`Vos analyses contiennent ce que vous y écrivez librement (notes, thèses d'investissement, positions, prix d'achat). Ces informations peuvent révéler votre situation financière : ne saisissez en ligne que ce que vous acceptez d'y stocker. Vous pouvez à tout moment vous en passer en n'utilisant pas de compte. N'y indiquez aucune information sur d'autres personnes.`),
     LH(`Qui d'autre reçoit des données`),
@@ -9867,7 +9891,8 @@ const LEGAL_CONTENT = {
       `<strong>GitHub Pages</strong> (hébergement du site) : comme tout site web, reçoit votre adresse IP quand vous ouvrez l'application.`,
       `<strong>Google Fonts</strong> : les polices d'écriture sont chargées depuis Google, qui reçoit votre adresse IP.`,
       `<strong>Wikidata, Wikimedia, le service d'icônes de Google et Clearbit</strong> (logos des entreprises) : reçoivent uniquement le nom de l'entreprise analysée, pour retrouver son logo automatiquement.`,
-      `<strong>Twelve Data</strong> (prix actuels) : reçoit uniquement le ticker de l'action, si vous avez renseigné votre propre clé API.`,
+      `<strong>Twelve Data</strong> (prix actuels) : reçoit uniquement le ticker de l'action et votre clé API, si vous en avez renseigné une. Si vous activez les alertes par e-mail, ces requêtes sont aussi faites depuis notre serveur.`,
+      `<strong>Google (Gmail)</strong> : sert à envoyer les e-mails de l'application (confirmation de compte, réinitialisation du mot de passe, alertes). Reçoit votre adresse e-mail et le contenu du message.`,
       `<strong>Web3Forms</strong> (formulaire « Nous contacter ») : reçoit votre nom (si indiqué), votre adresse e-mail et le contenu de votre message, uniquement si vous utilisez ce formulaire, pour nous transmettre votre message par e-mail.`,
     ]),
     LP(`Hors Supabase, aucun de ces services ne reçoit le contenu de vos analyses. Certains prestataires sont des sociétés américaines : les éventuels transferts de données hors de l'Union européenne sont encadrés par les mécanismes prévus par le règlement européen (RGPD), comme les clauses contractuelles types.`),
