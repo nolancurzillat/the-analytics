@@ -1730,6 +1730,9 @@ tr:hover .ct-del-btn, .ct-del-btn:focus-visible{ opacity:1; }
 .jr-more{ display:block; margin:18px auto 0 auto; }
 .jr-empty{ margin-top:22px; }
 .cap-grid{ display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:16px; }
+.cap-grid.cap-grid-5{ grid-template-columns:repeat(5, minmax(0,1fr)); gap:12px; }
+@media (max-width:1180px){ .cap-grid.cap-grid-5{ grid-template-columns:repeat(6, minmax(0,1fr)); } .cap-grid-5 .cap-tile{ grid-column:span 2; } .cap-grid-5 .cap-tile:nth-child(n+4){ grid-column:span 3; } }
+@media (max-width:640px){ .cap-grid.cap-grid-5{ grid-template-columns:repeat(2, minmax(0,1fr)); } .cap-grid-5 .cap-tile, .cap-grid-5 .cap-tile:nth-child(n+4){ grid-column:auto; } .cap-grid-5 .cap-tile:last-child{ grid-column:1 / -1; } }
 .cap-tile{ padding:16px; background:var(--paper-line); border:1px solid var(--border); border-radius:12px; text-align:center; }
 .cap-v{ font-family:var(--font-serif); font-weight:700; font-size:28px; color:var(--accent); line-height:1.1; }
 .cap-l{ font-size:13px; color:var(--ink-soft); margin-top:6px; }
@@ -8112,11 +8115,12 @@ function renderReviewView(){
     </div><div class="space-actions"><button class="btn btn-outline" data-go-space>&larr; Mon espace</button><button class="btn btn-outline" id="rvPrint">Imprimer</button></div></div>
     <div class="jr-controls"><div class="jr-seg" role="group" aria-label="Année">${years.map(y => `<button type="button" data-rv-year="${y}" class="${y === year ? 'active' : ''}">${y}</button>`).join('')}</div></div>
     <section class="scard rv-letter">${reviewLetter(year, d).map(t => `<p>${escapeHtml(t)}</p>`).join('')}</section>
-    <section class="scard capital-card"><div class="cap-grid">
+    <section class="scard capital-card"><div class="cap-grid cap-grid-5">
       ${tile(d.created.length, d.created.length > 1 ? 'analyses créées' : 'analyse créée')}
       ${tile(d.theses, d.theses > 1 ? 'thèses archivées' : 'thèse archivée')}
       ${tile(d.events.length, d.events.length > 1 ? 'décisions journalisées' : 'décision journalisée')}
-      ${tile(d.posOpen + '/' + d.posClosed, 'positions ouvertes / clôturées')}
+      ${tile(d.posOpen, d.posOpen > 1 ? 'positions ouvertes' : 'position ouverte')}
+      ${tile(d.posClosed, d.posClosed > 1 ? 'positions clôturées' : 'position clôturée')}
     </div></section>
     <div class="rv-pos-grid">
       <section class="scard capital-card"><div class="scard-t">Positions ouvertes <span class="rv-count">${d.openedList.length}</span></div>${d.openedList.length ? `<div class="rv-lines">${openRows}</div>` : `<div class="s-empty">Aucune position ouverte.</div>`}</section>
