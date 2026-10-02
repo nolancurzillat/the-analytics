@@ -1578,6 +1578,19 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
 .rv-lines{ display:flex; flex-direction:column; margin-top:12px; }
 .rv-line{ display:flex; justify-content:space-between; gap:14px; padding:9px 2px; border-bottom:1px solid var(--border); font-size:14.5px; }
 .rv-line:last-child{ border-bottom:none; }
+/* Comparateur (2026-10-02) */
+.cmp-page{ max-width:1100px; }
+.cmp-wrap{ overflow-x:auto; margin-top:16px; background:var(--card); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); }
+.cmp-table{ width:100%; border-collapse:collapse; font-size:14px; min-width:520px; }
+.cmp-table th, .cmp-table td{ padding:10px 14px; text-align:left; border-bottom:1px solid var(--border); vertical-align:middle; }
+.cmp-table tbody th{ font-weight:600; color:var(--ink); width:26%; }
+.cmp-table thead th{ position:sticky; top:0; background:var(--card); }
+.cmp-co .jr-co{ display:flex; align-items:center; gap:8px; }
+.cmp-main td, .cmp-main th{ background:var(--paper-line); }
+.cmp-score{ font-family:var(--font-serif); font-size:26px; font-weight:700; }
+.cmp-axis th, .cmp-axis td{ background:color-mix(in srgb, var(--accent) 7%, var(--card)); border-top:2px solid var(--border-strong); }
+.cmp-best{ background:color-mix(in srgb, var(--green) 13%, transparent); font-weight:600; }
+.cmp-dot{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:8px; }
 .rv-name{ font-weight:600; }
 .rv-sub{ font-weight:400; color:var(--ink-soft); }
 .rv-val{ font-family:var(--font-mono); white-space:nowrap; }
@@ -6660,7 +6673,7 @@ function renderTabs(){
   const list = document.getElementById('tabs');
   list.innerHTML = '';
   document.getElementById('navHome').classList.toggle('active', currentView === 'home');
-  document.getElementById('navSpace').classList.toggle('active', currentView === 'space' || currentView === 'journal' || currentView === 'review');
+  document.getElementById('navSpace').classList.toggle('active', currentView === 'space' || currentView === 'journal' || currentView === 'review' || currentView === 'compare');
   document.getElementById('navPortfolio').classList.toggle('active', currentView === 'portfolio');
   document.getElementById('navLearn').classList.toggle('active', currentView === 'learn');
   document.getElementById('sideCount').textContent = state.companies.length ? String(state.companies.length) : '';
@@ -7583,7 +7596,7 @@ function renderSpaceView(){
         <h1 class="space-title"><span id="spaceHello">${greetingWord()}${name ? ', ' + escapeHtml(name) : ''}</span></h1>
         <p class="space-sub">${sub}${nameLink}</p>
       </div>
-      <div class="space-actions"><button class="btn btn-primary" data-new-analysis>+ Nouvelle analyse</button></div>
+      <div class="space-actions">${cs.length >= 2 ? '<button class="btn btn-outline" data-go-compare>Comparer</button>' : ''}<button class="btn btn-primary" data-new-analysis>+ Nouvelle analyse</button></div>
     </div>${buildBackupReminder()}`;
   if(!cs.length){
     html += `<section class="scard onboard">
@@ -7866,11 +7879,86 @@ function renderReviewView(){
   document.getElementById('rvPrint').addEventListener('click', () => window.print());
 }
 
+// ============================================================
+// COMPARATEUR (2026-10-02, point 6 de la liste de pistes) : 2 à 4 analyses côte à côte sur les mêmes indicateurs.
+// Réutilise computeRadarAxes (mêmes valeurs, mêmes barèmes de couleur que partout) : aucun nouveau calcul de score.
+// ============================================================
+let compareIds = [];
+const COMPARE_MAX = 4;
+function cmpPartText(p){
+  if(p.val === null) return '—';
+  if(p.key === 'buffett') return Math.round(p.val * BUFFETT_RULES.length / 100) + '/' + BUFFETT_RULES.length;
+  if(p.key === 'consensus') return WS_RECO[wsRecoIndex(p.val)].label;
+  return fmtNum(p.val, 2) + (SCORE_PART_UNITS[p.key] || '');
+}
+function goCompare(){
+  currentView = 'compare';
+  compareIds = compareIds.filter(id => state.companies.some(c => c.id === id));
+  if(compareIds.length < 2) compareIds = state.companies.slice(0, 2).map(c => c.id);
+  render();
+  window.scrollTo(0, 0);
+  closeMenu();
+}
+function compareTableHtml(){
+  const cs = compareIds.map(id => state.companies.find(c => c.id === id)).filter(Boolean);
+  if(cs.length < 2) return `<div class="s-empty">Choisissez au moins deux analyses ci-dessus pour les comparer.</div>`;
+  const infos = cs.map(c => computeScoreInfo(c));
+  const axesBy = cs.map((c, i) => infos[i].axes);
+  // La meilleure valeur d'une ligne (note la plus haute, au moins deux notes comparables) est mise en valeur.
+  const bestIdx = scores => { const v = scores.filter(s => s !== null && s !== undefined); if(v.length < 2) return -1; const m = Math.max(...v); return scores.indexOf(m); };
+  const row = (label, cells, best, cls) => `<tr class="${cls || ''}"><th scope="row">${label}</th>${cells.map((h, i) => `<td${i === best ? ' class="cmp-best"' : ''}>${h}</td>`).join('')}</tr>`;
+  const head = `<tr><th></th>${cs.map(c => `<th class="cmp-co"><button type="button" class="jr-co" data-cmp-open="${escapeHtml(c.id)}">${miniAv(c)}<span>${escapeHtml(c.name || 'Sans nom')}</span></button><div class="jr-meta">${escapeHtml((c.fields.identite || {}).ticker || '')}</div></th>`).join('')}</tr>`;
+  const globalScores = infos.map(x => x.score);
+  let body = row('Score global', infos.map(x => x.score === null ? '—' : `<span class="cmp-score" style="color:${scoreColor5(x.score)}">${Math.round(x.score)}</span><span class="jr-meta"> / 100${x.provisional ? ' · provisoire' : ''}</span>`), bestIdx(globalScores), 'cmp-main');
+  body += row('Décision', cs.map(c => decisionPill(c.fields.personnelle.decision || '')), -1);
+  const conv = cs.map(c => parseFloat(c.fields.personnelle.conviction) || 0);
+  body += row('Conviction', conv.map(v => v ? `<span style="color:var(--star)">&#9733;</span> ${fmtNum(v, 1)} / 5` : '—'), bestIdx(conv.map(v => v || null)));
+  body += row('Prix actuel', cs.map(c => c.fields.valorisation.prixActuel ? `${escapeHtml(String(c.fields.valorisation.prixActuel))} ${c.currency}` : '—'), -1);
+  body += row("Prix d'achat cible", cs.map(c => c.fields.personnelle.prixAchatCible ? `${escapeHtml(String(c.fields.personnelle.prixAchatCible))} ${c.currency}` : '—'), -1);
+  const ec = cs.map(c => computeEcart(c, 'valeurIntrinseque'));
+  body += row('Cours vs valeur intrinsèque', ec.map(e => e === null ? '—' : `<span style="color:${e < 0 ? 'var(--green)' : 'var(--red)'}">${e > 0 ? '+' : ''}${fmtNum(e, 1)} %</span>`), bestIdx(ec.map(e => e === null ? null : -e)));
+  SCORE_AXES.forEach((ax, ai) => {
+    const axisScores = axesBy.map(a => a[ai].score);
+    if(axisScores.every(s => s === null)) return;
+    body += row(`${escapeHtml(ax.label)}`, axisScores.map(s => s === null ? '—' : `<strong style="color:${scoreColor5(s)}">${Math.round(s)}</strong><span class="jr-meta"> / 100</span>`), bestIdx(axisScores), 'cmp-axis');
+    ax.parts.forEach((key, pi) => {
+      const parts = axesBy.map(a => a[ai].parts[pi]);
+      if(parts.every(p => p.val === null)) return;
+      body += row(`<span class="rv-sub">${escapeHtml(parts[0].label)}</span>`, parts.map(p => p.val === null ? '—' : `<span class="cmp-dot" style="background:${p.tier ? TIER_COLORS[p.tier] : 'var(--border-strong)'}"></span>${escapeHtml(cmpPartText(p))}`), bestIdx(parts.map(p => p.score)));
+    });
+  });
+  return `<div class="cmp-wrap"><table class="cmp-table"><thead>${head}</thead><tbody>${body}</tbody></table></div>
+    <div class="s-note">La case teintée marque la meilleure valeur de chaque ligne (si au moins deux analyses sont renseignées). Un indicateur vide n'est pas pénalisé ici : il est simplement ignoré, comme dans le score. Aucun conseil en investissement.</div>`;
+}
+function renderCompareView(){
+  const main = document.getElementById('main');
+  const chips = state.companies.map(c => `<button type="button" class="lr-chip${compareIds.indexOf(c.id) >= 0 ? ' on' : ''}" data-cmp-toggle="${escapeHtml(c.id)}">${escapeHtml(c.name || 'Sans nom')}</button>`).join('');
+  main.innerHTML = `<div class="wrap page space cmp-page">
+    <div class="space-head"><div>
+      <div class="kicker">Mon espace · Comparateur</div>
+      <h1 class="space-title">Comparer des entreprises</h1>
+      <p class="space-sub">Mettez ${COMPARE_MAX} analyses au maximum côte à côte, sur les mêmes indicateurs et les mêmes couleurs que dans vos fiches.</p>
+    </div><div class="space-actions"><button class="btn btn-outline" data-go-space>&larr; Mon espace</button></div></div>
+    <div class="pf-chips" style="margin:18px 0 6px 0"><span class="pf-chips-l">Analyses :</span>${chips}</div>
+    <div id="cmpBody">${compareTableHtml()}</div>
+  </div>`;
+  main.querySelectorAll('[data-go-space]').forEach(el => el.addEventListener('click', goSpace));
+  main.querySelectorAll('[data-cmp-toggle]').forEach(b => b.addEventListener('click', () => {
+    const id = b.dataset.cmpToggle, i = compareIds.indexOf(id);
+    if(i >= 0) compareIds.splice(i, 1);
+    else if(compareIds.length < COMPARE_MAX) compareIds.push(id);
+    else { showToast(`${COMPARE_MAX} analyses au maximum : retirez-en une d'abord.`); return; }
+    renderCompareView();
+  }));
+  main.querySelectorAll('[data-cmp-open]').forEach(b => b.addEventListener('click', () => selectCompany(b.dataset.cmpOpen)));
+}
+
 function bindSpace(){
   const main = document.getElementById('main');
   bindTableSortMenu();
   main.querySelectorAll('[data-go-journal]').forEach(el => el.addEventListener('click', goJournal));
   main.querySelectorAll('[data-go-review]').forEach(el => el.addEventListener('click', () => goReview()));
+  main.querySelectorAll('[data-go-compare]').forEach(el => el.addEventListener('click', goCompare));
   main.querySelectorAll('[data-rv-done]').forEach(el => el.addEventListener('click', () => {
     const c = state.companies.find(x => x.id === el.dataset.rvDone);
     if(!c) return;
@@ -9487,6 +9575,10 @@ function render(){
   }
   if(currentView === 'review'){
     renderReviewView();
+    return;
+  }
+  if(currentView === 'compare'){
+    renderCompareView();
     return;
   }
   const main = document.getElementById('main');
