@@ -1564,6 +1564,33 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
 /* Carte "Votre capital" (2026-10-02, demande de Nolan) : rend visible ce qui s'est déjà accumulé, pour que l'app se
    ressente comme un historique qui se construit, pas juste un outil de calcul. */
 .capital-card{ margin-top:20px; }
+.cap-link{ margin-top:16px; }
+/* Journal de bord (2026-10-02, demande de Nolan) : flux global des thèses réécrites et décisions, groupé par jour. */
+.jr-wrap{ max-width:900px; }
+.jr-controls{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:22px 0 4px 0; }
+.jr-seg{ display:inline-flex; border:1px solid var(--border); border-radius:10px; overflow:hidden; background:var(--card); }
+.jr-seg button{ border:none; background:transparent; color:var(--ink-soft); font:inherit; font-size:13.5px; font-weight:600; padding:8px 14px; cursor:pointer; }
+.jr-seg button.active{ background:var(--accent); color:#fff; }
+.jr-select{ border:1px solid var(--border); background:var(--card); color:var(--ink); font:inherit; font-size:13.5px; padding:8px 12px; border-radius:10px; max-width:100%; }
+.jr-day{ font-size:12.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); margin:26px 0 10px 2px; }
+.jr-item{ display:flex; gap:12px; align-items:flex-start; padding:13px 15px; background:var(--card); border:1px solid var(--border); border-radius:12px; margin-bottom:8px; }
+.jr-item .company-search-avatar{ margin-top:1px; }
+.jr-body{ flex:1; min-width:0; }
+.jr-top{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.jr-co{ border:none; background:none; padding:0; font:inherit; font-size:14.5px; font-weight:700; color:var(--ink); cursor:pointer; }
+.jr-co:hover{ color:var(--accent); text-decoration:underline; }
+.jr-chip{ font-size:11.5px; font-weight:700; padding:2px 9px; border-radius:99px; color:var(--c); background:color-mix(in srgb, var(--c) 14%, transparent); }
+.jr-time{ margin-left:auto; font-size:12px; color:var(--ink-soft); white-space:nowrap; }
+.jr-text{ margin-top:5px; font-size:14px; line-height:1.5; color:var(--ink); }
+.jr-meta{ font-size:12.5px; color:var(--ink-soft); }
+.jr-thesis{ margin-top:5px; }
+.jr-thesis summary{ cursor:pointer; list-style:none; font-size:14px; line-height:1.5; color:var(--ink); }
+.jr-thesis summary::-webkit-details-marker{ display:none; }
+.jr-thesis summary:after{ content:' Lire la version complète'; color:var(--accent); font-size:12.5px; font-weight:600; }
+.jr-thesis[open] summary:after{ content:' Réduire'; }
+.jr-thesis-full{ margin-top:8px; padding:10px 14px; border-left:3px solid var(--border-strong); background:var(--paper-line); border-radius:0 8px 8px 0; font-size:14px; line-height:1.6; }
+.jr-more{ display:block; margin:18px auto 0 auto; }
+.jr-empty{ margin-top:22px; }
 .cap-grid{ display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:16px; }
 .cap-tile{ padding:16px; background:var(--paper-line); border:1px solid var(--border); border-radius:12px; text-align:center; }
 .cap-v{ font-family:var(--font-serif); font-weight:700; font-size:28px; color:var(--accent); line-height:1.1; }
@@ -6574,7 +6601,7 @@ function renderTabs(){
   const list = document.getElementById('tabs');
   list.innerHTML = '';
   document.getElementById('navHome').classList.toggle('active', currentView === 'home');
-  document.getElementById('navSpace').classList.toggle('active', currentView === 'space');
+  document.getElementById('navSpace').classList.toggle('active', currentView === 'space' || currentView === 'journal');
   document.getElementById('navPortfolio').classList.toggle('active', currentView === 'portfolio');
   document.getElementById('navLearn').classList.toggle('active', currentView === 'learn');
   document.getElementById('sideCount').textContent = state.companies.length ? String(state.companies.length) : '';
@@ -7116,6 +7143,7 @@ function buildCapitalCard(){
       ${tile(nDecisions, nDecisions > 1 ? 'décisions journalisées' : 'décision journalisée')}
       ${tile(since || '—', since ? "d'historique" : 'historique')}
     </div>
+    <button type="button" class="btn btn-outline cap-link" data-go-journal>Ouvrir le journal de bord &rarr;</button>
   </section>`;
 }
 function buildSpaceKpis(){
@@ -7488,9 +7516,148 @@ function renderSpaceView(){
   main.innerHTML = html;
   bindSpace();
 }
+// ============================================================
+// JOURNAL DE BORD (2026-10-02, demande de Nolan) : page qui rassemble, pour TOUTES les analyses, les thèses réécrites
+// (c.thesisHistory) et les décisions (c.decisionLog) dans un seul fil daté, pour voir l'évolution du regard de
+// l'investisseur. Vue dérivée, aucune donnée propre : tout vient des deux journaux déjà tenus par analyse.
+// ============================================================
+let journalType = 'all', journalCompany = '', journalLimit = 40;
+const JOURNAL_KINDS = {
+  thesis:     { label:'Thèse',      color:'#a3227a' },
+  conviction: { label:'Conviction', color:'#d99a06' },
+  decision:   { label:'Décision',   color:'#2a5bea' },
+  target:     { label:'Prix cible', color:'#06b6d4' },
+  position:   { label:'Position',   color:'#2f9e6b' },
+};
+function journalDecisionKind(text){
+  if(/^Conviction/i.test(text)) return 'conviction';
+  if(/^Prix/i.test(text)) return 'target';
+  if(/^Position/i.test(text)) return 'position';
+  return 'decision';
+}
+function journalLocalDay(d){
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+function journalDayLabel(day){
+  const now = new Date();
+  const y = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  if(day === journalLocalDay(now)) return "Aujourd'hui";
+  if(day === journalLocalDay(y)) return 'Hier';
+  return formatDateFr(day);
+}
+function journalEntries(){
+  const out = [];
+  state.companies.forEach(c => {
+    (c.thesisHistory || []).forEach((e, i, arr) => {
+      out.push({ kind:'thesis', c, day:e.date, sort:e.date + 'T12:00:00', html:e.html, prevHtml: i ? arr[i - 1].html : null });
+    });
+    (c.decisionLog || []).forEach(e => {
+      const d = new Date(e.date);
+      if(isNaN(d.getTime())) return;
+      out.push({ kind:journalDecisionKind(e.text), c, day:journalLocalDay(d), sort:e.date, text:e.text, date:e.date });
+    });
+  });
+  return out.sort((a, b) => a.sort < b.sort ? 1 : (a.sort > b.sort ? -1 : 0));
+}
+function journalItemHtml(en){
+  const k = JOURNAL_KINDS[en.kind];
+  const av = avatarInner(en.c);
+  const tk = (en.c.fields.identite || {}).ticker || '';
+  let main, time = '';
+  if(en.kind === 'thesis'){
+    const plain = richToPlain(en.html);
+    const words = plain ? plain.split(' ').length : 0;
+    let meta = 'Première version';
+    if(en.prevHtml !== null){
+      const diff = words - (richToPlain(en.prevHtml).split(' ').filter(Boolean).length);
+      meta = `Thèse réécrite · ${words} mots (${diff >= 0 ? '+' : ''}${diff})`;
+    }else meta += ` · ${words} mots`;
+    const excerpt = plain.length > 170 ? plain.slice(0, 170).trim() + '…' : plain;
+    main = `<div class="jr-meta">${escapeHtml(meta)}</div>
+      <details class="jr-thesis"><summary>${escapeHtml(excerpt)}</summary><div class="jr-thesis-full">${sanitizeRichHtml(en.html)}</div></details>`;
+  }else{
+    main = `<div class="jr-text">${escapeHtml(en.text)}</div>`;
+    const t = new Date(en.date);
+    time = `<span class="jr-time">${t.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' })}</span>`;
+  }
+  return `<div class="jr-item">
+    <span class="company-search-avatar${av.cls}">${av.html}</span>
+    <div class="jr-body">
+      <div class="jr-top">
+        <button type="button" class="jr-co" data-jr-open="${escapeHtml(en.c.id)}">${escapeHtml(en.c.name || 'Sans nom')}${tk ? ` <span class="jr-meta">${escapeHtml(tk)}</span>` : ''}</button>
+        <span class="jr-chip" style="--c:${k.color}">${k.label}</span>${time}
+      </div>${main}
+    </div>
+  </div>`;
+}
+function journalFeedHtml(){
+  let list = journalEntries();
+  const total = list.length;
+  if(journalType === 'thesis') list = list.filter(e => e.kind === 'thesis');
+  else if(journalType === 'decision') list = list.filter(e => e.kind !== 'thesis');
+  if(journalCompany) list = list.filter(e => e.c.id === journalCompany);
+  if(!total){
+    return `<div class="s-empty jr-empty">Le journal se remplit tout seul, sans rien à faire de plus. Il garde une trace datée dès que vous réécrivez une thèse d'investissement, changez une conviction, une décision, un prix d'achat cible, ou ouvrez et clôturez une position. Au fil des mois, vous pourrez relire ici comment votre regard sur chaque entreprise a évolué.</div>`;
+  }
+  if(!list.length) return `<div class="s-empty jr-empty">Aucune entrée pour ce filtre.</div>`;
+  const shown = list.slice(0, journalLimit);
+  let html = '', lastDay = null;
+  shown.forEach(en => {
+    if(en.day !== lastDay){ html += `<div class="jr-day">${escapeHtml(journalDayLabel(en.day))}</div>`; lastDay = en.day; }
+    html += journalItemHtml(en);
+  });
+  if(list.length > shown.length) html += `<button type="button" class="btn btn-outline jr-more" id="jrMore">Afficher plus (${list.length - shown.length} restantes)</button>`;
+  return html;
+}
+function goJournal(){
+  currentView = 'journal';
+  journalLimit = 40;
+  render();
+  window.scrollTo(0, 0);
+  closeMenu();
+}
+function renderJournalView(){
+  const main = document.getElementById('main');
+  const n = journalEntries().length;
+  const opts = state.companies.map(c => `<option value="${escapeHtml(c.id)}"${c.id === journalCompany ? ' selected' : ''}>${escapeHtml(c.name || 'Sans nom')}</option>`).join('');
+  const seg = (v, l) => `<button type="button" data-jr-type="${v}" class="${journalType === v ? 'active' : ''}">${l}</button>`;
+  main.innerHTML = `<div class="wrap page space jr-wrap">
+    <div class="space-head"><div>
+      <div class="kicker">Mon espace · ${n} entrée${n > 1 ? 's' : ''}</div>
+      <h1 class="space-title">Journal de bord</h1>
+      <p class="space-sub">L'évolution de votre regard sur chaque entreprise : thèses réécrites, convictions et décisions, de la plus récente à la plus ancienne.</p>
+    </div><div class="space-actions"><button class="btn btn-outline" data-go-space>&larr; Mon espace</button></div></div>
+    <div class="jr-controls">
+      <div class="jr-seg" role="group" aria-label="Type d'entrée">${seg('all', 'Tout')}${seg('thesis', 'Thèses')}${seg('decision', 'Décisions')}</div>
+      <select class="jr-select" id="jrCompany" aria-label="Entreprise"><option value="">Toutes les entreprises</option>${opts}</select>
+    </div>
+    <div id="jrFeed">${journalFeedHtml()}</div>
+  </div>`;
+  main.querySelectorAll('[data-go-space]').forEach(el => el.addEventListener('click', goSpace));
+  const repaint = () => { document.getElementById('jrFeed').innerHTML = journalFeedHtml(); bindJournalFeed(); };
+  main.querySelectorAll('[data-jr-type]').forEach(b => b.addEventListener('click', () => {
+    journalType = b.dataset.jrType; journalLimit = 40;
+    main.querySelectorAll('[data-jr-type]').forEach(x => x.classList.toggle('active', x === b));
+    repaint();
+  }));
+  document.getElementById('jrCompany').addEventListener('change', e => { journalCompany = e.target.value; journalLimit = 40; repaint(); });
+  bindJournalFeed();
+}
+function bindJournalFeed(){
+  const feed = document.getElementById('jrFeed');
+  feed.querySelectorAll('[data-jr-open]').forEach(b => b.addEventListener('click', () => {
+    selectCompany(b.dataset.jrOpen);
+    setTimeout(() => { const t = document.getElementById('sec-personnelle'); if(t) t.scrollIntoView({ behavior:'smooth', block:'start' }); }, 80);
+  }));
+  const more = document.getElementById('jrMore');
+  if(more) more.addEventListener('click', () => { journalLimit += 40; feed.innerHTML = journalFeedHtml(); bindJournalFeed(); });
+}
+
 function bindSpace(){
   const main = document.getElementById('main');
   bindTableSortMenu();
+  main.querySelectorAll('[data-go-journal]').forEach(el => el.addEventListener('click', goJournal));
   main.querySelectorAll('[data-new-analysis]').forEach(el => el.addEventListener('click', openNewCompanyModal));
   main.querySelectorAll('[data-open-company]').forEach(el => el.addEventListener('click', () => selectCompany(el.dataset.openCompany)));
   main.querySelectorAll('[data-rename-id]').forEach(el => el.addEventListener('click', e => openRenameModal(el.dataset.renameId, e)));
@@ -9092,6 +9259,10 @@ function render(){
   }
   if(currentView === 'legal'){
     renderLegalView();
+    return;
+  }
+  if(currentView === 'journal'){
+    renderJournalView();
     return;
   }
   const main = document.getElementById('main');
