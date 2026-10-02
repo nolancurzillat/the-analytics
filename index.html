@@ -7917,7 +7917,6 @@ function cmpPartText(p){
   if(p.key === 'consensus') return WS_RECO[wsRecoIndex(p.val)].label;
   return fmtNum(p.val, 2) + (SCORE_PART_UNITS[p.key] || '');
 }
-const CMP_SHOWN_ELSEWHERE = ['peg', 'margeSecurite', 'tailleCapi'];
 function goCompare(){
   currentView = 'compare';
   compareIds = compareIds.filter(id => state.companies.some(c => c.id === id));
@@ -7957,8 +7956,6 @@ function compareTableHtml(){
   body += row('Conviction', conv.map(v => v ? `<span style="color:var(--star)">&#9733;</span> ${fmtNum(v, 1)} / 5` : '—'), bestIdx(conv.map(v => v || null)));
   body += row('Prix actuel', cs.map(c => money(c, c.fields.valorisation.prixActuel)), -1);
   body += row("Prix d'achat cible", cs.map(c => money(c, c.fields.personnelle.prixAchatCible)), -1);
-  const ec = cs.map(c => computeEcart(c, 'valeurIntrinseque'));
-  body += row('Cours vs valeur intrinsèque', ec.map(e => e === null ? '—' : `<span style="color:${e < 0 ? 'var(--green)' : 'var(--red)'}">${e > 0 ? '+' : ''}${fmtNum(e, 1)} %</span>`), bestIdx(ec.map(e => e === null ? null : -e)));
   body += section('Identité');
   body += row('Secteur', cs.map(c => { const s = (c.fields.identite.secteur || {}); return s.secteur ? escapeHtml(s.secteur) + (s.industrie ? ` <span class="jr-meta">${escapeHtml(s.industrie)}</span>` : '') : '—'; }), -1);
   body += row('Pays', cs.map(c => { const p = (c.fields.identite.paysSiege || {}).pays; return p ? `${flagIcon(p)} ${escapeHtml(p)}` : '—'; }), -1);
@@ -7972,9 +7969,7 @@ function compareTableHtml(){
   body += section('Valorisation');
   body += row('PE actuel', cs.map(c => num1(computePeActuel(c), 1)), -1);
   body += row('PE forward', cs.map(c => num1(computePeForward(c), 1)), -1);
-  // PEG : affiché ici (avec sa pastille de couleur et la mise en valeur du meilleur), donc retiré du « Score détaillé » pour ne pas apparaître deux fois
-  const pegParts = axesBy.map(a => { for(const ax of a){ const p = ax.parts.find(x => x.key === 'peg'); if(p) return p; } return null; });
-  body += row('PEG', cs.map((c, i) => { const p = pegParts[i], v = computePeg(c); return v === null || v === undefined ? '—' : `<span class="cmp-dot" style="background:${p && p.tier ? TIER_COLORS[p.tier] : 'var(--border-strong)'}"></span>${fmtNum(v, 2)}`; }), bestIdx(pegParts.map(p => p ? p.score : null)));
+  // Le PEG n'est plus ici : il figure dans le « Score détaillé » (axe Valorisation), avec tous les autres indicateurs qui entrent dans la note
   body += row('Valeur intrinsèque', cs.map(c => money(c, c.fields.valorisation.valeurIntrinseque)), -1);
   body += row('Bear / Bull case', cs.map(c => { const b = c.fields.valorisation.bearCase, u = c.fields.valorisation.bullCase; return (b || u) ? `${escapeHtml(String(b || '—'))} / ${escapeHtml(String(u || '—'))} ${c.currency}` : '—'; }), -1);
   body += row('Objectif Wall Street (moyen)', cs.map(c => { const w = computeWallStreetTargets(c), p = w && w.pct.moy; return (p === null || p === undefined) ? '—' : `<span style="color:${p >= 0 ? 'var(--green)' : 'var(--red)'}">${p >= 0 ? '+' : ''}${fmtNum(p, 1)} %</span>`; }), -1);
@@ -7986,13 +7981,10 @@ function compareTableHtml(){
   body += section('Score détaillé');
   SCORE_AXES.forEach((ax, ai) => {
     const axisScores = axesBy.map(a => a[ai].score);
-    if(axisScores.every(s => s === null)) return;
+    // Chaque axe et chacun de ses indicateurs sont toujours listés, même vides (« — »), pour voir tout ce qui entre dans la note (demande de Nolan)
     body += row(`${escapeHtml(ax.label)}`, axisScores.map(s => s === null ? '—' : `<strong style="color:${scoreColor5(s)}">${Math.round(s)}</strong><span class="jr-meta"> / 100</span>`), bestIdx(axisScores), 'cmp-axis');
     ax.parts.forEach((key, pi) => {
-      // Indicateurs déjà affichés plus haut dans le tableau : le PEG (Valorisation), la marge de sécurité (= « Cours vs valeur intrinsèque ») et la taille (déduite du Market Cap)
-      if(CMP_SHOWN_ELSEWHERE.indexOf(key) >= 0) return;
       const parts = axesBy.map(a => a[ai].parts[pi]);
-      if(parts.every(p => p.val === null)) return;
       body += row(`<span class="rv-sub">${escapeHtml(parts[0].label)}</span>`, parts.map(p => p.val === null ? '—' : `<span class="cmp-dot" style="background:${p.tier ? TIER_COLORS[p.tier] : 'var(--border-strong)'}"></span>${escapeHtml(cmpPartText(p))}`), bestIdx(parts.map(p => p.score)));
     });
   });
@@ -8001,7 +7993,7 @@ function compareTableHtml(){
   body += textRow('Points faibles', c => c.fields.personnelle.pointsFaibles);
   body += textRow("Thèse d'investissement", c => c.fields.personnelle.these);
   return `<div class="cmp-wrap"><table class="cmp-table"><thead>${head}</thead><tbody>${body}</tbody></table></div>
-    <div class="s-note">La case teintée en vert marque la meilleure valeur d'une ligne notée, seulement quand elle est la seule à l'être : à égalité, rien n'est surligné. Un indicateur vide est simplement ignoré, comme dans le score. Les montants sont dans la devise de chaque analyse, sans conversion. Aucun conseil en investissement.</div>`;
+    <div class="s-note">La case teintée en vert marque la meilleure valeur d'une ligne notée, seulement quand elle est la seule à l'être : à égalité, rien n'est surligné. Le « Score détaillé » liste tous les indicateurs qui entrent dans chaque note ; un indicateur non renseigné s'affiche « — » et est ignoré dans le calcul, comme dans le score. Les montants sont dans la devise de chaque analyse, sans conversion. Aucun conseil en investissement.</div>`;
 }
 function renderCompareView(){
   const main = document.getElementById('main');
