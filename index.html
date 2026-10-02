@@ -1600,6 +1600,36 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
 .rv-lines{ display:flex; flex-direction:column; margin-top:12px; }
 .rv-line{ display:flex; justify-content:space-between; gap:14px; padding:9px 2px; border-bottom:1px solid var(--border); font-size:14.5px; }
 .rv-line:last-child{ border-bottom:none; }
+/* Ordres clôturés (2026-10-02) */
+.scard-s-row{ display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; }
+.ct-sum{ display:flex; flex-wrap:wrap; gap:12px; margin:4px 0 16px 0; }
+.ct-sum-item{ flex:1 1 240px; display:flex; flex-direction:column; gap:3px; padding:14px 16px; border:1px solid var(--border); border-radius:12px; background:var(--paper-line); }
+.ct-sum-cur{ font-size:11.5px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-soft); }
+.ct-sum-main{ font-family:var(--font-serif); font-size:26px; font-weight:700; line-height:1.15; }
+.ct-sum-main small{ font-family:var(--font-ui); font-size:14px; font-weight:600; }
+.ct-sum-sub{ font-size:13px; color:var(--ink-soft); }
+.ct-date{ white-space:nowrap; color:var(--ink-soft); font-size:13px; }
+.ct-del{ text-align:right; }
+.ct-del-btn{ border:1px solid transparent; background:none; color:var(--ink-soft); font:inherit; font-size:12.5px; padding:5px 10px; border-radius:8px; cursor:pointer; opacity:.7; }
+tr:hover .ct-del-btn, .ct-del-btn:focus-visible{ opacity:1; }
+.ct-del-btn:hover{ color:var(--red); border-color:var(--red); }
+.ct-del-btn.armed{ color:#fff; background:var(--red); border-color:var(--red); opacity:1; }
+.pos-close-row{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin-top:16px; font-size:13px; color:var(--ink-soft); }
+.trade-box{ width:520px; }
+.trade-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px 14px; margin-bottom:14px; }
+.trade-f{ display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:600; color:var(--ink-soft); min-width:0; }
+.trade-wide{ grid-column:1 / -1; }
+.trade-cur{ font-weight:600; color:var(--ink); }
+.trade-box .trade-f input, .trade-box .trade-f select{ width:100%; margin:0; padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:var(--field); color:var(--ink); font-family:var(--font-ui); font-size:var(--fs-value); font-weight:400; color-scheme:light; }
+:root[data-theme="dark"] .trade-box .trade-f input, :root[data-theme="dark"] .trade-box .trade-f select{ color-scheme:dark; }
+.trade-box .trade-f input:focus, .trade-box .trade-f select:focus{ outline:none; border-color:var(--blue); box-shadow:0 0 0 3px var(--ring); }
+.trade-check{ display:flex; align-items:flex-start; gap:10px; font-size:13.5px; margin:0 0 12px 0; cursor:pointer; }
+.trade-check.hidden{ display:none; }
+.trade-box .trade-check input{ width:18px; height:18px; flex:0 0 auto; margin:1px 0 0 0; padding:0; accent-color:var(--accent); }
+.trade-preview{ min-height:20px; font-size:14px; margin-bottom:6px; }
+.trade-err{ min-height:18px; color:var(--red); font-size:13px; margin-bottom:10px; }
+@media (max-width:520px){ .trade-grid{ grid-template-columns:1fr; } }
+@media print{ .ct-del, .ct-del-btn, [data-trade-add], .pos-close-row{ display:none !important; } }
 /* Comparateur (2026-10-02) */
 .cmp-page{ max-width:1100px; }
 /* overflow:clip (et non auto) : un conteneur qui défile bloquerait l'en-tête collant, qui doit se coller sous la barre du haut (62px) */
@@ -2088,6 +2118,10 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
       <button id="globalSearchCancel">Fermer</button>
     </div>
   </div>
+</div>
+
+<div class="modal-overlay hidden" id="tradeModal">
+  <div class="modal-box trade-box" id="tradeBox"></div>
 </div>
 
 <div class="modal-overlay hidden" id="authModal">
@@ -3326,6 +3360,8 @@ function migrateCompany(c){
   // des actions (archiveThesisAndClear, logDecisionEvent). Absents des analyses créées avant ce changement.
   if(!Array.isArray(c.thesisHistory)) c.thesisHistory = [];
   if(!Array.isArray(c.decisionLog)) c.decisionLog = [];
+  // Ordres clôturés (2026-10-02) : voir la section ORDRES CLÔTURÉS
+  if(!Array.isArray(c.closedTrades)) c.closedTrades = [];
   return c;
 }
 
@@ -5849,7 +5885,8 @@ function buildPositionBlock(c){
       </div></div></div>
       ${positionMontantHtml(c)}
       <div class="field-row"><div class="field-label" id="posResultLabel">${positionResultInfo(c).label}</div><div class="field-value"><div class="pos-result" id="posResult">${positionResultInfo(c).html}</div></div></div>
-    </div>${positionDividendHtml(c)}`;
+    </div>${positionDividendHtml(c)}
+    <div class="pos-close-row"><button type="button" class="btn btn-outline btn-sm" id="posCloseBtn">Clôturer la position</button><span>Vous avez vendu ? Enregistrez la vente : elle rejoint vos « Ordres clôturés » et votre bilan annuel.</span></div>`;
   } else {
     inner = `<div class="position-empty">Aucune position en cours</div>`;
   }
@@ -5922,6 +5959,12 @@ function togglePositionActive(checked){
 function bindPositionEvents(){
   const posToggle = document.getElementById('positionActiveToggle');
   if(posToggle) posToggle.addEventListener('change', e => togglePositionActive(e.target.checked));
+  const posCloseBtn = document.getElementById('posCloseBtn');
+  if(posCloseBtn) posCloseBtn.addEventListener('click', () => {
+    const c = getActive();
+    if(!c) return;
+    openTradeModal({ companyId:c.id, fromPosition:true, qty:String(c.position.quantite || ''), buy:String(c.position.prixAchat || ''), sell:String(c.fields.valorisation.prixActuel || '') });
+  });
   const posQuantite = document.getElementById('posQuantite');
   if(posQuantite) posQuantite.addEventListener('input', e => { e.target.size = Math.max(e.target.value.length, 4) + 1; updatePositionField('quantite', e.target.value); });
   const posPrixAchat = document.getElementById('posPrixAchat');
@@ -7688,6 +7731,9 @@ function cleanImportedCompany(raw){
     .map(e => { const o = { date:e.date, html:sanitizeRichHtml(e.html) }; if(typeof e.at === 'string' && !isNaN(Date.parse(e.at))) o.at = new Date(e.at).toISOString(); return o; });
   c.decisionLog = (Array.isArray(c.decisionLog) ? c.decisionLog : []).filter(e => e && typeof e.text === 'string' && !isNaN(Date.parse(e.date))).slice(-200)
     .map(e => ({ date:new Date(e.date).toISOString(), text:String(e.text).slice(0, 300) }));
+  // Ordres clôturés importés : dates, nombres, devise et textes revalidés (affichés en HTML)
+  c.closedTrades = (Array.isArray(c.closedTrades) ? c.closedTrades : []).filter(t => t && isoRe.test(String(t.date)) && Number.isFinite(Number(t.qty)) && Number(t.qty) > 0 && Number.isFinite(Number(t.buy)) && Number(t.buy) > 0 && Number.isFinite(Number(t.sell)) && Number(t.sell) >= 0).slice(0, 2000)
+    .map((t, i) => ({ id:String(t.id || ('t' + i)).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40) || ('t' + i), date:t.date, qty:Number(t.qty), buy:Number(t.buy), sell:Number(t.sell), cur:t.cur === '€' ? '€' : '$', note:String(t.note || '').slice(0, 140) }));
   if(!Number.isFinite(c.reviewedTs)) delete c.reviewedTs;
   if(c.logo &&!(typeof c.logo.url === 'string' && /^(https:\/\/|data:image\/(png|jpeg|webp|gif);base64,)/.test(c.logo.url))) c.logo = null;
   // La devise (c.currency) est validée par migrateCompany, appelé juste après : toute valeur qui n'est pas exactement '$' ou '€' est ignorée.
@@ -7928,6 +7974,7 @@ function reviewYears(){
     if(c.createdAt) ys.add(String(c.createdAt).slice(0, 4));
     (c.thesisHistory || []).forEach(e => ys.add(String(e.date).slice(0, 4)));
     (c.decisionLog || []).forEach(e => { const d = new Date(e.date); if(!isNaN(d.getTime())) ys.add(String(d.getFullYear())); });
+    (c.closedTrades || []).forEach(t => ys.add(String(t.date).slice(0, 4)));
   });
   Object.keys(state.history || {}).forEach(k => ys.add(k.slice(0, 4)));
   return Array.from(ys).filter(y => /^\d{4}$/.test(y)).sort().reverse();
@@ -7961,7 +8008,8 @@ function reviewData(year){
     const a = state.history[days[0]].c[cur], b = state.history[days[days.length - 1]].c[cur];
     pf.push({ cur, firstDay:days[0], lastDay:days[days.length - 1], a, b, n:days.length });
   });
-  return { created, theses, events, nDecision:by('decision'), nConviction:by('conviction'), nTarget:by('target'), posOpen, posClosed, conv, pf };
+  const trades = allClosedTrades(year);
+  return { created, theses, events, nDecision:by('decision'), nConviction:by('conviction'), nTarget:by('target'), posOpen, posClosed, conv, pf, trades };
 }
 function reviewLetter(year, d){
   const p = [];
@@ -7974,6 +8022,10 @@ function reviewLetter(year, d){
   if(d.nTarget) bits.push(`${d.nTarget} révision${d.nTarget > 1 ? 's' : ''} de prix d'achat cible`);
   if(bits.length) p.push(`Votre regard a bougé : ${bits.join(', ')}.`);
   if(d.posOpen || d.posClosed) p.push(`Côté portefeuille : ${d.posOpen} position${d.posOpen > 1 ? 's' : ''} ouverte${d.posOpen > 1 ? 's' : ''} et ${d.posClosed} clôturée${d.posClosed > 1 ? 's' : ''}.`);
+  if(d.trades && d.trades.length){
+    const parts = closedTradesSummary(d.trades).map(s => `${s.n} ordre${s.n > 1 ? 's' : ''} en ${s.cur === '$' ? 'dollars' : 'euros'} (${s.wins} gagnant${s.wins > 1 ? 's' : ''}, résultat réalisé ${s.gain >= 0 ? '+' : ''}${fmtMoney(s.gain, s.cur)})`);
+    p.push(`Vous avez clôturé ${parts.join(' et ')}.`);
+  }
   if(d.conv.length){
     const up = d.conv.filter(x => x.to > (x.from || 0)).length;
     p.push(`${up} conviction${up > 1 ? 's' : ''} en hausse, ${d.conv.length - up} en baisse sur l'année.`);
@@ -8019,12 +8071,14 @@ function renderReviewView(){
       ${tile(d.posOpen + '/' + d.posClosed, 'positions ouvertes / clôturées')}
     </div></section>
     ${d.conv.length ? `<section class="scard capital-card"><div class="scard-t">Convictions qui ont bougé</div><div class="rv-lines">${convRows}</div></section>` : ''}
+    ${d.trades.length ? `<section class="scard capital-card"><div class="scard-t">Ordres clôturés</div>${closedSummaryHtml(d.trades)}${closedTradesTableHtml(d.trades)}<div class="s-note">Supprimez une ligne si vous l'avez saisie par erreur : cela ne modifie pas vos positions.</div></section>` : ''}
     ${d.pf.length ? `<section class="scard capital-card"><div class="scard-t">Portefeuille</div><div class="rv-lines">${pfRows}</div><div class="s-note">Valeur entre la première et la dernière photo enregistrée de l'année (${fmtNum(d.pf[0].n, 0)} jour${d.pf[0].n > 1 ? 's' : ''} relevé${d.pf[0].n > 1 ? 's' : ''}). Les achats et ventes de l'année y sont inclus : ce n'est pas une performance pure.</div></section>` : ''}
     <div class="s-note" style="margin-top:20px">Ce bilan est un simple récapitulatif de vos saisies, jamais un conseil en investissement.</div>
   </div>`;
   main.querySelectorAll('[data-go-space]').forEach(el => el.addEventListener('click', goSpace));
   main.querySelectorAll('[data-rv-year]').forEach(b => b.addEventListener('click', () => { reviewYear = b.dataset.rvYear; renderReviewView(); }));
   document.getElementById('rvPrint').addEventListener('click', () => window.print());
+  bindClosedTrades(main, () => renderReviewView());
 }
 
 // ============================================================
@@ -9077,6 +9131,190 @@ function pfIdeas(){
   }).join('') + `</div>`;
 }
 
+// ============================================================
+// ORDRES CLÔTURÉS (2026-10-02, demande de Nolan) : chaque analyse garde ses ventes dans c.closedTrades
+// [{ id, date:'AAAA-MM-JJ', qty, buy, sell, cur:'$'|'€', note }]. Affichés dans le Portefeuille et dans le Bilan annuel, supprimables en cas d'erreur.
+// Totaux TOUJOURS séparés par devise (jamais de conversion). Rien ici ne touche à la position ouverte, sauf si l'utilisateur coche la case dédiée.
+// ============================================================
+let pfClosedYear = 'all';
+function closedTradeMetrics(t){
+  const cost = t.buy * t.qty, gain = (t.sell - t.buy) * t.qty;
+  return { cost, gain, pct: t.buy > 0 ? (t.sell / t.buy - 1) * 100 : null };
+}
+function allClosedTrades(year){
+  const out = [];
+  state.companies.forEach(c => (c.closedTrades || []).forEach(t => {
+    if(year && year !== 'all' && String(t.date).slice(0, 4) !== year) return;
+    out.push({ c, t, m: closedTradeMetrics(t) });
+  }));
+  return out.sort((a, b) => String(b.t.date).localeCompare(String(a.t.date)));
+}
+function closedTradeYears(){
+  const ys = new Set();
+  state.companies.forEach(c => (c.closedTrades || []).forEach(t => ys.add(String(t.date).slice(0, 4))));
+  return Array.from(ys).sort().reverse();
+}
+// Résumé par devise : nombre d'ordres, gagnants, résultat réalisé et rendement sur le capital engagé
+function closedTradesSummary(list){
+  const by = {};
+  list.forEach(({ t, m }) => {
+    const d = by[t.cur] || (by[t.cur] = { cur:t.cur, n:0, wins:0, losses:0, gain:0, cost:0 });
+    d.n++; d.gain += m.gain; d.cost += m.cost;
+    if(m.gain > 0) d.wins++; else if(m.gain < 0) d.losses++;
+  });
+  return Object.keys(by).sort().map(k => by[k]);
+}
+function closedSummaryHtml(list){
+  const s = closedTradesSummary(list);
+  if(!s.length) return '';
+  return `<div class="ct-sum">${s.map(d => {
+    const pct = d.cost > 0 ? d.gain / d.cost * 100 : null;
+    return `<div class="ct-sum-item"><span class="ct-sum-cur">${d.cur === '$' ? 'En dollars' : 'En euros'}</span>
+      <span class="ct-sum-main" style="color:${pfColor(d.gain)}">${pfSigned(d.gain, d.cur)}${pct === null ? '' : ` <small>(${pfPct(pct)})</small>`}</span>
+      <span class="ct-sum-sub">${d.n} ordre${d.n > 1 ? 's' : ''} clôturé${d.n > 1 ? 's' : ''} · ${d.wins} gagnant${d.wins > 1 ? 's' : ''} sur ${d.n} (${Math.round(d.wins / d.n * 100)}&nbsp;%)${d.losses ? ` · ${d.losses} perdant${d.losses > 1 ? 's' : ''}` : ''}</span></div>`;
+  }).join('')}</div>`;
+}
+function closedTradesTableHtml(list){
+  if(!list.length) return '';
+  const rows = list.map(({ c, t, m }) => `<tr>
+    <td class="ct-date">${escapeHtml(formatDateFr(t.date))}</td>
+    <td><div class="ht-co">${miniAv(c)}<div class="ht-id"><div class="home-td-name"><span class="home-td-name-txt">${escapeHtml(c.name || 'Sans nom')}</span>${(c.fields.identite || {}).ticker ? `<span class="home-ticker">${escapeHtml(c.fields.identite.ticker)}</span>` : ''}</div>${t.note ? `<div class="ht-sec">${escapeHtml(t.note)}</div>` : ''}</div></div></td>
+    <td>${fmtNum(t.qty, 4)}</td>
+    <td>${fmtMoney(t.buy, t.cur)}</td>
+    <td>${fmtMoney(t.sell, t.cur)}</td>
+    <td><span class="pf-res" style="color:${pfColor(m.gain)}">${pfSigned(m.gain, t.cur)}</span>${m.pct !== null ? `<span class="pf-res-s" style="color:${pfColor(m.pct)}">${pfPct(m.pct)}</span>` : ''}</td>
+    <td class="ct-del"><button type="button" class="ct-del-btn" data-trade-del="${escapeHtml(c.id)}|${escapeHtml(t.id)}" title="Supprimer cet ordre en cas d'erreur (la position ouverte n'est pas modifiée)">Supprimer</button></td>
+  </tr>`).join('');
+  return `<div class="home-table-wrap home-table-wrap--tight"><table class="home-table home-table--tight ct-table"><thead><tr><th>Date</th><th>Entreprise</th><th>Quantité</th><th>Prix d'achat</th><th>Prix de vente</th><th>Résultat</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+// Suppression en deux temps (un premier clic demande confirmation pendant 3 s), comme dans le journal de bord
+function bindClosedTrades(root, rerender){
+  root.querySelectorAll('[data-trade-del]').forEach(b => {
+    let armed = null;
+    b.addEventListener('click', e => {
+      e.stopPropagation();
+      if(!armed){
+        b.textContent = 'Confirmer ?'; b.classList.add('armed');
+        armed = setTimeout(() => { armed = null; b.textContent = 'Supprimer'; b.classList.remove('armed'); }, 3000);
+        return;
+      }
+      clearTimeout(armed);
+      const [cid, tid] = b.dataset.tradeDel.split('|');
+      const c = state.companies.find(x => x.id === cid);
+      if(!c) return;
+      const i = (c.closedTrades || []).findIndex(t => t.id === tid);
+      if(i < 0) return;
+      c.closedTrades.splice(i, 1);
+      touchUpdated(c);   // indispensable : la fusion cloud compare updatedTs, sans ça la ligne supprimée pourrait revenir d'un autre appareil
+      saveState();
+      showToast('Ordre supprimé.');
+      rerender();
+    });
+  });
+}
+function closedTradesCard(){
+  const years = closedTradeYears();
+  if(pfClosedYear !== 'all' && years.indexOf(pfClosedYear) < 0) pfClosedYear = 'all';
+  const list = allClosedTrades(pfClosedYear);
+  const chips = years.length > 1 ? `<div class="pf-chips" style="margin-bottom:14px"><span class="pf-chips-l">Année :</span><button class="lr-chip${pfClosedYear === 'all' ? ' on' : ''}" data-ct-year="all">Toutes</button>${years.map(y => `<button class="lr-chip${y === pfClosedYear ? ' on' : ''}" data-ct-year="${y}">${y}</button>`).join('')}</div>` : '';
+  const body = list.length
+    ? `${chips}${closedSummaryHtml(list)}${closedTradesTableHtml(list)}<div class="s-note">Ces ordres alimentent votre bilan annuel. Une suppression n'agit que sur cette liste : elle ne modifie pas vos positions ouvertes. Les totaux sont séparés par devise, sans conversion.</div>`
+    : `${chips}<div class="s-empty">${years.length ? 'Aucun ordre clôturé cette année-là.' : `Aucun ordre clôturé pour le moment. Quand vous vendez une position, enregistrez-la ici (ou avec « Clôturer la position » dans la fiche) : vos résultats réalisés s'affichent ensuite avec un résumé, et dans votre bilan annuel.`}</div>`;
+  const add = `<button type="button" class="btn btn-primary btn-sm" data-trade-add>+ Enregistrer un ordre clôturé</button>`;
+  return `<section class="scard s12" id="closed-trades"><div class="scard-h"><div class="scard-t">Ordres clôturés</div><div class="scard-s scard-s-row">${list.length ? `${list.length} ordre${list.length > 1 ? 's' : ''}` : 'Positions vendues'}${add}</div></div>${body}</section>`;
+}
+function bindClosedTradesCard(main){
+  main.querySelectorAll('[data-trade-add]').forEach(b => b.addEventListener('click', () => openTradeModal({})));
+  main.querySelectorAll('[data-ct-year]').forEach(b => b.addEventListener('click', () => { pfClosedYear = b.dataset.ctYear; renderPortfolioView(); }));
+  bindClosedTrades(main, () => renderPortfolioView());
+}
+// --- Fenêtre « Enregistrer un ordre clôturé » ---
+let tradeModalFromPosition = false;
+function tradeNum(s){ const n = num(String(s || '').replace(/[$€\s]/g, '')); return n; }
+function openTradeModal(o){
+  if(!state.companies.length){ showToast("Créez d'abord une analyse pour y rattacher l'ordre."); return; }
+  const box = document.getElementById('tradeBox');
+  const cid = (o.companyId && state.companies.some(c => c.id === o.companyId)) ? o.companyId : (state.companies.find(c => c.position && c.position.active) || state.companies[0]).id;
+  tradeModalFromPosition = !!o.fromPosition;
+  const today = new Date(); const iso = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+  box.innerHTML = `<h2>Enregistrer un ordre clôturé</h2>
+    <div class="modal-hint" style="margin:-8px 0 16px 0">Une vente déjà passée : elle sera ajoutée à la liste « Ordres clôturés » du Portefeuille et à votre bilan annuel.</div>
+    <div class="trade-grid">
+      <label class="trade-f trade-wide"><span>Analyse</span><select id="tradeCompany">${sortedByRecent().map(c => `<option value="${escapeHtml(c.id)}"${c.id === cid ? ' selected' : ''}>${escapeHtml(c.name || 'Sans nom')}${(c.fields.identite || {}).ticker ? ' (' + escapeHtml(c.fields.identite.ticker) + ')' : ''}</option>`).join('')}</select></label>
+      <label class="trade-f"><span>Date de la vente</span><input type="date" id="tradeDate" max="${iso}" value="${escapeHtml(o.date || iso)}"></label>
+      <label class="trade-f"><span>Quantité vendue</span><input type="text" id="tradeQty" inputmode="decimal" value="${escapeHtml(o.qty || '')}"></label>
+      <label class="trade-f"><span>Prix d'achat <b class="trade-cur"></b></span><input type="text" id="tradeBuy" inputmode="decimal" value="${escapeHtml(o.buy || '')}"></label>
+      <label class="trade-f"><span>Prix de vente <b class="trade-cur"></b></span><input type="text" id="tradeSell" inputmode="decimal" value="${escapeHtml(o.sell || '')}"></label>
+      <label class="trade-f trade-wide"><span>Note (facultatif)</span><input type="text" id="tradeNote" maxlength="140" placeholder="Pourquoi vous avez vendu, en une phrase"></label>
+    </div>
+    <label class="trade-check hidden" id="tradeReduceWrap"><input type="checkbox" id="tradeReduce"><span id="tradeReduceTxt"></span></label>
+    <div class="trade-preview" id="tradePreview"></div>
+    <div class="trade-err" id="tradeErr" role="alert"></div>
+    <div class="modal-actions"><button id="tradeCancel" type="button">Annuler</button><button class="primary" id="tradeSave" type="button">Enregistrer</button></div>`;
+  const q = id => document.getElementById(id);
+  const refresh = () => {
+    const c = state.companies.find(x => x.id === q('tradeCompany').value);
+    box.querySelectorAll('.trade-cur').forEach(e => { e.textContent = c ? '(' + c.currency + ')' : ''; });
+    const qty = tradeNum(q('tradeQty').value), buy = tradeNum(q('tradeBuy').value), sell = tradeNum(q('tradeSell').value);
+    const pv = q('tradePreview');
+    if(c && qty > 0 && buy > 0 && sell !== null && sell >= 0){
+      const m = closedTradeMetrics({ qty, buy, sell });
+      pv.innerHTML = `Résultat réalisé : <b style="color:${pfColor(m.gain)}">${pfSigned(m.gain, c.currency)}${m.pct === null ? '' : ' (' + pfPct(m.pct) + ')'}</b>`;
+    } else pv.textContent = '';
+    const wrap = q('tradeReduceWrap'), pos = c && c.position && c.position.active;
+    wrap.classList.toggle('hidden', !pos);
+    if(pos) q('tradeReduceTxt').textContent = 'Retirer ces titres de ma position ouverte sur cette analyse';
+  };
+  q('tradeCompany').addEventListener('change', () => {
+    const c = state.companies.find(x => x.id === q('tradeCompany').value);
+    if(c && c.position && c.position.active){
+      if(!q('tradeBuy').value) q('tradeBuy').value = c.position.prixAchat || '';
+      if(!q('tradeQty').value) q('tradeQty').value = c.position.quantite || '';
+      if(!q('tradeSell').value && c.fields.valorisation.prixActuel) q('tradeSell').value = c.fields.valorisation.prixActuel;
+    }
+    refresh();
+  });
+  ['tradeQty', 'tradeBuy', 'tradeSell', 'tradeDate'].forEach(id => q(id).addEventListener('input', refresh));
+  q('tradeCancel').addEventListener('click', closeTradeModal);
+  q('tradeSave').addEventListener('click', saveTradeFromModal);
+  q('tradeReduce').checked = tradeModalFromPosition;
+  refresh();
+  if(tradeModalFromPosition) q('tradeReduce').checked = true;
+  document.getElementById('tradeModal').classList.remove('hidden');
+  setTimeout(() => q(o.sell ? 'tradeNote' : 'tradeSell').focus(), 0);
+}
+function closeTradeModal(){ document.getElementById('tradeModal').classList.add('hidden'); }
+function saveTradeFromModal(){
+  const q = id => document.getElementById(id);
+  const err = m => { q('tradeErr').textContent = m; };
+  const c = state.companies.find(x => x.id === q('tradeCompany').value);
+  if(!c){ err('Choisissez une analyse.'); return; }
+  const qty = tradeNum(q('tradeQty').value), buy = tradeNum(q('tradeBuy').value), sell = tradeNum(q('tradeSell').value);
+  const date = q('tradeDate').value;
+  const todayIso = (() => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); })();
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date) || date > todayIso){ err('Indiquez la date de la vente (pas dans le futur).'); return; }
+  if(!(qty > 0)){ err('La quantité vendue doit être un nombre positif.'); return; }
+  if(!(buy > 0)){ err("Le prix d'achat doit être un nombre positif."); return; }
+  if(sell === null || !(sell >= 0)){ err('Indiquez le prix de vente.'); return; }
+  if(!Array.isArray(c.closedTrades)) c.closedTrades = [];
+  const t = { id:'t' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), date, qty, buy, sell, cur:c.currency, note:q('tradeNote').value.trim().slice(0, 140) };
+  c.closedTrades.push(t);
+  let posNote = '';
+  if(q('tradeReduce').checked && c.position && c.position.active){
+    const pq = num(c.position.quantite);
+    const rem = pq === null ? 0 : pq - qty;
+    if(rem <= 1e-9){ c.position.active = false; c.position.quantite = ''; c.position.prixAchat = ''; c.position.montantInvesti = ''; posNote = 'Position clôturée'; }
+    else { c.position.quantite = String(Math.round(rem * 1e6) / 1e6); posNote = 'Position réduite'; }
+    const m = closedTradeMetrics(t);
+    logDecisionEvent(c, `${posNote} : ${fmtNum(qty, 4)} titre${qty > 1 ? 's' : ''} vendu${qty > 1 ? 's' : ''} à ${fmtNum(sell, 2)} ${c.currency}${m.pct === null ? '' : ' (' + (m.pct >= 0 ? '+' : '') + fmtNum(m.pct, 1) + ' %)'}`);
+  }
+  touchUpdated(c);
+  saveState();
+  closeTradeModal();
+  showToast(posNote ? `Ordre enregistré. ${posNote}.` : 'Ordre clôturé enregistré.');
+  render();
+}
+
 function renderPortfolioView(){
   const main = document.getElementById('main');
   recordPortfolioSnapshot();
@@ -9107,7 +9345,7 @@ function renderPortfolioView(){
       </div>
       ${cs.length ? `<div class="s-note" style="margin-bottom:10px">Ouvrir une analyse :</div><div class="pf-chips">${cs.map(c => `<button class="btn btn-outline btn-sm" data-open-company="${c.id}" data-jump="position-card">${escapeHtml(c.name || 'Sans nom')}</button>`).join('')}</div>` : `<button class="btn btn-primary" data-new-analysis>Créer ma première analyse</button>`}
     </section>
-    <div class="sgrid"><section class="scard s12"><div class="scard-h"><div class="scard-t">Idées à suivre</div><div class="scard-s">Analyses sans position, en « Surveiller » ou « Acheter »</div></div>${pfIdeas()}</section></div></div>`;
+    <div class="sgrid">${closedTradesCard()}<section class="scard s12"><div class="scard-h"><div class="scard-t">Idées à suivre</div><div class="scard-s">Analyses sans position, en « Surveiller » ou « Acheter »</div></div>${pfIdeas()}</section></div></div>`;
     main.innerHTML = html;
     bindPortfolio();
     return;
@@ -9132,6 +9370,7 @@ function renderPortfolioView(){
     ${spaceCard('s6', 'Répartition par pays', 'Pays du siège, capital investi' + (cur ? ` en ${cur}` : ''), pfBreakdown(rowsCur, i => i.country, k => `${flagIcon(k)} ${escapeHtml(k)}`, `Renseignez le pays dans la section Identité.`))}
     ${spaceCard('s7', 'Points d\'attention', alerts.length ? `${alerts.length} point${alerts.length > 1 ? 's' : ''}` : '', alertsBody + `<div class="s-note">Rappels et pistes de réflexion calculés uniquement à partir de vos propres saisies. Ils ne constituent pas un conseil en investissement.</div>`)}
     ${spaceCard('s5', 'Idées à suivre', 'Analyses sans position en « Surveiller » ou « Acheter »', pfIdeas())}
+    ${closedTradesCard()}
   </div></div>`;
   main.innerHTML = html;
   bindPortfolio();
@@ -9146,6 +9385,7 @@ function bindPortfolio(){
   }));
   main.querySelectorAll('[data-pf-cur]').forEach(el => el.addEventListener('click', () => { portfolioCur = el.dataset.pfCur; renderPortfolioView(); }));
   main.querySelectorAll('[data-pf-range]').forEach(el => el.addEventListener('click', () => { portfolioRange = el.dataset.pfRange; renderPortfolioView(); }));
+  bindClosedTradesCard(main);
   bindHistoryHover();
 }
 
@@ -10595,6 +10835,8 @@ document.getElementById('sideNewBtn').addEventListener('click', () => { closeMen
 document.getElementById('menuBtn').addEventListener('click', () => document.body.classList.toggle('menu-open'));
 document.getElementById('sideOverlay').addEventListener('click', closeMenu);
 document.getElementById('themeBtn').addEventListener('click', toggleTheme);
+document.getElementById('tradeModal').addEventListener('click', e => { if(e.target.id === 'tradeModal') closeTradeModal(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && !document.getElementById('tradeModal').classList.contains('hidden')) closeTradeModal(); });
 window.addEventListener('scroll', updateSectionNavActive, { passive:true });
 refreshThemeButton();
 applyTierPalette();
