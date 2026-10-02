@@ -1587,6 +1587,10 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
 .cmp-table thead th{ position:sticky; top:0; background:var(--card); }
 .cmp-co .jr-co{ display:flex; align-items:center; gap:8px; }
 .cmp-main td, .cmp-main th{ background:var(--paper-line); }
+.cmp-table .cmp-sec th{ background:var(--paper-line); font-size:11.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--sec-c, var(--accent)); padding-top:16px; border-top:2px solid var(--border-strong); }
+.cmp-table .cmp-textrow th, .cmp-table .cmp-textrow td{ vertical-align:top; }
+.cmp-rich{ font-size:13.5px; line-height:1.55; white-space:normal; }
+.cmp-table td, .cmp-table tbody th{ min-width:150px; }
 .cmp-score{ font-family:var(--font-serif); font-size:26px; font-weight:700; }
 .cmp-axis th, .cmp-axis td{ background:color-mix(in srgb, var(--accent) 7%, var(--card)); border-top:2px solid var(--border-strong); }
 .cmp-best{ background:color-mix(in srgb, var(--green) 13%, transparent); font-weight:600; }
@@ -1986,6 +1990,7 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
       <button type="button" class="main-nav-item" id="navSpace" aria-label="Mon espace"><span class="mn-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span><span>Mon espace</span></button>
       <button type="button" class="main-nav-item" id="navPortfolio" aria-label="Portefeuille"><span class="mn-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v9h9"/><path d="M20.5 15A9 9 0 1 1 9 3.5"/></svg></span><span>Portefeuille</span></button>
       <button type="button" class="main-nav-item" id="navLearn" aria-label="Apprentissage"><span class="mn-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 21.5V5.5"/><path d="M9 8h7M9 12h5"/></svg></span><span>Apprentissage</span></button>
+      <button type="button" class="main-nav-item" id="navCompare" aria-label="Comparateur"><span class="mn-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 20V10M12 20V4M18 20v-7"/></svg></span><span>Comparateur</span></button>
     </div>
     <div class="topbar-actions">
       <button type="button" class="search-btn" id="globalSearchBtn" title="Rechercher une entreprise" aria-label="Rechercher une entreprise">
@@ -6673,7 +6678,8 @@ function renderTabs(){
   const list = document.getElementById('tabs');
   list.innerHTML = '';
   document.getElementById('navHome').classList.toggle('active', currentView === 'home');
-  document.getElementById('navSpace').classList.toggle('active', currentView === 'space' || currentView === 'journal' || currentView === 'review' || currentView === 'compare');
+  document.getElementById('navSpace').classList.toggle('active', currentView === 'space' || currentView === 'journal' || currentView === 'review');
+  document.getElementById('navCompare').classList.toggle('active', currentView === 'compare');
   document.getElementById('navPortfolio').classList.toggle('active', currentView === 'portfolio');
   document.getElementById('navLearn').classList.toggle('active', currentView === 'learn');
   document.getElementById('sideCount').textContent = state.companies.length ? String(state.companies.length) : '';
@@ -7596,7 +7602,7 @@ function renderSpaceView(){
         <h1 class="space-title"><span id="spaceHello">${greetingWord()}${name ? ', ' + escapeHtml(name) : ''}</span></h1>
         <p class="space-sub">${sub}${nameLink}</p>
       </div>
-      <div class="space-actions">${cs.length >= 2 ? '<button class="btn btn-outline" data-go-compare>Comparer</button>' : ''}<button class="btn btn-primary" data-new-analysis>+ Nouvelle analyse</button></div>
+      <div class="space-actions"><button class="btn btn-primary" data-new-analysis>+ Nouvelle analyse</button></div>
     </div>${buildBackupReminder()}`;
   if(!cs.length){
     html += `<section class="scard onboard">
@@ -7884,7 +7890,7 @@ function renderReviewView(){
 // Réutilise computeRadarAxes (mêmes valeurs, mêmes barèmes de couleur que partout) : aucun nouveau calcul de score.
 // ============================================================
 let compareIds = [];
-const COMPARE_MAX = 4;
+const COMPARE_MAX = 3;
 function cmpPartText(p){
   if(p.val === null) return '—';
   if(p.key === 'buffett') return Math.round(p.val * BUFFETT_RULES.length / 100) + '/' + BUFFETT_RULES.length;
@@ -7904,19 +7910,57 @@ function compareTableHtml(){
   if(cs.length < 2) return `<div class="s-empty">Choisissez au moins deux analyses ci-dessus pour les comparer.</div>`;
   const infos = cs.map(c => computeScoreInfo(c));
   const axesBy = cs.map((c, i) => infos[i].axes);
-  // La meilleure valeur d'une ligne (note la plus haute, au moins deux notes comparables) est mise en valeur.
-  const bestIdx = scores => { const v = scores.filter(s => s !== null && s !== undefined); if(v.length < 2) return -1; const m = Math.max(...v); return scores.indexOf(m); };
+  // La meilleure valeur d'une ligne (note la plus haute, au moins deux notes comparables) est mise en valeur, mais
+  // JAMAIS en cas d'égalité au sommet : si deux analyses ont la même valeur, aucune n'est surlignée (demande de Nolan).
+  const bestIdx = scores => {
+    const v = scores.filter(s => s !== null && s !== undefined);
+    if(v.length < 2) return -1;
+    const m = Math.max(...v);
+    return v.filter(s => s === m).length > 1 ? -1 : scores.indexOf(m);
+  };
+  const colN = cs.length + 1;
+  const section = title => `<tr class="cmp-sec"><th colspan="${colN}">${escapeHtml(title)}</th></tr>`;
   const row = (label, cells, best, cls) => `<tr class="${cls || ''}"><th scope="row">${label}</th>${cells.map((h, i) => `<td${i === best ? ' class="cmp-best"' : ''}>${h}</td>`).join('')}</tr>`;
+  const money = (c, v) => (v === undefined || v === null || String(v).trim() === '') ? '—' : `${escapeHtml(String(v))} ${c.currency}`;
+  const num1 = (v, d) => v === null || v === undefined ? '—' : fmtNum(v, d);
+  const textRow = (label, getter) => {
+    const cells = cs.map(c => { const h = getter(c); return richToPlain(h) ? `<div class="cmp-rich">${sanitizeRichHtml(h)}</div>` : '—'; });
+    return `<tr class="cmp-textrow"><th scope="row">${label}</th>${cells.map(h => `<td>${h}</td>`).join('')}</tr>`;
+  };
   const head = `<tr><th></th>${cs.map(c => `<th class="cmp-co"><button type="button" class="jr-co" data-cmp-open="${escapeHtml(c.id)}">${miniAv(c)}<span>${escapeHtml(c.name || 'Sans nom')}</span></button><div class="jr-meta">${escapeHtml((c.fields.identite || {}).ticker || '')}</div></th>`).join('')}</tr>`;
   const globalScores = infos.map(x => x.score);
-  let body = row('Score global', infos.map(x => x.score === null ? '—' : `<span class="cmp-score" style="color:${scoreColor5(x.score)}">${Math.round(x.score)}</span><span class="jr-meta"> / 100${x.provisional ? ' · provisoire' : ''}</span>`), bestIdx(globalScores), 'cmp-main');
+  let body = section("Vue d'ensemble");
+  body += row('Score global', infos.map(x => x.score === null ? '—' : `<span class="cmp-score" style="color:${scoreColor5(x.score)}">${Math.round(x.score)}</span><span class="jr-meta"> / 100${x.provisional ? ' · provisoire' : ''}</span>`), bestIdx(globalScores), 'cmp-main');
   body += row('Décision', cs.map(c => decisionPill(c.fields.personnelle.decision || '')), -1);
   const conv = cs.map(c => parseFloat(c.fields.personnelle.conviction) || 0);
   body += row('Conviction', conv.map(v => v ? `<span style="color:var(--star)">&#9733;</span> ${fmtNum(v, 1)} / 5` : '—'), bestIdx(conv.map(v => v || null)));
-  body += row('Prix actuel', cs.map(c => c.fields.valorisation.prixActuel ? `${escapeHtml(String(c.fields.valorisation.prixActuel))} ${c.currency}` : '—'), -1);
-  body += row("Prix d'achat cible", cs.map(c => c.fields.personnelle.prixAchatCible ? `${escapeHtml(String(c.fields.personnelle.prixAchatCible))} ${c.currency}` : '—'), -1);
+  body += row('Prix actuel', cs.map(c => money(c, c.fields.valorisation.prixActuel)), -1);
+  body += row("Prix d'achat cible", cs.map(c => money(c, c.fields.personnelle.prixAchatCible)), -1);
   const ec = cs.map(c => computeEcart(c, 'valeurIntrinseque'));
   body += row('Cours vs valeur intrinsèque', ec.map(e => e === null ? '—' : `<span style="color:${e < 0 ? 'var(--green)' : 'var(--red)'}">${e > 0 ? '+' : ''}${fmtNum(e, 1)} %</span>`), bestIdx(ec.map(e => e === null ? null : -e)));
+  body += section('Identité');
+  body += row('Secteur', cs.map(c => { const s = (c.fields.identite.secteur || {}); return s.secteur ? escapeHtml(s.secteur) + (s.industrie ? ` <span class="jr-meta">${escapeHtml(s.industrie)}</span>` : '') : '—'; }), -1);
+  body += row('Pays', cs.map(c => { const p = (c.fields.identite.paysSiege || {}).pays; return p ? `${flagIcon(p)} ${escapeHtml(p)}` : '—'; }), -1);
+  body += row('Cotation', cs.map(c => { const t = c.fields.identite.ticker, x = c.fields.identite.cotation; return (t || x) ? `${escapeHtml(t || '')} <span class="jr-meta">${escapeHtml(x || '')}</span>` : '—'; }), -1);
+  body += row('Market Cap', cs.map(c => money(c, c.fields.identite.marketCap || c.fields.financier.marketCap)), -1);
+  body += section('Chiffres clés');
+  body += row("Chiffre d'affaires", cs.map(c => money(c, c.fields.financier.chiffreAffaires)), -1);
+  body += row('Bénéfice net', cs.map(c => money(c, c.fields.financier.beneficeNet)), -1);
+  body += row('Free Cash Flow', cs.map(c => money(c, c.fields.financier.fcf)), -1);
+  body += row('Dette nette', cs.map(c => money(c, c.fields.financier.detteNette)), -1);
+  body += section('Valorisation');
+  body += row('PE actuel', cs.map(c => num1(computePeActuel(c), 1)), -1);
+  body += row('PE forward', cs.map(c => num1(computePeForward(c), 1)), -1);
+  body += row('PEG', cs.map(c => num1(computePeg(c), 2)), -1);
+  body += row('Valeur intrinsèque', cs.map(c => money(c, c.fields.valorisation.valeurIntrinseque)), -1);
+  body += row('Bear / Bull case', cs.map(c => { const b = c.fields.valorisation.bearCase, u = c.fields.valorisation.bullCase; return (b || u) ? `${escapeHtml(String(b || '—'))} / ${escapeHtml(String(u || '—'))} ${c.currency}` : '—'; }), -1);
+  body += row('Objectif Wall Street (moyen)', cs.map(c => { const w = computeWallStreetTargets(c), p = w && w.pct.moy; return (p === null || p === undefined) ? '—' : `<span style="color:${p >= 0 ? 'var(--green)' : 'var(--red)'}">${p >= 0 ? '+' : ''}${fmtNum(p, 1)} %</span>`; }), -1);
+  body += row('Rendement du dividende', cs.map(c => { const y = computeDividendYield(c); return y === null ? '—' : `${fmtNum(y, 2)} %`; }), -1);
+  if(cs.some(c => positionMetrics(c))){
+    body += section('Position');
+    body += row('Résultat de la position', cs.map(c => { const m = positionMetrics(c); return (!m || m.gainPct === null || m.gainPct === undefined) ? (m ? 'Ouverte' : '—') : `<span style="color:${m.gainPct >= 0 ? 'var(--green)' : 'var(--red)'}">${m.gainPct >= 0 ? '+' : ''}${fmtNum(m.gainPct, 1)} %</span>`; }), -1);
+  }
+  body += section('Score détaillé');
   SCORE_AXES.forEach((ax, ai) => {
     const axisScores = axesBy.map(a => a[ai].score);
     if(axisScores.every(s => s === null)) return;
@@ -7927,8 +7971,12 @@ function compareTableHtml(){
       body += row(`<span class="rv-sub">${escapeHtml(parts[0].label)}</span>`, parts.map(p => p.val === null ? '—' : `<span class="cmp-dot" style="background:${p.tier ? TIER_COLORS[p.tier] : 'var(--border-strong)'}"></span>${escapeHtml(cmpPartText(p))}`), bestIdx(parts.map(p => p.score)));
     });
   });
+  body += section('Votre analyse');
+  body += textRow('Points forts', c => c.fields.personnelle.pointsForts);
+  body += textRow('Points faibles', c => c.fields.personnelle.pointsFaibles);
+  body += textRow("Thèse d'investissement", c => c.fields.personnelle.these);
   return `<div class="cmp-wrap"><table class="cmp-table"><thead>${head}</thead><tbody>${body}</tbody></table></div>
-    <div class="s-note">La case teintée marque la meilleure valeur de chaque ligne (si au moins deux analyses sont renseignées). Un indicateur vide n'est pas pénalisé ici : il est simplement ignoré, comme dans le score. Aucun conseil en investissement.</div>`;
+    <div class="s-note">La case teintée en vert marque la meilleure valeur d'une ligne notée, seulement quand elle est la seule à l'être : à égalité, rien n'est surligné. Un indicateur vide est simplement ignoré, comme dans le score. Les montants sont dans la devise de chaque analyse, sans conversion. Aucun conseil en investissement.</div>`;
 }
 function renderCompareView(){
   const main = document.getElementById('main');
@@ -7937,7 +7985,7 @@ function renderCompareView(){
     <div class="space-head"><div>
       <div class="kicker">Mon espace · Comparateur</div>
       <h1 class="space-title">Comparer des entreprises</h1>
-      <p class="space-sub">Mettez ${COMPARE_MAX} analyses au maximum côte à côte, sur les mêmes indicateurs et les mêmes couleurs que dans vos fiches.</p>
+      <p class="space-sub">Choisissez jusqu'à ${COMPARE_MAX} analyses et comparez-les côte à côte, sur les mêmes indicateurs et les mêmes couleurs que dans vos fiches.</p>
     </div><div class="space-actions"><button class="btn btn-outline" data-go-space>&larr; Mon espace</button></div></div>
     <div class="pf-chips" style="margin:18px 0 6px 0"><span class="pf-chips-l">Analyses :</span>${chips}</div>
     <div id="cmpBody">${compareTableHtml()}</div>
@@ -7958,7 +8006,6 @@ function bindSpace(){
   bindTableSortMenu();
   main.querySelectorAll('[data-go-journal]').forEach(el => el.addEventListener('click', goJournal));
   main.querySelectorAll('[data-go-review]').forEach(el => el.addEventListener('click', () => goReview()));
-  main.querySelectorAll('[data-go-compare]').forEach(el => el.addEventListener('click', goCompare));
   main.querySelectorAll('[data-rv-done]').forEach(el => el.addEventListener('click', () => {
     const c = state.companies.find(x => x.id === el.dataset.rvDone);
     if(!c) return;
@@ -10346,6 +10393,7 @@ document.getElementById('deleteCompanyModal').addEventListener('click', e => {
 document.getElementById('brandHome').addEventListener('click', goHome);
 document.getElementById('navHome').addEventListener('click', goHome);
 document.getElementById('navSpace').addEventListener('click', goSpace);
+document.getElementById('navCompare').addEventListener('click', goCompare);
 document.getElementById('navPortfolio').addEventListener('click', goPortfolio);
 document.getElementById('navLearn').addEventListener('click', () => goLearn());
 document.addEventListener('click', e => { const b = e.target.closest('[data-go-learn]'); if(b) goLearn(b.dataset.goLearn || undefined); });
