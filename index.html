@@ -1600,6 +1600,13 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
 .rv-lines{ display:flex; flex-direction:column; margin-top:12px; }
 .rv-line{ display:flex; justify-content:space-between; gap:14px; padding:9px 2px; border-bottom:1px solid var(--border); font-size:14.5px; }
 .rv-line:last-child{ border-bottom:none; }
+/* Bilan : positions ouvertes et clôturées (2026-10-02) */
+.rv-pos-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px 28px; margin-top:12px; }
+.rv-pos-h{ font-size:12px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-soft); padding-bottom:6px; border-bottom:2px solid var(--border-strong); }
+.rv-pos-h span{ margin-left:6px; padding:1px 8px; border-radius:999px; background:var(--paper-line); color:var(--ink); }
+.rv-pos-grid .rv-lines{ margin-top:0; }
+.rv-name .rv-meta{ display:block; font-weight:400; font-size:12.5px; color:var(--ink-soft); }
+@media (max-width:760px){ .rv-pos-grid{ grid-template-columns:1fr; } }
 /* Ordres clôturés (2026-10-02) */
 .scard-s-row{ display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; }
 .ct-sum{ display:flex; flex-wrap:wrap; gap:12px; margin:4px 0 16px 0; }
@@ -7989,8 +7996,21 @@ function reviewData(year){
   events.sort((a, b) => a.t - b.t);
   const theses = state.companies.reduce((s, c) => s + (c.thesisHistory || []).filter(e => String(e.date).slice(0, 4) === year).length, 0);
   const by = k => events.filter(e => e.kind === k).length;
-  const posOpen = events.filter(e => e.kind === 'position' && /ouverte/.test(e.text)).length;
-  const posClosed = events.filter(e => e.kind === 'position' && /clôturée/.test(e.text)).length;
+  // Positions ouvertes : celles ouvertes pendant l'année (journal de bord) et, pour l'année en cours, toutes celles qui sont encore ouvertes
+  // (même si elles datent d'avant le journal). Positions clôturées : les ordres clôturés de l'année, plus les clôtures notées dans le journal
+  // sans ordre enregistré le même jour pour la même analyse (case décochée à la main, par exemple).
+  const openedList = [];
+  events.filter(e => e.kind === 'position' && /ouverte/.test(e.text)).forEach(e => { if(!openedList.some(x => x.c === e.c)) openedList.push({ c:e.c, t:e.t }); });
+  if(year === String(new Date().getFullYear())) state.companies.forEach(c => { if(c.position && c.position.active && !openedList.some(x => x.c === c)) openedList.push({ c, t:null }); });
+  openedList.forEach(x => { x.active = !!(x.c.position && x.c.position.active); x.m = x.active ? positionMetrics(x.c) : null; });
+  openedList.sort((a, b) => (b.t || 0) - (a.t || 0));
+  const closedList = allClosedTrades(year).map(x => ({ c:x.c, day:x.t.date, trade:x }));
+  events.filter(e => e.kind === 'position' && /clôturée/.test(e.text)).forEach(e => {
+    const day = journalLocalDay(new Date(e.t));
+    if(!closedList.some(x => x.c === e.c && x.day === day)) closedList.push({ c:e.c, day, trade:null });
+  });
+  closedList.sort((a, b) => String(b.day).localeCompare(String(a.day)));
+  const posOpen = openedList.length, posClosed = closedList.length;
   // Convictions : première et dernière valeur de l'année par entreprise, seulement si elles diffèrent.
   const conv = [];
   state.companies.forEach(c => {
@@ -8009,7 +8029,7 @@ function reviewData(year){
     pf.push({ cur, firstDay:days[0], lastDay:days[days.length - 1], a, b, n:days.length });
   });
   const trades = allClosedTrades(year);
-  return { created, theses, events, nDecision:by('decision'), nConviction:by('conviction'), nTarget:by('target'), posOpen, posClosed, conv, pf, trades };
+  return { created, theses, events, nDecision:by('decision'), nConviction:by('conviction'), nTarget:by('target'), posOpen, posClosed, openedList, closedList, conv, pf, trades };
 }
 function reviewLetter(year, d){
   const p = [];
@@ -8051,6 +8071,17 @@ function renderReviewView(){
     const up = x.to > (x.from || 0);
     return `<div class="rv-line"><span class="rv-name">${escapeHtml(x.c.name || 'Sans nom')}</span><span class="rv-val" style="color:${up ? 'var(--green)' : 'var(--red)'}">${x.from === null ? '—' : fmtNum(x.from, 1)} &rarr; ${fmtNum(x.to, 1)} / 5</span></div>`;
   }).join('');
+  const dayFr = t => formatDateFr(journalLocalDay(new Date(t)));
+  const openRows = d.openedList.map(x => {
+    const m = x.m, res = (m && m.gainPct !== null && m.gainPct !== undefined) ? `<span style="color:${pfColor(m.gainPct)}">${pfPct(m.gainPct)}</span>` : (x.active ? 'Ouverte' : 'Clôturée depuis');
+    const meta = `${x.t ? 'Ouverte le ' + escapeHtml(dayFr(x.t)) : 'Ouverte avant le journal'}${x.active ? ' · toujours ouverte' : ' · clôturée depuis'}`;
+    return `<div class="rv-line"><span class="rv-name">${escapeHtml(x.c.name || 'Sans nom')}<small class="rv-meta">${meta}</small></span><span class="rv-val">${res}</span></div>`;
+  }).join('');
+  const closedRows = d.closedList.map(x => {
+    const t = x.trade;
+    const res = t ? `<span style="color:${pfColor(t.m.gain)}">${pfSigned(t.m.gain, t.t.cur)}${t.m.pct === null ? '' : ' (' + pfPct(t.m.pct) + ')'}</span>` : '<span class="rv-meta">sans ordre enregistré</span>';
+    return `<div class="rv-line"><span class="rv-name">${escapeHtml(x.c.name || 'Sans nom')}<small class="rv-meta">Clôturée le ${escapeHtml(formatDateFr(x.day))}</small></span><span class="rv-val">${res}</span></div>`;
+  }).join('');
   const pfRows = d.pf.map(x => {
     const gain = x.b.v - x.b.i, pct = x.b.i ? gain / x.b.i * 100 : null;
     return `<div class="rv-line"><span class="rv-name">Portefeuille en ${x.cur === '€' ? 'euros' : 'dollars'}</span><span class="rv-val">${fmtMoney(x.a.v, x.cur)} &rarr; ${fmtMoney(x.b.v, x.cur)}</span></div>
@@ -8070,6 +8101,10 @@ function renderReviewView(){
       ${tile(d.events.length, d.events.length > 1 ? 'décisions journalisées' : 'décision journalisée')}
       ${tile(d.posOpen + '/' + d.posClosed, 'positions ouvertes / clôturées')}
     </div></section>
+    ${(d.openedList.length || d.closedList.length) ? `<section class="scard capital-card"><div class="scard-t">Positions</div><div class="rv-pos-grid">
+      <div><div class="rv-pos-h">Ouvertes <span>${d.openedList.length}</span></div>${d.openedList.length ? `<div class="rv-lines">${openRows}</div>` : `<div class="s-empty">Aucune position ouverte.</div>`}</div>
+      <div><div class="rv-pos-h">Clôturées <span>${d.closedList.length}</span></div>${d.closedList.length ? `<div class="rv-lines">${closedRows}</div>` : `<div class="s-empty">Aucune position clôturée.</div>`}</div>
+    </div></section>` : ''}
     ${d.conv.length ? `<section class="scard capital-card"><div class="scard-t">Convictions qui ont bougé</div><div class="rv-lines">${convRows}</div></section>` : ''}
     ${d.trades.length ? `<section class="scard capital-card"><div class="scard-t">Ordres clôturés</div>${closedSummaryHtml(d.trades)}${closedTradesTableHtml(d.trades)}<div class="s-note">Supprimez une ligne si vous l'avez saisie par erreur : cela ne modifie pas vos positions.</div></section>` : ''}
     ${d.pf.length ? `<section class="scard capital-card"><div class="scard-t">Portefeuille</div><div class="rv-lines">${pfRows}</div><div class="s-note">Valeur entre la première et la dernière photo enregistrée de l'année (${fmtNum(d.pf[0].n, 0)} jour${d.pf[0].n > 1 ? 's' : ''} relevé${d.pf[0].n > 1 ? 's' : ''}). Les achats et ventes de l'année y sont inclus : ce n'est pas une performance pure.</div></section>` : ''}
