@@ -701,6 +701,14 @@ input.company-name:focus{ outline:none; border-bottom-color:var(--blue); }
   font-size:13px; font-weight:500;
 }
 .chip.mono{ font-family:var(--font-mono); color:var(--blue); background:var(--blue-soft); font-weight:600; }
+/* Signalement « rapport publié » (2026-10-02) : petite cloche orange (#f2994a, même orange que la sécurité du dividende, jamais le rouge du barème) */
+.rpt-flag{ display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; width:19px; height:19px; margin-left:6px; border-radius:50%; color:#f2994a; background:color-mix(in srgb, #f2994a 20%, transparent); vertical-align:middle; }
+.rpt-flag svg{ width:12px; height:12px; }
+.chip-report-due{ gap:6px; color:#f2994a; background:color-mix(in srgb, #f2994a 16%, transparent); font-weight:600; }
+.rpt-note{ margin-top:7px; font-size:12.5px; line-height:1.45; color:var(--ink-soft); display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; }
+.rpt-note-due{ color:var(--ink); }
+.rpt-note-due svg{ color:#f2994a; vertical-align:-2px; }
+.field-value input.report-date-input{ width:100%; min-width:0; font-family:var(--font-ui); }
 .chip-progress{ gap:8px; }
 .chip-progress .hbar-track{ width:56px; height:7px; }
 .chip-progress b{ font-family:var(--font-mono); font-size:12.5px; color:var(--ink); }
@@ -2143,6 +2151,7 @@ const FIELD_DESCRIPTIONS = {
   ceo: "Le dirigeant principal de l'entreprise, et s'il en est aussi le fondateur.",
   nbEmployes: "Le nombre total de salariés, et le chiffre d'affaires généré par employé.",
   dateCreation: "L'année de fondation de l'entreprise.",
+  prochainRapport: "Date de la prochaine publication de résultats (visible sur le site de l'entreprise, rubrique Investisseurs, ou sur TradingView). Quand cette date est atteinte, une petite cloche orange apparaît à côté de l'entreprise pour vous rappeler de mettre à jour vos données.",
   dateIPO: "La date d'introduction en bourse et le prix auquel l'action a été proposée initialement.",
   activitePrincipale: "Ce que fait concrètement l'entreprise pour générer ses revenus.",
   autresActivites: "Les activités secondaires ou complémentaires de l'entreprise.",
@@ -2336,9 +2345,10 @@ const SECTIONS = [
     title: "Identité de l'entreprise",
     num: 1,
     fields: [
-      {key:'ticker', label:'Ticker', type:'ticker', group:'Identité et repères'},
-      {key:'cotation', label:'Cotation', type:'exchange'},
-      {key:'dateCreation', label:'Date de création', type:'text', compact:true},
+      {key:'ticker', label:'Ticker', type:'ticker', span:3, group:'Identité et repères'},
+      {key:'cotation', label:'Cotation', type:'exchange', span:3},
+      {key:'dateCreation', label:'Date de création', type:'text', compact:true, span:3},
+      {key:'prochainRapport', label:'Prochain rapport', type:'nextReport', span:3},
       {key:'paysSiege', label:'Pays', type:'duo', span:6, subs:[{key:'pays',label:'', picker:'country'},{key:'siegeSocial',label:'Siège social'}]},
       {key:'secteur', label:'Secteur', type:'duo', span:6, autoWidth:true, subs:[{key:'secteur',label:''},{key:'industrie',label:'Industrie'}]},
       {key:'marketCap', label:'Market Cap', type:'text', money:true, span:6},
@@ -3849,6 +3859,10 @@ function updateField(sectionKey, fieldKey, value, fieldType){
   if(fieldType === 'ticker'){
     scheduleLogo(c.id, 1300);
     schedulePriceRefresh(c.id, 1300);
+  }
+  if(fieldKey === 'prochainRapport'){
+    refreshReportNote();
+    renderTabs();
   }
   if(fieldKey === 'cotation'){
     c.priceUpdatedAt = null;
@@ -6710,6 +6724,81 @@ function bindTableSortMenu(){
   });
 }
 
+// ---------- Date du prochain rapport (2026-10-02, demande de Nolan) ----------
+// `identite.prochainRapport` = 'AAAA-MM-JJ' ou ''. Quand la date est atteinte ou dépassée, l'analyse reçoit un petit signalement (cloche orange)
+// dans la barre latérale, les tableaux, l'en-tête de la fiche et la carte « Rapports » de Mon espace, jusqu'à ce que l'utilisateur
+// clique « Données mises à jour » (la date est alors vidée) ou saisisse une nouvelle date future. Rien n'est envoyé nulle part.
+const REPORT_SOON_DAYS = 30;
+const REPORT_BELL = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>`;
+function reportInfo(c){
+  const raw = c && c.fields && c.fields.identite && c.fields.identite.prochainRapport;
+  if(typeof raw !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return null;
+  const [y, m, d] = raw.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  if(isNaN(dt.getTime()) || dt.getMonth() !== m - 1) return null;
+  const now = new Date();
+  const days = Math.round((dt - new Date(now.getFullYear(), now.getMonth(), now.getDate())) / 86400000);
+  return { iso: raw, days, due: days <= 0 };
+}
+function reportWhen(r){
+  if(r.days === 0) return "aujourd'hui";
+  if(r.days < 0) return `il y a ${-r.days} jour${-r.days > 1 ? 's' : ''}`;
+  return r.days === 1 ? 'demain' : `dans ${r.days} jours`;
+}
+function reportFlagHtml(c){
+  const r = reportInfo(c);
+  if(!r || !r.due) return '';
+  return `<span class="rpt-flag" data-tooltip="<div class='tt-desc'>Rapport attendu le ${escapeHtml(formatDateFr(r.iso))} (${reportWhen(r)}) : pensez à mettre à jour les données de cette analyse.</div>">${REPORT_BELL}</span>`;
+}
+function reportNoteHtml(c){
+  const r = reportInfo(c);
+  if(!r) return `<div class="rpt-note">Saisissez la date : un signalement apparaîtra à côté de l'entreprise quand le rapport sera publié.</div>`;
+  if(r.due) return `<div class="rpt-note rpt-note-due"><span>${REPORT_BELL} Rapport prévu ${reportWhen(r)} : mettez à jour vos données.</span><button type="button" class="btn btn-outline btn-sm" data-rpt-done="${escapeHtml(c.id)}">Données mises à jour</button></div>`;
+  return `<div class="rpt-note">Rapport ${reportWhen(r)}.</div>`;
+}
+function refreshReportNote(){
+  const c = getActive();
+  const el = document.getElementById('reportNote');
+  if(!c || !el) return;
+  el.innerHTML = reportNoteHtml(c);
+  bindReportDone(el);
+}
+function bindReportDone(root){
+  (root || document).querySelectorAll('[data-rpt-done]').forEach(b => { b.onclick = e => { e.stopPropagation(); markReportDone(b.dataset.rptDone); }; });
+}
+// « Données mises à jour » : la date est vidée (le texte n'est pas perdu : c'est seulement le rappel qui disparaît) ; on re-rend la vue courante
+function markReportDone(id){
+  const c = state.companies.find(x => x.id === id);
+  if(!c) return;
+  c.fields.identite.prochainRapport = '';
+  touchUpdated(c);
+  saveState();
+  render();
+  showToast('Rappel retiré : saisissez la date du prochain rapport quand vous la connaîtrez.');
+}
+// Entreprises dont le rapport est attendu : d'abord celles à mettre à jour (le plus ancien en premier), puis les prochains rapports
+function reportList(){
+  return state.companies.map(c => ({ c, r: reportInfo(c) })).filter(x => x.r && (x.r.due || x.r.days <= REPORT_SOON_DAYS))
+    .sort((a, b) => a.r.days - b.r.days);
+}
+function buildReportsCard(){
+  const list = reportList();
+  if(!list.length) return '';
+  const rows = list.map(({ c, r }) => `<div class="rv-row"><button type="button" class="tg-row rv-open" data-rec-open="${escapeHtml(c.id)}" data-rec-jump="sec-identite">${miniAv(c)}<span class="tg-id"><span class="tg-name">${escapeHtml(c.name || 'Sans nom')}${r.due ? ` <span class="rpt-flag rpt-flag-in">${REPORT_BELL}</span>` : ''}</span><span class="tg-vals">${r.due ? `Rapport du ${escapeHtml(formatDateFr(r.iso))} (${reportWhen(r)}) : données à mettre à jour` : `Prochain rapport le ${escapeHtml(formatDateFr(r.iso))} (${reportWhen(r)})`}${c.position && c.position.active ? ' · position ouverte' : ''}</span></span></button>${r.due ? `<button type="button" class="btn btn-outline btn-sm" data-rpt-done="${escapeHtml(c.id)}">Données mises à jour</button>` : ''}</div>`).join('');
+  const nDue = list.filter(x => x.r.due).length;
+  return spaceCard('s12', 'Rapports', nDue ? `${nDue} analyse${nDue > 1 ? 's' : ''} à mettre à jour, puis les rapports des ${REPORT_SOON_DAYS} prochains jours` : `Rapports attendus dans les ${REPORT_SOON_DAYS} prochains jours`, `<div class="tg-list">${rows}</div>`);
+}
+// Rappel à l'ouverture de l'app, une seule fois par jour
+function notifyDueReports(){
+  const n = state.companies.filter(c => { const r = reportInfo(c); return r && r.due; }).length;
+  if(!n) return;
+  const today = new Date().toISOString().slice(0, 10);
+  if(state.settings.reportToastDay === today) return;
+  state.settings.reportToastDay = today;
+  saveState();
+  showToast(n === 1 ? 'Un rapport est publié : pensez à mettre à jour vos données.' : `${n} rapports sont publiés : pensez à mettre à jour vos données.`);
+}
+
 function renderTabs(){
   const list = document.getElementById('tabs');
   list.innerHTML = '';
@@ -6732,7 +6821,7 @@ function renderTabs(){
     const av = avatarInner(c);
     el.innerHTML = `<span class="si-ico${av.cls}">${av.html}</span>
       <span class="si-text">
-        <span class="si-line1"><span class="si-name">${escapeHtml(c.name || 'Sans nom')}</span>${conviction ? starsRowHtml(conviction, 'si-stars') : ''}</span>
+        <span class="si-line1"><span class="si-name">${escapeHtml(c.name || 'Sans nom')}</span>${reportFlagHtml(c)}${conviction ? starsRowHtml(conviction, 'si-stars') : ''}</span>
         ${ticker ? `<span class="si-sub">${escapeHtml(ticker)}</span>` : ''}
       </span>
       <span class="del" title="Supprimer">✕</span>`;
@@ -6763,6 +6852,7 @@ function toggleTheme(){
 // ---------- Avancement de remplissage par section ----------
 function isFieldFilled(c, section, field){
   if(field.type.indexOf('computed') === 0 || field.type === 'checklist') return null;
+  if(field.type === 'nextReport') return null;   // simple rappel, pas une donnée d'analyse : ne compte pas dans le remplissage de la fiche
   const v = c.fields[section.key][field.key];
   const str = x => x !== undefined && x !== null && String(x).replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() !== '';
   if(field.type === 'stars') return (parseFloat(v) || 0) > 0;
@@ -6813,7 +6903,11 @@ function buildCompanyMeta(c){
   // Complétion de la fiche, en haut de la page (demande de Nolan le 2026-09-29) : même calcul que "Toutes vos analyses" (companyCompletion), même composant barre+pourcentage.
   const comp = companyCompletion(c);
   const progressChip = `<span class="chip chip-progress" data-tooltip="<div class='tt-desc'>Fiche complétée à ${comp.pct}&nbsp;% · ${comp.filled} champ${comp.filled > 1 ? 's' : ''} sur ${comp.total} renseigné${comp.filled > 1 ? 's' : ''}</div>"><span class="hbar-track"><i style="width:${comp.pct}%;background:${comp.pct >= 100 ? 'var(--green)' : 'var(--accent)'}"></i></span><b>${comp.pct}&nbsp;%</b></span>`;
-  return progressChip + out;
+  const rpt = reportInfo(c);
+  const reportChip = !rpt ? '' : (rpt.due
+    ? `<span class="chip chip-report-due">${REPORT_BELL} Rapport publié, mettre à jour les données</span>`
+    : (rpt.days <= REPORT_SOON_DAYS ? `<span class="chip">Prochain rapport ${reportWhen(rpt)}</span>` : ''));
+  return progressChip + reportChip + out;
 }
 function buildCompanyKpis(c){
   const sinfo = computeScoreInfo(c);
@@ -6924,6 +7018,10 @@ function fieldInput(sectionKey, field, value){
   }
   if(field.type === 'exchange'){
     return buildExchangePicker(sectionKey, field.key, v);
+  }
+  if(field.type === 'nextReport'){
+    // Date du prochain rapport financier : sélecteur de date natif, valeur AAAA-MM-JJ (ou vide)
+    return `<input type="date" class="report-date-input" data-section="${sectionKey}" data-field="${field.key}" data-type="date" value="${escapeHtml(/^\d{4}-\d{2}-\d{2}$/.test(String(v)) ? v : '')}">`;
   }
   if(field.type === 'select'){
     const opts = field.options.map(o => `<option value="${escapeHtml(o)}" ${o===v?'selected':''}>${o || '—'}</option>`).join('');
@@ -7448,7 +7546,7 @@ function buildCompaniesTableRows(){
     const mc = parseMoney(idn.marketCap) ?? parseMoney((c.fields.financier || {}).marketCap);
     return `<tr data-open-company="${c.id}">
       <td><div class="ht-co">${miniAv(c)}<div class="ht-id">
-        <div class="home-td-name"><span class="home-td-name-txt">${escapeHtml(c.name || 'Sans nom')}</span>${ticker ? `<span class="home-ticker">${escapeHtml(ticker)}</span>` : ''}</div>
+        <div class="home-td-name"><span class="home-td-name-txt">${escapeHtml(c.name || 'Sans nom')}</span>${reportFlagHtml(c)}${ticker ? `<span class="home-ticker">${escapeHtml(ticker)}</span>` : ''}</div>
         <div class="ht-sec">${sect ? escapeHtml(sect) : 'Secteur non renseigné'}</div>
       </div></div></td>
       <td>${chip(gs, gsColor, gs === null ? '' : Math.round(gs), { lg:true, prov:sinfo.provisional })}</td>
@@ -7654,7 +7752,7 @@ function renderSpaceView(){
   }else{
     html += buildSpaceKpis();
     html += buildCapitalCard();
-    html += `<div class="sgrid">${buildRevisitCard()}${buildRecsCard()}${buildDividendsCard()}${buildPipeline()}${buildScoreBars()}${buildValueGap()}${buildTargets()}${buildSectorsCard()}${buildCompaniesTable()}</div>`;
+    html += `<div class="sgrid">${buildReportsCard()}${buildRevisitCard()}${buildRecsCard()}${buildDividendsCard()}${buildPipeline()}${buildScoreBars()}${buildValueGap()}${buildTargets()}${buildSectorsCard()}${buildCompaniesTable()}</div>`;
   }
   html += `<div class="sgrid">${buildMilestones()}${buildTipCard()}${buildPrefsCard()}</div></div>`;
   main.innerHTML = html;
@@ -8085,6 +8183,7 @@ function renderCompareView(){
 function bindSpace(){
   const main = document.getElementById('main');
   bindTableSortMenu();
+  bindReportDone(main);
   main.querySelectorAll('[data-go-journal]').forEach(el => el.addEventListener('click', goJournal));
   main.querySelectorAll('[data-go-review]').forEach(el => el.addEventListener('click', () => goReview()));
   main.querySelectorAll('[data-rv-done]').forEach(el => el.addEventListener('click', () => {
@@ -8714,7 +8813,7 @@ function pfTableForDev(pf, d){
     const res = m.gain === null ? '—' : `<span class="pf-res" style="color:${pfColor(m.gain)}">${pfSigned(m.gain, m.devise)}</span>${m.gainPct !== null ? `<span class="pf-res-s" style="color:${pfColor(m.gainPct)}">${pfPct(m.gainPct)}</span>` : ''}`;
     const dec = info.decision ? `<span class="pill ${PF_DECISION_PILL[info.decision] || 'pill-none'}">${escapeHtml(info.decision)}</span>` : '<span style="color:var(--ink-soft)">—</span>';
     return `<tr data-open-company="${c.id}">
-      <td><div class="ht-co">${miniAv(c)}<span class="home-td-name">${escapeHtml(c.name || 'Sans nom')}${info.ticker ? ` <span style="font-family:var(--font-mono);font-size:12.5px;color:var(--ink-soft);font-weight:400">${escapeHtml(info.ticker)}</span>` : ''}</span></div></td>
+      <td><div class="ht-co">${miniAv(c)}<span class="home-td-name">${escapeHtml(c.name || 'Sans nom')}${reportFlagHtml(c)}${info.ticker ? ` <span style="font-family:var(--font-mono);font-size:12.5px;color:var(--ink-soft);font-weight:400">${escapeHtml(info.ticker)}</span>` : ''}</span></div></td>
       <td>${m.qty === null ? '—' : fmtNum(m.qty, 4)}</td>
       <td>${m.buy === null ? '—' : fmtMoney(m.buy, m.devise)}</td>
       <td>${m.cur === null ? '—' : fmtMoney(m.cur, m.devise)}</td>
@@ -10126,9 +10225,10 @@ function render(){
       const thesisBtn = field.key === 'these' && section.key === 'personnelle'
         ? `<div class="thesis-actions"><button type="button" class="thesis-change-btn" id="thesisChangeBtn">&#10003; Changement de thèse</button><span>Archive la thèse actuelle dans le journal de bord et vide la case pour en écrire une nouvelle. Une simple retouche, sans ce bouton, n'archive rien.</span></div>`
         : '';
+      const reportNote = field.type === 'nextReport' ? `<div id="reportNote">${reportNoteHtml(c)}</div>` : '';
       html += `<div class="field-row">
         <div class="field-label" data-tooltip="${fieldDescTooltip(field.key)}">${field.label}</div>
-        <div class="field-value">${fieldInput(section.key, field, value)}${thesisBtn}</div>
+        <div class="field-value">${fieldInput(section.key, field, value)}${thesisBtn}${reportNote}</div>
       </div>`;
     };
     // `group` insère un sous-titre pleine largeur, `span` (3, 4, 6, 12 sur 12 colonnes) règle la largeur du champ
@@ -10177,6 +10277,7 @@ function render(){
   bindSectionNav();
   const thesisChangeBtn = document.getElementById('thesisChangeBtn');
   if(thesisChangeBtn) thesisChangeBtn.addEventListener('click', archiveThesisAndClear);
+  bindReportDone(document.getElementById('reportNote'));
 
   main.querySelectorAll('[data-section][data-field]').forEach(el => {
     if(el.dataset.type === 'richtext'){
@@ -10503,6 +10604,7 @@ bindAuth();
 initTour();
 initPieHover();
 initGotoLinks();
+notifyDueReports();
 
 if('serviceWorker' in navigator){
   window.addEventListener('load', () => {
