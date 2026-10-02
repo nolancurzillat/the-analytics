@@ -1597,7 +1597,20 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
 .cmp-co .jr-meta{ display:inline; margin-left:6px; font-weight:500; }
 .cmp-co .jr-co .av, .cmp-co .jr-co > :first-child:not(span){ flex:0 0 auto; }
 .cmp-main td, .cmp-main th{ background:var(--paper-line); }
-.cmp-table .cmp-sec th{ background:var(--paper-line); font-size:11.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--sec-c, var(--accent)); padding-top:16px; border-top:2px solid var(--border-strong); }
+/* Bandeau de catégorie bien visible : fond teinté de la couleur de la catégorie, gros trait à gauche, filet épais au-dessus (demande de Nolan) */
+.cmp-table .cmp-sec th{ background:color-mix(in srgb, var(--sec-c, var(--accent)) 20%, var(--card)); font-size:13px; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--ink); padding:13px 14px 12px 12px; border-left:6px solid var(--sec-c, var(--accent)); border-top:3px solid var(--sec-c, var(--accent)); border-bottom:1px solid var(--sec-c, var(--accent)); }
+.cmp-table tbody tr:not(.cmp-sec):not(.cmp-radar) > :first-child{ border-left:6px solid color-mix(in srgb, var(--sec-c, var(--border-strong)) 35%, transparent); }
+.cmp-co{ border-bottom:3px solid var(--co-c, var(--accent)) !important; }
+.cmp-radar td{ padding:14px 10px; background:color-mix(in srgb, var(--sec-c) 5%, var(--card)); border-left:6px solid color-mix(in srgb, var(--sec-c) 35%, transparent); }
+.cmp-radar-box{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+.cmp-radar-t{ font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); }
+.cmp-radar-svg{ width:100%; max-width:580px; height:auto; }
+.cmp-legend{ display:flex; flex-wrap:wrap; justify-content:center; gap:6px 18px; }
+.cmp-leg{ display:inline-flex; align-items:center; gap:7px; font-size:13.5px; font-weight:600; }
+.cmp-leg-dot{ width:11px; height:11px; border-radius:50%; flex:0 0 auto; }
+.cmp-bb{ line-height:1.5; white-space:nowrap; }
+.cmp-bb-l{ display:inline-block; min-width:34px; font-size:12px; color:var(--ink-soft); }
+.cmp-pct{ font-weight:700; margin-left:2px; }
 .cmp-table .cmp-textrow th, .cmp-table .cmp-textrow td{ vertical-align:top; }
 .cmp-rich{ font-size:13.5px; line-height:1.55; white-space:normal; }
 @media (max-width:760px){
@@ -1610,10 +1623,13 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
   .cmp-table tbody th{ width:27%; }
   .cmp-co .jr-co{ font-size:13px; flex-wrap:wrap; gap:4px; }
   .cmp-co .jr-meta{ display:none; }
+  .cmp-bb{ white-space:normal; }
+  .cmp-table .cmp-sec th{ font-size:12px; padding:11px 8px 10px 8px; border-left-width:5px; }
+  .cmp-table tbody tr:not(.cmp-sec):not(.cmp-radar) > :first-child, .cmp-radar td{ border-left-width:4px; }
 }
 .cmp-score{ font-family:var(--font-serif); font-size:26px; font-weight:700; }
-.cmp-axis th, .cmp-axis td{ background:color-mix(in srgb, var(--accent) 7%, var(--card)); border-top:2px solid var(--border-strong); }
-.cmp-best{ background:color-mix(in srgb, var(--green) 13%, transparent); font-weight:600; }
+.cmp-axis th, .cmp-axis td{ background:color-mix(in srgb, var(--sec-c, var(--accent)) 10%, var(--card)); border-top:2px solid color-mix(in srgb, var(--sec-c, var(--border-strong)) 45%, transparent); }
+.cmp-table td.cmp-best{ background:color-mix(in srgb, var(--green) 16%, var(--card)); font-weight:600; }
 .cmp-dot{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:8px; }
 .rv-name{ font-weight:600; }
 .rv-sub{ font-weight:400; color:var(--ink-soft); }
@@ -7925,6 +7941,33 @@ function goCompare(){
   window.scrollTo(0, 0);
   closeMenu();
 }
+// Une couleur par entreprise comparée (jamais vert ni rouge : réservés au barème), dans l'ordre fixe de la sélection
+function cmpCompanyColors(n){ return ['#4f7cf0', '#d9a93c', '#d04fa6', '#22b8cf'].slice(0, n); }
+// Radar des 5 axes du score, une forme par entreprise (mêmes valeurs que le radar de la Synthèse globale, mais superposées)
+function compareRadarHtml(cs, axesBy, cols){
+  const cx = 110, cy = 105, maxR = 62, axes = SCORE_AXES, n = axes.length;
+  const ang = i => (Math.PI * 2 * i / n) - Math.PI / 2;
+  const pt = (i, f) => [cx + Math.cos(ang(i)) * maxR * f, cy + Math.sin(ang(i)) * maxR * f];
+  let grid = '';
+  [0.25, 0.5, 0.75, 1].forEach(f => { grid += `<polygon points="${axes.map((_, i) => pt(i, f).join(',')).join(' ')}" fill="none" stroke="var(--border-strong)" stroke-width="1"/>`; });
+  axes.forEach((_, i) => { const [x, y] = pt(i, 1); grid += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="var(--border-strong)" stroke-width="1"/>`; });
+  let labels = '';
+  axes.forEach((a, i) => {
+    const [x, y] = pt(i, 1.3), cosA = Math.cos(ang(i));
+    const anchor = Math.abs(cosA) < 0.3 ? 'middle' : (cosA > 0 ? 'start' : 'end');
+    labels += `<text x="${x}" y="${y + 4}" text-anchor="${anchor}" font-size="12" font-weight="600" fill="var(--ink)" font-family="Inter, sans-serif">${escapeHtml(a.label)}</text>`;
+  });
+  let shapes = '';
+  cs.forEach((c, k) => {
+    const sc = axesBy[k].map(a => a.score);
+    if(sc.every(s => s === null)) return;
+    const pts = sc.map((s, i) => pt(i, s === null ? 0.03 : s / 100));
+    shapes += `<polygon points="${pts.map(p => p.join(',')).join(' ')}" fill="${cols[k]}" fill-opacity="0.14" stroke="${cols[k]}" stroke-width="2" stroke-linejoin="round"/>`;
+    pts.forEach((p, i) => { if(sc[i] !== null) shapes += `<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="${cols[k]}" stroke="var(--card)" stroke-width="1.5"/>`; });
+  });
+  const legend = cs.map((c, k) => `<span class="cmp-leg"><span class="cmp-leg-dot" style="background:${cols[k]}"></span>${escapeHtml(c.name || 'Sans nom')}</span>`).join('');
+  return `<div class="cmp-radar-box"><div class="cmp-radar-t">Profil du score par axe</div><svg viewBox="-56 0 332 210" class="cmp-radar-svg" role="img" aria-label="Radar comparant les 5 axes du score">${grid}${shapes}${labels}</svg><div class="cmp-legend">${legend}</div></div>`;
+}
 function compareTableHtml(){
   const cs = compareIds.map(id => state.companies.find(c => c.id === id)).filter(Boolean);
   if(cs.length < 2) return `<div class="s-empty">Choisissez au moins deux analyses ci-dessus pour les comparer.</div>`;
@@ -7939,56 +7982,73 @@ function compareTableHtml(){
     return v.filter(s => s === m).length > 1 ? -1 : scores.indexOf(m);
   };
   const colN = cs.length + 1;
-  const section = title => `<tr class="cmp-sec"><th colspan="${colN}">${escapeHtml(title)}</th></tr>`;
-  const row = (label, cells, best, cls) => `<tr class="${cls || ''}"><th scope="row">${label}</th>${cells.map((h, i) => `<td${i === best ? ' class="cmp-best"' : ''}>${h}</td>`).join('')}</tr>`;
+  // Chaque catégorie a sa couleur (celles des sections des fiches quand elles existent) : bandeau teinté + trait épais à gauche (demande de Nolan : mieux séparer les catégories)
+  const SEC_COL = { overview:'#7c8aa8', identite:SECTION_COLORS.identite, chiffres:SECTION_COLORS.financier, valo:SECTION_COLORS.valorisation, position:'#7c8aa8', score:SECTION_COLORS.croissance, analyse:SECTION_COLORS.personnelle };
+  let curCol = SEC_COL.overview; // couleur de la catégorie en cours : toutes ses lignes reprennent le même trait à gauche
+  const section = (title, col) => { curCol = col; return `<tr class="cmp-sec" style="--sec-c:${col}"><th colspan="${colN}">${escapeHtml(title)}</th></tr>`; };
+  const row = (label, cells, best, cls, col) => `<tr class="${cls || ''}" style="--sec-c:${col || curCol}"><th scope="row">${label}</th>${cells.map((h, i) => `<td${i === best ? ' class="cmp-best"' : ''}>${h}</td>`).join('')}</tr>`;
+  const cmpCols = cmpCompanyColors(cs.length);
   const money = (c, v) => (v === undefined || v === null || String(v).trim() === '') ? '—' : `${escapeHtml(String(v))} ${c.currency}`;
   const num1 = (v, d) => v === null || v === undefined ? '—' : fmtNum(v, d);
   const textRow = (label, getter) => {
     const cells = cs.map(c => { const h = getter(c); return richToPlain(h) ? `<div class="cmp-rich">${sanitizeRichHtml(h)}</div>` : '—'; });
-    return `<tr class="cmp-textrow"><th scope="row">${label}</th>${cells.map(h => `<td>${h}</td>`).join('')}</tr>`;
+    return `<tr class="cmp-textrow" style="--sec-c:${curCol}"><th scope="row">${label}</th>${cells.map(h => `<td>${h}</td>`).join('')}</tr>`;
   };
-  const head = `<tr><th></th>${cs.map(c => `<th class="cmp-co"><button type="button" class="jr-co" data-cmp-open="${escapeHtml(c.id)}">${miniAv(c)}<span>${escapeHtml(c.name || 'Sans nom')}</span><span class="jr-meta">${escapeHtml((c.fields.identite || {}).ticker || '')}</span></button></th>`).join('')}</tr>`;
+  const head = `<tr><th></th>${cs.map(c => `<th class="cmp-co"><button type="button" class="jr-co" data-cmp-open="${escapeHtml(c.id)}">${miniAv(c)}<span>${escapeHtml(c.name || 'Sans nom')}</span><span class="jr-meta">${escapeHtml((c.fields.identite || {}).ticker || '')}</span></button></th>`.replace('<th class="cmp-co">', `<th class="cmp-co" style="--co-c:${cmpCols[cs.indexOf(c)]}">`)).join('')}</tr>`;
   const globalScores = infos.map(x => x.score);
-  let body = section("Vue d'ensemble");
+  let body = section("Vue d'ensemble", SEC_COL.overview);
   body += row('Score global', infos.map(x => x.score === null ? '—' : `<span class="cmp-score" style="color:${scoreColor5(x.score)}">${Math.round(x.score)}</span><span class="jr-meta"> / 100${x.provisional ? ' · provisoire' : ''}</span>`), bestIdx(globalScores), 'cmp-main');
   body += row('Décision', cs.map(c => decisionPill(c.fields.personnelle.decision || '')), -1);
   const conv = cs.map(c => parseFloat(c.fields.personnelle.conviction) || 0);
   body += row('Conviction', conv.map(v => v ? `<span style="color:var(--star)">&#9733;</span> ${fmtNum(v, 1)} / 5` : '—'), bestIdx(conv.map(v => v || null)));
   body += row('Prix actuel', cs.map(c => money(c, c.fields.valorisation.prixActuel)), -1);
   body += row("Prix d'achat cible", cs.map(c => money(c, c.fields.personnelle.prixAchatCible)), -1);
-  body += section('Identité');
+  body += section('Identité', SEC_COL.identite);
   body += row('Secteur', cs.map(c => { const s = (c.fields.identite.secteur || {}); return s.secteur ? escapeHtml(s.secteur) + (s.industrie ? ` <span class="jr-meta">${escapeHtml(s.industrie)}</span>` : '') : '—'; }), -1);
   body += row('Pays', cs.map(c => { const p = (c.fields.identite.paysSiege || {}).pays; return p ? `${flagIcon(p)} ${escapeHtml(p)}` : '—'; }), -1);
   body += row('Cotation', cs.map(c => { const t = c.fields.identite.ticker, x = c.fields.identite.cotation; return (t || x) ? `${escapeHtml(t || '')} <span class="jr-meta">${escapeHtml(x || '')}</span>` : '—'; }), -1);
   body += row('Market Cap', cs.map(c => money(c, c.fields.identite.marketCap || c.fields.financier.marketCap)), -1);
-  body += section('Chiffres clés');
+  body += section('Chiffres clés', SEC_COL.chiffres);
   body += row("Chiffre d'affaires", cs.map(c => money(c, c.fields.financier.chiffreAffaires)), -1);
   body += row('Bénéfice net', cs.map(c => money(c, c.fields.financier.beneficeNet)), -1);
   body += row('Free Cash Flow', cs.map(c => money(c, c.fields.financier.fcf)), -1);
   body += row('Dette nette', cs.map(c => money(c, c.fields.financier.detteNette)), -1);
-  body += section('Valorisation');
-  body += row('PE actuel', cs.map(c => num1(computePeActuel(c), 1)), -1);
-  body += row('PE forward', cs.map(c => num1(computePeForward(c), 1)), -1);
+  body += section('Valorisation', SEC_COL.valo);
+  // PE : plus il est bas, mieux c'est, mais seulement s'il est positif (un PE négatif ne signale pas une bonne affaire)
+  const lowPe = vals => vals.map(v => (v !== null && v !== undefined && v > 0) ? -v : null);
+  const pes = cs.map(c => computePeActuel(c)), pesF = cs.map(c => computePeForward(c));
+  body += row('PE actuel', pes.map(v => num1(v, 1)), bestIdx(lowPe(pes)));
+  body += row('PE forward', pesF.map(v => num1(v, 1)), bestIdx(lowPe(pesF)));
   // Le PEG n'est plus ici : il figure dans le « Score détaillé » (axe Valorisation), avec tous les autres indicateurs qui entrent dans la note
   body += row('Valeur intrinsèque', cs.map(c => money(c, c.fields.valorisation.valeurIntrinseque)), -1);
-  body += row('Bear / Bull case', cs.map(c => { const b = c.fields.valorisation.bearCase, u = c.fields.valorisation.bullCase; return (b || u) ? `${escapeHtml(String(b || '—'))} / ${escapeHtml(String(u || '—'))} ${c.currency}` : '—'; }), -1);
-  body += row('Objectif Wall Street (moyen)', cs.map(c => { const w = computeWallStreetTargets(c), p = w && w.pct.moy; return (p === null || p === undefined) ? '—' : `<span style="color:${p >= 0 ? 'var(--green)' : 'var(--red)'}">${p >= 0 ? '+' : ''}${fmtNum(p, 1)} %</span>`; }), -1);
+  // Bear / Bull : valeur saisie suivie de l'écart estimé par rapport au prix actuel (vert si au-dessus du cours, rouge si en dessous)
+  const bbCell = (c, label, v) => {
+    if(v === undefined || v === null || String(v).trim() === '') return `<div class="cmp-bb"><span class="cmp-bb-l">${label}</span> —</div>`;
+    const price = num(c.fields.valorisation.prixActuel), val = num(v);
+    const pct = (price && price > 0 && val !== null) ? (val / price - 1) * 100 : null;
+    return `<div class="cmp-bb"><span class="cmp-bb-l">${label}</span> ${escapeHtml(String(v))} ${c.currency}${pct === null ? '' : ` <span class="cmp-pct" style="color:${pct >= 0 ? 'var(--green)' : 'var(--red)'}">${pct >= 0 ? '+' : ''}${fmtNum(pct, 1)} %</span>`}</div>`;
+  };
+  body += row('Bear / Bull case', cs.map(c => bbCell(c, 'Bear', c.fields.valorisation.bearCase) + bbCell(c, 'Bull', c.fields.valorisation.bullCase)), -1);
+  const wsPct = cs.map(c => { const w = computeWallStreetTargets(c), p = w && w.pct.moy; return (p === null || p === undefined) ? null : p; });
+  body += row('Objectif Wall Street (moyen)', wsPct.map(p => p === null ? '—' : `<span style="color:${p >= 0 ? 'var(--green)' : 'var(--red)'}">${p >= 0 ? '+' : ''}${fmtNum(p, 1)} %</span>`), bestIdx(wsPct));
   body += row('Rendement du dividende', cs.map(c => { const y = computeDividendYield(c); return y === null ? '—' : `${fmtNum(y, 2)} %`; }), -1);
   if(cs.some(c => positionMetrics(c))){
-    body += section('Position');
+    body += section('Position', SEC_COL.position);
     body += row('Résultat de la position', cs.map(c => { const m = positionMetrics(c); return (!m || m.gainPct === null || m.gainPct === undefined) ? (m ? 'Ouverte' : '—') : `<span style="color:${m.gainPct >= 0 ? 'var(--green)' : 'var(--red)'}">${m.gainPct >= 0 ? '+' : ''}${fmtNum(m.gainPct, 1)} %</span>`; }), -1);
   }
-  body += section('Score détaillé');
+  // Le graphique radar (une couleur par entreprise) juste avant le détail des notes
+  body += `<tr class="cmp-radar" style="--sec-c:${SEC_COL.score}"><td colspan="${colN}">${compareRadarHtml(cs, axesBy, cmpCols)}</td></tr>`;
+  body += section('Score détaillé', SEC_COL.score);
   SCORE_AXES.forEach((ax, ai) => {
     const axisScores = axesBy.map(a => a[ai].score);
     // Chaque axe et chacun de ses indicateurs sont toujours listés, même vides (« — »), pour voir tout ce qui entre dans la note (demande de Nolan)
-    body += row(`${escapeHtml(ax.label)}`, axisScores.map(s => s === null ? '—' : `<strong style="color:${scoreColor5(s)}">${Math.round(s)}</strong><span class="jr-meta"> / 100</span>`), bestIdx(axisScores), 'cmp-axis');
+    body += row(`${escapeHtml(ax.label)}`, axisScores.map(s => s === null ? '—' : `<strong style="color:${scoreColor5(s)}">${Math.round(s)}</strong><span class="jr-meta"> / 100</span>`), bestIdx(axisScores), 'cmp-axis', SEC_COL.score);
     ax.parts.forEach((key, pi) => {
       const parts = axesBy.map(a => a[ai].parts[pi]);
       body += row(`<span class="rv-sub">${escapeHtml(parts[0].label)}</span>`, parts.map(p => p.val === null ? '—' : `<span class="cmp-dot" style="background:${p.tier ? TIER_COLORS[p.tier] : 'var(--border-strong)'}"></span>${escapeHtml(cmpPartText(p))}`), bestIdx(parts.map(p => p.score)));
     });
   });
-  body += section('Votre analyse');
+  body += section('Votre analyse', SEC_COL.analyse);
   body += textRow('Points forts', c => c.fields.personnelle.pointsForts);
   body += textRow('Points faibles', c => c.fields.personnelle.pointsFaibles);
   body += textRow("Thèse d'investissement", c => c.fields.personnelle.these);
