@@ -302,8 +302,10 @@ svg{display:block;}
 .search-btn:hover{ background:rgba(255,255,255,.08); color:#fff; }
 .search-btn svg{ flex:0 0 auto; }
 .search-btn-label{ font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-@media (max-width:1100px){
-  .search-btn{ flex:0 0 34px; width:34px; padding:0; justify-content:center; }
+/* 5 onglets depuis l'ajout du Comparateur (2026-10-02) : la case de recherche redevient une icône dès 1500px (contenu = écran moins la barre latérale de 268px),
+   sinon les onglets défilaient avec une barre de défilement visible à ~1280px. */
+@media (max-width:1500px){
+  .search-btn{ flex:0 0 34px; width:34px; padding:0; justify-content:center; margin-right:8px; }
   .search-btn-label{ display:none; }
 }
 
@@ -342,7 +344,8 @@ svg{display:block;}
    (2026-09-29, demande de Nolan après un premier essai en barre séparée juste en dessous). `.topbar-nav` prend toute la place
    restante entre la marque et les actions (`flex:1 1 auto`) et défile horizontalement si ça ne tient pas, sans jamais pousser
    `.topbar-actions` hors de l'écran (compte/thème restent toujours accessibles, quitte à faire défiler les onglets). */
-.topbar-nav{ display:flex; align-items:center; gap:6px; overflow-x:auto; flex:1 1 auto; min-width:0; }
+.topbar-nav{ display:flex; align-items:center; gap:6px; overflow-x:auto; scrollbar-width:none; flex:1 1 auto; min-width:0; }
+.topbar-nav::-webkit-scrollbar{ display:none; }
 .main-nav-item{
   display:inline-flex; align-items:center; gap:7px; flex:0 0 auto;
   padding:8px 14px; border-radius:999px; border:1px solid transparent;
@@ -351,6 +354,9 @@ svg{display:block;}
 }
 .main-nav-item:hover{ color:#fff; background:rgba(255,255,255,.08); }
 .main-nav-item.active{ color:#fff; background:var(--accent); }
+@media (min-width:901px) and (max-width:1500px){
+  .main-nav-item{ padding:8px 10px; gap:6px; }
+}
 .mn-ico{ display:flex; }
 .mn-ico svg{ width:15px; height:15px; }
 .side-overlay{ display:none; }
@@ -1580,17 +1586,31 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
 .rv-line:last-child{ border-bottom:none; }
 /* Comparateur (2026-10-02) */
 .cmp-page{ max-width:1100px; }
-.cmp-wrap{ overflow-x:auto; margin-top:16px; background:var(--card); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); }
-.cmp-table{ width:100%; border-collapse:collapse; font-size:14px; min-width:520px; }
+/* overflow:clip (et non auto) : un conteneur qui défile bloquerait l'en-tête collant, qui doit se coller sous la barre du haut (62px) */
+.cmp-wrap{ overflow:visible; overflow:clip; margin-top:16px; background:var(--card); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); }
+.cmp-table{ width:100%; border-collapse:collapse; font-size:14px; }
 .cmp-table th, .cmp-table td{ padding:10px 14px; text-align:left; border-bottom:1px solid var(--border); vertical-align:middle; }
 .cmp-table tbody th{ font-weight:600; color:var(--ink); width:26%; }
-.cmp-table thead th{ position:sticky; top:0; background:var(--card); }
-.cmp-co .jr-co{ display:flex; align-items:center; gap:8px; }
+.cmp-table thead th{ position:sticky; top:63px; z-index:3; background:var(--card); padding:6px 14px; box-shadow:0 1px 0 var(--border-strong), 0 6px 10px -8px rgba(0,0,0,.35); }
+.cmp-co .jr-co{ display:flex; align-items:center; gap:8px; text-align:left; }
+.cmp-co .jr-co span{ overflow-wrap:anywhere; }
+.cmp-co .jr-meta{ display:inline; margin-left:6px; font-weight:500; }
+.cmp-co .jr-co .av, .cmp-co .jr-co > :first-child:not(span){ flex:0 0 auto; }
 .cmp-main td, .cmp-main th{ background:var(--paper-line); }
 .cmp-table .cmp-sec th{ background:var(--paper-line); font-size:11.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--sec-c, var(--accent)); padding-top:16px; border-top:2px solid var(--border-strong); }
 .cmp-table .cmp-textrow th, .cmp-table .cmp-textrow td{ vertical-align:top; }
 .cmp-rich{ font-size:13.5px; line-height:1.55; white-space:normal; }
-.cmp-table td, .cmp-table tbody th{ min-width:150px; }
+@media (max-width:760px){
+  .cmp-table{ font-size:13px; table-layout:fixed; }
+  .cmp-table td, .cmp-table th{ overflow-wrap:anywhere; }
+  .cmp-co .jr-co{ flex-direction:column; align-items:flex-start; }
+  .cmp-co .mini-av{ width:26px; height:26px; font-size:10px; }
+  .cmp-table th, .cmp-table td{ padding:8px 7px; }
+  .cmp-table thead th{ padding:5px 7px; top:60px; }
+  .cmp-table tbody th{ width:27%; }
+  .cmp-co .jr-co{ font-size:13px; flex-wrap:wrap; gap:4px; }
+  .cmp-co .jr-meta{ display:none; }
+}
 .cmp-score{ font-family:var(--font-serif); font-size:26px; font-weight:700; }
 .cmp-axis th, .cmp-axis td{ background:color-mix(in srgb, var(--accent) 7%, var(--card)); border-top:2px solid var(--border-strong); }
 .cmp-best{ background:color-mix(in srgb, var(--green) 13%, transparent); font-weight:600; }
@@ -7897,6 +7917,7 @@ function cmpPartText(p){
   if(p.key === 'consensus') return WS_RECO[wsRecoIndex(p.val)].label;
   return fmtNum(p.val, 2) + (SCORE_PART_UNITS[p.key] || '');
 }
+const CMP_SHOWN_ELSEWHERE = ['peg', 'margeSecurite', 'tailleCapi'];
 function goCompare(){
   currentView = 'compare';
   compareIds = compareIds.filter(id => state.companies.some(c => c.id === id));
@@ -7927,7 +7948,7 @@ function compareTableHtml(){
     const cells = cs.map(c => { const h = getter(c); return richToPlain(h) ? `<div class="cmp-rich">${sanitizeRichHtml(h)}</div>` : '—'; });
     return `<tr class="cmp-textrow"><th scope="row">${label}</th>${cells.map(h => `<td>${h}</td>`).join('')}</tr>`;
   };
-  const head = `<tr><th></th>${cs.map(c => `<th class="cmp-co"><button type="button" class="jr-co" data-cmp-open="${escapeHtml(c.id)}">${miniAv(c)}<span>${escapeHtml(c.name || 'Sans nom')}</span></button><div class="jr-meta">${escapeHtml((c.fields.identite || {}).ticker || '')}</div></th>`).join('')}</tr>`;
+  const head = `<tr><th></th>${cs.map(c => `<th class="cmp-co"><button type="button" class="jr-co" data-cmp-open="${escapeHtml(c.id)}">${miniAv(c)}<span>${escapeHtml(c.name || 'Sans nom')}</span><span class="jr-meta">${escapeHtml((c.fields.identite || {}).ticker || '')}</span></button></th>`).join('')}</tr>`;
   const globalScores = infos.map(x => x.score);
   let body = section("Vue d'ensemble");
   body += row('Score global', infos.map(x => x.score === null ? '—' : `<span class="cmp-score" style="color:${scoreColor5(x.score)}">${Math.round(x.score)}</span><span class="jr-meta"> / 100${x.provisional ? ' · provisoire' : ''}</span>`), bestIdx(globalScores), 'cmp-main');
@@ -7951,7 +7972,9 @@ function compareTableHtml(){
   body += section('Valorisation');
   body += row('PE actuel', cs.map(c => num1(computePeActuel(c), 1)), -1);
   body += row('PE forward', cs.map(c => num1(computePeForward(c), 1)), -1);
-  body += row('PEG', cs.map(c => num1(computePeg(c), 2)), -1);
+  // PEG : affiché ici (avec sa pastille de couleur et la mise en valeur du meilleur), donc retiré du « Score détaillé » pour ne pas apparaître deux fois
+  const pegParts = axesBy.map(a => { for(const ax of a){ const p = ax.parts.find(x => x.key === 'peg'); if(p) return p; } return null; });
+  body += row('PEG', cs.map((c, i) => { const p = pegParts[i], v = computePeg(c); return v === null || v === undefined ? '—' : `<span class="cmp-dot" style="background:${p && p.tier ? TIER_COLORS[p.tier] : 'var(--border-strong)'}"></span>${fmtNum(v, 2)}`; }), bestIdx(pegParts.map(p => p ? p.score : null)));
   body += row('Valeur intrinsèque', cs.map(c => money(c, c.fields.valorisation.valeurIntrinseque)), -1);
   body += row('Bear / Bull case', cs.map(c => { const b = c.fields.valorisation.bearCase, u = c.fields.valorisation.bullCase; return (b || u) ? `${escapeHtml(String(b || '—'))} / ${escapeHtml(String(u || '—'))} ${c.currency}` : '—'; }), -1);
   body += row('Objectif Wall Street (moyen)', cs.map(c => { const w = computeWallStreetTargets(c), p = w && w.pct.moy; return (p === null || p === undefined) ? '—' : `<span style="color:${p >= 0 ? 'var(--green)' : 'var(--red)'}">${p >= 0 ? '+' : ''}${fmtNum(p, 1)} %</span>`; }), -1);
@@ -7966,6 +7989,8 @@ function compareTableHtml(){
     if(axisScores.every(s => s === null)) return;
     body += row(`${escapeHtml(ax.label)}`, axisScores.map(s => s === null ? '—' : `<strong style="color:${scoreColor5(s)}">${Math.round(s)}</strong><span class="jr-meta"> / 100</span>`), bestIdx(axisScores), 'cmp-axis');
     ax.parts.forEach((key, pi) => {
+      // Indicateurs déjà affichés plus haut dans le tableau : le PEG (Valorisation), la marge de sécurité (= « Cours vs valeur intrinsèque ») et la taille (déduite du Market Cap)
+      if(CMP_SHOWN_ELSEWHERE.indexOf(key) >= 0) return;
       const parts = axesBy.map(a => a[ai].parts[pi]);
       if(parts.every(p => p.val === null)) return;
       body += row(`<span class="rv-sub">${escapeHtml(parts[0].label)}</span>`, parts.map(p => p.val === null ? '—' : `<span class="cmp-dot" style="background:${p.tier ? TIER_COLORS[p.tier] : 'var(--border-strong)'}"></span>${escapeHtml(cmpPartText(p))}`), bestIdx(parts.map(p => p.score)));
