@@ -1580,7 +1580,12 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
 .jr-co{ border:none; background:none; padding:0; font:inherit; font-size:14.5px; font-weight:700; color:var(--ink); cursor:pointer; }
 .jr-co:hover{ color:var(--accent); text-decoration:underline; }
 .jr-chip{ font-size:11.5px; font-weight:700; padding:2px 9px; border-radius:99px; color:var(--c); background:color-mix(in srgb, var(--c) 14%, transparent); }
-.jr-time{ margin-left:auto; font-size:12px; color:var(--ink-soft); white-space:nowrap; }
+.jr-end{ margin-left:auto; display:flex; align-items:center; gap:10px; }
+.jr-time{ font-size:12px; color:var(--ink-soft); white-space:nowrap; }
+.jr-del{ border:none; background:none; padding:2px 6px; border-radius:6px; font:inherit; font-size:12px; color:var(--ink-soft); cursor:pointer; opacity:.55; }
+.jr-item:hover .jr-del, .jr-del:focus-visible, .jr-del.confirm{ opacity:1; }
+.jr-del:hover{ color:var(--red); background:color-mix(in srgb, var(--red) 12%, transparent); }
+.jr-del.confirm{ color:#fff; background:var(--red); font-weight:600; }
 .jr-text{ margin-top:5px; font-size:14px; line-height:1.5; color:var(--ink); }
 .jr-meta{ font-size:12.5px; color:var(--ink-soft); }
 .jr-thesis{ margin-top:5px; }
@@ -7550,12 +7555,12 @@ function journalEntries(){
   const out = [];
   state.companies.forEach(c => {
     (c.thesisHistory || []).forEach((e, i, arr) => {
-      out.push({ kind:'thesis', c, day:e.date, sort:e.date + 'T12:00:00', html:e.html, prevHtml: i ? arr[i - 1].html : null });
+      out.push({ kind:'thesis', c, idx:i, day:e.date, sort:e.date + 'T12:00:00', html:e.html, prevHtml: i ? arr[i - 1].html : null });
     });
-    (c.decisionLog || []).forEach(e => {
+    (c.decisionLog || []).forEach((e, i) => {
       const d = new Date(e.date);
       if(isNaN(d.getTime())) return;
-      out.push({ kind:journalDecisionKind(e.text), c, day:journalLocalDay(d), sort:e.date, text:e.text, date:e.date });
+      out.push({ kind:journalDecisionKind(e.text), c, idx:i, day:journalLocalDay(d), sort:e.date, text:e.text, date:e.date });
     });
   });
   return out.sort((a, b) => a.sort < b.sort ? 1 : (a.sort > b.sort ? -1 : 0));
@@ -7581,12 +7586,13 @@ function journalItemHtml(en){
     const t = new Date(en.date);
     time = `<span class="jr-time">${t.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' })}</span>`;
   }
+  const del = `<button type="button" class="jr-del" data-jr-del-c="${escapeHtml(en.c.id)}" data-jr-del-t="${en.kind === 'thesis' ? 'thesis' : 'log'}" data-jr-del-i="${en.idx}" title="Supprime seulement cette ligne du journal, pas la valeur actuelle dans l'analyse">Supprimer</button>`;
   return `<div class="jr-item">
     <span class="company-search-avatar${av.cls}">${av.html}</span>
     <div class="jr-body">
       <div class="jr-top">
         <button type="button" class="jr-co" data-jr-open="${escapeHtml(en.c.id)}">${escapeHtml(en.c.name || 'Sans nom')}${tk ? ` <span class="jr-meta">${escapeHtml(tk)}</span>` : ''}</button>
-        <span class="jr-chip" style="--c:${k.color}">${k.label}</span>${time}
+        <span class="jr-chip" style="--c:${k.color}">${k.label}</span><span class="jr-end">${time}${del}</span>
       </div>${main}
     </div>
   </div>`;
@@ -7649,6 +7655,21 @@ function bindJournalFeed(){
   feed.querySelectorAll('[data-jr-open]').forEach(b => b.addEventListener('click', () => {
     selectCompany(b.dataset.jrOpen);
     setTimeout(() => { const t = document.getElementById('sec-personnelle'); if(t) t.scrollIntoView({ behavior:'smooth', block:'start' }); }, 80);
+  }));
+  // Suppression en deux temps (un premier clic demande « Confirmer ? » pendant 3 s) : un clic ne doit pas effacer par erreur.
+  feed.querySelectorAll('.jr-del').forEach(b => b.addEventListener('click', () => {
+    if(!b.classList.contains('confirm')){
+      b.classList.add('confirm'); b.textContent = 'Confirmer ?';
+      setTimeout(() => { if(b.isConnected){ b.classList.remove('confirm'); b.textContent = 'Supprimer'; } }, 3000);
+      return;
+    }
+    const c = state.companies.find(x => x.id === b.dataset.jrDelC);
+    const arr = c && (b.dataset.jrDelT === 'thesis' ? c.thesisHistory : c.decisionLog);
+    if(!arr) return;
+    arr.splice(Number(b.dataset.jrDelI), 1);
+    touchUpdated(c);
+    saveState();
+    renderJournalView();
   }));
   const more = document.getElementById('jrMore');
   if(more) more.addEventListener('click', () => { journalLimit += 40; feed.innerHTML = journalFeedHtml(); bindJournalFeed(); });
