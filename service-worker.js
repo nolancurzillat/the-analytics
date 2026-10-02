@@ -1,4 +1,4 @@
-const CACHE_NAME = 'carnet-analyse-v150';
+const CACHE_NAME = 'carnet-analyse-v151';
 const ASSETS = [
   './index.html',
   './manifest.json',

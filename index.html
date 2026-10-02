@@ -1600,11 +1600,15 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
 .rv-lines{ display:flex; flex-direction:column; margin-top:12px; }
 .rv-line{ display:flex; justify-content:space-between; gap:14px; padding:9px 2px; border-bottom:1px solid var(--border); font-size:14.5px; }
 .rv-line:last-child{ border-bottom:none; }
+/* Bilan élargi (2026-10-02) : la page du bilan prend plus de largeur que le journal de bord */
+.jr-wrap.rv-page{ max-width:1240px; }
+.rv-count{ margin-left:8px; padding:1px 9px; border-radius:999px; background:var(--paper-line); color:var(--ink); font-size:13px; font-family:var(--font-ui); font-weight:700; vertical-align:middle; }
+.rv-val .ct-del-btn{ margin-left:12px; }
+.rv-pos-grid{ display:grid; grid-template-columns:1fr 1fr; gap:0 18px; align-items:start; }
+.rv-pos-grid .scard{ margin-top:18px; }
 /* Bilan : positions ouvertes et clôturées (2026-10-02) */
-.rv-pos-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px 28px; margin-top:12px; }
 .rv-pos-h{ font-size:12px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-soft); padding-bottom:6px; border-bottom:2px solid var(--border-strong); }
 .rv-pos-h span{ margin-left:6px; padding:1px 8px; border-radius:999px; background:var(--paper-line); color:var(--ink); }
-.rv-pos-grid .rv-lines{ margin-top:0; }
 .rv-name .rv-meta{ display:block; font-weight:400; font-size:12.5px; color:var(--ink-soft); }
 @media (max-width:760px){ .rv-pos-grid{ grid-template-columns:1fr; } }
 /* Ordres clôturés (2026-10-02) */
@@ -3856,10 +3860,13 @@ function commitPrixCible(id){
 // Journal de décisions : une ligne horodatée à chaque changement RÉELLEMENT COMMIS (pas à chaque frappe) de
 // conviction, décision personnelle, prix d'achat cible ou ouverture/clôture de position. 200 entrées max par
 // analyse, un garde-fou large qui n'arrivera en pratique jamais à saturer pour un usage personnel.
-function logDecisionEvent(c, text){
+function logDecisionEvent(c, text, tid){
   if(!c || !text) return;
   if(!Array.isArray(c.decisionLog)) c.decisionLog = [];
-  c.decisionLog.push({ date: new Date().toISOString(), text });
+  // `tid` (facultatif) = identifiant de l'ordre clôturé à l'origine de la ligne : supprimer l'ordre supprime aussi cette ligne du journal
+  const e = { date: new Date().toISOString(), text };
+  if(tid) e.tid = tid;
+  c.decisionLog.push(e);
   if(c.decisionLog.length > 200) c.decisionLog.splice(0, c.decisionLog.length - 200);
 }
 // Bloc "Historique" affiché sous la grille de champs de la section Décision, jamais si les deux journaux sont vides
@@ -7737,7 +7744,7 @@ function cleanImportedCompany(raw){
   c.thesisHistory = (Array.isArray(c.thesisHistory) ? c.thesisHistory : []).filter(e => e && isoRe.test(String(e.date)) && typeof e.html === 'string').slice(0, 500)
     .map(e => { const o = { date:e.date, html:sanitizeRichHtml(e.html) }; if(typeof e.at === 'string' && !isNaN(Date.parse(e.at))) o.at = new Date(e.at).toISOString(); return o; });
   c.decisionLog = (Array.isArray(c.decisionLog) ? c.decisionLog : []).filter(e => e && typeof e.text === 'string' && !isNaN(Date.parse(e.date))).slice(-200)
-    .map(e => ({ date:new Date(e.date).toISOString(), text:String(e.text).slice(0, 300) }));
+    .map(e => { const o = { date:new Date(e.date).toISOString(), text:String(e.text).slice(0, 300) }; const tid = String(e.tid || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40); if(tid) o.tid = tid; return o; });
   // Ordres clôturés importés : dates, nombres, devise et textes revalidés (affichés en HTML)
   c.closedTrades = (Array.isArray(c.closedTrades) ? c.closedTrades : []).filter(t => t && isoRe.test(String(t.date)) && Number.isFinite(Number(t.qty)) && Number(t.qty) > 0 && Number.isFinite(Number(t.buy)) && Number(t.buy) > 0 && Number.isFinite(Number(t.sell)) && Number(t.sell) >= 0).slice(0, 2000)
     .map((t, i) => ({ id:String(t.id || ('t' + i)).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40) || ('t' + i), date:t.date, qty:Number(t.qty), buy:Number(t.buy), sell:Number(t.sell), cur:t.cur === '€' ? '€' : '$', note:String(t.note || '').slice(0, 140) }));
@@ -7991,7 +7998,7 @@ function reviewData(year){
   const events = [];
   state.companies.forEach(c => (c.decisionLog || []).forEach(e => {
     const d = new Date(e.date);
-    if(!isNaN(d.getTime()) && String(d.getFullYear()) === year) events.push({ c, t:d.getTime(), kind:journalDecisionKind(e.text), text:e.text });
+    if(!isNaN(d.getTime()) && String(d.getFullYear()) === year) events.push({ c, t:d.getTime(), iso:e.date, tid:e.tid, kind:journalDecisionKind(e.text), text:e.text });
   }));
   events.sort((a, b) => a.t - b.t);
   const theses = state.companies.reduce((s, c) => s + (c.thesisHistory || []).filter(e => String(e.date).slice(0, 4) === year).length, 0);
@@ -8007,9 +8014,11 @@ function reviewData(year){
   const closedList = allClosedTrades(year).map(x => ({ c:x.c, day:x.t.date, trade:x }));
   events.filter(e => e.kind === 'position' && /clôturée/.test(e.text)).forEach(e => {
     const day = journalLocalDay(new Date(e.t));
-    if(!closedList.some(x => x.c === e.c && x.day === day)) closedList.push({ c:e.c, day, trade:null });
+    if(!closedList.some(x => x.c === e.c && x.day === day) && !e.tid) closedList.push({ c:e.c, day, trade:null, iso:e.iso });
   });
   closedList.sort((a, b) => String(b.day).localeCompare(String(a.day)));
+  // Une position ouverte ET clôturée dans la même année n'est listée que dans « clôturées » (les deux cartes restent bien séparées)
+  for(let i = openedList.length - 1; i >= 0; i--) if(!openedList[i].active && closedList.some(y => y.c === openedList[i].c)) openedList.splice(i, 1);
   const posOpen = openedList.length, posClosed = closedList.length;
   // Convictions : première et dernière valeur de l'année par entreprise, seulement si elles diffèrent.
   const conv = [];
@@ -8022,8 +8031,13 @@ function reviewData(year){
     if(from !== to) conv.push({ c, from, to });
   });
   const pf = [];
+  // Une devise n'apparaît que si elle figure dans la DERNIÈRE photo de l'année : sans position dans cette devise à la fin (ou aujourd'hui, pour l'année en cours),
+  // d'anciennes photos ne doivent pas faire afficher un portefeuille fantôme (demande de Nolan : « je n'ai pas de position en euro »).
+  const yearDays = Object.keys(state.history || {}).filter(d => d.slice(0, 4) === year).sort();
+  const lastDay = yearDays.length ? yearDays[yearDays.length - 1] : null;
   ['$', '€'].forEach(cur => {
-    const days = Object.keys(state.history || {}).filter(d => d.slice(0, 4) === year && state.history[d].c && state.history[d].c[cur]).sort();
+    if(!lastDay || !(state.history[lastDay].c && state.history[lastDay].c[cur])) return;
+    const days = yearDays.filter(d => state.history[d].c && state.history[d].c[cur]);
     if(!days.length) return;
     const a = state.history[days[0]].c[cur], b = state.history[days[days.length - 1]].c[cur];
     pf.push({ cur, firstDay:days[0], lastDay:days[days.length - 1], a, b, n:days.length });
@@ -8062,6 +8076,7 @@ function goReview(year){
 }
 function renderReviewView(){
   const main = document.getElementById('main');
+  recordPortfolioSnapshot();   // photo du jour à jour avant de lire l'historique (devises réellement détenues aujourd'hui)
   const years = reviewYears();
   if(!reviewYear || years.indexOf(reviewYear) < 0) reviewYear = years[0];
   const year = reviewYear;
@@ -8080,12 +8095,14 @@ function renderReviewView(){
   const closedRows = d.closedList.map(x => {
     const t = x.trade;
     const res = t ? `<span style="color:${pfColor(t.m.gain)}">${pfSigned(t.m.gain, t.t.cur)}${t.m.pct === null ? '' : ' (' + pfPct(t.m.pct) + ')'}</span>` : '<span class="rv-meta">sans ordre enregistré</span>';
-    return `<div class="rv-line"><span class="rv-name">${escapeHtml(x.c.name || 'Sans nom')}<small class="rv-meta">Clôturée le ${escapeHtml(formatDateFr(x.day))}</small></span><span class="rv-val">${res}</span></div>`;
+    // Suppression en cas d'erreur : un ordre part avec sa ligne de journal, une clôture notée seulement au journal part avec cette ligne
+    const del = t ? `data-trade-del="${escapeHtml(x.c.id)}|${escapeHtml(t.t.id)}"` : `data-evt-del="${escapeHtml(x.c.id)}|${escapeHtml(x.iso)}"`;
+    return `<div class="rv-line"><span class="rv-name">${escapeHtml(x.c.name || 'Sans nom')}<small class="rv-meta">Clôturée le ${escapeHtml(formatDateFr(x.day))}</small></span><span class="rv-val">${res}<button type="button" class="ct-del-btn" ${del} title="Supprimer cette clôture en cas d'erreur (elle disparaît aussi du journal de bord ; la position ouverte n'est pas modifiée)">Supprimer</button></span></div>`;
   }).join('');
   const pfRows = d.pf.map(x => {
     const gain = x.b.v - x.b.i, pct = x.b.i ? gain / x.b.i * 100 : null;
     return `<div class="rv-line"><span class="rv-name">Portefeuille en ${x.cur === '€' ? 'euros' : 'dollars'}</span><span class="rv-val">${fmtMoney(x.a.v, x.cur)} &rarr; ${fmtMoney(x.b.v, x.cur)}</span></div>
-      <div class="rv-line"><span class="rv-name rv-sub">Résultat latent en fin de période</span><span class="rv-val" style="color:${gain >= 0 ? 'var(--green)' : 'var(--red)'}">${gain >= 0 ? '+' : ''}${fmtMoney(gain, x.cur)}${pct === null ? '' : ` (${gain >= 0 ? '+' : ''}${fmtNum(pct, 1)} %)`}</span></div>`;
+      <div class="rv-line"><span class="rv-name rv-sub">Résultat latent</span><span class="rv-val" style="color:${gain >= 0 ? 'var(--green)' : 'var(--red)'}">${gain >= 0 ? '+' : ''}${fmtMoney(gain, x.cur)}${pct === null ? '' : ` (${gain >= 0 ? '+' : ''}${fmtNum(pct, 1)} %)`}</span></div>`;
   }).join('');
   main.innerHTML = `<div class="wrap page space jr-wrap rv-page">
     <div class="space-head"><div>
@@ -8101,10 +8118,10 @@ function renderReviewView(){
       ${tile(d.events.length, d.events.length > 1 ? 'décisions journalisées' : 'décision journalisée')}
       ${tile(d.posOpen + '/' + d.posClosed, 'positions ouvertes / clôturées')}
     </div></section>
-    ${(d.openedList.length || d.closedList.length) ? `<section class="scard capital-card"><div class="scard-t">Positions</div><div class="rv-pos-grid">
-      <div><div class="rv-pos-h">Ouvertes <span>${d.openedList.length}</span></div>${d.openedList.length ? `<div class="rv-lines">${openRows}</div>` : `<div class="s-empty">Aucune position ouverte.</div>`}</div>
-      <div><div class="rv-pos-h">Clôturées <span>${d.closedList.length}</span></div>${d.closedList.length ? `<div class="rv-lines">${closedRows}</div>` : `<div class="s-empty">Aucune position clôturée.</div>`}</div>
-    </div></section>` : ''}
+    <div class="rv-pos-grid">
+      <section class="scard capital-card"><div class="scard-t">Positions ouvertes <span class="rv-count">${d.openedList.length}</span></div>${d.openedList.length ? `<div class="rv-lines">${openRows}</div>` : `<div class="s-empty">Aucune position ouverte.</div>`}</section>
+      <section class="scard capital-card"><div class="scard-t">Positions clôturées <span class="rv-count">${d.closedList.length}</span></div>${d.closedList.length ? `<div class="rv-lines">${closedRows}</div>` : `<div class="s-empty">Aucune position clôturée.</div>`}</section>
+    </div>
     ${d.conv.length ? `<section class="scard capital-card"><div class="scard-t">Convictions qui ont bougé</div><div class="rv-lines">${convRows}</div></section>` : ''}
     ${d.trades.length ? `<section class="scard capital-card"><div class="scard-t">Ordres clôturés</div>${closedSummaryHtml(d.trades)}${closedTradesTableHtml(d.trades)}<div class="s-note">Supprimez une ligne si vous l'avez saisie par erreur : cela ne modifie pas vos positions.</div></section>` : ''}
     ${d.pf.length ? `<section class="scard capital-card"><div class="scard-t">Portefeuille</div><div class="rv-lines">${pfRows}</div><div class="s-note">Valeur entre la première et la dernière photo enregistrée de l'année (${fmtNum(d.pf[0].n, 0)} jour${d.pf[0].n > 1 ? 's' : ''} relevé${d.pf[0].n > 1 ? 's' : ''}). Les achats et ventes de l'année y sont inclus : ce n'est pas une performance pure.</div></section>` : ''}
@@ -8114,6 +8131,24 @@ function renderReviewView(){
   main.querySelectorAll('[data-rv-year]').forEach(b => b.addEventListener('click', () => { reviewYear = b.dataset.rvYear; renderReviewView(); }));
   document.getElementById('rvPrint').addEventListener('click', () => window.print());
   bindClosedTrades(main, () => renderReviewView());
+  // Clôture notée seulement au journal (case « J'ai une position » décochée) : on retire la ligne du journal
+  main.querySelectorAll('[data-evt-del]').forEach(b => {
+    let armed = null;
+    b.addEventListener('click', () => {
+      if(!armed){ b.textContent = 'Confirmer ?'; b.classList.add('armed'); armed = setTimeout(() => { armed = null; b.textContent = 'Supprimer'; b.classList.remove('armed'); }, 3000); return; }
+      clearTimeout(armed);
+      const [cid, iso] = b.dataset.evtDel.split('|');
+      const c = state.companies.find(x => x.id === cid);
+      if(!c) return;
+      const i = (c.decisionLog || []).findIndex(e => e.date === iso && /^Position/.test(e.text));
+      if(i < 0) return;
+      c.decisionLog.splice(i, 1);
+      touchUpdated(c);
+      saveState();
+      showToast('Clôture supprimée.');
+      renderReviewView();
+    });
+  });
 }
 
 // ============================================================
@@ -9240,6 +9275,7 @@ function bindClosedTrades(root, rerender){
       const i = (c.closedTrades || []).findIndex(t => t.id === tid);
       if(i < 0) return;
       c.closedTrades.splice(i, 1);
+      c.decisionLog = (c.decisionLog || []).filter(e => e.tid !== tid);   // la ligne du journal de bord créée par cet ordre part avec lui
       touchUpdated(c);   // indispensable : la fusion cloud compare updatedTs, sans ça la ligne supprimée pourrait revenir d'un autre appareil
       saveState();
       showToast('Ordre supprimé.');
@@ -9341,7 +9377,7 @@ function saveTradeFromModal(){
     if(rem <= 1e-9){ c.position.active = false; c.position.quantite = ''; c.position.prixAchat = ''; c.position.montantInvesti = ''; posNote = 'Position clôturée'; }
     else { c.position.quantite = String(Math.round(rem * 1e6) / 1e6); posNote = 'Position réduite'; }
     const m = closedTradeMetrics(t);
-    logDecisionEvent(c, `${posNote} : ${fmtNum(qty, 4)} titre${qty > 1 ? 's' : ''} vendu${qty > 1 ? 's' : ''} à ${fmtNum(sell, 2)} ${c.currency}${m.pct === null ? '' : ' (' + (m.pct >= 0 ? '+' : '') + fmtNum(m.pct, 1) + ' %)'}`);
+    logDecisionEvent(c, `${posNote} : ${fmtNum(qty, 4)} titre${qty > 1 ? 's' : ''} vendu${qty > 1 ? 's' : ''} à ${fmtNum(sell, 2)} ${c.currency}${m.pct === null ? '' : ' (' + (m.pct >= 0 ? '+' : '') + fmtNum(m.pct, 1) + ' %)'}`, t.id);
   }
   touchUpdated(c);
   saveState();
