@@ -7821,9 +7821,12 @@ function renderSpaceView(){
       <button class="btn btn-primary" data-new-analysis>Créer ma première analyse</button>
     </section>`;
   }else{
+    // Ordre par importance (2026-10-02, demande de Nolan) : d'abord ce qui demande une action (rapports publiés), puis la vue d'ensemble
+    // « Toutes vos analyses », puis les rappels (à revisiter, recommandations + objectifs d'achat), les idées par décision, les classements
+    // (score + cours vs valeur) et enfin dividendes + répartition. Les cartes sont associées par paires 7+5 / 5+7 pour remplir les 12 colonnes.
     html += buildSpaceKpis();
+    html += `<div class="sgrid">${buildReportsCard()}${buildCompaniesTable()}${buildRevisitCard()}${buildRecsCard()}${buildTargets()}${buildPipeline()}${buildScoreBars()}${buildValueGap()}${buildDividendsCard()}${buildSectorsCard()}</div>`;
     html += buildCapitalCard();
-    html += `<div class="sgrid">${buildReportsCard()}${buildRevisitCard()}${buildRecsCard()}${buildDividendsCard()}${buildPipeline()}${buildScoreBars()}${buildValueGap()}${buildTargets()}${buildSectorsCard()}${buildCompaniesTable()}</div>`;
   }
   html += `<div class="sgrid">${buildMilestones()}${buildTipCard()}${buildPrefsCard()}</div></div>`;
   main.innerHTML = html;
