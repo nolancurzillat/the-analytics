@@ -1568,7 +1568,26 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
 /* Carte "Votre capital" (2026-10-02, demande de Nolan) : rend visible ce qui s'est déjà accumulé, pour que l'app se
    ressente comme un historique qui se construit, pas juste un outil de calcul. */
 .capital-card{ margin-top:20px; }
-.cap-link{ margin-top:16px; }
+.space-actions{ display:flex; flex-wrap:wrap; gap:10px; }
+.cap-links{ display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
+/* Bilan annuel (2026-10-02) */
+.rv-page .scard{ margin-top:18px; }
+.rv-letter p{ margin:0 0 10px 0; font-size:16px; line-height:1.65; color:var(--ink); }
+.rv-letter p:last-child{ margin-bottom:0; }
+.rv-letter p:first-child{ font-family:var(--font-serif); font-size:19px; font-weight:600; }
+.rv-lines{ display:flex; flex-direction:column; margin-top:12px; }
+.rv-line{ display:flex; justify-content:space-between; gap:14px; padding:9px 2px; border-bottom:1px solid var(--border); font-size:14.5px; }
+.rv-line:last-child{ border-bottom:none; }
+.rv-name{ font-weight:600; }
+.rv-sub{ font-weight:400; color:var(--ink-soft); }
+.rv-val{ font-family:var(--font-mono); white-space:nowrap; }
+@media print{
+  .sidebar, .topbar, .space-actions, .jr-controls, .toast-host{ display:none !important; }
+  .content{ margin-left:0 !important; }
+}
+.rv-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.rv-row .rv-open{ flex:1 1 260px; min-width:0; }
+.rv-row .btn{ flex:0 0 auto; }
 /* Journal de bord (2026-10-02, demande de Nolan) : flux global des thèses réécrites et décisions, groupé par jour. */
 .jr-wrap{ max-width:900px; }
 .jr-controls{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:22px 0 4px 0; }
@@ -2453,10 +2472,13 @@ function saveState(){
   scheduleFileBackup();
   scheduleCloudSync();
 }
-function touchUpdated(c){
+// `auto` = mise à jour faite par l'app seule (prix automatique) : elle compte pour la fusion cloud (updatedTs) mais
+// PAS comme un passage de l'utilisateur sur l'analyse (reviewedTs, utilisé par la carte "À revisiter").
+function touchUpdated(c, auto){
   if(!c) return;
   c.updatedAt = new Date().toISOString().slice(0,10);
   c.updatedTs = Date.now();
+  if(!auto) c.reviewedTs = c.updatedTs;
 }
 
 // ---------- Sauvegarde automatique dans un fichier (Chrome et Edge sur ordinateur) ----------
@@ -6263,7 +6285,7 @@ async function refreshCurrentPrice(id, force){
       c.fields.valorisation.prixActuel = String(Math.round(result.price * 10) / 10);
       c.priceError = null;
       applyLegacyWallStreet(c);
-      touchUpdated(c);
+      touchUpdated(c, true);
     }
     c.priceUpdatedAt = new Date().toISOString();
   }else{
@@ -6638,7 +6660,7 @@ function renderTabs(){
   const list = document.getElementById('tabs');
   list.innerHTML = '';
   document.getElementById('navHome').classList.toggle('active', currentView === 'home');
-  document.getElementById('navSpace').classList.toggle('active', currentView === 'space' || currentView === 'journal');
+  document.getElementById('navSpace').classList.toggle('active', currentView === 'space' || currentView === 'journal' || currentView === 'review');
   document.getElementById('navPortfolio').classList.toggle('active', currentView === 'portfolio');
   document.getElementById('navLearn').classList.toggle('active', currentView === 'learn');
   document.getElementById('sideCount').textContent = state.companies.length ? String(state.companies.length) : '';
@@ -7180,7 +7202,7 @@ function buildCapitalCard(){
       ${tile(nDecisions, nDecisions > 1 ? 'décisions journalisées' : 'décision journalisée')}
       ${tile(since || '—', since ? "d'historique" : 'historique')}
     </div>
-    <button type="button" class="btn btn-outline cap-link" data-go-journal>Ouvrir le journal de bord &rarr;</button>
+    <div class="cap-links"><button type="button" class="btn btn-outline" data-go-journal>Ouvrir le journal de bord &rarr;</button><button type="button" class="btn btn-outline" data-go-review>Voir mon bilan annuel &rarr;</button></div>
   </section>`;
 }
 function buildSpaceKpis(){
@@ -7289,6 +7311,30 @@ function buildValueGap(){
     }).join('') + `</div>`;
   }else body = `<div class="s-empty">Renseignez le prix actuel et votre valeur intrinsèque pour comparer vos entreprises.</div>`;
   return spaceCard('s7', 'Cours vs valeur intrinsèque', 'Écart entre le prix et votre estimation', body);
+}
+
+// Carte "À revisiter" (2026-10-02, point 5 de la liste de pistes) : analyses sur lesquelles l'utilisateur n'est pas
+// repassé depuis REVISIT_DAYS jours. "Repassé" = reviewedTs (toute modification faite PAR l'utilisateur, ou le bouton
+// "Marquer comme revue" quand il a juste relu sa thèse) ; le prix automatique ne compte pas (touchUpdated(c, true)),
+// sinon une analyse avec un ticker ne serait jamais "ancienne". Repli pour les analyses d'avant ce changement :
+// updatedTs puis updatedAt. Positions ouvertes en premier (ce sont elles qui comptent le plus), puis les plus anciennes.
+const REVISIT_DAYS = 90, REVISIT_MAX = 5;
+function reviewedDaysAgo(c){
+  const ts = c.reviewedTs || c.updatedTs || Date.parse(c.updatedAt || c.createdAt || '') || Date.now();
+  return Math.max(0, Math.floor((Date.now() - ts) / 86400000));
+}
+function buildRevisitCard(){
+  const list = state.companies.map(c => ({ c, days: reviewedDaysAgo(c), pos: !!(c.position && c.position.active) }))
+    .filter(x => x.days >= REVISIT_DAYS)
+    .sort((a, b) => (b.pos - a.pos) || (b.days - a.days));
+  if(!list.length) return '';
+  const rows = list.slice(0, REVISIT_MAX).map(({ c, days, pos }) => {
+    const months = Math.floor(days / 30.44);
+    const since = months < 12 ? `${months} mois` : `${fmtNum(Math.round(days / 36.525) / 10, 1)} an${days >= 730 ? 's' : ''}`;
+    return `<div class="rv-row"><button type="button" class="tg-row rv-open" data-rec-open="${escapeHtml(c.id)}" data-rec-jump="sec-personnelle">${miniAv(c)}<span class="tg-id"><span class="tg-name">${escapeHtml(c.name || 'Sans nom')}</span><span class="tg-vals">Pas revue depuis ${since}${pos ? ' · position ouverte' : ''}</span></span></button><button type="button" class="btn btn-outline btn-sm" data-rv-done="${escapeHtml(c.id)}" title="Vous avez relu votre thèse et elle tient toujours : l'analyse repart pour ${REVISIT_DAYS} jours">Marquer comme revue</button></div>`;
+  }).join('');
+  const more = list.length > REVISIT_MAX ? `<div class="s-note">Et ${list.length - REVISIT_MAX} autre${list.length - REVISIT_MAX > 1 ? 's' : ''} analyse${list.length - REVISIT_MAX > 1 ? 's' : ''} à revisiter.</div>` : '';
+  return spaceCard('s12', 'À revisiter', `Analyses sans passage depuis ${REVISIT_DAYS} jours : votre thèse tient-elle toujours ?`, `<div class="tg-list">${rows}</div>${more}`);
 }
 
 function buildTargets(){
@@ -7476,7 +7522,13 @@ function cleanImportedCompany(raw){
   pers.conviction = parseFloat(pers.conviction) || 0;
   ['prixAchatCible'].forEach(k => { if(pers[k] !== undefined) pers[k] = String(pers[k]); });
   if(c.fields.identite && c.fields.identite.moatNote !== undefined) c.fields.identite.moatNote = String(c.fields.identite.moatNote);
-  if(c.logo && !(typeof c.logo.url === 'string' && /^(https:\/\/|data:image\/(png|jpeg|webp|gif);base64,)/.test(c.logo.url))) c.logo = null;
+  // Journaux (thèses archivées, décisions) : données importées NON fiables, affichées en HTML (dates, textes riches).
+  c.thesisHistory = (Array.isArray(c.thesisHistory) ? c.thesisHistory : []).filter(e => e && isoRe.test(String(e.date)) && typeof e.html === 'string').slice(0, 500)
+    .map(e => { const o = { date:e.date, html:sanitizeRichHtml(e.html) }; if(typeof e.at === 'string' && !isNaN(Date.parse(e.at))) o.at = new Date(e.at).toISOString(); return o; });
+  c.decisionLog = (Array.isArray(c.decisionLog) ? c.decisionLog : []).filter(e => e && typeof e.text === 'string' && !isNaN(Date.parse(e.date))).slice(-200)
+    .map(e => ({ date:new Date(e.date).toISOString(), text:String(e.text).slice(0, 300) }));
+  if(!Number.isFinite(c.reviewedTs)) delete c.reviewedTs;
+  if(c.logo &&!(typeof c.logo.url === 'string' && /^(https:\/\/|data:image\/(png|jpeg|webp|gif);base64,)/.test(c.logo.url))) c.logo = null;
   // La devise (c.currency) est validée par migrateCompany, appelé juste après : toute valeur qui n'est pas exactement '$' ou '€' est ignorée.
   migrateCompany(c);
   return c;
@@ -7547,7 +7599,7 @@ function renderSpaceView(){
   }else{
     html += buildSpaceKpis();
     html += buildCapitalCard();
-    html += `<div class="sgrid">${buildRecsCard()}${buildDividendsCard()}${buildPipeline()}${buildScoreBars()}${buildValueGap()}${buildTargets()}${buildSectorsCard()}${buildCompaniesTable()}</div>`;
+    html += `<div class="sgrid">${buildRevisitCard()}${buildRecsCard()}${buildDividendsCard()}${buildPipeline()}${buildScoreBars()}${buildValueGap()}${buildTargets()}${buildSectorsCard()}${buildCompaniesTable()}</div>`;
   }
   html += `<div class="sgrid">${buildMilestones()}${buildTipCard()}${buildPrefsCard()}</div></div>`;
   main.innerHTML = html;
@@ -7704,10 +7756,128 @@ function bindJournalFeed(){
   if(more) more.addEventListener('click', () => { journalLimit += 40; feed.innerHTML = journalFeedHtml(); bindJournalFeed(); });
 }
 
+// ============================================================
+// BILAN ANNUEL (2026-10-02, point 4 de la liste de pistes) : lettre de fin d'année générée à partir de ce qui est déjà
+// enregistré (créations, thèses archivées, journal de décisions, historique du portefeuille). Vue 100 % dérivée.
+// ============================================================
+let reviewYear = null;
+function reviewYears(){
+  const ys = new Set([String(new Date().getFullYear())]);
+  state.companies.forEach(c => {
+    if(c.createdAt) ys.add(String(c.createdAt).slice(0, 4));
+    (c.thesisHistory || []).forEach(e => ys.add(String(e.date).slice(0, 4)));
+    (c.decisionLog || []).forEach(e => { const d = new Date(e.date); if(!isNaN(d.getTime())) ys.add(String(d.getFullYear())); });
+  });
+  Object.keys(state.history || {}).forEach(k => ys.add(k.slice(0, 4)));
+  return Array.from(ys).filter(y => /^\d{4}$/.test(y)).sort().reverse();
+}
+function reviewData(year){
+  const created = state.companies.filter(c => String(c.createdAt || '').slice(0, 4) === year);
+  const events = [];
+  state.companies.forEach(c => (c.decisionLog || []).forEach(e => {
+    const d = new Date(e.date);
+    if(!isNaN(d.getTime()) && String(d.getFullYear()) === year) events.push({ c, t:d.getTime(), kind:journalDecisionKind(e.text), text:e.text });
+  }));
+  events.sort((a, b) => a.t - b.t);
+  const theses = state.companies.reduce((s, c) => s + (c.thesisHistory || []).filter(e => String(e.date).slice(0, 4) === year).length, 0);
+  const by = k => events.filter(e => e.kind === k).length;
+  const posOpen = events.filter(e => e.kind === 'position' && /ouverte/.test(e.text)).length;
+  const posClosed = events.filter(e => e.kind === 'position' && /clôturée/.test(e.text)).length;
+  // Convictions : première et dernière valeur de l'année par entreprise, seulement si elles diffèrent.
+  const conv = [];
+  state.companies.forEach(c => {
+    const ev = events.filter(e => e.c === c && e.kind === 'conviction');
+    if(!ev.length) return;
+    const first = /Conviction : (—|[\d.,]+) →/.exec(ev[0].text), last = /→ ([\d.,]+)\/5/.exec(ev[ev.length - 1].text);
+    if(!first || !last) return;
+    const from = first[1] === '—' ? null : parseFloat(first[1].replace(',', '.')), to = parseFloat(last[1].replace(',', '.'));
+    if(from !== to) conv.push({ c, from, to });
+  });
+  const pf = [];
+  ['$', '€'].forEach(cur => {
+    const days = Object.keys(state.history || {}).filter(d => d.slice(0, 4) === year && state.history[d].c && state.history[d].c[cur]).sort();
+    if(!days.length) return;
+    const a = state.history[days[0]].c[cur], b = state.history[days[days.length - 1]].c[cur];
+    pf.push({ cur, firstDay:days[0], lastDay:days[days.length - 1], a, b, n:days.length });
+  });
+  return { created, theses, events, nDecision:by('decision'), nConviction:by('conviction'), nTarget:by('target'), posOpen, posClosed, conv, pf };
+}
+function reviewLetter(year, d){
+  const p = [];
+  const n = d.created.length;
+  p.push(n ? `En ${year}, vous avez ouvert ${n} nouvelle${n > 1 ? 's' : ''} analyse${n > 1 ? 's' : ''}${n <= 4 ? ` : ${d.created.map(c => c.name || 'Sans nom').join(', ')}` : ''}.` : `En ${year}, vous n'avez pas ouvert de nouvelle analyse.`);
+  const bits = [];
+  if(d.theses) bits.push(`${d.theses} thèse${d.theses > 1 ? 's' : ''} archivée${d.theses > 1 ? 's' : ''} pour être réécrite${d.theses > 1 ? 's' : ''}`);
+  if(d.nConviction) bits.push(`${d.nConviction} changement${d.nConviction > 1 ? 's' : ''} de conviction`);
+  if(d.nDecision) bits.push(`${d.nDecision} décision${d.nDecision > 1 ? 's' : ''} notée${d.nDecision > 1 ? 's' : ''}`);
+  if(d.nTarget) bits.push(`${d.nTarget} révision${d.nTarget > 1 ? 's' : ''} de prix d'achat cible`);
+  if(bits.length) p.push(`Votre regard a bougé : ${bits.join(', ')}.`);
+  if(d.posOpen || d.posClosed) p.push(`Côté portefeuille : ${d.posOpen} position${d.posOpen > 1 ? 's' : ''} ouverte${d.posOpen > 1 ? 's' : ''} et ${d.posClosed} clôturée${d.posClosed > 1 ? 's' : ''}.`);
+  if(d.conv.length){
+    const up = d.conv.filter(x => x.to > (x.from || 0)).length;
+    p.push(`${up} conviction${up > 1 ? 's' : ''} en hausse, ${d.conv.length - up} en baisse sur l'année.`);
+  }
+  if(!d.events.length && !d.theses) p.push(`Le journal de bord n'a rien enregistré cette année-là : il se remplit à mesure que vous modifiez vos convictions, décisions et prix cibles.`);
+  return p;
+}
+function goReview(year){
+  currentView = 'review';
+  reviewYear = year || reviewYear || String(new Date().getFullYear());
+  render();
+  window.scrollTo(0, 0);
+  closeMenu();
+}
+function renderReviewView(){
+  const main = document.getElementById('main');
+  const years = reviewYears();
+  if(!reviewYear || years.indexOf(reviewYear) < 0) reviewYear = years[0];
+  const year = reviewYear;
+  const d = reviewData(year);
+  const tile = (v, l) => `<div class="cap-tile"><div class="cap-v">${v}</div><div class="cap-l">${l}</div></div>`;
+  const convRows = d.conv.map(x => {
+    const up = x.to > (x.from || 0);
+    return `<div class="rv-line"><span class="rv-name">${escapeHtml(x.c.name || 'Sans nom')}</span><span class="rv-val" style="color:${up ? 'var(--green)' : 'var(--red)'}">${x.from === null ? '—' : fmtNum(x.from, 1)} &rarr; ${fmtNum(x.to, 1)} / 5</span></div>`;
+  }).join('');
+  const pfRows = d.pf.map(x => {
+    const gain = x.b.v - x.b.i, pct = x.b.i ? gain / x.b.i * 100 : null;
+    return `<div class="rv-line"><span class="rv-name">Portefeuille en ${x.cur === '€' ? 'euros' : 'dollars'}</span><span class="rv-val">${fmtMoney(x.a.v, x.cur)} &rarr; ${fmtMoney(x.b.v, x.cur)}</span></div>
+      <div class="rv-line"><span class="rv-name rv-sub">Résultat latent en fin de période</span><span class="rv-val" style="color:${gain >= 0 ? 'var(--green)' : 'var(--red)'}">${gain >= 0 ? '+' : ''}${fmtMoney(gain, x.cur)}${pct === null ? '' : ` (${gain >= 0 ? '+' : ''}${fmtNum(pct, 1)} %)`}</span></div>`;
+  }).join('');
+  main.innerHTML = `<div class="wrap page space jr-wrap rv-page">
+    <div class="space-head"><div>
+      <div class="kicker">Mon espace · Bilan annuel</div>
+      <h1 class="space-title">Bilan ${escapeHtml(year)}</h1>
+      <p class="space-sub">Votre année d'investisseur, rédigée à partir de ce que vous avez enregistré.</p>
+    </div><div class="space-actions"><button class="btn btn-outline" data-go-space>&larr; Mon espace</button><button class="btn btn-outline" id="rvPrint">Imprimer</button></div></div>
+    <div class="jr-controls"><div class="jr-seg" role="group" aria-label="Année">${years.map(y => `<button type="button" data-rv-year="${y}" class="${y === year ? 'active' : ''}">${y}</button>`).join('')}</div></div>
+    <section class="scard rv-letter">${reviewLetter(year, d).map(t => `<p>${escapeHtml(t)}</p>`).join('')}</section>
+    <section class="scard capital-card"><div class="cap-grid">
+      ${tile(d.created.length, d.created.length > 1 ? 'analyses créées' : 'analyse créée')}
+      ${tile(d.theses, d.theses > 1 ? 'thèses archivées' : 'thèse archivée')}
+      ${tile(d.events.length, d.events.length > 1 ? 'décisions journalisées' : 'décision journalisée')}
+      ${tile(d.posOpen + '/' + d.posClosed, 'positions ouvertes / clôturées')}
+    </div></section>
+    ${d.conv.length ? `<section class="scard capital-card"><div class="scard-t">Convictions qui ont bougé</div><div class="rv-lines">${convRows}</div></section>` : ''}
+    ${d.pf.length ? `<section class="scard capital-card"><div class="scard-t">Portefeuille</div><div class="rv-lines">${pfRows}</div><div class="s-note">Valeur entre la première et la dernière photo enregistrée de l'année (${fmtNum(d.pf[0].n, 0)} jour${d.pf[0].n > 1 ? 's' : ''} relevé${d.pf[0].n > 1 ? 's' : ''}). Les achats et ventes de l'année y sont inclus : ce n'est pas une performance pure.</div></section>` : ''}
+    <div class="s-note" style="margin-top:20px">Ce bilan est un simple récapitulatif de vos saisies, jamais un conseil en investissement.</div>
+  </div>`;
+  main.querySelectorAll('[data-go-space]').forEach(el => el.addEventListener('click', goSpace));
+  main.querySelectorAll('[data-rv-year]').forEach(b => b.addEventListener('click', () => { reviewYear = b.dataset.rvYear; renderReviewView(); }));
+  document.getElementById('rvPrint').addEventListener('click', () => window.print());
+}
+
 function bindSpace(){
   const main = document.getElementById('main');
   bindTableSortMenu();
   main.querySelectorAll('[data-go-journal]').forEach(el => el.addEventListener('click', goJournal));
+  main.querySelectorAll('[data-go-review]').forEach(el => el.addEventListener('click', () => goReview()));
+  main.querySelectorAll('[data-rv-done]').forEach(el => el.addEventListener('click', () => {
+    const c = state.companies.find(x => x.id === el.dataset.rvDone);
+    if(!c) return;
+    touchUpdated(c);
+    saveState();
+    renderSpaceView();
+  }));
   main.querySelectorAll('[data-new-analysis]').forEach(el => el.addEventListener('click', openNewCompanyModal));
   main.querySelectorAll('[data-open-company]').forEach(el => el.addEventListener('click', () => selectCompany(el.dataset.openCompany)));
   main.querySelectorAll('[data-rename-id]').forEach(el => el.addEventListener('click', e => openRenameModal(el.dataset.renameId, e)));
@@ -9313,6 +9483,10 @@ function render(){
   }
   if(currentView === 'journal'){
     renderJournalView();
+    return;
+  }
+  if(currentView === 'review'){
+    renderReviewView();
     return;
   }
   const main = document.getElementById('main');
