@@ -1602,10 +1602,10 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
 .cmp-table tbody tr:not(.cmp-sec):not(.cmp-radar) > :first-child{ border-left:6px solid color-mix(in srgb, var(--sec-c, var(--border-strong)) 35%, transparent); }
 .cmp-co{ border-bottom:3px solid var(--co-c, var(--accent)) !important; }
 .cmp-radar td{ padding:14px 10px; background:color-mix(in srgb, var(--sec-c) 5%, var(--card)); border-left:6px solid color-mix(in srgb, var(--sec-c) 35%, transparent); }
-.cmp-radar-box{ display:flex; flex-direction:column; align-items:center; gap:6px; }
-.cmp-radar-t{ font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); }
-.cmp-radar-svg{ width:100%; max-width:580px; height:auto; }
-.cmp-legend{ display:flex; flex-wrap:wrap; justify-content:center; gap:6px 18px; }
+.cmp-radars{ display:grid; grid-template-columns:repeat(var(--n, 2), minmax(0, 1fr)); gap:10px 14px; }
+.cmp-radar-box{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:0; }
+.cmp-radar-svg{ width:100%; max-width:380px; height:auto; }
+@media (max-width:760px){ .cmp-radars{ grid-template-columns:repeat(2, minmax(0, 1fr)); } }
 .cmp-leg{ display:inline-flex; align-items:center; gap:7px; font-size:13.5px; font-weight:600; }
 .cmp-leg-dot{ width:11px; height:11px; border-radius:50%; flex:0 0 auto; }
 .cmp-bb{ line-height:1.5; white-space:nowrap; }
@@ -7951,22 +7951,24 @@ function compareRadarHtml(cs, axesBy, cols){
   let grid = '';
   [0.25, 0.5, 0.75, 1].forEach(f => { grid += `<polygon points="${axes.map((_, i) => pt(i, f).join(',')).join(' ')}" fill="none" stroke="var(--border-strong)" stroke-width="1"/>`; });
   axes.forEach((_, i) => { const [x, y] = pt(i, 1); grid += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="var(--border-strong)" stroke-width="1"/>`; });
-  let labels = '';
-  axes.forEach((a, i) => {
-    const [x, y] = pt(i, 1.3), cosA = Math.cos(ang(i));
-    const anchor = Math.abs(cosA) < 0.3 ? 'middle' : (cosA > 0 ? 'start' : 'end');
-    labels += `<text x="${x}" y="${y + 4}" text-anchor="${anchor}" font-size="12" font-weight="600" fill="var(--ink)" font-family="Inter, sans-serif">${escapeHtml(a.label)}</text>`;
-  });
-  let shapes = '';
-  cs.forEach((c, k) => {
+  // Un radar PAR entreprise, côte à côte (demande de Nolan : pas un seul radar superposé) : même échelle, même grille, chacun dans la couleur de son entreprise
+  return `<div class="cmp-radars" style="--n:${cs.length}">${cs.map((c, k) => {
     const sc = axesBy[k].map(a => a.score);
-    if(sc.every(s => s === null)) return;
-    const pts = sc.map((s, i) => pt(i, s === null ? 0.03 : s / 100));
-    shapes += `<polygon points="${pts.map(p => p.join(',')).join(' ')}" fill="${cols[k]}" fill-opacity="0.14" stroke="${cols[k]}" stroke-width="2" stroke-linejoin="round"/>`;
-    pts.forEach((p, i) => { if(sc[i] !== null) shapes += `<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="${cols[k]}" stroke="var(--card)" stroke-width="1.5"/>`; });
-  });
-  const legend = cs.map((c, k) => `<span class="cmp-leg"><span class="cmp-leg-dot" style="background:${cols[k]}"></span>${escapeHtml(c.name || 'Sans nom')}</span>`).join('');
-  return `<div class="cmp-radar-box"><div class="cmp-radar-t">Profil du score par axe</div><svg viewBox="-56 0 332 210" class="cmp-radar-svg" role="img" aria-label="Radar comparant les 5 axes du score">${grid}${shapes}${labels}</svg><div class="cmp-legend">${legend}</div></div>`;
+    let labels = '';
+    axes.forEach((a, i) => {
+      const [x, y] = pt(i, 1.32), cosA = Math.cos(ang(i));
+      const anchor = Math.abs(cosA) < 0.3 ? 'middle' : (cosA > 0 ? 'start' : 'end');
+      labels += `<text x="${x}" y="${y + 3}" text-anchor="${anchor}" font-size="13" font-weight="600" fill="var(--ink)" font-family="Inter, sans-serif">${escapeHtml(a.label)}</text>`;
+      labels += `<text x="${x}" y="${y + 17}" text-anchor="${anchor}" font-size="12.5" font-weight="700" fill="${cols[k]}" font-family="Inter, sans-serif">${sc[i] === null ? '—' : Math.round(sc[i])}</text>`;
+    });
+    let shape = '';
+    if(!sc.every(s => s === null)){
+      const pts = sc.map((s, i) => pt(i, s === null ? 0.03 : s / 100));
+      shape += `<polygon points="${pts.map(p => p.join(',')).join(' ')}" fill="${cols[k]}" fill-opacity="0.2" stroke="${cols[k]}" stroke-width="2.2" stroke-linejoin="round"/>`;
+      pts.forEach((p, i) => { if(sc[i] !== null) shape += `<circle cx="${p[0]}" cy="${p[1]}" r="3.2" fill="${cols[k]}" stroke="var(--card)" stroke-width="1.5"/>`; });
+    }
+    return `<div class="cmp-radar-box"><div class="cmp-leg"><span class="cmp-leg-dot" style="background:${cols[k]}"></span>${escapeHtml(c.name || 'Sans nom')}</div><svg viewBox="-56 0 332 215" class="cmp-radar-svg" role="img" aria-label="Radar des 5 axes du score de ${escapeHtml(c.name || 'Sans nom')}">${grid}${shape}${labels}</svg></div>`;
+  }).join('')}</div>`;
 }
 function compareTableHtml(){
   const cs = compareIds.map(id => state.companies.find(c => c.id === id)).filter(Boolean);
@@ -8037,15 +8039,17 @@ function compareTableHtml(){
     body += row('Résultat de la position', cs.map(c => { const m = positionMetrics(c); return (!m || m.gainPct === null || m.gainPct === undefined) ? (m ? 'Ouverte' : '—') : `<span style="color:${m.gainPct >= 0 ? 'var(--green)' : 'var(--red)'}">${m.gainPct >= 0 ? '+' : ''}${fmtNum(m.gainPct, 1)} %</span>`; }), -1);
   }
   // Le graphique radar (une couleur par entreprise) juste avant le détail des notes
-  body += `<tr class="cmp-radar" style="--sec-c:${SEC_COL.score}"><td colspan="${colN}">${compareRadarHtml(cs, axesBy, cmpCols)}</td></tr>`;
   body += section('Score détaillé', SEC_COL.score);
+  body += `<tr class="cmp-radar" style="--sec-c:${SEC_COL.score}"><td colspan="${colN}">${compareRadarHtml(cs, axesBy, cmpCols)}</td></tr>`;
   SCORE_AXES.forEach((ax, ai) => {
     const axisScores = axesBy.map(a => a[ai].score);
     // Chaque axe et chacun de ses indicateurs sont toujours listés, même vides (« — »), pour voir tout ce qui entre dans la note (demande de Nolan)
     body += row(`${escapeHtml(ax.label)}`, axisScores.map(s => s === null ? '—' : `<strong style="color:${scoreColor5(s)}">${Math.round(s)}</strong><span class="jr-meta"> / 100</span>`), bestIdx(axisScores), 'cmp-axis', SEC_COL.score);
     ax.parts.forEach((key, pi) => {
       const parts = axesBy.map(a => a[ai].parts[pi]);
-      body += row(`<span class="rv-sub">${escapeHtml(parts[0].label)}</span>`, parts.map(p => p.val === null ? '—' : `<span class="cmp-dot" style="background:${p.tier ? TIER_COLORS[p.tier] : 'var(--border-strong)'}"></span>${escapeHtml(cmpPartText(p))}`), bestIdx(parts.map(p => p.score)));
+      // Consensus des analystes : on compare la CATÉGORIE (Strong Buy, Buy...) et non la note, deux « Strong Buy » à 4,7 et 4,8 sont à égalité (demande de Nolan)
+      const cmpScores = key === 'consensus' ? parts.map(p => p.val === null ? null : wsRecoIndex(p.val)) : parts.map(p => p.score);
+      body += row(`<span class="rv-sub">${escapeHtml(parts[0].label)}</span>`, parts.map(p => p.val === null ? '—' : `<span class="cmp-dot" style="background:${p.tier ? TIER_COLORS[p.tier] : 'var(--border-strong)'}"></span>${escapeHtml(cmpPartText(p))}`), bestIdx(cmpScores));
     });
   });
   body += section('Votre analyse', SEC_COL.analyse);
