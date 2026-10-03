@@ -2260,6 +2260,8 @@ a.btn{ text-decoration:none; }
 /* Point d'attention sans entreprise précise : point d'exclamation (vigilance) au lieu d'un logo */
 .mini-av-warn{ background:var(--amber-soft); color:var(--amber); font-family:var(--font-ui); font-style:normal; font-weight:800; font-size:20px; border:1px solid color-mix(in srgb, var(--amber) 35%, transparent); }
 
+.guide-tabs{ display:flex; flex-wrap:wrap; gap:8px; margin:4px 0 14px 0; }
+.guide-tabs .lr-chip small{ display:block; font-size:11.5px; opacity:.75; margin:2px 0 0 0; font-weight:500; }
 </style>
 </head>
 <body>
@@ -2380,16 +2382,15 @@ a.btn{ text-decoration:none; }
 <div class="modal-overlay hidden" id="priceGuideModal">
   <div class="modal-box guide-box">
     <h2>Activer le prix automatique</h2>
-    <p class="guide-lead">Quatre étapes, à faire une seule fois. Ensuite, le prix actuel de vos actions se met à jour tout seul.</p>
-    <ol class="guide-steps">
-      <li><span>Ouvrez <a href="https://twelvedata.com/pricing" target="_blank" rel="noopener noreferrer">twelvedata.com/pricing</a> et choisissez l'offre gratuite <strong>Basic</strong>. Aucun paiement n'est demandé.</span></li>
-      <li><span>Créez votre compte avec une adresse e-mail et un mot de passe, puis confirmez votre e-mail.</span></li>
-      <li><span>Une fois connecté, ouvrez votre tableau de bord : votre <strong>clé API</strong> y est affichée. Copiez-la.</span></li>
-      <li><span>Collez-la ci-dessous et cliquez sur « Enregistrer et tester ».</span></li>
-    </ol>
+    <p class="guide-lead">À faire une seule fois pour chaque service. Ensuite, le prix actuel de vos actions se met à jour tout seul. Choisissez la devise de vos actions :</p>
+    <div class="guide-tabs" role="tablist">
+      <button type="button" class="lr-chip" role="tab" data-guide-tab="usd">Actions en dollars <small>Twelve Data</small></button>
+      <button type="button" class="lr-chip" role="tab" data-guide-tab="eur">Actions en euros <small>Alpha Vantage</small></button>
+    </div>
+    <ol class="guide-steps" id="guideSteps"></ol>
     <input type="text" id="guideKeyInput" placeholder="Collez votre clé API ici" autocomplete="off" spellcheck="false">
     <div class="guide-result" id="guideResult" aria-live="polite"></div>
-    <div class="modal-hint">Cette clé couvre les actions américaines (NASDAQ, NYSE, en dollars). Pour les actions européennes (en euros), ajoutez aussi une clé gratuite Alpha Vantage (Préférences, Mon espace) : le cours est alors différé. Seul le ticker est envoyé, jamais le contenu de vos analyses.</div>
+    <div class="modal-hint" id="guideHint"></div>
     <div class="modal-actions" style="margin-top:16px;">
       <button id="guideClose">Fermer</button>
       <button class="primary" id="guideSave">Enregistrer et tester</button>
@@ -6856,7 +6857,11 @@ function paintPriceStatus(id){
   const statusEl = document.getElementById('priceStatus');
   if(statusEl) statusEl.textContent = priceStatusText(c);
   const guideLink = document.getElementById('priceGuideLink');
-  if(guideLink) guideLink.style.display = String(state.settings.twelveDataApiKey || '').trim() ? 'none' : '';
+  if(guideLink){
+    // Le lien vise la clé utile pour la devise de CETTE analyse (Alpha Vantage pour l'euro, Twelve Data pour le dollar)
+    guideLink.dataset.openPriceGuide = c.currency === '€' ? 'eur' : 'usd';
+    guideLink.style.display = String((c.currency === '€' ? state.settings.alphaVantageApiKey : state.settings.twelveDataApiKey) || '').trim() ? 'none' : '';
+  }
   const input = document.querySelector('[data-section="valorisation"][data-field="prixActuel"]');
   if(input && document.activeElement !== input){
     const v = c.fields.valorisation.prixActuel || '';
@@ -6971,20 +6976,60 @@ function ensurePrices(){
   });
 }
 
-// Guide pas à pas pour obtenir et coller la clé Twelve Data, avec test immédiat de la clé.
-function openPriceGuide(){
+// Guide pas à pas pour obtenir et coller une clé de prix, avec test immédiat de la clé. DEUX services (2026-10-04, demande de Nolan : le guide doit aussi
+// guider pour les valeurs en euros) : Twelve Data pour les actions en dollars, Alpha Vantage (cours différé) pour celles en euros. Onglet ouvert d'office
+// selon le contexte (devise de l'analyse, ou la clé qui manque), choix possible en haut de la fenêtre.
+let guideTab = 'usd';
+const PRICE_GUIDES = {
+  usd: {
+    setting:'twelveDataApiKey', prefId:'prefPriceKey',
+    steps:[
+      `Ouvrez <a href="https://twelvedata.com/pricing" target="_blank" rel="noopener noreferrer">twelvedata.com/pricing</a> et choisissez l'offre gratuite <strong>Basic</strong>. Aucun paiement n'est demandé.`,
+      `Créez votre compte avec une adresse e-mail et un mot de passe, puis confirmez votre e-mail.`,
+      `Une fois connecté, ouvrez votre tableau de bord : votre <strong>clé API</strong> y est affichée. Copiez-la.`,
+      `Collez-la ci-dessous et cliquez sur « Enregistrer et tester ».`,
+    ],
+    hint:`Cette clé couvre les actions américaines (NASDAQ, NYSE, en dollars), cours quasi en direct. Seul le ticker est envoyé, jamais le contenu de vos analyses.`,
+  },
+  eur: {
+    setting:'alphaVantageApiKey', prefId:'prefAvKey',
+    steps:[
+      `Ouvrez <a href="https://www.alphavantage.co/support/#api-key" target="_blank" rel="noopener noreferrer">alphavantage.co/support/#api-key</a> : c'est la page de la clé gratuite, aucun paiement n'est demandé.`,
+      `Remplissez le court formulaire (votre adresse e-mail suffit) et validez : pas de mot de passe à créer.`,
+      `Votre <strong>clé API</strong> s'affiche tout de suite à l'écran. Copiez-la.`,
+      `Collez-la ci-dessous et cliquez sur « Enregistrer et tester ».`,
+    ],
+    hint:`Cette clé couvre les actions européennes (en euros : Paris, Amsterdam, Allemagne, Italie, Espagne). Le cours est <strong>différé</strong> (dernière séance ou quelques minutes de retard, jamais en temps réel) et limité à environ 25 mises à jour par jour. Seul le ticker est envoyé, jamais le contenu de vos analyses.`,
+  },
+};
+function paintPriceGuide(){
+  const g = PRICE_GUIDES[guideTab];
+  document.querySelectorAll('[data-guide-tab]').forEach(b => { const on = b.dataset.guideTab === guideTab; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); });
+  document.getElementById('guideSteps').innerHTML = g.steps.map(s => `<li><span>${s}</span></li>`).join('');
+  document.getElementById('guideHint').innerHTML = g.hint;
   const input = document.getElementById('guideKeyInput');
-  input.value = state.settings.twelveDataApiKey || '';
+  input.value = state.settings[g.setting] || '';
   const res = document.getElementById('guideResult');
   res.textContent = '';
   res.className = 'guide-result';
+}
+function openPriceGuide(tab){
+  if(tab === 'usd' || tab === 'eur') guideTab = tab;
+  else{
+    // Sans indication : la clé qui manque ; à défaut, la devise de l'analyse ouverte
+    const noUsd = !String(state.settings.twelveDataApiKey || '').trim(), noEur = !String(state.settings.alphaVantageApiKey || '').trim();
+    const c = currentView === 'company' ? getActive() : null;
+    guideTab = (c && c.currency === '€' && noEur) ? 'eur' : (noUsd ? 'usd' : (noEur ? 'eur' : 'usd'));
+  }
+  paintPriceGuide();
   document.getElementById('priceGuideModal').classList.remove('hidden');
-  setTimeout(() => input.focus(), 50);
+  setTimeout(() => document.getElementById('guideKeyInput').focus(), 50);
 }
 function closePriceGuide(){
   document.getElementById('priceGuideModal').classList.add('hidden');
 }
 async function savePriceGuideKey(){
+  const tab = guideTab, g = PRICE_GUIDES[tab];
   const key = document.getElementById('guideKeyInput').value.trim();
   const res = document.getElementById('guideResult');
   if(!key){
@@ -6995,20 +7040,30 @@ async function savePriceGuideKey(){
   res.className = 'guide-result';
   res.textContent = 'Vérification de la clé...';
   try{
-    const r = await fetch(`https://api.twelvedata.com/price?symbol=AAPL&apikey=${encodeURIComponent(key)}`);
-    const data = await r.json();
-    if(data && data.status === 'error') throw new Error(data.message || 'Clé refusée.');
-    if(!data || data.price === undefined) throw new Error('Réponse inattendue du service.');
+    if(tab === 'usd'){
+      const r = await fetch(`https://api.twelvedata.com/price?symbol=AAPL&apikey=${encodeURIComponent(key)}`);
+      const data = await r.json();
+      if(data && data.status === 'error') throw new Error(data.message || 'Clé refusée.');
+      if(!data || data.price === undefined) throw new Error('Réponse inattendue du service.');
+    }else{
+      if(!/^[A-Za-z0-9]{6,64}$/.test(key)) throw new Error('Cette clé ne semble pas valide.');
+      // Alpha Vantage : un cours d'essai (IBM) avec la clé collée ; les erreurs (clé invalide, limite) sont traduites par avErrorText
+      let d;
+      try{ d = await avRequest({ function:'GLOBAL_QUOTE', symbol:'IBM' }, key); }catch(e){ throw new Error(avErrorText(e, 'IBM')); }
+      if(!d || !d['Global Quote'] || !d['Global Quote']['05. price']) throw new Error('Réponse inattendue du service.');
+    }
   }catch(e){
     res.className = 'guide-result ko';
     res.textContent = 'La clé n\'a pas été acceptée : ' + ((e && e.message) ? e.message : 'connexion impossible') + ' Vérifiez que vous l\'avez copiée en entier.';
     return;
   }
-  state.settings.twelveDataApiKey = key;
+  state.settings[g.setting] = key;
+  // Les analyses en euros repartent d'une tentative fraîche (une erreur précédente ne doit pas les bloquer)
+  if(tab === 'eur') state.companies.forEach(c => { if(c.currency === '€'){ c.priceError = null; c.priceUpdatedAt = null; } });
   saveState();
   res.className = 'guide-result ok';
-  res.textContent = 'Clé valide et enregistrée. Le prix se mettra à jour automatiquement.';
-  const pref = document.getElementById('prefPriceKey');
+  res.textContent = tab === 'eur' ? 'Clé valide et enregistrée. Le cours des actions en euros se mettra à jour automatiquement (différé).' : 'Clé valide et enregistrée. Le prix se mettra à jour automatiquement.';
+  const pref = document.getElementById(g.prefId);
   if(pref) pref.value = key;
   const c = getActive();
   if(currentView === 'company' && c) paintPriceStatus(c.id);
@@ -7020,9 +7075,9 @@ function bindPriceGuide(){
   document.getElementById('priceGuideModal').addEventListener('click', e => { if(e.target.id === 'priceGuideModal') closePriceGuide(); });
   document.getElementById('guideSave').addEventListener('click', savePriceGuideKey);
   document.getElementById('guideKeyInput').addEventListener('keydown', e => { if(e.key === 'Enter') savePriceGuideKey(); });
-  document.addEventListener('click', e => { if(e.target.closest('[data-open-price-guide]')) openPriceGuide(); });
+  document.querySelectorAll('[data-guide-tab]').forEach(b => b.addEventListener('click', () => { guideTab = b.dataset.guideTab; paintPriceGuide(); document.getElementById('guideKeyInput').focus(); }));
+  document.addEventListener('click', e => { const b = e.target.closest('[data-open-price-guide]'); if(b) openPriceGuide(b.dataset.openPriceGuide); });
 }
-
 function avatarInner(c){
   const ini = escapeHtml(initialsOf(c.name));
   const u = c.logo && c.logo.url;
@@ -8599,12 +8654,12 @@ function buildPrefsCard(){
         <div class="pref-key">
           <label class="pref-k" for="prefPriceKey">Actions américaines ($) <span>Twelve Data</span></label>
           <input type="text" id="prefPriceKey" placeholder="Clé API" value="${escapeHtml(s.twelveDataApiKey || '')}" autocomplete="off" spellcheck="false">
-          <button class="btn btn-outline btn-sm" data-open-price-guide>Guide pour obtenir la clé</button>
+          <button class="btn btn-outline btn-sm" data-open-price-guide="usd">Guide pour obtenir la clé</button>
         </div>
         <div class="pref-key">
           <label class="pref-k" for="prefAvKey">Actions en euros (€) <span>Alpha Vantage, cours différé</span></label>
           <input type="text" id="prefAvKey" placeholder="Clé API" value="${escapeHtml(s.alphaVantageApiKey || '')}" autocomplete="off" spellcheck="false">
-          <a class="btn btn-outline btn-sm" href="https://www.alphavantage.co/support/#api-key" target="_blank" rel="noopener noreferrer">Obtenir la clé</a>
+          <button class="btn btn-outline btn-sm" data-open-price-guide="eur">Guide pour obtenir la clé</button>
         </div>
       </div>
       <div class="pref-h">Clés gratuites : le cours se met à jour tout seul. En euros, il est différé et limité à environ 25 mises à jour par jour.</div>
@@ -11140,9 +11195,7 @@ function renderHomeView(){
         <h2>De la première ligne à la décision, en trois étapes</h2>
       </div>
       <div class="steps">${steps}</div>
-      <div class="steps-cta">${visitor
-        ? `<button class="btn btn-primary" data-auth-open="signup">Créer un compte gratuit</button><button class="btn btn-outline" data-new-analysis>Essayer sans compte</button>`
-        : `<button class="btn btn-primary" data-new-analysis>${state.companies.length ? 'Nouvelle analyse' : 'Commencer une analyse'}</button>`}</div>
+      ${visitor ? `<div class="steps-cta"><button class="btn btn-primary" data-auth-open="signup">Créer un compte gratuit</button><button class="btn btn-outline" data-new-analysis>Essayer sans compte</button></div>` : ''}
     </section>
 
     ${visitor ? `<section class="hsec" id="account">
@@ -11686,7 +11739,7 @@ function render(){
         const sz = Math.max(String(value || '').length, 2) + 1;
         const autoPrice = field.key === 'prixActuel' ? `<div class="price-auto-row">
             <span class="price-status" id="priceStatus">${escapeHtml(priceStatusText(c))}</span>
-            <button type="button" class="link-btn" id="priceGuideLink" data-open-price-guide${String(state.settings.twelveDataApiKey || '').trim() ? ' style="display:none"' : ''}>Activer le prix automatique</button>
+            <button type="button" class="link-btn" id="priceGuideLink" data-open-price-guide="${c.currency === '€' ? 'eur' : 'usd'}"${String((c.currency === '€' ? state.settings.alphaVantageApiKey : state.settings.twelveDataApiKey) || '').trim() ? ' style="display:none"' : ''}>Activer le prix automatique</button>
           </div>` : '';
         html += `<div class="field-row"><div class="field-label" data-tooltip="${fieldDescTooltip(field.key)}">${field.label}</div>
           <div class="field-value"><div class="value-with-suffix">
