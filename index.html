@@ -642,7 +642,8 @@ main{ display:block; }
 }
 .demo-val{ display:flex; align-items:center; gap:10px; }
 .demo-tip{ position:relative; width:100%; max-width:330px; margin-left:auto; }
-.demo-tip .custom-tooltip{ position:relative; opacity:1; transform:none; max-width:none; box-shadow:var(--shadow-lg); }
+/* z-index:auto : ces exemples reprennent la classe .custom-tooltip (z-index 9999 pour la vraie infobulle), sinon ils passaient AU-DESSUS de la barre du haut en défilant */
+.demo-tip .custom-tooltip{ position:relative; z-index:auto; opacity:1; transform:none; max-width:none; box-shadow:var(--shadow-lg); }
 
 .steps{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
 .step{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:28px; box-shadow:var(--shadow); }
@@ -1852,7 +1853,7 @@ tr:hover .ct-del-btn, .ct-del-btn:focus-visible{ opacity:1; }
 .ms-h{ font-size:13px; color:var(--ink-soft); margin-top:1px; }
 .tip-term{ font-family:var(--font-serif); font-weight:700; font-size:26px; line-height:1.2; margin-bottom:8px; }
 .tip-desc{ margin:0 0 16px 0; font-size:15.5px; line-height:1.65; color:var(--ink); }
-.tip-scale .custom-tooltip{ position:relative; opacity:1; transform:none; max-width:none; box-shadow:none; }
+.tip-scale .custom-tooltip{ position:relative; z-index:auto; opacity:1; transform:none; max-width:none; box-shadow:none; }
 .tip-nav{ display:flex; gap:10px; margin-top:18px; }
 
 .pref-grid{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:28px; }
