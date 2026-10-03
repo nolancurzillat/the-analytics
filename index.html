@@ -2269,6 +2269,10 @@ a.btn{ text-decoration:none; }
 .update-banner{ position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:90; display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:10px 18px; width:min(640px, calc(100vw - 32px)); padding:14px 18px; border:1px solid var(--border-strong); border-left:4px solid var(--accent); border-radius:14px; background:var(--card); color:var(--ink); box-shadow:0 16px 40px rgba(0,0,0,.35); font-size:14.5px; line-height:1.5; }
 .update-banner .update-btns{ display:flex; gap:8px; flex:0 0 auto; }
 
+/* Version de l'application : à part, en bas à droite de la carte « Préférences et données » */
+.pref-version{ display:flex; flex-wrap:wrap; justify-content:flex-end; align-items:center; gap:4px 14px; margin-top:22px; padding-top:14px; border-top:1px solid var(--border); font-size:13px; color:var(--ink-soft); text-align:right; }
+.pref-version strong{ color:var(--ink); }
+.pref-version .link-btn{ font-size:13px; }
 .guide-sub{ margin:14px 0 8px 0; font-size:15px; font-weight:700; }
 .home-install{ display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:10px 16px; margin:44px auto 0 auto; padding:16px 22px; max-width:760px; border:1px solid var(--border); border-radius:14px; background:var(--card); text-align:center; font-size:14.5px; color:var(--ink-soft); }
 .home-install strong{ color:var(--ink); }
@@ -7009,7 +7013,7 @@ const PRICE_GUIDES = {
     setting:'alphaVantageApiKey', prefId:'prefAvKey',
     steps:[
       `Ouvrez <a href="https://www.alphavantage.co/support/#api-key" target="_blank" rel="noopener noreferrer">alphavantage.co/support/#api-key</a> : c'est la page de la clé gratuite, aucun paiement n'est demandé.`,
-      `Remplissez le court formulaire (votre adresse e-mail suffit) et validez : pas de mot de passe à créer.`,
+      `Remplissez le court formulaire : votre adresse e-mail suffit. Si le champ « Organisation » est demandé, écrivez simplement <strong>Autre</strong>. Validez : pas de mot de passe à créer.`,
       `Votre <strong>clé API</strong> s'affiche tout de suite à l'écran. Copiez-la.`,
       `Collez-la ci-dessous et cliquez sur « Enregistrer et tester ».`,
     ],
@@ -8683,15 +8687,11 @@ function buildPrefsCard(){
       <div class="pref-btns">${isInstalledApp() ? '' : '<button class="btn btn-primary btn-sm" data-install-open>Installer l\'application</button>'}<button class="btn btn-outline btn-sm" data-start-tour>Revoir la visite guidée</button></div>
     </div>
     <div class="pref">
-      <div class="pref-l">Version de l'application</div>
-      <div class="pref-h" id="versionLine">${versionLineHtml()}</div>
-      <button class="btn btn-outline btn-sm" id="checkUpdateBtn">Rechercher une mise à jour</button>
-    </div>
-    <div class="pref">
       <div class="pref-l">Sauvegarde de vos analyses</div>
       <div id="backupPanel" class="bk-panel">${backupPanelHtml()}</div>
     </div>
-  </div>`);
+  </div>
+  <div class="pref-version"><span id="versionLine">${versionLineHtml()}</span><button type="button" class="link-btn" id="checkUpdateBtn">Rechercher une mise à jour</button></div>`);
 }
 
 // ---------- Sauvegarde : export / import ----------
@@ -11619,22 +11619,31 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 206;
-const updateInfo = { latest:null, checking:false, dismissedAt:0, lastCheck:0 };
+const APP_BUILD = 207;
+// Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de Nolan : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
+// nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
+// APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
+const APP_VERSION = '1.0';
+const updateInfo = { latest:null, latestVersion:null, checking:false, dismissedAt:0, lastCheck:0 };
 async function fetchLatestBuild(){
   const r = await fetch('service-worker.js?check=' + Date.now(), { cache:'no-store' });
   if(!r.ok) throw new Error('http');
-  const m = /CACHE_NAME\s*=\s*'carnet-analyse-v(\d+)'/.exec(await r.text());
+  const txt = await r.text();
+  const m = /CACHE_NAME\s*=\s*'carnet-analyse-v(\d+)'/.exec(txt);
   if(!m) throw new Error('format');
-  return Number(m[1]);
+  const v = /APP_VERSION\s*=\s*'([0-9.]+)'/.exec(txt);
+  return { build:Number(m[1]), version:v ? v[1] : null };
 }
 function updateAvailable(){ return updateInfo.latest !== null && updateInfo.latest > APP_BUILD; }
 function versionLineHtml(){
-  const base = `Version <strong>${APP_BUILD}</strong>`;
+  const base = `Version <strong>${APP_VERSION}</strong>`;
   if(updateInfo.checking) return base + ' · vérification...';
-  if(updateInfo.latest === null) return base + ' · pas encore vérifiée.';
-  if(updateAvailable()) return base + ` · <strong>une nouvelle version (${updateInfo.latest}) est disponible.</strong> <button type="button" class="link-btn" id="applyUpdateBtn">Mettre à jour maintenant</button>`;
-  return base + ' · ✓ vous avez la dernière version.';
+  if(updateInfo.latest === null) return base + '';
+  if(updateAvailable()){
+    const same = !updateInfo.latestVersion || updateInfo.latestVersion === APP_VERSION;
+    return base + ` · <strong>${same ? 'une mise à jour est disponible' : 'la version ' + updateInfo.latestVersion + ' est disponible'}.</strong> <button type="button" class="link-btn" id="applyUpdateBtn">Mettre à jour maintenant</button>`;
+  }
+  return base + ' · ✓ à jour';
 }
 function paintVersionLine(){
   const el = document.getElementById('versionLine');
@@ -11655,7 +11664,8 @@ async function checkForUpdate(manual){
   if(!manual && Date.now() - updateInfo.lastCheck < 5 * 60 * 1000) return;
   updateInfo.checking = true; updateInfo.lastCheck = Date.now(); paintVersionLine();
   try{
-    updateInfo.latest = await fetchLatestBuild();
+    const lb = await fetchLatestBuild();
+    updateInfo.latest = lb.build; updateInfo.latestVersion = lb.version;
   }catch(e){
     if(manual) showToast('Vérification impossible : vérifiez votre connexion internet.');
   }
@@ -11663,7 +11673,7 @@ async function checkForUpdate(manual){
   paintVersionLine();
   // Bandeau : automatiquement, sauf si l'utilisateur a répondu « Plus tard » il y a moins d'une heure ; toujours après une vérification manuelle
   if(updateAvailable() && (manual || Date.now() - updateInfo.dismissedAt > 60 * 60 * 1000)) showUpdateBanner();
-  else if(!updateAvailable()){ hideUpdateBanner(); if(manual && updateInfo.latest !== null) showToast('Vous avez la dernière version (' + APP_BUILD + ').'); }
+  else if(!updateAvailable()){ hideUpdateBanner(); if(manual && updateInfo.latest !== null) showToast('Vous avez la dernière version (' + APP_VERSION + ').'); }
 }
 async function applyUpdate(){
   try{
