@@ -1479,9 +1479,20 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
    permanence dans .topbar, déjà très à l'étroit sous 900px (voir plus haut). La liste de résultats est ici en flux
    normal sous la case (pas en superposition comme .company-search-results de "Nouvelle analyse") car la modale
    EST l'expérience de recherche, rien d'autre ne vit dessous à couvrir. */
+/* Recherche globale en menu déroulant sous la loupe (2026-10-03) : le fond ne couvre que le contenu sous la barre du haut (top posé par positionGlobalSearch),
+   la boîte est positionnée en absolu dans ce fond, le champ de saisie passe EN PREMIER (order) comme un champ de recherche qui se déploie. */
+#globalSearchModal{ align-items:flex-start; justify-content:flex-start; background:rgba(7,12,24,.34); -webkit-backdrop-filter:none; backdrop-filter:none; z-index:60; }
+#globalSearchModal .modal-box.search-modal-box{ position:absolute; margin:0; padding:14px 16px 12px 16px; display:flex; flex-direction:column; max-height:calc(100vh - 100px); border-radius:14px; transform-origin:top left; animation:srchDrop .14s ease-out; }
+@keyframes srchDrop{ from{ opacity:0; transform:translateY(-8px) scale(.985); } to{ opacity:1; transform:none; } }
+#globalSearchModal .search-modal-box h2{ display:none; }
+#globalSearchModal .search-modal-box input#globalSearchInput{ order:1; }
+#globalSearchModal .search-modal-box .modal-hint{ order:2; margin:8px 2px 0 2px !important; font-size:12px; }
+#globalSearchModal .search-modal-box .search-modal-results{ order:3; }
+#globalSearchModal .search-modal-box .modal-actions{ order:4; }
+.search-btn.is-open{ background:rgba(255,255,255,.12); color:#fff; border-color:rgba(255,255,255,.3); }
 .search-modal-box{ width:620px; max-width:94vw; }
 .search-modal-box input#globalSearchInput{ margin-bottom:0; }
-.search-modal-results{ max-height:520px; overflow-y:auto; margin:10px -8px 14px -8px; padding:0 8px; }
+.search-modal-results{ max-height:min(520px, calc(100vh - 290px)); overflow-y:auto; margin:10px -8px 12px -8px; padding:0 8px; }
 .search-modal-group-title{ padding:12px 10px 6px 10px; font-size:11.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); }
 .search-modal-group-title:first-child{ padding-top:2px; }
 .search-modal-empty{ padding:18px 10px; font-size:13.5px; line-height:1.55; color:var(--ink-soft); }
@@ -3836,6 +3847,21 @@ function scheduleGlobalSearch(){
     paintGlobalSearch(globalSearchExisting, failed ? 'error' : globalSearchWikiResults, q);
   }, 350);
 }
+// La recherche globale s'ouvre en menu déroulant ANCRÉ sous le bouton de la barre du haut (demande de Nolan le 2026-10-03 : « il doit y avoir
+// une continuité », avant elle s'affichait au milieu de la page). Le fond sombre ne couvre que ce qui est SOUS la barre du haut, qui reste
+// visible avec la loupe en surbrillance ; la boîte est alignée sur la loupe et ramenée dans l'écran si besoin.
+function positionGlobalSearch(){
+  const overlay = document.getElementById('globalSearchModal');
+  if(overlay.classList.contains('hidden')) return;
+  const btn = document.getElementById('globalSearchBtn'), bar = document.querySelector('.topbar');
+  const box = overlay.querySelector('.modal-box');
+  const br = btn.getBoundingClientRect(), barBottom = Math.round(bar.getBoundingClientRect().bottom);
+  const w = Math.min(620, Math.round(window.innerWidth * 0.94));
+  overlay.style.top = barBottom + 'px';
+  box.style.width = w + 'px';
+  box.style.left = Math.max(12, Math.min(Math.round(br.left), window.innerWidth - w - 12)) + 'px';
+  box.style.top = '8px';
+}
 function openGlobalSearch(){
   const overlay = document.getElementById('globalSearchModal');
   const input = document.getElementById('globalSearchInput');
@@ -3843,12 +3869,17 @@ function openGlobalSearch(){
   globalSearchExisting = []; globalSearchWikiResults = [];
   paintGlobalSearch([], [], '');
   overlay.classList.remove('hidden');
+  document.getElementById('globalSearchBtn').classList.add('is-open');
+  positionGlobalSearch();
   setTimeout(() => input.focus(), 0);
 }
 function closeGlobalSearch(){
   document.getElementById('globalSearchModal').classList.add('hidden');
+  document.getElementById('globalSearchBtn').classList.remove('is-open');
   clearTimeout(globalSearchTimer);
 }
+window.addEventListener('resize', positionGlobalSearch);
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && !document.getElementById('globalSearchModal').classList.contains('hidden')) closeGlobalSearch(); });
 
 let pendingDeleteId = null;
 function deleteCompany(id, evt){
@@ -11299,7 +11330,9 @@ document.getElementById('companySearchResults').addEventListener('click', e => {
   const r = companySearchResults[Number(btn.dataset.pickIdx)];
   if(r) pickCompanySearchResult(r);
 });
-document.getElementById('globalSearchBtn').addEventListener('click', openGlobalSearch);
+document.getElementById('globalSearchBtn').addEventListener('click', () => {
+  if(document.getElementById('globalSearchModal').classList.contains('hidden')) openGlobalSearch(); else closeGlobalSearch();
+});
 document.getElementById('globalSearchCancel').addEventListener('click', closeGlobalSearch);
 document.getElementById('globalSearchModal').addEventListener('click', e => {
   if(e.target.id === 'globalSearchModal') closeGlobalSearch();
