@@ -185,6 +185,7 @@ svg{display:block;}
 .sort-opt:hover{ background:rgba(255,255,255,.08); color:#fff; }
 .sort-opt.current{ color:#fff; font-weight:600; }
 .sort-opt .sort-check{ width:14px; flex:0 0 14px; color:var(--accent); font-weight:700; }
+.sort-hint{ padding:8px 10px 6px 10px; max-width:230px; font-size:12.5px; line-height:1.45; color:#9aa8c4; }
 .sort-sep{ height:1px; background:rgba(255,255,255,.1); margin:6px 4px; }
 /* Tri de "Toutes vos analyses" (2026-09-27) : même bouton/menu que la barre latérale, réutilise .sort-btn/.sort-menu/.sort-opt, juste une nouvelle ancre positionnée. */
 .scard-s-row{ display:flex; align-items:center; gap:8px; }
@@ -6981,9 +6982,20 @@ function sortedForTable(){
   // Filtres par secteur et par tag (rangées de pastilles de « Toutes vos analyses »)
   return state.companies.filter(c => (!tagFilter || (c.tags || []).some(t => sameTag(t, tagFilter))) && (!sectorFilter || companySector(c) === sectorFilter)).sort((a, b) => sortCompare(a, b, key, sign, idx));
 }
-function sortMenuHtml(keys, curKey, curDir){
+// Menu du tableau « Toutes vos analyses » (double flèche) : seulement les critères SANS colonne cliquable (2026-10-03, demande
+// de Nolan : « enlève dans les doubles flèches les filtres déjà applicables en appuyant sur le nom, par exemple la conviction »).
+// Score, PEG, MOAT, Buffett, Décision, Conv., Progrès, Cap. et Date se trient en cliquant sur leur en-tête ; il ne reste ici que
+// la date de création et l'ordre alphabétique. `TABLE_SORT_KEYS` garde la liste complète (sens naturel de chaque colonne).
+const TABLE_MENU_KEYS = TABLE_SORT_KEYS.filter(k => k.key === 'created' || k.key === 'name');
+function sortMenuHtml(keys, curKey, curDir, columnHint){
+  const byColumn = columnHint && !keys.some(k => k.key === curKey);
   const cur = keys.find(k => k.key === curKey) || keys[0];
-  const check = on => `<span class="sort-check">${on ? '&#10003;' : ''}</span>`;
+  const check = on => `<span class="sort-check">${on && !byColumn ? '&#10003;' : ''}</span>`;
+  if(byColumn){
+    return `<div class="sort-title">Trier par</div>`
+      + keys.map(k => `<button type="button" class="sort-opt" data-sort-key="${k.key}" role="menuitemradio" aria-checked="false">${check(false)}${k.label}</button>`).join('')
+      + `<div class="sort-hint">Le tableau est trié par une colonne. Cliquez sur son en-tête pour inverser l'ordre, ou sur un autre en-tête pour changer.</div>`;
+  }
   return `<div class="sort-title">Trier par</div>`
     + keys.map(k => `<button type="button" class="sort-opt${k.key === cur.key ? ' current' : ''}" data-sort-key="${k.key}" role="menuitemradio" aria-checked="${k.key === cur.key}">${check(k.key === cur.key)}${k.label}</button>`).join('')
     + `<div class="sort-sep"></div><div class="sort-title">Sens</div>`
@@ -6995,7 +7007,7 @@ function paintSortMenu(){
 }
 function paintTableSortMenu(){
   const menu = document.getElementById('tableSortMenu');
-  if(menu) menu.innerHTML = sortMenuHtml(TABLE_SORT_KEYS, state.settings.tableSortKey, state.settings.tableSortDir);
+  if(menu) menu.innerHTML = sortMenuHtml(TABLE_MENU_KEYS, state.settings.tableSortKey, state.settings.tableSortDir, true);
 }
 function setSidebarSort(key, dir){
   if(key && key !== state.settings.sortKey){
@@ -8285,7 +8297,7 @@ function buildCompaniesTableRows(){
   return `<div class="home-table-wrap home-table-wrap--tight" id="companiesTableWrap"><table class="home-table home-table--tight"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 function buildCompaniesTable(){
-  const sortCtrl = `<span class="table-sort-wrap"><button type="button" class="sort-btn" id="tableSortBtn" aria-label="Trier les analyses" aria-haspopup="true" aria-expanded="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20V4M7 4L3.5 7.5M7 4l3.5 3.5"/><path d="M17 4v16M17 20l-3.5-3.5M17 20l3.5-3.5"/></svg></button><div class="sort-menu hidden" id="tableSortMenu" role="menu">${sortMenuHtml(TABLE_SORT_KEYS, state.settings.tableSortKey, state.settings.tableSortDir)}</div></span>`;
+  const sortCtrl = `<span class="table-sort-wrap"><button type="button" class="sort-btn" id="tableSortBtn" aria-label="Trier les analyses" aria-haspopup="true" aria-expanded="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20V4M7 4L3.5 7.5M7 4l3.5 3.5"/><path d="M17 4v16M17 20l-3.5-3.5M17 20l3.5-3.5"/></svg></button><div class="sort-menu hidden" id="tableSortMenu" role="menu">${sortMenuHtml(TABLE_MENU_KEYS, state.settings.tableSortKey, state.settings.tableSortDir, true)}</div></span>`;
   const shown = sortedForTable().length;
   const sub = `<span class="scard-s-row">${(tagFilter || sectorFilter) && shown !== state.companies.length ? `${shown} sur ${state.companies.length}` : `${state.companies.length} au total`}${sortCtrl}</span>`;
   return spaceCard('s12', 'Toutes vos analyses', sub, sectorFilterChipsHtml(true) + tagFilterChipsHtml() + buildCompaniesTableRows());
