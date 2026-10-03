@@ -6978,8 +6978,8 @@ function sortedForSidebar(){
 function sortedForTable(){
   const key = state.settings.tableSortKey, sign = state.settings.tableSortDir === 'desc' ? -1 : 1;
   const idx = new Map(state.companies.map((c, i) => [c.id, i]));
-  // Filtre par tag (rangée de pastilles de « Toutes vos analyses »)
-  return state.companies.filter(c => !tagFilter || (c.tags || []).some(t => sameTag(t, tagFilter))).sort((a, b) => sortCompare(a, b, key, sign, idx));
+  // Filtres par secteur et par tag (rangées de pastilles de « Toutes vos analyses »)
+  return state.companies.filter(c => (!tagFilter || (c.tags || []).some(t => sameTag(t, tagFilter))) && (!sectorFilter || companySector(c) === sectorFilter)).sort((a, b) => sortCompare(a, b, key, sign, idx));
 }
 function sortMenuHtml(keys, curKey, curDir){
   const cur = keys.find(k => k.key === curKey) || keys[0];
@@ -7479,6 +7479,32 @@ function tagFilterChipsHtml(){
   if(!tc.length) return '';
   if(tagFilter && !tc.some(x => sameTag(x.tag, tagFilter))) tagFilter = '';
   return `<div class="pf-chips" style="margin-bottom:12px"><span class="pf-chips-l">Tag :</span><button class="lr-chip${tagFilter ? '' : ' on'}" data-tag-filter="">Tous</button>${tc.map(x => `<button class="lr-chip${sameTag(x.tag, tagFilter) ? ' on' : ''}" data-tag-filter="${escapeHtml(x.tag)}">${escapeHtml(x.tag)} <small>${x.n}</small></button>`).join('')}</div>`;
+}
+
+// ---------- Filtre par SECTEUR (2026-10-03, demande de Nolan : « ne choisir que des entreprises du même secteur pour comparer ») ----------
+// Rangée de pastilles « Secteur : Tous / Technologie 5 / ... » dans « Toutes vos analyses » et dans le Comparateur (même variable
+// `sectorFilter`), masquée tant qu'il y a moins de deux secteurs. Le secteur est un texte libre : on regroupe avec `normSector`
+// (casse et espaces ignorés, comme partout). Les analyses sans secteur ne forment pas de pastille (elles restent visibles sous « Tous »).
+let sectorFilter = '';
+function companySector(c){ return normSector(c && c.fields && c.fields.identite && c.fields.identite.secteur && c.fields.identite.secteur.secteur); }
+function sectorCounts(){
+  const m = {};
+  state.companies.forEach(c => { const s = companySector(c); if(s) m[s] = (m[s] || 0) + 1; });
+  return Object.keys(m).sort((a, b) => (m[b] - m[a]) || a.localeCompare(b, 'fr')).map(k => ({ sector:k, n:m[k] }));
+}
+// Les analyses d'un secteur, les mieux notées d'abord (note provisoire comprise), limitées à ce que le comparateur accepte.
+function topBySector(sector){
+  const sc = c => { const v = computeGlobalScore(c); return v === null || v === undefined ? -1 : v; };
+  return state.companies.filter(c => companySector(c) === sector).sort((a, b) => sc(b) - sc(a)).slice(0, COMPARE_MAX);
+}
+function sectorFilterChipsHtml(withCompare){
+  const sc = sectorCounts();
+  if(sc.length < 2) return '';
+  if(sectorFilter && !sc.some(x => x.sector === sectorFilter)) sectorFilter = '';
+  const inSec = sectorFilter ? sc.find(x => x.sector === sectorFilter).n : 0;
+  const cmp = withCompare && inSec >= 2
+    ? `<button type="button" class="btn btn-outline btn-sm" data-sector-compare>${inSec > COMPARE_MAX ? `Comparer les ${COMPARE_MAX} mieux notées` : `Comparer ces ${inSec} entreprises`}</button>` : '';
+  return `<div class="pf-chips" style="margin-bottom:12px"><span class="pf-chips-l">Secteur :</span><button type="button" class="lr-chip${sectorFilter ? '' : ' on'}" data-sector-filter="">Tous</button>${sc.map(x => `<button type="button" class="lr-chip${x.sector === sectorFilter ? ' on' : ''}" data-sector-filter="${escapeHtml(x.sector)}">${escapeHtml(x.sector)} <small>${x.n}</small></button>`).join('')}${cmp}</div>`;
 }
 
 function renderTabs(){
@@ -8261,8 +8287,8 @@ function buildCompaniesTableRows(){
 function buildCompaniesTable(){
   const sortCtrl = `<span class="table-sort-wrap"><button type="button" class="sort-btn" id="tableSortBtn" aria-label="Trier les analyses" aria-haspopup="true" aria-expanded="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20V4M7 4L3.5 7.5M7 4l3.5 3.5"/><path d="M17 4v16M17 20l-3.5-3.5M17 20l3.5-3.5"/></svg></button><div class="sort-menu hidden" id="tableSortMenu" role="menu">${sortMenuHtml(TABLE_SORT_KEYS, state.settings.tableSortKey, state.settings.tableSortDir)}</div></span>`;
   const shown = sortedForTable().length;
-  const sub = `<span class="scard-s-row">${tagFilter && shown !== state.companies.length ? `${shown} sur ${state.companies.length}` : `${state.companies.length} au total`}${sortCtrl}</span>`;
-  return spaceCard('s12', 'Toutes vos analyses', sub, tagFilterChipsHtml() + buildCompaniesTableRows());
+  const sub = `<span class="scard-s-row">${(tagFilter || sectorFilter) && shown !== state.companies.length ? `${shown} sur ${state.companies.length}` : `${state.companies.length} au total`}${sortCtrl}</span>`;
+  return spaceCard('s12', 'Toutes vos analyses', sub, sectorFilterChipsHtml(true) + tagFilterChipsHtml() + buildCompaniesTableRows());
 }
 
 function buildMilestones(){
@@ -8945,17 +8971,25 @@ function compareTableHtml(){
 }
 function renderCompareView(){
   const main = document.getElementById('main');
-  const chips = state.companies.map(c => `<button type="button" class="lr-chip${compareIds.indexOf(c.id) >= 0 ? ' on' : ''}" data-cmp-toggle="${escapeHtml(c.id)}">${escapeHtml(c.name || 'Sans nom')}</button>`).join('');
+  sectorFilterChipsHtml(false);   // remet le filtre à « Tous » si le secteur choisi n'existe plus
+  const chips = state.companies.filter(c => !sectorFilter || companySector(c) === sectorFilter).map(c => `<button type="button" class="lr-chip${compareIds.indexOf(c.id) >= 0 ? ' on' : ''}" data-cmp-toggle="${escapeHtml(c.id)}">${escapeHtml(c.name || 'Sans nom')}</button>`).join('');
   main.innerHTML = `<div class="wrap page space cmp-page">
     <div class="space-head"><div>
       <div class="kicker">Mon espace · Comparateur</div>
       <h1 class="space-title">Comparer des entreprises</h1>
       <p class="space-sub">Choisissez jusqu'à ${COMPARE_MAX} analyses et comparez-les côte à côte, sur les mêmes indicateurs et les mêmes couleurs que dans vos fiches.</p>
     </div><div class="space-actions"><button class="btn btn-outline" data-go-space>&larr; Mon espace</button></div></div>
-    <div class="pf-chips" style="margin:18px 0 6px 0"><span class="pf-chips-l">Analyses :</span>${chips}</div>
+    <div style="margin-top:18px">${sectorFilterChipsHtml(false)}</div>
+    <div class="pf-chips" style="margin:0 0 6px 0"><span class="pf-chips-l">Analyses :</span>${chips}</div>
     <div id="cmpBody">${compareTableHtml()}</div>
   </div>`;
   main.querySelectorAll('[data-go-space]').forEach(el => el.addEventListener('click', goSpace));
+  main.querySelectorAll('[data-sector-filter]').forEach(b => b.addEventListener('click', () => {
+    sectorFilter = b.dataset.sectorFilter;
+    // Choisir un secteur sélectionne d'office ses analyses les mieux notées (jamais une sélection qui mélange les secteurs)
+    if(sectorFilter){ const ids = topBySector(sectorFilter).map(c => c.id); if(ids.length >= 2) compareIds = ids; else compareIds = ids.concat(compareIds.filter(id => !ids.includes(id))).slice(0, 1); }
+    renderCompareView();
+  }));
   main.querySelectorAll('[data-cmp-toggle]').forEach(b => b.addEventListener('click', () => {
     const id = b.dataset.cmpToggle, i = compareIds.indexOf(id);
     if(i >= 0) compareIds.splice(i, 1);
@@ -8980,6 +9014,11 @@ function bindSpace(){
     renderSpaceView();
   }));
   main.querySelectorAll('[data-tag-filter]').forEach(b => b.addEventListener('click', () => { tagFilter = b.dataset.tagFilter; renderSpaceView(); }));
+  main.querySelectorAll('[data-sector-filter]').forEach(b => b.addEventListener('click', () => { sectorFilter = b.dataset.sectorFilter; renderSpaceView(); }));
+  main.querySelectorAll('[data-sector-compare]').forEach(b => b.addEventListener('click', () => {
+    const ids = topBySector(sectorFilter).map(c => c.id);
+    if(ids.length >= 2){ compareIds = ids; goCompare(); }
+  }));
   main.querySelectorAll('[data-go-journal]').forEach(el => el.addEventListener('click', goJournal));
   main.querySelectorAll('[data-go-review]').forEach(el => el.addEventListener('click', () => goReview()));
   main.querySelectorAll('[data-rv-done]').forEach(el => el.addEventListener('click', () => {
