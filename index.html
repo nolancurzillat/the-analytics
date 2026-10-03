@@ -2756,12 +2756,12 @@ function backupPanelHtml(){
   const last = s.lastBackupAt ? `<div class="pref-h">Dernière sauvegarde : ${fmtBackupDate(s.lastBackupAt)}.</div>` : `<div class="pref-h">Aucune sauvegarde faite pour l'instant.</div>`;
   let auto;
   if(!fileBackup.supported){
-    auto = `<div class="pref-h">La sauvegarde automatique dans un fichier n'est pas disponible sur ce navigateur (elle fonctionne avec Chrome ou Edge sur ordinateur). Utilisez la sauvegarde manuelle ci-dessous.</div>`;
+    auto = `<div class="pref-h">Sauvegarde automatique indisponible sur ce navigateur (Chrome ou Edge sur ordinateur).</div>`;
   }else if(!fileBackup.handle){
-    auto = `<div class="pref-h"><strong>Sauvegarde automatique</strong> : choisissez un fichier (par exemple dans votre dossier OneDrive) et l'app le tient à jour toute seule à chaque modification. Sur un nouvel ordinateur, importez d'abord votre sauvegarde avant d'en choisir une : un fichier déjà existant serait remplacé.</div>
+    auto = `<div class="pref-h"><strong>Sauvegarde automatique</strong> : choisissez un fichier (par exemple dans OneDrive), il est mis à jour à chaque modification. Sur un nouvel ordinateur, importez d'abord votre sauvegarde : un fichier existant serait remplacé.</div>
       <div class="pref-btns"><button class="btn btn-primary btn-sm" data-backup-action="choose">Activer la sauvegarde automatique</button></div>`;
   }else if(fileBackup.perm !== 'granted'){
-    auto = `<div class="pref-h"><strong>Sauvegarde automatique en pause.</strong> Le navigateur demande de confirmer l'accès au fichier « ${escapeHtml(fileBackup.handle.name || '')} ».</div>
+    auto = `<div class="pref-h"><strong>Sauvegarde automatique en pause</strong> : confirmez l'accès au fichier « ${escapeHtml(fileBackup.handle.name || '')} ».</div>
       <div class="pref-btns"><button class="btn btn-primary btn-sm" data-backup-action="reauth">Réactiver</button><button class="btn btn-outline btn-sm" data-backup-action="off">Désactiver</button></div>`;
   }else{
     auto = `<div class="pref-h"><strong>Sauvegarde automatique active</strong> dans le fichier « ${escapeHtml(fileBackup.handle.name || '')} ».${fileBackup.error ? ' <span class="bk-err">' + escapeHtml(fileBackup.error) + '</span>' : ''}</div>
@@ -2769,9 +2769,9 @@ function backupPanelHtml(){
   }
   const acct = cloud.session
     ? `<div class="pref-h"><strong>Compte en ligne</strong> : ${escapeHtml(cloud.session.email)}. ${escapeHtml(cloudStatusText())}</div><div class="pref-btns"><button class="btn btn-outline btn-sm" data-auth-open="login">Mon compte</button></div>`
-    : `<div class="pref-h"><strong>Compte en ligne</strong> : créez un compte gratuit pour retrouver vos analyses sur tous vos appareils (ordinateur, téléphone).</div><div class="pref-btns"><button class="btn btn-primary btn-sm" data-auth-open="signup">Créer un compte</button><button class="btn btn-outline btn-sm" data-auth-open="login">Se connecter</button></div>`;
+    : `<div class="pref-h"><strong>Compte en ligne</strong> : un compte gratuit retrouve vos analyses sur tous vos appareils.</div><div class="pref-btns"><button class="btn btn-primary btn-sm" data-auth-open="signup">Créer un compte</button><button class="btn btn-outline btn-sm" data-auth-open="login">Se connecter</button></div>`;
   return `${acct}${auto}${last}
-    <div class="pref-h">Sauvegarde manuelle : téléchargez un fichier pour changer de navigateur ou d'ordinateur. Votre clé API n'y est jamais incluse.</div>
+    <div class="pref-h">Sauvegarde manuelle (sans votre clé API) :</div>
     <div class="pref-btns"><button class="btn btn-outline btn-sm" id="prefExport">Télécharger une sauvegarde</button><button class="btn btn-outline btn-sm" id="prefImport">Importer une sauvegarde</button></div>`;
 }
 function backupProtected(){
@@ -7966,27 +7966,24 @@ function buildPrefsCard(){
     <div class="pref">
       <label class="pref-l" for="prefName">Comment souhaitez-vous être appelé ?</label>
       <input type="text" id="prefName" maxlength="30" placeholder="Votre prénom" value="${escapeHtml(s.firstName || '')}">
-      <div class="pref-h">Utilisé uniquement pour personnaliser cet espace, il reste sur votre appareil.</div>
     </div>
     <div class="pref">
-      <div class="pref-l">Logo automatique des entreprises</div>
-      <div class="pref-h">Le logo de chaque entreprise est recherché automatiquement (Wikidata, Wikimedia, favicon du site officiel, Clearbit). Envoie uniquement le nom de l'entreprise, jamais le contenu de vos analyses. Vous pouvez toujours le remplacer ou le retirer sur une analyse précise, dans son en-tête.</div>
+      <div class="pref-l">Logos des entreprises</div>
+      <div class="pref-h">Trouvés automatiquement (seul le nom de l'entreprise est envoyé).</div>
       <button class="btn btn-outline btn-sm" id="prefRefreshLogos">Relancer la recherche de logos</button>
     </div>
     <div class="pref">
       <label class="pref-l" for="prefPriceKey">Mise à jour automatique du prix actuel</label>
       <input type="text" id="prefPriceKey" placeholder="Clé API Twelve Data" value="${escapeHtml(s.twelveDataApiKey || '')}" autocomplete="off" spellcheck="false">
-      <div class="pref-h">Avec un ticker renseigné (section Identité) et une clé API personnelle, "Prix actuel" se met à jour tout seul, sans ressaisie quotidienne. Compte gratuit sur twelvedata.com, clé à coller ici ; seul le ticker est envoyé. Le compte gratuit couvre les actions américaines (NASDAQ, NYSE) : privilégiez le dollar. Pour les bourses européennes, payantes chez eux, saisissez le prix à la main. L'app ne convertit jamais les devises.</div>
-      <button class="btn btn-outline btn-sm" data-open-price-guide>Guide pas à pas pour obtenir ma clé</button>
+      <div class="pref-h">Clé gratuite Twelve Data : le cours se met à jour tout seul (actions américaines, en dollars).</div>
+      <button class="btn btn-outline btn-sm" data-open-price-guide>Guide pour obtenir ma clé</button>
     </div>
     <div class="pref">
       <div class="pref-l">Visite guidée</div>
-      <div class="pref-h">Un tour de 30 secondes pour retrouver où se trouvent les fonctions principales.</div>
       <button class="btn btn-outline btn-sm" data-start-tour>Revoir la visite guidée</button>
     </div>
     <div class="pref">
       <div class="pref-l">Sauvegarde de vos analyses</div>
-      <div class="pref-h">Vos analyses sont enregistrées dans ce navigateur. Pour ne rien perdre, activez la sauvegarde automatique dans un fichier ou téléchargez une sauvegarde.</div>
       <div id="backupPanel" class="bk-panel">${backupPanelHtml()}</div>
     </div>
   </div>`);
