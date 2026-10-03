@@ -2929,6 +2929,27 @@ async function cloudLogout(){
   try{ if(s) await sbFetch('/auth/v1/logout', { method:'POST', token:s.access_token }); }catch(e){}
   paintAccount(); paintBackupPanel();
 }
+// Déconnexion (demande de Nolan le 2026-10-03) : les données synchronisées du compte ne doivent plus apparaître une fois déconnecté.
+// On envoie d'abord les dernières modifications (rien n'est perdu, tout reste dans le compte en ligne), puis on vide l'appareil et on recharge.
+// Si l'envoi échoue (hors ligne...), on prévient avant d'effacer des modifications qui n'auraient pas encore quitté l'appareil.
+async function logoutAndWipe(){
+  const wait = async () => { for(let i = 0; i < 50 && cloud.busy; i++) await new Promise(r => setTimeout(r, 150)); };
+  if(cloud.session){
+    await wait();
+    await syncNow();
+    await wait();
+    const unsent = localStorage.getItem(DIRTY_KEY) === '1' && (state.companies.length || Object.keys(state.deleted || {}).length);
+    if(unsent && !window.confirm("Certaines modifications n'ont pas pu être envoyées sur votre compte (connexion indisponible ?). Si vous vous déconnectez maintenant, elles seront perdues. Se déconnecter quand même ?")) return false;
+  }
+  await cloudLogout();
+  const keep = { tourDone:true, defaultCurrency:(state.settings && state.settings.defaultCurrency) === '€' ? '€' : '$' };
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ companies:[], activeId:null, deleted:{}, history:{}, settings:keep }));
+    localStorage.removeItem(OWNER_KEY); localStorage.removeItem(DIRTY_KEY);
+  }catch(e){}
+  location.replace(location.pathname + location.search);
+  return true;
+}
 async function cloudToken(){
   const s = cloud.session;
   if(!s) throw new Error('nosession');
@@ -3087,7 +3108,7 @@ function paintAuthModal(){
     box.innerHTML = `<h2>Mon compte</h2>
       <p class="guide-lead">Connecté avec <strong>${escapeHtml(cloud.session.email)}</strong>.</p>
       <div class="guide-result ${cloud.status === 'error' ? 'ko' : 'ok'}">${escapeHtml(cloudStatusText())}</div>
-      <div class="modal-hint">Vos analyses restent enregistrées sur cet appareil, puis une copie part en ligne quelques secondes après chaque modification. Connectez-vous avec la même adresse sur un autre appareil pour les retrouver. Votre clé API Twelve Data reste sur cet appareil.</div>
+      <div class="modal-hint">Vos analyses restent enregistrées sur cet appareil, puis une copie part en ligne quelques secondes après chaque modification. Connectez-vous avec la même adresse sur un autre appareil pour les retrouver. En vous déconnectant, elles sont retirées de cet appareil (elles restent dans votre compte).</div>
       <div class="modal-actions" style="margin-top:18px;flex-wrap:wrap"><button data-auth="close">Fermer</button><button data-auth="sync">Synchroniser maintenant</button><button class="primary" data-auth="logout">Se déconnecter</button></div>
       <div class="modal-hint auth-links"><button class="link-btn" data-auth="export">Télécharger mes données</button><button class="link-btn" data-auth="mode-delete">Supprimer mon compte</button><button class="link-btn" data-legal="confidentialite">Confidentialité</button></div>`;
     return;
@@ -3285,7 +3306,7 @@ function bindAuth(){
       pw.focus();
     }
     else if(a === 'sync') syncNow();
-    else if(a === 'logout'){ cloudLogout().then(() => { closeAuth(); showToast('Déconnecté. Vos analyses restent sur cet appareil.'); if(currentView === 'home') render(); }); }
+    else if(a === 'logout'){ b.disabled = true; b.textContent = 'Déconnexion...'; logoutAndWipe().then(done => { if(!done){ b.disabled = false; b.textContent = 'Se déconnecter'; } }); }
   });
   box.addEventListener('keydown', e => { if(e.key === 'Enter' && e.target.tagName === 'INPUT') submitAuth(); });
   document.getElementById('accountBtn').addEventListener('click', () => openAuth('login'));
