@@ -2184,6 +2184,14 @@ a.btn{ text-decoration:none; }
 .ro-fiche input[readonly], .ro-fiche textarea[readonly]{ cursor:default; }
 .ro-fiche input:disabled, .ro-fiche select:disabled{ opacity:1; color:var(--ink); -webkit-text-fill-color:var(--ink); }
 
+/* Largeur des pages « Mon espace », « Portefeuille » et « Comparateur » (2026-10-04, demande de Nolan) : toutes trois à 1440px (avant 1240px, et 1100px pour le Comparateur),
+   volontairement moins larges que l'Apprentissage (1680px). Journal de bord et bilan annuel (`jr-wrap`) gardent leur largeur de lecture. */
+.wrap.page.space:not(.jr-wrap), .cmp-page{ max-width:1440px; }
+/* « Toutes vos analyses » : logos des entreprises plus grands (36px avant), nom un peu plus long avant d'être tronqué */
+#companiesTableWrap .ht-co{ gap:11px; }
+#companiesTableWrap .mini-av{ width:48px; height:48px; flex:0 0 48px; border-radius:12px; font-size:14px; }
+#companiesTableWrap .home-td-name-txt{ max-width:130px; }
+#companiesTableWrap .ht-sec{ max-width:150px; }
 </style>
 </head>
 <body>
