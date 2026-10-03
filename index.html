@@ -440,6 +440,9 @@ main{ display:block; }
 .pill-buy{ background:var(--green-soft); color:var(--green); }
 .pill-watch{ background:var(--blue-soft); color:var(--blue); }
 .pill-hold{ background:var(--amber-soft); color:var(--amber); }
+/* Décision « Conserver » : violet (plus l'orange/ambre, réservé à la vigilance) */
+.pill-keep{ background:color-mix(in srgb, #8b5cf6 16%, transparent); color:#7241e0; }
+:root[data-theme="dark"] .pill-keep{ color:#b9a0ff; }
 .pill-sell{ background:var(--red-soft); color:var(--red); }
 .pill-none{ background:var(--paper-line); color:var(--ink-soft); }
 .pill-none:before{ display:none; }
@@ -2660,7 +2663,7 @@ const SECTIONS = [
       {key:'pointsFaibles', label:'Points faibles', type:'textarea', span:6},
       {key:'these', label:"Thèse d'investissement", type:'textarea'},
       {key:'conviction', label:'Conviction', type:'stars', group:'Décision'},
-      {key:'decision', label:'Décision personnelle', type:'select', options:['','Acheter','Surveiller','Garder','Vendre']},
+      {key:'decision', label:'Décision personnelle', type:'select', options:['','Acheter','Surveiller','Conserver','Vendre']},
       {key:'prixAchatCible', label:"Prix d'achat cible", type:'text', money:true},
     ]
   }
@@ -3546,7 +3549,9 @@ function migrateCompany(c){
   if(typeof val.croissanceEstimeeEps === 'string' || typeof val.croissanceEstimeeEps === 'number') val.croissanceEstimeeEps = { cagr:String(val.croissanceEstimeeEps), total:'' };
   if(!val.croissanceEstimeeEps || typeof val.croissanceEstimeeEps !== 'object' || Array.isArray(val.croissanceEstimeeEps)) val.croissanceEstimeeEps = { cagr:'', total:'' };
   const pers = c.fields.personnelle || (c.fields.personnelle = {});
-  if(pers.decision === 'Attendre') pers.decision = 'Garder';
+  // « Garder » (et l'ancien « Attendre ») est devenu « Conserver » le 2026-10-04 (demande de Nolan) : décision ET lignes du journal de décisions
+  if(pers.decision === 'Attendre' || pers.decision === 'Garder') pers.decision = 'Conserver';
+  if(Array.isArray(c.decisionLog)) c.decisionLog.forEach(e => { if(e && typeof e.text === 'string' && /^Décision : (Garder|Attendre)$/.test(e.text)) e.text = 'Décision : Conserver'; });
   if(!pers.regleBuffett || typeof pers.regleBuffett !== 'object' || Array.isArray(pers.regleBuffett)){
     pers.regleBuffett = {};
   }
@@ -6393,7 +6398,7 @@ function initialsOf(name){
 const DECISION_STYLE = {
   'Acheter':    { cls:'pill-buy',   color:'#2f9e6b' },
   'Surveiller': { cls:'pill-watch', color:'#5b8cf7' },
-  'Garder':     { cls:'pill-hold',  color:'#d99a06' },
+  'Conserver':  { cls:'pill-keep',  color:'#8b5cf6' },
   'Vendre':     { cls:'pill-sell',  color:'#e0574f' },
 };
 // Étoile en SVG symétrique : une demi-étoile est coupée exactement au centre (les glyphes ★ ont des marges inégales)
@@ -7563,7 +7568,7 @@ let sectorFilter = '';
 let receivedOnly = false;
 // Rangée de BADGES de « Toutes vos analyses » (2026-10-04, demande de Nolan : pas de libellé « Origine », on garde le badge « Reçues » et on
 // ajoute les décisions comme badges) : « Tous », « Reçues N » (si au moins une) puis un badge par décision utilisée (Acheter, Surveiller,
-// Garder, Vendre, aux couleurs des pastilles de décision). Un clic active/désactive le badge ; « Reçues » et une décision se combinent,
+// Conserver, Vendre, aux couleurs des pastilles de décision). Un clic active/désactive le badge ; « Reçues » et une décision se combinent,
 // et se combinent avec le filtre de secteur. Les décisions ne sont comptées que sur les analyses qui en ont une.
 let decisionFilter = '';
 function badgeFilterHtml(){
@@ -8091,7 +8096,7 @@ function buildRecommendations(){
     if(conviction >= 4 && buff.checked <= 4){
       add('warning', c, `${nm} : conviction élevée, checklist faible`, `Conviction de ${String(conviction).replace('.', ',')}/5 mais seulement ${buff.checked}/${buff.total} critères Buffett validés. Vérifiez que votre thèse est bien étayée.`, 'sec-personnelle');
     }
-    if(gs !== null && gs < 40 && (decision === 'Acheter' || decision === 'Garder')){
+    if(gs !== null && gs < 40 && (decision === 'Acheter' || decision === 'Conserver')){
       add('warning', c, `${nm} : profil fragile`, `Score de ${gsTxt}/100 pour une décision « ${decision} ». Relisez les points faibles et les risques.`, 'sec-personnelle');
     }
     if(days !== null && days >= 30 && comp.pct >= 35){
@@ -8261,7 +8266,7 @@ function buildDividendsCard(){
 
 function buildPipeline(){
   const cs = state.companies;
-  const cols = ['Surveiller', 'Acheter', 'Garder', 'Vendre', ''];
+  const cols = ['Surveiller', 'Acheter', 'Conserver', 'Vendre', ''];
   const html = `<div class="pipe">` + cols.map(d => {
     const list = cs.filter(c => ((c.fields.personnelle || {}).decision || '') === d);
     const st = DECISION_STYLE[d];
@@ -9165,8 +9170,9 @@ function bindSpace(){
   main.querySelectorAll('[data-badge-filter]').forEach(b => b.addEventListener('click', () => {
     const v = b.dataset.badgeFilter;
     if(v === ''){ receivedOnly = false; decisionFilter = ''; }
-    else if(v === 'received') receivedOnly = !receivedOnly;
-    else if(v.indexOf('decision:') === 0){ const d = v.slice(9); decisionFilter = decisionFilter === d ? '' : d; }
+    // « Reçues » et un badge de décision sont EXCLUSIFS (demande de Nolan, 2026-10-04) : activer l'un désactive l'autre
+    else if(v === 'received'){ receivedOnly = !receivedOnly; if(receivedOnly) decisionFilter = ''; }
+    else if(v.indexOf('decision:') === 0){ const d = v.slice(9); decisionFilter = decisionFilter === d ? '' : d; if(decisionFilter) receivedOnly = false; }
     renderSpaceView();
   }));
   main.querySelectorAll('[data-sector-compare]').forEach(b => b.addEventListener('click', () => {
@@ -9318,7 +9324,7 @@ const LEARN_CHAPTERS = [
         [`Remplissez les sections dans l'ordre`, `Identité, Financier, Croissance, Valorisation, puis Décision. Vous n'avez pas besoin de tout remplir : chaque section a une barre de progression et l'analyse s'affine au fur et à mesure. Les chiffres se trouvent sur le site web de l'entreprise, sur TradingView ou sur Alpha Spread : voir le chapitre <button type="button" class="link-btn" data-go-learn="sections">Remplir chaque section</button>.`],
         [`Repérez les couleurs`, `Une pastille verte, jaune ou rouge à côté d'un chiffre vous dit s'il est très bon, moyen ou mauvais. Survolez-la pour voir le barème exact.`],
         [`Lisez la synthèse`, `La section 6 résume tout : score sur 100, radar, points forts, points à surveiller et résumé rédigé. Elle est calculée automatiquement à partir de vos saisies.`],
-        [`Notez votre décision`, `Dans la section 5, donnez votre conviction en étoiles, choisissez Acheter, Surveiller, Garder ou Vendre et fixez un prix d'achat cible.`],
+        [`Notez votre décision`, `Dans la section 5, donnez votre conviction en étoiles, choisissez Acheter, Surveiller, Conserver ou Vendre et fixez un prix d'achat cible.`],
         [`Suivez votre position`, `Si vous détenez l'action, cochez « J'ai une position actuelle » en bas de la fiche : la quantité et le prix d'achat suffisent pour voir votre gain ou votre perte. La page Portefeuille rassemble ensuite toutes vos positions.`],
       ]),
       LH(`Les repères visuels à connaître`),
@@ -9707,7 +9713,7 @@ const LEARN_INDICATORS = {
   pointsFaibles: { how:`Ce qui vous inquiète. Chercher volontairement les arguments contraires protège du biais de confirmation.` },
   these: { how:`Les raisons pour lesquelles vous investissez et ce qui vous ferait changer d'avis. À écrire avant d'acheter.` },
   conviction: { how:`Votre niveau de confiance dans l'idée, de 0 à 5 étoiles. Elle apparaît dans la barre de gauche et dans Mon espace.` },
-  decision: { how:`Acheter, Surveiller, Garder ou Vendre : le résultat de votre réflexion, à tout moment révisable.` },
+  decision: { how:`Acheter, Surveiller, Conserver ou Vendre : le résultat de votre réflexion, à tout moment révisable.` },
   prixAchatCible: { how:`Le prix auquel l'entreprise devient attractive pour vous. Mon espace montre la distance entre le cours et cette cible.` },
 };
 
@@ -9716,7 +9722,7 @@ const LEARN_INDICATORS = {
 // Tout est calculé à partir des saisies (quantité, prix d'achat, cours). Totaux séparés par devise, jamais de conversion.
 // ============================================================
 let portfolioCur = null;
-const PF_DECISION_PILL = { Acheter:'pill-buy', Surveiller:'pill-watch', Garder:'pill-hold', Vendre:'pill-sell' };
+const PF_DECISION_PILL = { Acheter:'pill-buy', Surveiller:'pill-watch', Conserver:'pill-keep', Vendre:'pill-sell' };
 function goPortfolio(){
   currentView = 'portfolio';
   render();
