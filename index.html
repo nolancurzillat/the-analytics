@@ -2232,6 +2232,34 @@ a.btn{ text-decoration:none; }
 .dp-dot{ width:11px; height:11px; border-radius:50%; flex:0 0 11px; }
 .dp-dot[data-none]{ border:2px dashed var(--border-strong); }
 .dp-check{ margin-left:auto; color:var(--accent); font-weight:700; }
+/* « Vos positions » (2026-10-04, demande de Nolan : plus beau visuellement) */
+.pf-pos thead th{ padding:13px 16px; white-space:nowrap; }
+.pf-pos td{ padding:13px 16px; }
+.pf-pos .pf-num{ text-align:right; font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:14px; }
+.pf-pos thead th.pf-num{ text-align:right; font-family:var(--font-ui); }
+.pf-pos .pf-mid, .pf-pos thead th.pf-mid{ text-align:center; }
+.pf-pos tbody tr:hover{ background:color-mix(in srgb, var(--accent) 6%, var(--card)); }
+.pf-co-in{ display:flex; align-items:center; gap:14px; min-width:190px; }
+.pf-pos .mini-av{ width:46px; height:46px; flex:0 0 46px; border-radius:12px; font-size:14px; }
+.pf-co-t{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+.pf-co-name{ font-weight:600; font-size:15px; color:var(--ink); }
+.pf-co-tk{ font-family:var(--font-mono); font-size:12.5px; font-weight:500; color:var(--blue); }
+.pf-resbox{ display:inline-flex; flex-direction:column; align-items:flex-end; gap:1px; padding:5px 12px; border-radius:10px; background:color-mix(in srgb, var(--rc) 13%, transparent); border:1px solid color-mix(in srgb, var(--rc) 22%, transparent); }
+.pf-resbox .pf-res{ color:var(--rc); font-weight:700; font-size:14px; }
+.pf-resbox .pf-res-s{ color:var(--rc); font-weight:600; font-size:12px; opacity:1; }
+.pf-w{ display:inline-flex; flex-direction:column; align-items:flex-end; gap:6px; }
+.pf-w b{ font-weight:600; }
+.pf-w-bar{ display:block; width:86px; height:6px; border-radius:99px; background:var(--border); overflow:hidden; }
+.pf-w-bar i{ display:block; height:100%; border-radius:99px; background:linear-gradient(90deg, var(--blue), var(--accent)); }
+.pf-ring{ position:relative; display:inline-flex; align-items:center; justify-content:center; width:42px; height:42px; }
+.pf-ring svg{ position:absolute; inset:0; }
+.pf-ring b{ position:relative; font-family:var(--font-mono); font-size:13px; font-weight:700; }
+.pf-ring-none{ color:var(--ink-soft); }
+.home-table.pf-pos tr.pf-total td{ border-top:2px solid var(--border-strong); background:color-mix(in srgb, var(--accent) 7%, var(--paper-line)); padding-top:15px; padding-bottom:15px; }
+.home-table.pf-pos tr.pf-total{ cursor:default; }
+/* Point d'attention sans entreprise précise : point d'exclamation (vigilance) au lieu d'un logo */
+.mini-av-warn{ background:var(--amber-soft); color:var(--amber); font-family:var(--font-ui); font-style:normal; font-weight:800; font-size:20px; border:1px solid color-mix(in srgb, var(--amber) 35%, transparent); }
+
 </style>
 </head>
 <body>
@@ -3448,7 +3476,7 @@ if(!state.history || typeof state.history !== 'object' || Array.isArray(state.hi
 if(!Array.isArray(state.received)) state.received = [];   // analyses reçues d'autres utilisateurs (voir PARTAGE D'ANALYSES), séparées de state.companies
 state.companies.forEach(migrateCompany);
 // Préférences personnelles (ajoutées après la V1, sans effet sur les analyses existantes)
-state.settings = Object.assign({ defaultCurrency:'$', twelveDataApiKey:'', alphaVantageApiKey:'', sortKey:'created', sortDir:'asc', tableSortKey:'created', tableSortDir:'asc', learnRead:[], lastBackupAt:0, backupSnoozeUntil:0, recentSearchIds:[] },(state.settings && typeof state.settings === 'object') ? state.settings : {});
+state.settings = Object.assign({ defaultCurrency:'$', twelveDataApiKey:'', alphaVantageApiKey:'', sortKey:'created', sortDir:'asc', tableSortKey:'score', tableSortDir:'desc', learnRead:[], lastBackupAt:0, backupSnoozeUntil:0, recentSearchIds:[] },(state.settings && typeof state.settings === 'object') ? state.settings : {});
 if(!Array.isArray(state.settings.recentSearchIds)) state.settings.recentSearchIds = [];
 delete state.settings.firstName; // fonctionnalité « prénom » retirée le 2026-10-03 (demande de Nolan)
 if(state.settings.tourDone === undefined) state.settings.tourDone = state.companies.length > 0;
@@ -3457,6 +3485,9 @@ if(state.settings.sortDir !== 'desc') state.settings.sortDir = 'asc';
 // Tri de "Toutes vos analyses" (Mon espace), indépendant du tri de la barre latérale (demande de Nolan le 2026-09-27) : mêmes critères, plus le Score composite.
 if(['created','name','stars','updated','marketCap','score'].indexOf(state.settings.tableSortKey) < 0) state.settings.tableSortKey = 'created';
 if(state.settings.tableSortDir !== 'desc') state.settings.tableSortDir = 'asc';
+// « Toutes vos analyses » est triée par SCORE (décroissant) par défaut (2026-10-04, demande de Nolan) : appliqué UNE fois aux réglages existants,
+// ensuite le choix de la personne (menu ou en-têtes) est conservé.
+if(!state.settings.tableSortScoreDefault){ state.settings.tableSortKey = 'score'; state.settings.tableSortDir = 'desc'; state.settings.tableSortScoreDefault = true; }
 if(state.settings.defaultCurrency !== '€') state.settings.defaultCurrency = '$';
 let currentView = 'home';
 
@@ -9962,38 +9993,52 @@ function sortPortfolioBy(key){
   renderPortfolioView();
   window.scrollTo(0, y);
 }
+// Anneau de score (2026-10-04, demande de Nolan) : cercle dont la LONGUEUR de l'arc (note ÷ 100) et la COULEUR (barème à 5 paliers `scoreColor5`) dépendent
+// de la note, avec la note au centre. `provisional` : arc en pointillés, comme la note provisoire ailleurs.
+function scoreRingHtml(score, provisional){
+  if(score === null || score === undefined) return '<span class="pf-ring pf-ring-none">—</span>';
+  const r = 16, circ = 2 * Math.PI * r, col = scoreColor5(score);
+  return `<span class="pf-ring" data-tooltip="<div class='tt-desc'>Score composite : ${Math.round(score)} sur 100${provisional ? ' (provisoire)' : ''}</div>"><svg viewBox="0 0 40 40" width="42" height="42" aria-hidden="true"><circle cx="20" cy="20" r="${r}" fill="none" stroke="var(--border)" stroke-width="4"/><circle cx="20" cy="20" r="${r}" fill="none" stroke="${col}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${(Math.max(0, Math.min(100, score)) / 100 * circ).toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 20 20)"${provisional ? ' opacity=".7"' : ''}/></svg><b style="color:${col}">${Math.round(score)}</b></span>`;
+}
 // Une table par devise (demande de Nolan le 2026-09-29 : séparer les positions dollar et euro plutôt qu'une table mélangée avec des lignes de total intercalées).
+// Mise en forme refaite le 2026-10-04 (« Vos positions plus beau ») : logo plus grand avec nom et ticker empilés, chiffres alignés à droite en police
+// à chiffres de même largeur, résultat dans une pastille teintée, poids avec sa petite barre, score en anneau coloré, ligne Total distincte.
 function pfTableForDev(pf, d){
   const rows = pfSortRows(pf.rows.filter(r => r.m.devise === d));
   const sortKey = PF_SORT_COLS.some(c => c.k === state.settings.pfSortKey) ? state.settings.pfSortKey : 'gainPct';
   const sortDesc = state.settings.pfSortDir !== 'asc';
+  const NUM = { qty:1, buy:1, cur:1, invested:1, value:1, gainPct:1, weight:1 };
   const head = PF_SORT_COLS.map(c => {
     const active = c.k === sortKey;
-    return `<th class="th-sort${active ? ' th-sort-active' : ''}" data-pf-sort="${c.k}"${c.tip ? ` data-tooltip="<div class=\'tt-desc\'>${c.tip}</div>"` : ''}>${c.l}${active ? `<span class="th-sort-arrow">${sortDesc ? '&darr;' : '&uarr;'}</span>` : ''}</th>`;
+    const cls = 'th-sort' + (active ? ' th-sort-active' : '') + (NUM[c.k] ? ' pf-num' : '') + (c.k === 'score' ? ' pf-mid' : '');
+    return `<th class="${cls}" data-pf-sort="${c.k}"${c.tip ? ` data-tooltip="<div class='tt-desc'>${c.tip}</div>"` : ''}>${c.l}${active ? `<span class="th-sort-arrow">${sortDesc ? '&darr;' : '&uarr;'}</span>` : ''}</th>`;
   }).join('');
+  const tot = pf.byDev[d].invested;
   const body = rows.map(({ c, m }) => {
     const info = pfInfo(c);
-    const tot = pf.byDev[d].invested;
-    const w = (m.invested !== null && tot > 0) ? fmtNum(m.invested / tot * 100) + '&nbsp;%' : '—';
-    const res = m.gain === null ? '—' : `<span class="pf-res" style="color:${pfColor(m.gain)}">${pfSigned(m.gain, m.devise)}</span>${m.gainPct !== null ? `<span class="pf-res-s" style="color:${pfColor(m.gainPct)}">${pfPct(m.gainPct)}</span>` : ''}`;
+    const wv = (m.invested !== null && tot > 0) ? m.invested / tot * 100 : null;
+    const w = wv === null ? '—' : `<div class="pf-w"><b>${fmtNum(wv)}&nbsp;%</b><span class="pf-w-bar"><i style="width:${Math.min(100, wv).toFixed(1)}%"></i></span></div>`;
+    const res = m.gain === null ? '—' : `<span class="pf-resbox" style="--rc:${pfColor(m.gain)}"><span class="pf-res">${pfSigned(m.gain, m.devise)}</span>${m.gainPct !== null ? `<span class="pf-res-s">${pfPct(m.gainPct)}</span>` : ''}</span>`;
     const dec = info.decision ? `<span class="pill ${PF_DECISION_PILL[info.decision] || 'pill-none'}">${escapeHtml(info.decision)}</span>` : '<span style="color:var(--ink-soft)">—</span>';
+    const sinfo = computeScoreInfo(c);
     return `<tr data-open-company="${c.id}">
-      <td><div class="ht-co">${miniAv(c)}<span class="home-td-name">${escapeHtml(c.name || 'Sans nom')}${reportFlagHtml(c)}${alertFlagHtml(c)}${info.ticker ? ` <span style="font-family:var(--font-mono);font-size:12.5px;color:var(--ink-soft);font-weight:400">${escapeHtml(info.ticker)}</span>` : ''}</span></div></td>
-      <td>${m.qty === null ? '—' : fmtNum(m.qty, 4)}</td>
-      <td>${m.buy === null ? '—' : fmtMoney(m.buy, m.devise)}</td>
-      <td>${m.cur === null ? '—' : fmtMoney(m.cur, m.devise)}</td>
-      <td>${m.invested === null ? '—' : fmtMoney(m.invested, m.devise)}</td>
-      <td>${m.value === null ? '—' : fmtMoney(m.value, m.devise)}</td>
-      <td>${res}</td>
-      <td>${w}</td>
+      <td><div class="pf-co-in">${miniAv(c)}<div class="pf-co-t"><span class="pf-co-name">${escapeHtml(c.name || 'Sans nom')}${reportFlagHtml(c)}${alertFlagHtml(c)}</span>${info.ticker ? `<span class="pf-co-tk">${escapeHtml(info.ticker)}</span>` : ''}</div></div></td>
+      <td class="pf-num">${m.qty === null ? '—' : fmtNum(m.qty, 4)}</td>
+      <td class="pf-num">${m.buy === null ? '—' : fmtMoney(m.buy, m.devise)}</td>
+      <td class="pf-num">${m.cur === null ? '—' : fmtMoney(m.cur, m.devise)}</td>
+      <td class="pf-num">${m.invested === null ? '—' : fmtMoney(m.invested, m.devise)}</td>
+      <td class="pf-num">${m.value === null ? '—' : fmtMoney(m.value, m.devise)}</td>
+      <td class="pf-num">${res}</td>
+      <td class="pf-num">${w}</td>
       <td>${dec}</td>
-      <td>${info.score === null ? '—' : Math.round(info.score)}</td>
+      <td class="pf-mid">${scoreRingHtml(sinfo.score, sinfo.provisional)}</td>
     </tr>`;
   }).join('');
   const x = pf.byDev[d];
   const base = x.value - x.gain;
-  const foot = `<tr class="pf-total"><td colspan="4"><strong>Total</strong></td><td><strong>${fmtMoney(x.invested, d)}</strong></td><td><strong>${x.nGain ? fmtMoney(x.value, d) : '—'}</strong></td><td>${x.nGain ? `<span class="pf-res" style="color:${pfColor(x.gain)}">${pfSigned(x.gain, d)}</span>${base > 0 ? `<span class="pf-res-s" style="color:${pfColor(x.gain)}">${pfPct(x.gain / base * 100)}</span>` : ''}` : '—'}</td><td>100&nbsp;%</td><td></td><td></td></tr>`;
-  return `<div class="home-table-wrap"><table class="home-table"><thead><tr>${head}</tr></thead><tbody>${body}${foot}</tbody></table></div>`;
+  const totRes = x.nGain ? `<span class="pf-resbox" style="--rc:${pfColor(x.gain)}"><span class="pf-res">${pfSigned(x.gain, d)}</span>${base > 0 ? `<span class="pf-res-s">${pfPct(x.gain / base * 100)}</span>` : ''}</span>` : '—';
+  const foot = `<tr class="pf-total"><td colspan="4"><strong>Total</strong></td><td class="pf-num"><strong>${fmtMoney(x.invested, d)}</strong></td><td class="pf-num"><strong>${x.nGain ? fmtMoney(x.value, d) : '—'}</strong></td><td class="pf-num">${totRes}</td><td class="pf-num"><strong>100&nbsp;%</strong></td><td></td><td></td></tr>`;
+  return `<div class="home-table-wrap pf-pos-wrap"><table class="home-table pf-pos"><thead><tr>${head}</tr></thead><tbody>${body}${foot}</tbody></table></div>`;
 }
 function pfTable(pf){
   const devOrder = Object.keys(pf.byDev).filter(d => pf.byDev[d].nInv).sort((a, b) => (a === pf.main ? -1 : 0) - (b === pf.main ? -1 : 0));
@@ -10459,7 +10504,7 @@ function renderPortfolioView(){
     .sort((a, b) => ({ warning:0, todo:1, info:2 }[a.type] - { warning:0, todo:1, info:2 }[b.type]));
   const alertsBody = alerts.length ? `<div class="rec-list">` + alerts.slice(0, 8).map(a => {
     const tag = REC_TAGS[a.type];
-    return `<div class="rec rec-${a.type}">${a.c ? miniAv(a.c) : `<span class="mini-av mini-av-info">i</span>`}<div class="rec-body"><div class="rec-top"><span class="pill ${tag[1]}">${tag[0]}</span><span class="rec-title">${escapeHtml(a.title)}</span></div><div class="rec-text">${escapeHtml(a.text)}</div></div>${a.c ? `<button class="btn btn-outline btn-sm" data-open-company="${a.c.id}" data-jump="position-card">Ouvrir</button>` : ''}</div>`;
+    return `<div class="rec rec-${a.type}">${a.c ? miniAv(a.c) : (a.type === 'warning' ? `<span class="mini-av mini-av-warn" aria-hidden="true">!</span>` : `<span class="mini-av mini-av-info">i</span>`)}<div class="rec-body"><div class="rec-top"><span class="pill ${tag[1]}">${tag[0]}</span><span class="rec-title">${escapeHtml(a.title)}</span></div><div class="rec-text">${escapeHtml(a.text)}</div></div>${a.c ? `<button class="btn btn-outline btn-sm" data-open-company="${a.c.id}" data-jump="position-card">Ouvrir</button>` : ''}</div>`;
   }).join('') + `</div>` : `<div class="s-empty s-empty-ok"><strong>Rien à signaler.</strong> Aucun point d'attention sur vos positions pour le moment.</div>`;
   const chips = devs.length > 1 ? `<div class="pf-chips" style="margin-bottom:14px"><span class="pf-chips-l">Répartition en :</span>${devs.map(d => `<button class="lr-chip${d === cur ? ' on' : ''}" data-pf-cur="${d}">${d === '$' ? 'Dollars' : 'Euros'}</button>`).join('')}</div>` : '';
   const multi = Object.keys(pf.byDev).length > 1 ? `<div class="s-note">Vos positions sont en plusieurs devises : les totaux et la répartition sont calculés séparément, sans conversion.</div>` : '';
