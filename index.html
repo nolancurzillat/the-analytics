@@ -1464,11 +1464,13 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
 }
 .company-search-item:hover{ background:var(--field); }
 .company-search-avatar{
-  width:30px; height:30px; flex:0 0 30px; border-radius:8px; background:var(--navy);
+  width:34px; height:34px; flex:0 0 34px; border-radius:8px; background:var(--navy);
   display:flex; align-items:center; justify-content:center; overflow:hidden;
   font-size:11px; font-weight:700; color:#fff; font-family:var(--font-mono);
 }
-.company-search-avatar img{ width:100%; height:100%; object-fit:cover; }
+/* Logos entiers (contain) sur fond blanc : « cover » rognait les logos larges (ASML devenait « AS », TSMC et Palantir coupés) */
+.company-search-avatar img{ width:100%; height:100%; object-fit:contain; }
+.company-search-avatar:has(img){ background:#fff; border:1px solid var(--border); padding:2px; }
 .company-search-text{ flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
 .company-search-name{ font-size:14px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .company-search-desc{ font-size:12px; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -3856,10 +3858,12 @@ function positionGlobalSearch(){
   const btn = document.getElementById('globalSearchBtn'), bar = document.querySelector('.topbar');
   const box = overlay.querySelector('.modal-box');
   const br = btn.getBoundingClientRect(), barBottom = Math.round(bar.getBoundingClientRect().bottom);
-  const w = Math.min(620, Math.round(window.innerWidth * 0.94));
+  // clientWidth (et non innerWidth) : la barre de défilement de la page ne doit pas rogner le côté droit du menu ; marge droite de 28px
+  const vw = document.documentElement.clientWidth;
+  const w = Math.min(620, Math.round(vw * 0.94));
   overlay.style.top = barBottom + 'px';
   box.style.width = w + 'px';
-  box.style.left = Math.max(12, Math.min(Math.round(br.left), window.innerWidth - w - 12)) + 'px';
+  box.style.left = Math.max(12, Math.min(Math.round(br.left), vw - w - 28)) + 'px';
   box.style.top = '8px';
 }
 function openGlobalSearch(){
