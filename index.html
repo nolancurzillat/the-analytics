@@ -2292,7 +2292,7 @@ a.btn{ text-decoration:none; }
         <button type="button" class="cur-opt" data-currency="$">$ Dollar</button>
         <button type="button" class="cur-opt" data-currency="€">€ Euro</button>
       </div>
-      <div class="modal-hint">Dollar ou euro : le prix se met à jour automatiquement avec vos clés API gratuites (Préférences, Mon espace).</div>
+      <div class="modal-hint">La devise se règle toute seule d'après la bourse de l'entreprise choisie dans la liste (dollar pour NASDAQ et NYSE, euro pour les bourses européennes). Cette bascule sert aux entreprises créées sans recherche. Vous pourrez toujours la changer dans la fiche.</div>
     </div>
     <div class="modal-actions">
       <button id="newCompanyCancel">Annuler</button>
@@ -3675,8 +3675,15 @@ function closeNewCompanyModal(){
 // ou d'une saisie manuelle (repli si l'entreprise n'est pas sur Wikidata, voir plus bas) : un seul chemin de création,
 // `extra` apporte juste ce que la recherche a trouvé en plus.
 function createAndOpenCompany(name, currency, extra){
+  // Devise AUTOMATIQUE d'après la bourse (2026-10-04, demande de Nolan) : une suggestion cotée sur une bourse connue (EXCHANGES) impose sa devise
+  // ($ pour NASDAQ/NYSE, € pour Euronext, Xetra, Borsa Italiana, Bolsa de Madrid), quelle que soit la bascule de la fenêtre. Sans bourse (création
+  // « sans recherche »), la devise choisie reste. Elle se change ensuite à la main en haut de la fiche ; le réglage mémorisé
+  // (`defaultCurrency`) reste le CHOIX de la personne, pas celui déduit de la bourse.
+  const ex = extra && extra.exchange ? findExchange(extra.exchange) : null;
+  const chosenCurrency = currency;
+  if(ex && (ex.cur === '$' || ex.cur === '€')) currency = ex.cur;
   const c = newCompany(name, currency);
-  state.settings.defaultCurrency = currency;
+  state.settings.defaultCurrency = chosenCurrency;
   if(extra && extra.ticker) c.fields.identite.ticker = extra.ticker;
   if(extra && extra.exchange) c.fields.identite.cotation = extra.exchange;
   if(extra && extra.country){ c.fields.identite.paysSiege = c.fields.identite.paysSiege || {}; c.fields.identite.paysSiege.pays = extra.country; }
@@ -3694,6 +3701,7 @@ function createAndOpenCompany(name, currency, extra){
   // resolveLogo(c.id), le même circuit validé (plusieurs candidats, plusieurs sources, chaque image vérifiée avant
   // d'être retenue) que pour une création manuelle ou le bouton "Relancer la recherche de logos".
   resolveLogo(c.id);
+  if(currency !== chosenCurrency && ex) showToast(`Devise réglée sur ${currency === '€' ? 'l\'euro' : 'le dollar'} d'après la bourse (${ex.label}). Vous pouvez la changer en haut à droite de la fiche.`);
   return c;
 }
 function confirmNewCompany(){
