@@ -3981,7 +3981,6 @@ function updateField(sectionKey, fieldKey, value, fieldType){
     schedulePriceRefresh(c.id, 1300);
   }
   if(fieldKey === 'prochainRapport'){
-    syncReportNotifs();
     refreshReportNote();
     renderTabs();
   }
@@ -6904,6 +6903,8 @@ function bindReportDone(root){
 function markReportDone(id){
   const c = state.companies.find(x => x.id === id);
   if(!c) return;
+  const r = reportInfo(c);
+  if(r && r.due) notifLog('report', c, `Rapport du ${formatDateFr(r.iso)} : données mises à jour.`, `report:${c.id}:${r.iso}`);   // l'historique des notifications ne garde que ce qui a été traité
   c.fields.identite.prochainRapport = '';
   touchUpdated(c);
   saveState();
@@ -6990,7 +6991,7 @@ function evalAlerts(c){
   const fresh = []; let changed = false;
   (c.alerts || []).forEach(a => {
     const ok = a.on && alertCond(c, a);
-    if(ok && !a.fired){ a.fired = true; a.ack = false; a.firedAt = new Date().toISOString(); fresh.push(a); changed = true; notifLog('alert', c, alertText(c, a), `alert:${c.id}:${a.id}:${a.firedAt}`); }
+    if(ok && !a.fired){ a.fired = true; a.ack = false; a.firedAt = new Date().toISOString(); fresh.push(a); changed = true; }
     else if(!ok && (a.fired || a.ack)){ a.fired = false; a.ack = false; changed = true; }
   });
   return { fresh, changed };
@@ -7104,10 +7105,19 @@ function buildAlertsCard(){
 // ============================================================
 // CENTRE DE NOTIFICATIONS (2026-10-03, demande de Nolan) : cloche dans la barre du haut, à côté de la recherche.
 // « À traiter » = ce qui demande une action MAINTENANT (alertes déclenchées non vues, rapports publiés), calculé en direct ;
-// « Historique » = journal local `state.notifications` (80 entrées, propre à cet appareil, non synchronisé ni exporté), alimenté quand une
-// alerte se déclenche (evalAlerts) ou qu'une date de rapport est atteinte (syncReportNotifs). Chaque entrée a une clé unique : jamais de doublon.
+// « Historique » = journal local `state.notifications` (80 entrées, propre à cet appareil, non synchronisé ni exporté), alimenté SEULEMENT
+// quand l'utilisateur TRAITE une notification (demande de Nolan le 2026-10-03) : « Compris » sur une alerte (ackAlert) ou « Mis à jour » sur
+// un rapport (markReportDone). Chaque entrée a une clé unique : jamais de doublon.
 // ============================================================
 const NOTIF_MAX = 80;
+// « Compris » : l'alerte est masquée (ack) ET ajoutée à l'historique ; utilisé par le panneau et par la carte « Alertes » de Mon espace
+function ackAlert(c, a){
+  if(!c || !a) return;
+  a.ack = true;
+  notifLog('alert', c, alertText(c, a), `alert:${c.id}:${a.id}:${a.firedAt}`);
+  touchUpdated(c);
+  saveState();
+}
 function notifList(){ if(!Array.isArray(state.notifications)) state.notifications = []; return state.notifications; }
 function notifLog(type, c, text, key){
   const l = notifList();
@@ -7115,16 +7125,6 @@ function notifLog(type, c, text, key){
   l.unshift({ id:'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), key, type, cid:c.id, name:c.name || 'Sans nom', text, at:new Date().toISOString() });
   if(l.length > NOTIF_MAX) l.length = NOTIF_MAX;
   return true;
-}
-// Une entrée d'historique par rapport publié (clé = analyse + date prévue) ; appelée au chargement, à la saisie d'une date et régulièrement
-function syncReportNotifs(){
-  let added = false;
-  state.companies.forEach(c => {
-    const r = reportInfo(c);
-    if(r && r.due && notifLog('report', c, `Rapport attendu le ${formatDateFr(r.iso)} : mettez à jour vos données.`, `report:${c.id}:${r.iso}`)) added = true;
-  });
-  if(added) saveState();
-  return added;
 }
 function notifActiveItems(){
   const items = [];
@@ -7161,7 +7161,7 @@ function notifPanelHtml(){
       <div class="nf-sec">À traiter${act.length ? ` <i>${act.length}</i>` : ''}</div>
       ${act.length ? actRows : `<div class="nf-empty">Rien à traiter pour le moment.</div>`}
       <div class="nf-sec">Historique${hist.length ? ` <button type="button" class="nf-clear" id="notifClear">Effacer</button>` : ''}</div>
-      ${hist.length ? histRows : `<div class="nf-empty">Les alertes déclenchées et les rapports publiés apparaîtront ici.</div>`}
+      ${hist.length ? histRows : `<div class="nf-empty">Les notifications apparaissent ici une fois traitées (« Compris » ou « Mis à jour »).</div>`}
     </div>`;
 }
 function paintNotifPanel(){
@@ -7178,7 +7178,7 @@ function paintNotifPanel(){
     const [cid, aid] = b.dataset.nfAck.split('|');
     const c = state.companies.find(x => x.id === cid), a = c && (c.alerts || []).find(x => x.id === aid);
     if(!a) return;
-    a.ack = true; touchUpdated(c); saveState(); renderTabs(); refreshNotifBadge(); paintNotifPanel();
+    ackAlert(c, a); renderTabs(); refreshNotifBadge(); paintNotifPanel();
     if(currentView === 'space') renderSpaceView();
     if(currentView === 'company') refreshAlertsBlock();
   }));
@@ -7188,7 +7188,6 @@ function paintNotifPanel(){
   document.getElementById('notifClose').addEventListener('click', closeNotifPanel);
 }
 function openNotifPanel(){
-  syncReportNotifs();
   paintNotifPanel();
   document.getElementById('notifPanel').classList.remove('hidden');
   document.getElementById('notifBtn').setAttribute('aria-expanded', 'true');
@@ -7204,11 +7203,12 @@ function initNotifCenter(){
   btn.addEventListener('click', e => { e.stopPropagation(); panel.classList.contains('hidden') ? openNotifPanel() : closeNotifPanel(); });
   document.addEventListener('click', e => { if(!panel.classList.contains('hidden') && !panel.contains(e.target) && !btn.contains(e.target)) closeNotifPanel(); });
   document.addEventListener('keydown', e => { if(e.key === 'Escape') closeNotifPanel(); });
-  // Une date de rapport peut être atteinte pendant que l'app reste ouverte : revérification régulière et au retour sur l'onglet
-  const tick = () => { syncReportNotifs(); refreshNotifBadge(); if(!panel.classList.contains('hidden')) paintNotifPanel(); };
+  // Une date de rapport peut être atteinte pendant que l'app reste ouverte : le nombre de choses à traiter est revérifié régulièrement et au retour sur l'onglet
+  const tick = () => { refreshNotifBadge(); if(!panel.classList.contains('hidden')) paintNotifPanel(); };
   setInterval(tick, 10 * 60 * 1000);
   document.addEventListener('visibilitychange', () => { if(!document.hidden) tick(); });
-  syncReportNotifs();
+  // Migration unique : l'ancienne version notait chaque déclenchement dans l'historique, la nouvelle ne garde que ce qui a été traité
+  if(!state.settings.notifAckOnly){ state.notifications = []; state.settings.notifAckOnly = true; saveState(); }
   refreshNotifBadge();
 }
 
@@ -8759,9 +8759,7 @@ function bindSpace(){
     const [cid, aid] = b.dataset.altAckHome.split('|');
     const c = state.companies.find(x => x.id === cid), a = c && (c.alerts || []).find(x => x.id === aid);
     if(!a) return;
-    a.ack = true;
-    touchUpdated(c);
-    saveState();
+    ackAlert(c, a);
     renderTabs();
     renderSpaceView();
   }));
