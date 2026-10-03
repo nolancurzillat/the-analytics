@@ -2317,8 +2317,8 @@ a.btn{ text-decoration:none; }
       <button type="button" class="main-nav-item" id="navHome" aria-label="Accueil"><span class="mn-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></span><span>Accueil</span></button>
       <button type="button" class="main-nav-item" id="navSpace" aria-label="Mon espace"><span class="mn-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span><span>Mon espace</span></button>
       <button type="button" class="main-nav-item" id="navPortfolio" aria-label="Portefeuille"><span class="mn-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v9h9"/><path d="M20.5 15A9 9 0 1 1 9 3.5"/></svg></span><span>Portefeuille</span></button>
-      <button type="button" class="main-nav-item" id="navLearn" aria-label="Apprentissage"><span class="mn-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 21.5V5.5"/><path d="M9 8h7M9 12h5"/></svg></span><span>Apprentissage</span></button>
       <button type="button" class="main-nav-item" id="navCompare" aria-label="Comparateur"><span class="mn-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 20V10M12 20V4M18 20v-7"/></svg></span><span>Comparateur</span></button>
+      <button type="button" class="main-nav-item" id="navLearn" aria-label="Apprentissage"><span class="mn-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 21.5V5.5"/><path d="M9 8h7M9 12h5"/></svg></span><span>Apprentissage</span></button>
     </div>
     <div class="topbar-actions">
       <button type="button" class="search-btn" id="globalSearchBtn" title="Rechercher une entreprise" aria-label="Rechercher une entreprise">
@@ -11629,7 +11629,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 213;
+const APP_BUILD = 214;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de Nolan : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'carnet-analyse-v213';
+const CACHE_NAME = 'carnet-analyse-v214';
 // Version affichee aux utilisateurs (doit etre egale a APP_VERSION de index.html) : 1.0, puis 1.1 pour de nouvelles fonctionnalites, 1.0.1 pour des corrections.
 const APP_VERSION = '1.0';
 const ASSETS = [
