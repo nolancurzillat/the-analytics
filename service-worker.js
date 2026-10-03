@@ -1,4 +1,4 @@
-const CACHE_NAME = 'carnet-analyse-v203';
+const CACHE_NAME = 'carnet-analyse-v204';
 const ASSETS = [
   './index.html',
   './manifest.json',
@@ -29,11 +29,30 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin && !CACHEABLE_HOSTS.includes(url.hostname)) return;
+  if (event.request.method !== 'GET') return;
+  // La PAGE (index.html) est demandée au réseau d'abord (2026-10-04) : avant, elle était servie depuis le cache et ne se renouvelait qu'au
+  // chargement suivant, donc une personne pouvait rester sur une ancienne version sans le savoir. `no-cache` = le navigateur revalide auprès
+  // du serveur (réponse 304 légère si rien n'a changé). Hors connexion, on retombe sur la copie en cache.
+  const isPage = event.request.mode === 'navigate' || url.pathname.endsWith('/index.html') || url.pathname.endsWith('/');
+  if (isPage && url.origin === self.location.origin) {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-cache' })
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put('./index.html', clone));
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match('./index.html').then((cached) => cached || caches.match(event.request)))
+    );
+    return;
+  }
   event.respondWith(
     caches.match(event.request).then((cached) => {
       const fetchPromise = fetch(event.request)
         .then((networkResponse) => {
-          if (event.request.method === 'GET' && networkResponse && networkResponse.status === 200) {
+          if (networkResponse && networkResponse.status === 200) {
             const clone = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
           }

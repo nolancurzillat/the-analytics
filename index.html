@@ -2265,6 +2265,10 @@ a.btn{ text-decoration:none; }
 
 .guide-tabs{ display:flex; flex-wrap:wrap; gap:8px; margin:4px 0 14px 0; }
 .guide-tabs .lr-chip small{ display:block; font-size:11.5px; opacity:.75; margin:2px 0 0 0; font-weight:500; }
+/* Bandeau « Nouvelle version disponible » */
+.update-banner{ position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:90; display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:10px 18px; width:min(640px, calc(100vw - 32px)); padding:14px 18px; border:1px solid var(--border-strong); border-left:4px solid var(--accent); border-radius:14px; background:var(--card); color:var(--ink); box-shadow:0 16px 40px rgba(0,0,0,.35); font-size:14.5px; line-height:1.5; }
+.update-banner .update-btns{ display:flex; gap:8px; flex:0 0 auto; }
+
 </style>
 </head>
 <body>
@@ -8672,6 +8676,11 @@ function buildPrefsCard(){
       <button class="btn btn-outline btn-sm" data-start-tour>Revoir la visite guidée</button>
     </div>
     <div class="pref">
+      <div class="pref-l">Version de l'application</div>
+      <div class="pref-h" id="versionLine">${versionLineHtml()}</div>
+      <button class="btn btn-outline btn-sm" id="checkUpdateBtn">Rechercher une mise à jour</button>
+    </div>
+    <div class="pref">
       <div class="pref-l">Sauvegarde de vos analyses</div>
       <div id="backupPanel" class="bk-panel">${backupPanelHtml()}</div>
     </div>
@@ -11594,6 +11603,81 @@ function renderReceivedView(){
   }
 }
 
+// ============================================================
+// VERSION DE L'APPLICATION ET MISES À JOUR (2026-10-04, demande de Nolan : l'ordinateur de son père tournait sur une ancienne version sans
+// que personne ne le sache). Deux causes : (1) le service worker servait la page depuis son cache et ne la renouvelait qu'au chargement SUIVANT
+// (corrigé dans service-worker.js : la page est maintenant demandée au réseau d'abord) ; (2) une fenêtre laissée ouverte ne se recharge jamais.
+// Ici : APP_BUILD = le numéro de CETTE page (doit toujours être égal au numéro de CACHE_NAME de service-worker.js, voir CLAUDE.md), comparé au numéro
+// publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
+// bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
+// ============================================================
+const APP_BUILD = 204;
+const updateInfo = { latest:null, checking:false, dismissedAt:0, lastCheck:0 };
+async function fetchLatestBuild(){
+  const r = await fetch('service-worker.js?check=' + Date.now(), { cache:'no-store' });
+  if(!r.ok) throw new Error('http');
+  const m = /CACHE_NAME\s*=\s*'carnet-analyse-v(\d+)'/.exec(await r.text());
+  if(!m) throw new Error('format');
+  return Number(m[1]);
+}
+function updateAvailable(){ return updateInfo.latest !== null && updateInfo.latest > APP_BUILD; }
+function versionLineHtml(){
+  const base = `Version <strong>${APP_BUILD}</strong>`;
+  if(updateInfo.checking) return base + ' · vérification...';
+  if(updateInfo.latest === null) return base + ' · pas encore vérifiée.';
+  if(updateAvailable()) return base + ` · <strong>une nouvelle version (${updateInfo.latest}) est disponible.</strong> <button type="button" class="link-btn" id="applyUpdateBtn">Mettre à jour maintenant</button>`;
+  return base + ' · ✓ vous avez la dernière version.';
+}
+function paintVersionLine(){
+  const el = document.getElementById('versionLine');
+  if(el) el.innerHTML = versionLineHtml();
+}
+function showUpdateBanner(){
+  if(document.getElementById('updateBanner')) return;
+  const b = document.createElement('div');
+  b.id = 'updateBanner';
+  b.className = 'update-banner';
+  b.setAttribute('role', 'status');
+  b.innerHTML = `<span><strong>Nouvelle version disponible.</strong> Mettez à jour pour profiter des dernières améliorations. Vos analyses ne sont pas touchées.</span><span class="update-btns"><button type="button" class="btn btn-primary btn-sm" id="updateNowBtn">Mettre à jour</button><button type="button" class="btn btn-outline btn-sm" id="updateLaterBtn">Plus tard</button></span>`;
+  document.body.appendChild(b);
+}
+function hideUpdateBanner(){ const b = document.getElementById('updateBanner'); if(b && b.parentNode) b.parentNode.removeChild(b); }
+async function checkForUpdate(manual){
+  if(updateInfo.checking) return;
+  if(!manual && Date.now() - updateInfo.lastCheck < 5 * 60 * 1000) return;
+  updateInfo.checking = true; updateInfo.lastCheck = Date.now(); paintVersionLine();
+  try{
+    updateInfo.latest = await fetchLatestBuild();
+  }catch(e){
+    if(manual) showToast('Vérification impossible : vérifiez votre connexion internet.');
+  }
+  updateInfo.checking = false;
+  paintVersionLine();
+  // Bandeau : automatiquement, sauf si l'utilisateur a répondu « Plus tard » il y a moins d'une heure ; toujours après une vérification manuelle
+  if(updateAvailable() && (manual || Date.now() - updateInfo.dismissedAt > 60 * 60 * 1000)) showUpdateBanner();
+  else if(!updateAvailable()){ hideUpdateBanner(); if(manual && updateInfo.latest !== null) showToast('Vous avez la dernière version (' + APP_BUILD + ').'); }
+}
+async function applyUpdate(){
+  try{
+    if('caches' in window){ const keys = await caches.keys(); await Promise.all(keys.map(k => caches.delete(k))); }
+    if('serviceWorker' in navigator){ const reg = await navigator.serviceWorker.getRegistration(); if(reg) await reg.update(); }
+  }catch(e){}
+  location.reload();
+}
+function initUpdateCheck(){
+  document.addEventListener('click', e => {
+    const t = e.target;
+    if(!t || !t.closest) return;
+    if(t.closest('#updateNowBtn, #applyUpdateBtn')) applyUpdate();
+    else if(t.closest('#updateLaterBtn')){ updateInfo.dismissedAt = Date.now(); hideUpdateBanner(); }
+    else if(t.closest('#checkUpdateBtn')) checkForUpdate(true);
+  });
+  document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') checkForUpdate(false); });
+  window.addEventListener('online', () => checkForUpdate(false));
+  setInterval(() => { if(document.visibilityState === 'visible') checkForUpdate(false); }, 30 * 60 * 1000);
+  setTimeout(() => checkForUpdate(false), 4000);
+}
+
 function render(){
   if(currentView !== 'received') roCompany = null;
   renderTabs();
@@ -12444,6 +12528,7 @@ scheduleSnapshot(6000);
 initFileBackup();
 bindAuth();
 bindShare();
+initUpdateCheck();
 initDecisionPicker();
 bindReadOnlyGuard();
 handleShareLink();
