@@ -8691,10 +8691,10 @@ function buildPrefsCard(){
       </div>
       <div class="pref-h">Clés gratuites : le cours se met à jour tout seul. En euros, il est différé et limité à environ 25 mises à jour par jour.</div>
     </div>
-    <div class="pref">
+    ${isInstalledApp() ? '' : `<div class="pref">
       <div class="pref-l">Application</div>
-      <div class="pref-btns">${isInstalledApp() ? '' : '<button class="btn btn-primary btn-sm" data-install-open>Installer l\'application</button>'}<button class="btn btn-outline btn-sm" data-start-tour>Revoir la visite guidée</button></div>
-    </div>
+      <div class="pref-btns"><button class="btn btn-primary btn-sm" data-install-open>Installer l'application</button></div>
+    </div>`}
     <div class="pref">
       <div class="pref-l">Sauvegarde de vos analyses</div>
       <div id="backupPanel" class="bk-panel">${backupPanelHtml()}</div>
@@ -10803,7 +10803,7 @@ function renderLegalView(){
 
 // ---------- Visite guidée du premier lancement ----------
 // Affichée une seule fois (state.settings.tourDone, propre à l'appareil) ; les utilisateurs qui ont déjà des analyses ne la voient pas
-// automatiquement. Relançable depuis Mon espace, Préférences (bouton [data-start-tour]). Sur mobile, le menu latéral est ouvert le temps des étapes marquées `inSidebar` (les seules dont la cible vit dans la barre latérale).
+// automatiquement. Relançable par tout élément [data-start-tour] (plus aucun bouton ne le propose : retiré des Préférences le 2026-10-04). Sur mobile, le menu latéral est ouvert le temps des étapes marquées `inSidebar` (les seules dont la cible vit dans la barre latérale).
 const TOUR_STEPS = [
   { sel:null, title:'Bienvenue sur The Analytics', text:"Une visite rapide, 30 secondes : voici où trouver l'essentiel. Vous pouvez la passer et la relancer plus tard depuis Mon espace, Préférences." },
   { sel:'#sideNewBtn', inSidebar:true, title:'Créez votre première analyse', text:"Commencez ici : nommez une entreprise et remplissez sa fiche, section par section. Les ratios se calculent et se colorent tout seuls." },
@@ -11628,7 +11628,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 209;
+const APP_BUILD = 210;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de Nolan : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
