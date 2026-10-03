@@ -2190,8 +2190,9 @@ a.btn{ text-decoration:none; }
 /* « Toutes vos analyses » : logos des entreprises plus grands (36px avant), nom un peu plus long avant d'être tronqué */
 #companiesTableWrap .ht-co{ gap:11px; }
 #companiesTableWrap .mini-av{ width:48px; height:48px; flex:0 0 48px; border-radius:12px; font-size:14px; }
-#companiesTableWrap .home-td-name-txt{ max-width:130px; }
-#companiesTableWrap .ht-sec{ max-width:150px; }
+#companiesTableWrap .home-td-name-txt{ max-width:240px; }
+/* Secteur affiché EN ENTIER (2026-10-04, demande de Nolan : il y a maintenant de la place) : plus de points de suspension, retour à la ligne au-delà de 260px */
+#companiesTableWrap .ht-sec{ max-width:260px; overflow:visible; text-overflow:clip; white-space:normal; line-height:1.3; }
 </style>
 </head>
 <body>
@@ -9768,15 +9769,58 @@ function pfKpis(pf){
   </div>`;
 }
 
+// Tri des tableaux de positions (2026-10-04, demande de Nolan : le même système que « Toutes vos analyses », en cliquant sur le nom de la colonne) :
+// premier clic sur une colonne = décroissant, reclic sur la MÊME colonne = croissant. Défaut : résultat en % décroissant (comme avant). Les valeurs
+// manquantes restent TOUJOURS en dernier. « Résultat » trie par le pourcentage ; « Poids » suit le capital investi (même ordre au sein d'une devise).
+const PF_SORT_COLS = [
+  { k:'name', l:'Entreprise' }, { k:'qty', l:'Quantité' }, { k:'buy', l:'Prix d\'achat' }, { k:'cur', l:'Cours' }, { k:'invested', l:'Investi' },
+  { k:'value', l:'Valeur' }, { k:'gainPct', l:'Résultat', tip:'Trié par le résultat en pourcentage' }, { k:'weight', l:'Poids' }, { k:'decision', l:'Décision' }, { k:'score', l:'Score' },
+];
+function pfSortValue(r, k){
+  const info = pfInfo(r.c);
+  switch(k){
+    case 'name': return String(r.c.name || '').trim() || null;
+    case 'qty': return r.m.qty; case 'buy': return r.m.buy; case 'cur': return r.m.cur;
+    case 'invested': case 'weight': return r.m.invested;
+    case 'value': return r.m.value; case 'gainPct': return r.m.gainPct;
+    case 'decision': return info.decision || null;
+    case 'score': return info.score;
+  }
+  return null;
+}
+function pfSortRows(rows){
+  const key = PF_SORT_COLS.some(c => c.k === state.settings.pfSortKey) ? state.settings.pfSortKey : 'gainPct';
+  const sign = state.settings.pfSortDir === 'asc' ? 1 : -1;
+  const idx = new Map(rows.map((r, i) => [r, i]));
+  return rows.slice().sort((a, b) => {
+    const va = pfSortValue(a, key), vb = pfSortValue(b, key);
+    const ma = va === null || va === undefined, mb = vb === null || vb === undefined;
+    if(ma && mb) return idx.get(a) - idx.get(b);
+    if(ma) return 1;
+    if(mb) return -1;
+    const c = typeof va === 'string' ? va.localeCompare(vb, 'fr', { sensitivity:'base' }) : va - vb;
+    return c ? sign * c : idx.get(a) - idx.get(b);
+  });
+}
+function sortPortfolioBy(key){
+  const same = (state.settings.pfSortKey || 'gainPct') === key;
+  const curDir = state.settings.pfSortDir === 'asc' ? 'asc' : 'desc';
+  state.settings.pfSortKey = key;
+  state.settings.pfSortDir = (same && curDir === 'desc') ? 'asc' : 'desc';
+  saveState();
+  const y = window.scrollY;
+  renderPortfolioView();
+  window.scrollTo(0, y);
+}
 // Une table par devise (demande de Nolan le 2026-09-29 : séparer les positions dollar et euro plutôt qu'une table mélangée avec des lignes de total intercalées).
 function pfTableForDev(pf, d){
-  // Triée par résultat en % décroissant (demande de Nolan le 2026-09-29) : les positions sans résultat calculable restent en dernier, quel que soit leur investi.
-  const rows = pf.rows.filter(r => r.m.devise === d).sort((a, b) => {
-    if(a.m.gainPct === null && b.m.gainPct === null) return 0;
-    if(a.m.gainPct === null) return 1;
-    if(b.m.gainPct === null) return -1;
-    return b.m.gainPct - a.m.gainPct;
-  });
+  const rows = pfSortRows(pf.rows.filter(r => r.m.devise === d));
+  const sortKey = PF_SORT_COLS.some(c => c.k === state.settings.pfSortKey) ? state.settings.pfSortKey : 'gainPct';
+  const sortDesc = state.settings.pfSortDir !== 'asc';
+  const head = PF_SORT_COLS.map(c => {
+    const active = c.k === sortKey;
+    return `<th class="th-sort${active ? ' th-sort-active' : ''}" data-pf-sort="${c.k}"${c.tip ? ` data-tooltip="<div class=\'tt-desc\'>${c.tip}</div>"` : ''}>${c.l}${active ? `<span class="th-sort-arrow">${sortDesc ? '&darr;' : '&uarr;'}</span>` : ''}</th>`;
+  }).join('');
   const body = rows.map(({ c, m }) => {
     const info = pfInfo(c);
     const tot = pf.byDev[d].invested;
@@ -9799,7 +9843,7 @@ function pfTableForDev(pf, d){
   const x = pf.byDev[d];
   const base = x.value - x.gain;
   const foot = `<tr class="pf-total"><td colspan="4"><strong>Total</strong></td><td><strong>${fmtMoney(x.invested, d)}</strong></td><td><strong>${x.nGain ? fmtMoney(x.value, d) : '—'}</strong></td><td>${x.nGain ? `<span class="pf-res" style="color:${pfColor(x.gain)}">${pfSigned(x.gain, d)}</span>${base > 0 ? `<span class="pf-res-s" style="color:${pfColor(x.gain)}">${pfPct(x.gain / base * 100)}</span>` : ''}` : '—'}</td><td>100&nbsp;%</td><td></td><td></td></tr>`;
-  return `<div class="home-table-wrap"><table class="home-table"><thead><tr><th>Entreprise</th><th>Quantité</th><th>Prix d'achat</th><th>Cours</th><th>Investi</th><th>Valeur</th><th>Résultat</th><th>Poids</th><th>Décision</th><th>Score</th></tr></thead><tbody>${body}${foot}</tbody></table></div>`;
+  return `<div class="home-table-wrap"><table class="home-table"><thead><tr>${head}</tr></thead><tbody>${body}${foot}</tbody></table></div>`;
 }
 function pfTable(pf){
   const devOrder = Object.keys(pf.byDev).filter(d => pf.byDev[d].nInv).sort((a, b) => (a === pf.main ? -1 : 0) - (b === pf.main ? -1 : 0));
@@ -10294,6 +10338,7 @@ function bindPortfolio(){
     if(jump) setTimeout(() => { const t = document.getElementById(jump); if(t) t.scrollIntoView({ behavior:'smooth', block:'start' }); }, 80);
   }));
   main.querySelectorAll('[data-pf-cur]').forEach(el => el.addEventListener('click', () => { portfolioCur = el.dataset.pfCur; renderPortfolioView(); }));
+  main.querySelectorAll('[data-pf-sort]').forEach(el => el.addEventListener('click', () => sortPortfolioBy(el.dataset.pfSort)));
   main.querySelectorAll('[data-pf-range]').forEach(el => el.addEventListener('click', () => { portfolioRange = el.dataset.pfRange; renderPortfolioView(); }));
   bindClosedTradesCard(main);
   bindHistoryHover();
