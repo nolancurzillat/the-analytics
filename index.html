@@ -830,7 +830,15 @@ input.company-name:focus{ outline:none; border-bottom-color:var(--blue); }
   box-shadow:0 1px 0 rgba(255,255,255,.02) inset;
 }
 .kpi-l{ font-size:13px; color:var(--ink-soft); font-weight:500; white-space:nowrap; }
-.kpi-v{ font-family:var(--font-mono); font-weight:600; font-size:27px; margin-top:6px; line-height:1.15; white-space:nowrap; }
+/* La taille du chiffre s'adapte à la largeur de SA carte (unités de conteneur `cqw`) : jamais de débordement, même pour « ★ 4,5 » ou un PE à 4 chiffres sur un écran étroit */
+.kpi{ container-type:inline-size; }
+.kpi-v{ font-family:var(--font-mono); font-weight:600; font-size:24px; font-size:clamp(14px, 26cqw, 27px); margin-top:6px; line-height:1.15; white-space:nowrap; }
+/* Écran de 1181 à 1450px : la bande passe sur DEUX lignes (4 cartes, puis 3 dont le prix actuel, deux fois plus large) au lieu de 7 cartes trop étroites */
+@media (min-width:1181px) and (max-width:1450px){
+  .kpis{ grid-template-columns:repeat(12, minmax(0,1fr)); }
+  .kpis .kpi{ grid-column:span 3; }
+  .kpis .kpi:nth-child(7){ grid-column:span 6; }
+}
 .kpi-v small{ font-size:13px; color:var(--ink-soft); font-weight:400; }
 .kpi-s{ font-size:13px; color:var(--ink-soft); margin-top:4px; line-height:1.4; }
 .kpi-s b{ font-weight:700; }
@@ -7984,7 +7992,8 @@ function buildCompanyKpis(c){
   return [
     `<div class="kpi kpi-score kpi-link" style="--k:${gsColor}" data-goto="insights-section" role="button" tabindex="0" aria-label="Voir le détail du score composite"><div class="kpi-ring" data-tooltip="<div class='tt-desc'>Score composite sur 100 : moyenne pondérée des 5 axes du profil global. Cliquez pour voir le détail.</div>${scoreScaleTooltip()}"><svg viewBox="0 0 54 54" width="54" height="54"><circle cx="27" cy="27" r="23" fill="none" stroke="var(--border)" stroke-width="6"/><circle cx="27" cy="27" r="23" fill="none" stroke="${gs === null ? 'transparent' : gsColor}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 27 27)"/></svg><span style="color:${gsColor}">${gs === null ? '—' : Math.round(gs)}</span></div><div><div class="kpi-l">Score composite</div><div class="kpi-s">${gs === null ? 'sur 100' : (sinfo.provisional ? 'provisoire · ' : 'sur 100 · ') + sinfo.filled + '/' + sinfo.total + ' axes'}</div></div></div>`,
     kpi('Décision', `<div style="margin-top:9px">${decisionPill(decision)}</div>`, decSub, decStyle ? decStyle.color : null),
-    kpi('Conviction', `<div class="kpi-v" style="color:var(--star)">${conviction ? '★ ' + String(conviction).replace('.', ',') : '—'}<small> / 5</small></div>`, conviction ? 'Votre niveau de conviction' : 'À renseigner', 'var(--star)'),
+    // Le « / 5 » passe dans le sous-titre : avec une note à demi-point (4,5) la valeur « ★ 4,5 / 5 » débordait de la carte (2026-10-04, signalé par Nolan)
+    kpi('Conviction', `<div class="kpi-v" style="color:var(--star)">${conviction ? '★ ' + String(conviction).replace('.', ',') : '—'}</div>`, conviction ? 'sur 5 · votre niveau de conviction' : 'À renseigner', 'var(--star)'),
     kpi('PEG', `<div class="kpi-v" style="color:${pegColor}">${peg === null ? '—' : peg.toFixed(2)}</div>`, pegTier ? TIER_LABELS[pegTier] : 'Pas assez de données', pegTier ? pegColor : null),
     kpi('PE', `<div class="kpi-v">${pe === null ? '—' : fmtNum(pe, 1)}</div>`, peSub, 'var(--blue)'),
     kpi('Checklist Buffett', `<div class="kpi-v" style="color:${buffColor}">${buff.checked}<small> / ${buff.total}</small></div>`, buffTier ? `critères validés · ${TIER_LABELS[buffTier]}` : 'critères validés', buffTier ? buffColor : null),
@@ -11619,7 +11628,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 207;
+const APP_BUILD = 209;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de Nolan : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
