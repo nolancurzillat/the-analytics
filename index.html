@@ -11238,7 +11238,6 @@ function renderHomeView(){
       </div>
     </section>
 
-C:\Users\nolan
     ${isInstalledApp() ? '' : `<div class="home-install" data-install-wrap><span><strong>Installez The Analytics</strong> sur votre ordinateur ou votre téléphone : sa propre fenêtre, son icône, et toujours la dernière version, automatiquement.</span><button class="btn btn-primary btn-sm" data-install-open>Installer l'application</button></div>`}
     <div class="legal" style="margin-top:64px">The Analytics est un outil d'aide à l'analyse fondamentale, à but pédagogique et informatif. Il ne constitue ni un conseil en investissement, ni une recommandation d'achat ou de vente. Investir comporte un risque de perte en capital.</div>
     <div class="home-legal-links"><button type="button" data-legal="confidentialite">Confidentialité</button><button type="button" data-legal="conditions">Conditions</button><button type="button" data-legal="mentions">Mentions légales</button><button type="button" data-legal="contact">Nous contacter</button></div>
@@ -11620,7 +11619,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 205;
+const APP_BUILD = 206;
 const updateInfo = { latest:null, checking:false, dismissedAt:0, lastCheck:0 };
 async function fetchLatestBuild(){
   const r = await fetch('service-worker.js?check=' + Date.now(), { cache:'no-store' });
