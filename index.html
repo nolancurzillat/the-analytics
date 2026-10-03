@@ -791,11 +791,7 @@ input.company-name:focus{ outline:none; border-bottom-color:var(--blue); }
 .alt-unit{ font-weight:700; color:var(--ink); }
 .alt-err{ min-height:16px; margin-top:6px; font-size:12.5px; color:var(--red); }
 @media (max-width:640px){ .alerts-block{ margin-left:14px; margin-right:14px; } }
-/* Pastille « Reçue » : analyse ajoutée depuis une analyse reçue (remplace les anciens tags, retirés le 2026-10-03) */
-.recv-tag{ display:inline-block; font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:1px 7px; border-radius:6px; margin-left:6px; vertical-align:middle; color:var(--ink); background:color-mix(in srgb, var(--blue) 16%, transparent); border:1px solid color-mix(in srgb, var(--blue) 35%, transparent); }
-.recv-tag-block{ display:inline-block; margin:6px 0 0 0; }
-/* Repère « Reçue » de la barre latérale : discret, sur la ligne du ticker, pour ne jamais raccourcir le nom de l'entreprise */
-.si-recv{ display:inline-block; margin-left:8px; padding:0 6px; border:1px solid rgba(157,180,232,.38); border-radius:5px; font-family:var(--font-ui); font-size:10px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:#9db4e8; vertical-align:1px; }
+/* Repère « Reçue » dans l'en-tête de la fiche (les anciens tags ont été retirés le 2026-10-03 ; le repère n'est PAS affiché ailleurs : barre latérale et tableau l'ont perdu à la demande de Nolan) */
 .chip-recv{ font-weight:700; background:color-mix(in srgb, var(--blue) 16%, var(--card)); border-color:color-mix(in srgb, var(--blue) 35%, transparent); }
 .lr-chip small{ opacity:.7; margin-left:2px; }
 .chip-progress{ gap:8px; }
@@ -7076,7 +7072,7 @@ function sortedForTable(){
   const key = state.settings.tableSortKey, sign = state.settings.tableSortDir === 'desc' ? -1 : 1;
   const idx = new Map(state.companies.map((c, i) => [c.id, i]));
   // Filtre par secteur (rangée de pastilles de « Toutes vos analyses »)
-  return state.companies.filter(c => !sectorFilter || companySector(c) === sectorFilter).sort((a, b) => sortCompare(a, b, key, sign, idx));
+  return state.companies.filter(c => (!sectorFilter || companySector(c) === sectorFilter) && (!receivedOnly || c.fromShare)).sort((a, b) => sortCompare(a, b, key, sign, idx));
 }
 // Menu du tableau « Toutes vos analyses » (double flèche) : seulement les critères SANS colonne cliquable (2026-10-03, demande
 // de Nolan : « enlève dans les doubles flèches les filtres déjà applicables en appuyant sur le nom, par exemple la conviction »).
@@ -7543,14 +7539,19 @@ function initNotifCenter(){
   refreshNotifBadge();
 }
 
-// Pastille « Reçue » (2026-10-03) : visible sur les analyses ajoutées depuis une analyse reçue (barre latérale, tableau, en-tête de la fiche).
-function fromShareBadge(c){ return c && c.fromShare ? '<span class="recv-tag" data-tooltip="<div class=\'tt-desc\'>Analyse ajoutée depuis une analyse que l\'on vous a envoyée.</div>">Reçue</span>' : ''; }
-
 // ---------- Filtre par SECTEUR (2026-10-03, demande de Nolan : « ne choisir que des entreprises du même secteur pour comparer ») ----------
 // Rangée de pastilles « Secteur : Tous / Technologie 5 / ... » dans « Toutes vos analyses » et dans le Comparateur (même variable
 // `sectorFilter`), masquée tant qu'il y a moins de deux secteurs. Le secteur est un texte libre : on regroupe avec `normSector`
 // (casse et espaces ignorés, comme partout). Les analyses sans secteur ne forment pas de pastille (elles restent visibles sous « Tous »).
 let sectorFilter = '';
+// Filtre « Reçues » de « Toutes vos analyses » (2026-10-03, demande de Nolan) : ne montrer que les analyses ajoutées depuis une analyse reçue
+// (`c.fromShare`). Rangée affichée seulement s'il y en a au moins une ; se combine avec le filtre de secteur.
+let receivedOnly = false;
+function originFilterHtml(){
+  const n = state.companies.filter(c => c.fromShare).length;
+  if(!n){ receivedOnly = false; return ''; }
+  return `<div class="pf-chips" style="margin-bottom:12px"><span class="pf-chips-l">Origine :</span><button type="button" class="lr-chip${receivedOnly ? '' : ' on'}" data-origin-filter="">Toutes</button><button type="button" class="lr-chip${receivedOnly ? ' on' : ''}" data-origin-filter="received">Reçues <small>${n}</small></button></div>`;
+}
 function companySector(c){ return normSector(c && c.fields && c.fields.identite && c.fields.identite.secteur && c.fields.identite.secteur.secteur); }
 function sectorCounts(){
   const m = {};
@@ -7615,7 +7616,7 @@ function renderTabs(){
     el.innerHTML = `<span class="si-ico${av.cls}">${av.html}</span>
       <span class="si-text">
         <span class="si-line1"><span class="si-name">${escapeHtml(c.name || 'Sans nom')}</span>${reportFlagHtml(c)}${alertFlagHtml(c)}${conviction ? starsRowHtml(conviction, 'si-stars') : ''}</span>
-        ${(ticker || c.fromShare) ? `<span class="si-sub">${escapeHtml(ticker)}${c.fromShare ? '<span class="si-recv">Reçue</span>' : ''}</span>` : ''}
+        ${ticker ? `<span class="si-sub">${escapeHtml(ticker)}</span>` : ''}
       </span>
       <span class="del" title="Supprimer">✕</span>`;
     el.querySelector('.del').onclick = (e) => deleteCompany(c.id, e);
@@ -8346,7 +8347,7 @@ function buildCompaniesTableRows(){
     return `<tr data-open-company="${c.id}">
       <td><div class="ht-co">${miniAv(c)}<div class="ht-id">
         <div class="home-td-name"><span class="home-td-name-txt">${escapeHtml(c.name || 'Sans nom')}</span>${reportFlagHtml(c)}${alertFlagHtml(c)}${ticker ? `<span class="home-ticker">${escapeHtml(ticker)}</span>` : ''}</div>
-        <div class="ht-sec">${sect ? escapeHtml(sect) : 'Secteur non renseigné'}</div>${c.fromShare ? `<div>${fromShareBadge(c).replace('recv-tag', 'recv-tag recv-tag-block')}</div>` : ''}
+        <div class="ht-sec">${sect ? escapeHtml(sect) : 'Secteur non renseigné'}</div>
       </div></div></td>
       <td>${chip(gs, gsColor, gs === null ? '' : Math.round(gs), { lg:true, prov:sinfo.provisional })}</td>
       <td>${chip(peg, pegTier ? TIER_COLORS[pegTier] : 'var(--border-strong)', peg === null ? '' : peg.toFixed(2))}</td>
@@ -8372,8 +8373,8 @@ function buildCompaniesTableRows(){
 function buildCompaniesTable(){
   const sortCtrl = `<span class="table-sort-wrap"><button type="button" class="sort-btn" id="tableSortBtn" aria-label="Trier les analyses" aria-haspopup="true" aria-expanded="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20V4M7 4L3.5 7.5M7 4l3.5 3.5"/><path d="M17 4v16M17 20l-3.5-3.5M17 20l3.5-3.5"/></svg></button><div class="sort-menu hidden" id="tableSortMenu" role="menu">${sortMenuHtml(TABLE_MENU_KEYS, state.settings.tableSortKey, state.settings.tableSortDir, true)}</div></span>`;
   const shown = sortedForTable().length;
-  const sub = `<span class="scard-s-row">${sectorFilter && shown !== state.companies.length ? `${shown} sur ${state.companies.length}` : `${state.companies.length} au total`}${sortCtrl}</span>`;
-  return spaceCard('s12', 'Toutes vos analyses', sub, sectorFilterChipsHtml(true) + buildCompaniesTableRows());
+  const sub = `<span class="scard-s-row">${(sectorFilter || receivedOnly) && shown !== state.companies.length ? `${shown} sur ${state.companies.length}` : `${state.companies.length} au total`}${sortCtrl}</span>`;
+  return spaceCard('s12', 'Toutes vos analyses', sub, sectorFilterChipsHtml(true) + originFilterHtml() + buildCompaniesTableRows());
 }
 
 function buildMilestones(){
@@ -9133,6 +9134,7 @@ function bindSpace(){
     renderSpaceView();
   }));
   main.querySelectorAll('[data-sector-filter]').forEach(b => b.addEventListener('click', () => { sectorFilter = b.dataset.sectorFilter; renderSpaceView(); }));
+  main.querySelectorAll('[data-origin-filter]').forEach(b => b.addEventListener('click', () => { receivedOnly = b.dataset.originFilter === 'received'; renderSpaceView(); }));
   main.querySelectorAll('[data-sector-compare]').forEach(b => b.addEventListener('click', () => {
     const ids = topBySector(sectorFilter).map(c => c.id);
     if(ids.length >= 2){ compareIds = ids; goCompare(); }
