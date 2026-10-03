@@ -4945,10 +4945,44 @@ function autoCapitalizeFirst(el){
   el.value = v.toUpperCase();
   if(pos !== null) el.setSelectionRange(pos, pos);
 }
+// Unités M et Md toujours en majuscule dans les montants (2026-10-03, demande de Nolan : « dans tous les champs où je dois renseigner
+// un nombre, le M soit majuscule pour M et Md ») : « 3,2m » devient « 3,2M », « 391md » devient « 391Md » (Mds et Mrd aussi). Ne touche que
+// les cases dont TOUT le contenu est un montant (nombre + unité + devise facultative), jamais un texte libre, donc « 3 m de large »
+// dans une note n'est pas modifié. Corrigé dans la case elle-même (le curseur reste en place, la longueur ne change pas), puis un nouvel
+// événement `input` fait enregistrer la valeur corrigée par le gestionnaire du champ concerné.
+const MONEY_UNIT_RE = /^(\s*-?\d[\d\s  ]*(?:[.,]\d+)?\s*)(mds|mrd|md|m)(\s*[$€]?\s*)$/i;
+const MONEY_UNIT_FIX = { m:'M', md:'Md', mds:'Mds', mrd:'Mrd' };
+function fixMoneyUnit(el){
+  if(el.tagName !== 'INPUT' || el.type !== 'text' || el.classList.contains('tag-input') || !el.closest('#main')) return;
+  const m = MONEY_UNIT_RE.exec(el.value);
+  if(!m) return;
+  const unit = MONEY_UNIT_FIX[m[2].toLowerCase()];
+  if(m[2] === unit) return;
+  const pos = el.selectionStart;
+  el.value = m[1] + unit + m[3];
+  if(pos !== null) el.setSelectionRange(pos, pos);
+  el.dispatchEvent(new Event('input', { bubbles:true }));
+}
+// Valeurs DÉJÀ enregistrées (« 3,2m » saisi avant ce changement) : corrigées une fois au chargement, en parcourant les champs de chaque analyse.
+// Seules les chaînes qui sont entièrement un montant sont touchées (même règle qu'à la saisie), rien n'est jamais supprimé.
+function normalizeStoredMoneyUnits(){
+  const walk = o => {
+    if(!o || typeof o !== 'object') return;
+    Object.keys(o).forEach(k => {
+      const v = o[k];
+      if(typeof v === 'string'){
+        const m = MONEY_UNIT_RE.exec(v);
+        if(m && m[2] !== MONEY_UNIT_FIX[m[2].toLowerCase()]) o[k] = m[1] + MONEY_UNIT_FIX[m[2].toLowerCase()] + m[3];
+      }else walk(v);
+    });
+  };
+  state.companies.forEach(c => walk(c.fields));
+}
 function initAutoCapitalize(){
   document.addEventListener('input', e => {
     const el = e.target;
     if(!el) return;
+    fixMoneyUnit(el);
     if((el.tagName === 'INPUT' && el.type === 'text') || (el.tagName === 'TEXTAREA' && el.hasAttribute('data-client-idx'))){
       if(shouldAutoCapitalize(el)) autoCapitalizeFirst(el);
     }else if(el.isContentEditable && el.classList.contains('rich-textarea')){
@@ -11678,6 +11712,7 @@ initCustomTooltips();
 initFormatToolbar();
 initPlainTextPaste();
 initAutoCapitalize();
+normalizeStoredMoneyUnits();
 ensureLogos();
 ensurePrices();
 scheduleSnapshot(6000);
