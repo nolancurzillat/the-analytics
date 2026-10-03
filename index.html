@@ -2808,26 +2808,19 @@ function fmtBackupDate(ts){
   return new Date(ts).toLocaleString('fr-FR', { day:'numeric', month:'long', hour:'2-digit', minute:'2-digit' });
 }
 function backupPanelHtml(){
-  const s = state.settings;
-  const last = s.lastBackupAt ? `<div class="pref-h">Dernière sauvegarde : ${fmtBackupDate(s.lastBackupAt)}.</div>` : `<div class="pref-h">Aucune sauvegarde faite pour l'instant.</div>`;
-  let auto;
-  if(!fileBackup.supported){
-    auto = `<div class="pref-h">Sauvegarde automatique indisponible sur ce navigateur (Chrome ou Edge sur ordinateur).</div>`;
-  }else if(!fileBackup.handle){
-    auto = `<div class="pref-h"><strong>Sauvegarde automatique</strong> : choisissez un fichier (par exemple dans OneDrive), il est mis à jour à chaque modification. Sur un nouvel ordinateur, importez d'abord votre sauvegarde : un fichier existant serait remplacé.</div>
-      <div class="pref-btns"><button class="btn btn-primary btn-sm" data-backup-action="choose">Activer la sauvegarde automatique</button></div>`;
-  }else if(fileBackup.perm !== 'granted'){
-    auto = `<div class="pref-h"><strong>Sauvegarde automatique en pause</strong> : confirmez l'accès au fichier « ${escapeHtml(fileBackup.handle.name || '')} ».</div>
-      <div class="pref-btns"><button class="btn btn-primary btn-sm" data-backup-action="reauth">Réactiver</button><button class="btn btn-outline btn-sm" data-backup-action="off">Désactiver</button></div>`;
-  }else{
-    auto = `<div class="pref-h"><strong>Sauvegarde automatique active</strong> dans le fichier « ${escapeHtml(fileBackup.handle.name || '')} ».${fileBackup.error ? ' <span class="bk-err">' + escapeHtml(fileBackup.error) + '</span>' : ''}</div>
-      <div class="pref-btns"><button class="btn btn-outline btn-sm" data-backup-action="choose">Changer de fichier</button><button class="btn btn-outline btn-sm" data-backup-action="off">Désactiver</button></div>`;
-  }
+  // Réduit à l'essentiel (2026-10-03, demande de Nolan) : le compte, la sauvegarde manuelle, et UNE ligne pour le fichier
+  // automatique seulement s'il est déjà configuré (on l'active depuis le rappel de sauvegarde de Mon espace).
   const acct = cloud.session
     ? `<div class="pref-h"><strong>Compte en ligne</strong> : ${escapeHtml(cloud.session.email)}. ${escapeHtml(cloudStatusText())}</div><div class="pref-btns"><button class="btn btn-outline btn-sm" data-auth-open="login">Mon compte</button></div>`
-    : `<div class="pref-h"><strong>Compte en ligne</strong> : un compte gratuit retrouve vos analyses sur tous vos appareils.</div><div class="pref-btns"><button class="btn btn-primary btn-sm" data-auth-open="signup">Créer un compte</button><button class="btn btn-outline btn-sm" data-auth-open="login">Se connecter</button></div>`;
-  return `${acct}${auto}${last}
-    <div class="pref-h">Sauvegarde manuelle (sans votre clé API) :</div>
+    : `<div class="pref-h">Un compte gratuit retrouve vos analyses sur tous vos appareils.</div><div class="pref-btns"><button class="btn btn-primary btn-sm" data-auth-open="signup">Créer un compte</button><button class="btn btn-outline btn-sm" data-auth-open="login">Se connecter</button></div>`;
+  let auto = '';
+  if(fileBackup.supported && fileBackup.handle){
+    const name = escapeHtml(fileBackup.handle.name || '');
+    auto = fileBackup.perm !== 'granted'
+      ? `<div class="pref-h">Fichier automatique « ${name} » en pause.</div><div class="pref-btns"><button class="btn btn-primary btn-sm" data-backup-action="reauth">Réactiver</button><button class="btn btn-outline btn-sm" data-backup-action="off">Désactiver</button></div>`
+      : `<div class="pref-h">Fichier automatique « ${name} » actif.${fileBackup.error ? ' <span class="bk-err">' + escapeHtml(fileBackup.error) + '</span>' : ''}</div><div class="pref-btns"><button class="btn btn-outline btn-sm" data-backup-action="off">Désactiver</button></div>`;
+  }
+  return `${acct}${auto}
     <div class="pref-btns"><button class="btn btn-outline btn-sm" id="prefExport">Télécharger une sauvegarde</button><button class="btn btn-outline btn-sm" id="prefImport">Importer une sauvegarde</button></div>`;
 }
 function backupProtected(){
@@ -8233,11 +8226,8 @@ function buildPrefsCard(){
       <input type="text" id="prefName" maxlength="30" placeholder="Votre prénom" value="${escapeHtml(s.firstName || '')}">
     </div>
     <div class="pref">
-      <div class="pref-l">Outils</div>
-      <div class="pref-btns">
-        <button class="btn btn-outline btn-sm" id="prefRefreshLogos">Relancer la recherche de logos</button>
-        <button class="btn btn-outline btn-sm" data-start-tour>Revoir la visite guidée</button>
-      </div>
+      <div class="pref-l">Visite guidée</div>
+      <button class="btn btn-outline btn-sm" data-start-tour>Revoir la visite guidée</button>
     </div>
     <div class="pref pref-wide">
       <div class="pref-l">Prix actuel automatique</div>
@@ -8967,13 +8957,6 @@ function bindSpace(){
     saveState();
     if(v){ showToast('Clé enregistrée. Actualisation des analyses en euros...'); ensurePrices(); const a = getActive(); if(currentView === 'company' && a) refreshCurrentPrice(a.id, true); }
     else showToast('Clé retirée.');
-  });
-  const refresh = document.getElementById('prefRefreshLogos');
-  if(refresh) refresh.addEventListener('click', () => {
-    state.companies.forEach(c => { if(!c.logo || c.logo.src === 'auto') c.logo = null; });
-    saveState();
-    state.companies.forEach((c, i) => setTimeout(() => resolveLogo(c.id, true), i * 350));
-    showToast('Recherche des logos relancée.');
   });
   // Les boutons de sauvegarde (#backupPanel) sont gérés par un écouteur délégué, car ce panneau est repeint tout seul.
 }
