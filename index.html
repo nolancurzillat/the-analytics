@@ -2112,9 +2112,14 @@ tr:hover .ct-del-btn, .ct-del-btn:focus-visible{ opacity:1; }
 .lr-ind-body .tip-scale{ margin-top:10px; max-width:340px; }
 .lr-faq > div{ padding:2px 18px 16px 18px; font-size:15px; line-height:1.7; color:var(--ink); border-top:1px solid var(--border); padding-top:12px; }
 .lr-gl{ display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:10px 14px; }
-.lr-gl-i{ border:1px solid var(--border); border-radius:12px; padding:12px 16px; background:var(--field); }
-.lr-gl-i b{ display:block; font-size:15px; margin-bottom:3px; color:var(--ink); }
+.lr-gl-i{ border:1px solid var(--border); border-left:4px solid var(--g, var(--border-strong)); border-radius:12px; padding:12px 16px; background:var(--field); }
+.lr-gl-i b{ display:flex; align-items:center; flex-wrap:wrap; gap:4px 8px; font-size:15px; margin-bottom:3px; color:var(--ink); }
 .lr-gl-i span{ font-size:14px; line-height:1.6; color:var(--ink-soft); }
+.lr-gl-app{ font-style:normal; font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:2px 8px; border-radius:999px; color:var(--blue); background:var(--blue-soft); }
+.lr-gl-group{ margin-top:26px; }
+.lr-gl-gh{ display:flex; align-items:baseline; flex-wrap:wrap; gap:4px 14px; margin:0 0 12px 0; padding-bottom:8px; border-bottom:2px solid var(--g); font-family:var(--font-serif); font-size:21px; color:var(--ink); }
+.lr-gl-gh small{ font-family:var(--font-ui); font-size:13px; font-weight:500; color:var(--ink-soft); }
+.lr-gl-chips{ margin-top:4px; }
 .lr-quiz-q{ border:1px solid var(--border); border-radius:14px; padding:18px 20px; margin-bottom:14px; background:var(--field); max-width:1040px; }
 .lr-quiz-t{ font-weight:600; font-size:15.5px; line-height:1.55; margin-bottom:12px; }
 .lr-quiz-o{ display:block; width:100%; text-align:left; font:inherit; font-size:14.5px; line-height:1.5; padding:10px 14px; margin-bottom:8px; border-radius:10px; border:1px solid var(--border); background:var(--card); color:var(--ink); cursor:pointer; }
@@ -8923,7 +8928,7 @@ const LEARN_CHAPTERS = [
     blocks:[
       LH(`Votre première analyse en 7 étapes`),
       LSTEPS([
-        [`Créez l'analyse`, `Cliquez sur « Nouvelle analyse » dans la barre de gauche, donnez le nom de l'entreprise et choisissez la devise (le dollar est recommandé).`],
+        [`Créez l'analyse`, `Tapez le nom de l'entreprise dans la recherche en haut (ou cliquez sur « Nouvelle analyse » à gauche) : le ticker, la bourse et le logo se remplissent tout seuls. Le dollar est la devise recommandée.`],
         [`Renseignez l'identité`, `Dans la section 1, indiquez le ticker et choisissez la place de cotation. L'application retrouve alors le logo et, avec une clé gratuite, le prix actuel.`],
         [`Remplissez les sections dans l'ordre`, `Identité, Financier, Croissance, Valorisation, puis Décision. Vous n'avez pas besoin de tout remplir : chaque section a une barre de progression et l'analyse s'affine au fur et à mesure. Les chiffres se trouvent sur le site web de l'entreprise, sur TradingView ou sur Alpha Spread : voir le chapitre <button type="button" class="link-btn" data-go-learn="sections">Remplir chaque section</button>.`],
         [`Repérez les couleurs`, `Une pastille verte, jaune ou rouge à côté d'un chiffre vous dit s'il est très bon, moyen ou mauvais. Survolez-la pour voir le barème exact.`],
@@ -8938,7 +8943,6 @@ const LEARN_CHAPTERS = [
         [`Les pastilles de couleur`, `Le barème d'un indicateur : vert foncé très bon, vert clair bon, jaune moyen, rouge mauvais. Une pastille grise signifie « pas assez de données ».`],
         [`La barre de navigation`, `En haut de la fiche, elle vous fait sauter d'une section à l'autre. La pastille « Position » passe au vert ou au rouge selon votre gain.`],
         [`Les étoiles`, `Votre conviction, de 0 à 5 par demi-étoile. Elles apparaissent aussi dans la liste de gauche.`],
-        [`Les couleurs des sections`, `Chaque section a sa couleur d'identité. Elles sont volontairement différentes du vert et du rouge, réservés au barème.`],
       ]),
       LH(`Saisir les chiffres facilement`),
       LUL([
@@ -8950,15 +8954,15 @@ const LEARN_CHAPTERS = [
       LH(`Le prix automatique`),
       LP(`Pour éviter de ressaisir le cours chaque jour, l'application peut le récupérer toute seule via un service gratuit (Twelve Data). Il faut créer un compte gratuit, une seule fois, et coller sa clé dans les Préférences : un guide pas à pas vous accompagne. Le compte gratuit couvre les <strong>actions américaines</strong> (NASDAQ, NYSE), une raison de plus de privilégier le dollar. Pour une bourse européenne, saisissez le prix à la main.`),
       { t:'btn', x:`Ouvrir le guide du prix automatique`, a:'data-open-price-guide' },
-      LH(`Mon espace, tri et sauvegarde`),
-      LUL([
-        `<strong>Mon espace</strong> rassemble vos indicateurs, recommandations, classements et objectifs d'achat.`,
-        `<strong>Portefeuille</strong> suit vos positions réelles : capital investi, résultat, performance de chaque ligne, répartition par position, secteur et pays, points d'attention et idées à suivre.`,
-        `Dans la barre de gauche, le bouton à double flèche trie « Mes analyses » par date de création, ordre alphabétique, note ou dernière modification.`,
-        `Vos données restent sur votre appareil. Téléchargez régulièrement une sauvegarde depuis Mon espace (section Préférences) pour ne rien perdre et pouvoir changer d'ordinateur.`,
-        `Le bouton en bas de la barre de gauche bascule entre thème clair et thème sombre.`,
-        `L'application peut s'installer comme une vraie appli : cherchez « Installer » dans le menu de votre navigateur.`,
+      LH(`Les pages de l'application`),
+      LDEFS([
+        [`Mon espace`, `La vue d'ensemble de toutes vos analyses : tableau, classements, rappels, tags pour les trier. Le journal de bord et le bilan annuel s'ouvrent depuis la carte « Votre capital ».`],
+        [`Portefeuille`, `Vos positions réelles : capital investi, résultat, dividendes attendus et ordres clôturés.`],
+        [`Comparateur`, `Jusqu'à 3 entreprises côte à côte, sur les mêmes indicateurs.`],
+        [`Notifications (la cloche)`, `Ce qui demande votre attention : alertes de cours déclenchées et rapports publiés dont il faut mettre à jour les données.`],
+        [`Compte et sauvegarde`, `Avec un compte gratuit, vos analyses vous suivent sur tous vos appareils. Sans compte, elles restent sur cet appareil : téléchargez une sauvegarde de temps en temps (Mon espace, Préférences).`],
       ]),
+      LP(`Le thème clair ou sombre se change avec le bouton en haut à droite, et l'application s'installe comme une vraie appli : cherchez « Installer » dans le menu de votre navigateur.`),
     ],
   },
   {
@@ -9127,8 +9131,8 @@ const LEARN_CHAPTERS = [
     ],
   },
   {
-    id:'glossaire', title:'Glossaire de la finance', level:'debutant', min:8, type:'glossary',
-    intro:`Les termes de la finance et de la bourse, par ordre alphabétique. Utilisez la recherche pour trouver une définition rapidement.`,
+    id:'glossaire', title:'Glossaire de la finance', level:'debutant', min:5, type:'glossary',
+    intro:`Les 52 termes essentiels, rangés par thème. Choisissez un thème, ou cherchez directement un mot. Les termes marqués « Dans l'appli » sont des indicateurs que vous retrouvez dans vos analyses.`,
   },
   {
     id:'quiz', title:'Testez vos connaissances', level:'tous', min:3, type:'quiz',
@@ -9140,76 +9144,78 @@ const LEARN_CHAPTERS = [
   },
 ];
 
+// Glossaire refondu le 2026-10-03 (demande de Nolan : « beaucoup de notions éparpillées ») : 52 termes (66 avant) rangés en 7 thèmes, chaque entrée
+// est [terme, définition, thème, 1 si le terme correspond à un indicateur de l'application]. Termes retirés car secondaires ou absents de l'application :
+// ADR, Amortissement, Catalyseur, Croissance organique, DCF, Dilution, EBITDA, Horizon de placement, IPO, Multiple, Piège à valeur, Split, Volume...
+// Les textes sont des gabarits JS : pas de `${` ni de guillemet oblique dedans.
+const LEARN_GL_GROUPS = [
+  { k:'base',      t:`Les bases de la bourse`,    s:`Ce que l'on achète, où et comment.`,                  c:'#2a5bea' },
+  { k:'entreprise',t:`Lire une entreprise`,       s:`Les chiffres que l'on trouve dans ses rapports.`,     c:'#4338ca' },
+  { k:'rentab',    t:`Rentabilité et croissance`, s:`Ce que l'entreprise gagne, et à quel rythme elle grandit.`, c:'#06b6d4' },
+  { k:'valo',      t:`Valorisation`,              s:`Combien vaut l'entreprise, et est-elle chère ?`,      c:'#c9a24a' },
+  { k:'div',       t:`Dividendes`,                s:`L'argent versé aux actionnaires.`,                    c:'#7c3aed' },
+  { k:'risque',    t:`Risque et marché`,          s:`Ce qui fait bouger les cours, et comment s'en protéger.`, c:'#64748b' },
+  { k:'methode',   t:`Méthode d'investisseur`,    s:`Les idées derrière l'application.`,                   c:'#a3227a' },
+];
 const LEARN_GLOSSARY = [
-  [`Action`, `Une part de propriété d'une entreprise. L'actionnaire profite de sa croissance et, parfois, de ses dividendes.`],
-  [`Actif`, `Tout ce que possède une entreprise : trésorerie, stocks, bâtiments, brevets... Il figure à gauche du bilan.`],
-  [`Actionnaire`, `Personne ou organisation qui détient des actions d'une entreprise.`],
-  [`ADR`, `Certificat qui représente des actions d'une société étrangère et se négocie aux États-Unis en dollars.`],
-  [`Amortissement`, `Répartition, sur plusieurs années, du coût d'un investissement (machine, immeuble) dans les charges de l'entreprise.`],
-  [`Baissier (bear market)`, `Marché en baisse durable, généralement de plus de 20 % par rapport à son plus haut.`],
-  [`Bénéfice par action (EPS)`, `Bénéfice net divisé par le nombre d'actions : la part du profit qui revient à une action.`],
-  [`Bêta`, `Mesure de la sensibilité d'une action aux mouvements du marché. 1 : comme le marché ; plus de 1 : plus volatile ; moins de 1 : plus stable.`],
-  [`Bilan`, `Photo, à une date donnée, de ce que l'entreprise possède (actifs) et doit (dettes et capitaux propres).`],
-  [`Bourse`, `Marché organisé où s'échangent des actions et d'autres titres financiers.`],
-  [`Capex`, `Dépenses d'investissement dans l'outil de production : usines, machines, infrastructures.`],
-  [`Capitalisation boursière (Market Cap)`, `Cours de l'action multiplié par le nombre d'actions : la valeur de l'entreprise en bourse.`],
-  [`Capitaux propres`, `Ce qui appartient aux actionnaires : les actifs moins toutes les dettes.`],
-  [`CAGR`, `Taux de croissance annuel moyen sur une période. Un chiffre d'affaires passé de 100 à 161 en 5 ans a un CAGR de 10 %.`],
-  [`Cash-flow`, `Flux de trésorerie : l'argent qui entre et sort réellement de l'entreprise, à distinguer du bénéfice comptable.`],
-  [`Catalyseur`, `Événement susceptible de faire évoluer fortement le cours : nouveau produit, résultat, acquisition, changement de réglementation.`],
-  [`Cercle de compétence`, `L'ensemble des activités que l'on comprend assez bien pour évaluer une entreprise. Notion chère à Warren Buffett.`],
-  [`Compte de résultat`, `Document qui détaille les ventes, les charges et le bénéfice d'une entreprise sur une période.`],
-  [`Consensus`, `Moyenne des prévisions des analystes financiers sur les résultats ou le cours d'une entreprise.`],
-  [`Cotation`, `Le fait qu'une action soit négociée sur une place boursière, et cette place elle-même.`],
-  [`Cours`, `Le prix d'une action à un instant donné.`],
-  [`Cours limite`, `Ordre d'achat ou de vente qui ne s'exécute qu'à un prix précis ou meilleur. Il évite de payer plus cher que prévu.`],
-  [`Croissance organique`, `Croissance obtenue par l'activité elle-même, sans acquisitions ni effets de change.`],
-  [`DCF (flux actualisés)`, `Méthode qui estime la valeur d'une entreprise en additionnant tous ses flux de trésorerie futurs, ramenés à leur valeur d'aujourd'hui.`],
-  [`Dette nette`, `Dette totale moins la trésorerie disponible : ce que l'entreprise devrait réellement rembourser.`],
-  [`Dilution`, `Baisse de la part de chaque actionnaire quand l'entreprise crée de nouvelles actions.`],
-  [`Diversification`, `Répartir ses investissements sur plusieurs entreprises, secteurs et pays pour limiter les risques.`],
-  [`Dividende`, `Part des bénéfices distribuée aux actionnaires.`],
-  [`EBITDA`, `Résultat avant intérêts, impôts, dépréciations et amortissements : une approximation de la rentabilité de l'activité courante.`],
-  [`ETF`, `Fonds coté en bourse qui reproduit un indice ou un panier d'actions.`],
-  [`Flottant (Free Float)`, `Part des actions librement négociables en bourse, hors actions détenues durablement par des actionnaires stables.`],
-  [`Free Cash Flow (FCF)`, `Flux de trésorerie d'exploitation moins les investissements (capex) : l'argent réellement disponible pour les actionnaires.`],
-  [`Haussier (bull market)`, `Marché en hausse durable.`],
-  [`Horizon de placement`, `La durée pendant laquelle on compte garder son investissement. Plus il est long, plus on peut supporter les baisses temporaires.`],
-  [`Indice`, `Panier d'actions qui mesure la santé d'un marché (S&P 500, CAC 40, NASDAQ 100...).`],
-  [`Inflation`, `Hausse générale des prix : elle réduit le pouvoir d'achat de l'argent qui dort.`],
-  [`Intérêts composés`, `Mécanisme par lequel les gains produisent à leur tour des gains : le facteur clé de l'investissement de long terme.`],
-  [`IPO (introduction en bourse)`, `Première mise en vente des actions d'une entreprise au public.`],
-  [`Liquidité`, `Facilité avec laquelle on peut acheter ou vendre un titre rapidement, sans faire bouger son prix.`],
-  [`Marge brute`, `Part du chiffre d'affaires qui reste après le coût direct des produits vendus.`],
-  [`Marge de sécurité`, `Écart entre la valeur estimée d'une entreprise et le prix payé, qui protège contre les erreurs d'estimation.`],
-  [`Marge nette`, `Part du chiffre d'affaires qui devient bénéfice net.`],
-  [`MOAT`, `Avantage concurrentiel durable qui protège les profits d'une entreprise, comme les douves protègent un château.`],
-  [`Moins-value`, `Perte réalisée en revendant un titre moins cher que son prix d'achat.`],
-  [`Multiple`, `Ratio qui compare un prix à un résultat (PE, prix sur ventes...). Il sert à comparer des entreprises entre elles.`],
-  [`Ordre de bourse`, `Instruction donnée pour acheter ou vendre un titre : au marché (au meilleur prix disponible) ou à cours limité.`],
-  [`PE (ou PER)`, `Prix divisé par le bénéfice par action : le nombre d'années de bénéfices que l'on paie.`],
-  [`PEG`, `PE divisé par la croissance attendue des bénéfices en % : il compare le prix à la croissance.`],
-  [`Piège à valeur (value trap)`, `Action qui paraît bon marché mais dont les bénéfices déclinent : le bas prix est justifié.`],
-  [`Plus-value`, `Gain réalisé en revendant un titre plus cher que son prix d'achat.`],
-  [`Portefeuille`, `L'ensemble des titres que l'on détient.`],
-  [`Position`, `Le fait de détenir un titre : quantité et prix d'achat.`],
-  [`Position short`, `Part des actions vendues à découvert, c'est-à-dire empruntées puis vendues dans l'espoir de les racheter moins cher.`],
-  [`Prix cible`, `Prix auquel on juge qu'une action devient intéressante à acheter (prix d'achat cible), ou objectif de cours des analystes.`],
-  [`Rachat d'actions`, `Opération par laquelle une entreprise rachète ses propres actions : il y en a moins, donc chaque action pèse plus.`],
-  [`Rendement du dividende`, `Dividende annuel divisé par le cours : un dividende de 2 $ pour une action à 100 $ donne 2 %.`],
-  [`Résultat d'exploitation`, `Bénéfice tiré de l'activité courante, avant intérêts et impôts.`],
-  [`ROE`, `Rendement des capitaux propres : bénéfice net divisé par les capitaux propres.`],
-  [`ROIC`, `Rendement du capital investi : profit d'exploitation après impôts divisé par le capital investi (actionnaires et prêteurs).`],
-  [`Secteur`, `Grande famille d'activités (technologie, santé, énergie, consommation...). On compare les entreprises d'un même secteur.`],
-  [`Split`, `Division du nombre d'actions : chaque action est coupée en plusieurs, le cours baisse en proportion et la valeur totale reste inchangée.`],
-  [`Sécurité du dividende`, `Solidité d'un dividende : la probabilité qu'il soit maintenu, voire augmenté. Elle dépend du taux de distribution, du free cash flow qui le couvre, de l'endettement et de la stabilité des bénéfices. Dans l'application, c'est votre note de 0 à 100.`],
-  [`Taux de distribution (payout)`, `Part du bénéfice net reversée aux actionnaires sous forme de dividende. Un dividende de 2 $ pour un bénéfice par action de 5 $ donne 40 %.`],
-  [`Trésorerie`, `L'argent disponible immédiatement dans l'entreprise.`],
-  [`TTM (12 derniers mois)`, `« Trailing Twelve Months » : le total des 12 derniers mois glissants, tous trimestres récents confondus, plutôt que celui du dernier exercice annuel. Il est plus récent que le chiffre annuel et évite les distorsions d'une entreprise saisonnière. Dans l'application, saisissez de préférence le chiffre d'affaires, le bénéfice net, le FCF et le Capex en TTM, sur la même période.`],
-  [`Valeur intrinsèque`, `Estimation de ce que vaut réellement une entreprise, indépendamment du cours du jour.`],
-  [`Vente à découvert`, `Vendre un titre que l'on ne possède pas (emprunté) en pariant sur sa baisse. Très risquée.`],
-  [`Volatilité`, `Ampleur des variations du cours : plus elle est forte, plus le titre monte et descend vite.`],
-  [`Volume`, `Nombre d'actions échangées sur une période. Un volume élevé indique un titre très liquide.`],
+  [`Action`, `Une part de propriété d'une entreprise. L'actionnaire profite de sa croissance et, parfois, de ses dividendes.`, 'base'],
+  [`Bourse`, `Marché organisé où s'échangent les actions et d'autres titres financiers.`, 'base'],
+  [`Cotation`, `Le fait qu'une action soit négociée sur une place boursière (NASDAQ, NYSE, Euronext Paris...), et cette place elle-même.`, 'base', 1],
+  [`Cours`, `Le prix d'une action à un instant donné.`, 'base'],
+  [`ETF`, `Fonds coté en bourse qui reproduit un indice ou un panier d'actions : on achète d'un coup des dizaines d'entreprises.`, 'base'],
+  [`Indice`, `Panier d'actions qui mesure la santé d'un marché (S&P 500, CAC 40, NASDAQ 100...).`, 'base'],
+  [`Ordre de bourse`, `L'instruction pour acheter ou vendre un titre. « Au marché » : au meilleur prix disponible. « À cours limité » : seulement à un prix précis ou meilleur, pour ne pas payer plus cher que prévu.`, 'base'],
+  [`Plus-value et moins-value`, `Plus-value : gain en revendant plus cher que le prix d'achat. Moins-value : perte en revendant moins cher. Tant que l'on n'a pas vendu, on parle de plus-value ou de moins-value « latente ».`, 'base', 1],
+  [`Portefeuille et position`, `Le portefeuille est l'ensemble des titres que l'on détient. Une position est un titre détenu, avec sa quantité et son prix d'achat.`, 'base', 1],
+
+  [`Bénéfice net`, `Ce qui reste des ventes une fois toutes les charges, intérêts et impôts payés : le vrai profit des actionnaires.`, 'entreprise', 1],
+  [`Bénéfice par action (EPS)`, `Bénéfice net divisé par le nombre d'actions : la part du profit qui revient à une action.`, 'entreprise', 1],
+  [`Bilan et compte de résultat`, `Le bilan est une photo, à une date donnée, de ce que l'entreprise possède (actifs) et doit (dettes). Le compte de résultat détaille ses ventes, ses charges et son bénéfice sur une période.`, 'entreprise'],
+  [`Capex`, `Dépenses d'investissement dans l'outil de production : usines, machines, infrastructures.`, 'entreprise', 1],
+  [`Capitaux propres`, `Ce qui appartient aux actionnaires : les actifs moins toutes les dettes.`, 'entreprise'],
+  [`Chiffre d'affaires`, `Le total des ventes sur une période, avant toute charge.`, 'entreprise', 1],
+  [`Conversion du FCF`, `Free cash flow divisé par le bénéfice net : elle vérifie que le bénéfice comptable se transforme vraiment en argent disponible. Proche de 100 % ou plus, c'est très bon ; très en dessous, à surveiller.`, 'entreprise', 1],
+  [`Dette nette`, `Dette totale moins la trésorerie disponible : ce que l'entreprise devrait réellement rembourser.`, 'entreprise', 1],
+  [`Free Cash Flow (FCF)`, `L'argent réellement disponible une fois les dépenses d'exploitation et les investissements (capex) payés : le cash-flow libre, à distinguer du bénéfice comptable.`, 'entreprise', 1],
+  [`Trésorerie`, `L'argent disponible immédiatement dans l'entreprise.`, 'entreprise'],
+  [`TTM (12 derniers mois)`, `« Trailing Twelve Months » : le total des 12 derniers mois glissants, plus récent que le dernier exercice annuel. Dans l'application, saisissez de préférence le chiffre d'affaires, le bénéfice net, le FCF et le Capex en TTM, sur la même période.`, 'entreprise', 1],
+
+  [`CAGR`, `Taux de croissance annuel moyen sur une période. Un chiffre d'affaires passé de 100 à 161 en 5 ans a un CAGR de 10 %.`, 'rentab', 1],
+  [`Marge brute`, `Part du chiffre d'affaires qui reste après le coût direct des produits vendus.`, 'rentab', 1],
+  [`Marge nette`, `Part du chiffre d'affaires qui devient bénéfice net.`, 'rentab', 1],
+  [`ROA`, `Rendement des actifs : bénéfice net divisé par le total des actifs. Plus bas que le ROE, puisqu'il divise par un total plus grand.`, 'rentab', 1],
+  [`ROE`, `Rendement des capitaux propres : bénéfice net divisé par les capitaux propres.`, 'rentab', 1],
+  [`ROIC`, `Rendement du capital investi : profit d'exploitation après impôts divisé par le capital investi (actionnaires et prêteurs). Il ne se laisse pas gonfler par la dette.`, 'rentab', 1],
+
+  [`Bear case et Bull case`, `Scénarios pessimiste (Bear) et optimiste (Bull) de la valeur d'une action. Ils encadrent votre estimation et montrent ce qu'il y a à perdre ou à gagner.`, 'valo', 1],
+  [`Capitalisation boursière (Market Cap)`, `Cours de l'action multiplié par le nombre d'actions : la valeur de l'entreprise en bourse.`, 'valo', 1],
+  [`Consensus`, `Moyenne des prévisions des analystes financiers sur les résultats ou le cours d'une entreprise.`, 'valo', 1],
+  [`Marge de sécurité`, `Écart entre la valeur estimée d'une entreprise et le prix payé, qui protège contre les erreurs d'estimation.`, 'valo', 1],
+  [`PE (ou PER)`, `Prix divisé par le bénéfice par action : le nombre d'années de bénéfices que l'on paie.`, 'valo', 1],
+  [`PEG`, `PE divisé par la croissance attendue des bénéfices en % : il compare le prix à la croissance.`, 'valo', 1],
+  [`Prix cible`, `Prix auquel on juge qu'une action devient intéressante à acheter (prix d'achat cible), ou objectif de cours des analystes.`, 'valo', 1],
+  [`Valeur intrinsèque`, `Estimation de ce que vaut réellement une entreprise, indépendamment du cours du jour.`, 'valo', 1],
+
+  [`Dividende`, `Part des bénéfices distribuée aux actionnaires.`, 'div', 1],
+  [`Rachat d'actions`, `Opération par laquelle une entreprise rachète ses propres actions : il y en a moins, donc chaque action pèse plus.`, 'div'],
+  [`Rendement du dividende`, `Dividende annuel divisé par le cours : un dividende de 2 $ pour une action à 100 $ donne 2 %.`, 'div', 1],
+  [`Sécurité du dividende`, `Solidité d'un dividende : la probabilité qu'il soit maintenu, voire augmenté. Dans l'application, c'est votre note de 0 à 100.`, 'div', 1],
+  [`Taux de distribution (payout)`, `Part du bénéfice net reversée aux actionnaires sous forme de dividende. Un dividende de 2 $ pour un bénéfice par action de 5 $ donne 40 %.`, 'div', 1],
+
+  [`Bêta`, `Mesure de la sensibilité d'une action aux mouvements du marché. 1 : comme le marché ; plus de 1 : plus volatile ; moins de 1 : plus stable.`, 'risque', 1],
+  [`Diversification`, `Répartir ses investissements sur plusieurs entreprises, secteurs et pays pour limiter les risques.`, 'risque'],
+  [`Flottant (Free Float et Closely Held)`, `Le flottant est la part des actions librement négociables en bourse. À l'inverse, les actions « closely held » sont détenues durablement par des dirigeants ou des actionnaires de référence.`, 'risque', 1],
+  [`Inflation`, `Hausse générale des prix : elle réduit le pouvoir d'achat de l'argent qui dort.`, 'risque'],
+  [`Liquidité`, `Facilité avec laquelle on peut acheter ou vendre un titre rapidement, sans faire bouger son prix.`, 'risque'],
+  [`Marché haussier et baissier`, `Haussier (bull market) : marché en hausse durable. Baissier (bear market) : marché en baisse durable, généralement de plus de 20 % sous son plus haut.`, 'risque'],
+  [`Vente à découvert (position short)`, `Vendre un titre que l'on ne possède pas (emprunté) en pariant sur sa baisse. Très risquée. La « position short » d'une action est la part de ses actions vendues ainsi.`, 'risque', 1],
+  [`Volatilité`, `Ampleur des variations du cours : plus elle est forte, plus le titre monte et descend vite.`, 'risque'],
+
+  [`Cercle de compétence`, `L'ensemble des activités que l'on comprend assez bien pour évaluer une entreprise. Notion chère à Warren Buffett.`, 'methode'],
+  [`Checklist Buffett`, `Dix critères inspirés de Warren Buffett pour juger la qualité d'une entreprise. Certains se cochent seuls à partir de vos chiffres.`, 'methode', 1],
+  [`Intérêts composés`, `Mécanisme par lequel les gains produisent à leur tour des gains : le facteur clé de l'investissement de long terme.`, 'methode'],
+  [`MOAT`, `Avantage concurrentiel durable qui protège les profits d'une entreprise, comme les douves protègent un château.`, 'methode', 1],
+  [`Score composite`, `Note sur 100 calculée par l'application à partir de 5 axes : Qualité, Rentabilité, Solidité, Croissance et Valorisation.`, 'methode', 1],
 ];
 
 const LEARN_QUIZ = [
@@ -9227,16 +9233,16 @@ const LEARN_QUIZ = [
 ];
 
 const LEARN_FAQ = [
-  [`Mes données sont-elles privées ?`, `Oui. Vos analyses sont enregistrées uniquement dans votre navigateur, sur votre appareil. L'application n'envoie que le nom de l'entreprise (pour retrouver son logo) et, si vous activez le prix automatique, le ticker. Le contenu de vos analyses n'est jamais envoyé.`],
-  [`Que se passe-t-il si je change d'ordinateur ou si je vide mon navigateur ?`, `Vos analyses seraient perdues, car elles ne sont pas stockées sur un serveur. Téléchargez régulièrement une sauvegarde depuis Mon espace (section Préférences) : vous pourrez la réimporter n'importe où.`],
+  [`Mes données sont-elles privées ?`, `Sans compte, vos analyses restent uniquement dans votre navigateur : seuls le nom de l'entreprise (pour son logo) et le ticker (pour le prix automatique) sont envoyés à des services tiers. Avec un compte, une copie de vos analyses est conservée sur nos serveurs pour la synchroniser entre vos appareils, et n'est lue que par vous. Le détail est dans la politique de confidentialité.`],
+  [`Que se passe-t-il si je change d'ordinateur ou si je vide mon navigateur ?`, `Avec un compte, il suffit de vous reconnecter : vos analyses reviennent. Sans compte, elles seraient perdues : téléchargez alors une sauvegarde depuis Mon espace (Préférences), vous pourrez la réimporter n'importe où.`],
   [`Où trouver les informations sur une entreprise ?`, `Commencez par le site web de l'entreprise (rubrique « Investisseurs » : rapports annuels, résultats trimestriels, présentations). Complétez avec <a href="https://www.tradingview.com" target="_blank" rel="noopener noreferrer">TradingView</a> et <a href="https://www.alphaspread.com" target="_blank" rel="noopener noreferrer">Alpha Spread</a>, dont les versions gratuites sont assez complètes. Le chapitre « Remplir chaque section » détaille tout cela.`],
   [`Faut-il tout remplir ?`, `Non. Remplissez ce que vous savez : l'analyse s'affine au fur et à mesure et la barre de progression de chaque section vous montre où vous en êtes. Un score n'est fiable que si les données principales sont renseignées.`],
-  [`Puis-je utiliser l'application sans connexion internet ?`, `Oui, une fois l'application chargée ou installée, vous pouvez consulter et modifier vos analyses. Seuls le logo automatique et le prix automatique ont besoin d'internet.`],
-  [`Pourquoi recommandez-vous le dollar ?`, `Parce que le service gratuit de prix couvre les bourses américaines (NASDAQ, NYSE), qui cotent en dollars. Pour une action européenne, vous pouvez toujours saisir le prix à la main.`],
-  [`Le prix automatique ne s'affiche pas, que vérifier ?`, `Vérifiez dans l'ordre : le ticker est renseigné, la cotation correspond à la bonne bourse, la clé Twelve Data est enregistrée dans les Préférences (le guide vous aide à l'obtenir) et la devise de l'analyse correspond à celle de la bourse. Un message sous « Prix actuel » explique le problème.`],
+  [`Puis-je utiliser l'application sans connexion internet ?`, `Oui, une fois l'application chargée ou installée, vous pouvez consulter et modifier vos analyses. Seuls la recherche d'entreprise, le logo, le prix automatique et la synchronisation ont besoin d'internet.`],
+  [`Le prix automatique ne s'affiche pas, que vérifier ?`, `Vérifiez dans l'ordre : le ticker est renseigné, la cotation correspond à la bonne bourse, la clé Twelve Data est enregistrée dans les Préférences (le guide vous aide à l'obtenir) et la devise de l'analyse correspond à celle de la bourse. Le service gratuit ne couvre que les bourses américaines (en dollars) : pour une action européenne, saisissez le prix à la main. Un message sous « Prix actuel » explique le problème.`],
   [`Que fait la bascule $ / € en haut de la fiche ?`, `Elle change la devise affichée dans toute l'analyse. Elle ne convertit jamais les montants déjà saisis : si vous changez de devise, ressaisissez vos chiffres dans la nouvelle.`],
   [`À quelle fréquence faut-il mettre une analyse à jour ?`, `À chaque publication de résultats (trimestrielle ou annuelle), et quand un événement important change la situation de l'entreprise. Le prix, lui, peut se mettre à jour automatiquement.`],
   [`L'application me dit-elle quoi acheter ?`, `Non. Elle vous aide à structurer votre réflexion et à comparer vos idées. Elle ne recommande jamais d'acheter ou de vendre : la décision vous appartient.`],
+  [`Comment être prévenu d'un rapport ou d'un cours à surveiller ?`, `Renseignez la « Date du prochain rapport » dans l'Identité d'une analyse, et créez des alertes de cours dans la section Décision. La cloche en haut vous signale ce qui demande votre attention. Ce sont des rappels dans l'application : aucun e-mail n'est envoyé.`],
   [`Comment supprimer une analyse ou ajouter un champ personnalisé ?`, `Pour supprimer, survolez l'analyse dans la barre de gauche et cliquez sur la croix. Pour ajouter un champ, utilisez le bouton « Ajouter un champ » en bas de chaque section.`],
   [`Puis-je installer l'application ?`, `Oui : c'est une application web installable. Cherchez « Installer » dans le menu de votre navigateur pour obtenir une icône sur votre bureau ou votre écran d'accueil.`],
 ];
@@ -10205,7 +10211,7 @@ function initTour(){
 
 // ---------- Apprentissage : affichage ----------
 let learnChapterId = 'bases';
-let learnIndSection = 'all', learnIndQuery = '', learnGlossQuery = '';
+let learnIndSection = 'all', learnIndQuery = '', learnGlossQuery = '', learnGlossGroup = 'all';
 const learnQuizAnswers = {};
 const learnNorm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 function learnReadList(){ return Array.isArray(state.settings.learnRead) ? state.settings.learnRead : []; }
@@ -10267,20 +10273,35 @@ function applyIndicatorFilter(){
   const em = document.getElementById('lrIndEmpty');
   if(em) em.style.display = n ? 'none' : '';
 }
+// Glossaire par thèmes (2026-10-03) : pastilles de thème + recherche ; « Tous » affiche chaque thème avec son titre, un thème choisi n'affiche que lui.
+// Les termes qui correspondent à un indicateur de l'application portent une petite pastille « Dans l'appli ».
 function learnGlossaryHtml(){
-  const list = LEARN_GLOSSARY.slice().sort((a, b) => a[0].localeCompare(b[0], 'fr', { sensitivity:'base' }));
+  const sorted = g => LEARN_GLOSSARY.filter(t => t[2] === g.k).sort((a, b) => a[0].localeCompare(b[0], 'fr', { sensitivity:'base' }));
+  const chips = `<button type="button" class="lr-chip${learnGlossGroup === 'all' ? ' on' : ''}" data-lr-gg="all">Tous <small>${LEARN_GLOSSARY.length}</small></button>`
+    + LEARN_GL_GROUPS.map(g => `<button type="button" class="lr-chip${learnGlossGroup === g.k ? ' on' : ''}" data-lr-gg="${g.k}">${g.t} <small>${sorted(g).length}</small></button>`).join('');
+  const groups = LEARN_GL_GROUPS.map(g => `<section class="lr-gl-group" data-g="${g.k}" style="--g:${g.c}">
+      <h3 class="lr-gl-gh"><span>${g.t}</span><small>${g.s}</small></h3>
+      <div class="lr-gl">${sorted(g).map(t => `<div class="lr-gl-i" data-q="${escapeHtml(learnNorm(t[0] + ' ' + t[1]))}"><b>${t[0]}${t[3] ? `<em class="lr-gl-app" data-tooltip="<div class='tt-desc'>Cet indicateur existe dans l'application : voir le Dictionnaire des indicateurs.</div>">Dans l'appli</em>` : ''}</b><span>${t[1]}</span></div>`).join('')}</div>
+    </section>`).join('');
   return `<div class="lr-tools"><div class="lr-search"><input type="search" id="lrGlSearch" placeholder="Rechercher un terme (dividende, PEG, ETF...)" value="${escapeHtml(learnGlossQuery)}"></div></div>
-    <p class="lr-count" id="lrGlCount"></p>
-    <div class="lr-gl" id="lrGlList">${list.map(g => `<div class="lr-gl-i" data-q="${escapeHtml(learnNorm(g[0] + ' ' + g[1]))}"><b>${g[0]}</b><span>${g[1]}</span></div>`).join('')}</div>
+    <div class="lr-chips lr-gl-chips" id="lrGlChips">${chips}</div>
+    <p class="lr-count" id="lrGlCount" style="margin-top:14px"></p>
+    <div id="lrGlList">${groups}</div>
     <div class="lr-empty" id="lrGlEmpty" style="display:none">Aucun terme ne correspond à votre recherche.</div>`;
 }
 function applyGlossaryFilter(){
   const q = learnNorm(learnGlossQuery.trim());
   let n = 0;
-  document.querySelectorAll('#lrGlList .lr-gl-i').forEach(el => {
-    const ok = !q || el.dataset.q.indexOf(q) >= 0;
-    el.style.display = ok ? '' : 'none';
-    if(ok) n++;
+  document.querySelectorAll('#lrGlList .lr-gl-group').forEach(sec => {
+    const inGroup = learnGlossGroup === 'all' || sec.dataset.g === learnGlossGroup;
+    let shown = 0;
+    sec.querySelectorAll('.lr-gl-i').forEach(el => {
+      const ok = inGroup && (!q || el.dataset.q.indexOf(q) >= 0);
+      el.style.display = ok ? '' : 'none';
+      if(ok) shown++;
+    });
+    sec.style.display = shown ? '' : 'none';
+    n += shown;
   });
   const cnt = document.getElementById('lrGlCount');
   if(cnt) cnt.textContent = `${n} terme${n > 1 ? 's' : ''}`;
@@ -10382,6 +10403,11 @@ function renderLearnView(){
   const glSearch = document.getElementById('lrGlSearch');
   if(glSearch){
     glSearch.addEventListener('input', e => { learnGlossQuery = e.target.value; applyGlossaryFilter(); });
+    main.querySelectorAll('[data-lr-gg]').forEach(el => el.addEventListener('click', () => {
+      learnGlossGroup = el.dataset.lrGg;
+      main.querySelectorAll('[data-lr-gg]').forEach(x => x.classList.toggle('on', x === el));
+      applyGlossaryFilter();
+    }));
     applyGlossaryFilter();
   }
   const quiz = document.getElementById('lrQuiz');
