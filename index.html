@@ -8318,6 +8318,9 @@ function importDataFile(file){
         const c = cleanImportedCompany(raw);
         if(!c) return;
         const idx = state.companies.findIndex(x => x.id === c.id);
+        // Une analyse supprimée puis réimportée doit gagner contre sa « pierre tombale » : sinon la synchronisation la supprime
+        // de nouveau (la tombstone, plus récente que la date de la sauvegarde, l'emporterait). On la marque donc comme modifiée maintenant.
+        if(state.deleted[c.id]){ c.updatedTs = Date.now(); c.updatedAt = new Date().toISOString().slice(0,10); }
         delete state.deleted[c.id];
         if(idx < 0){ state.companies.push(c); added++; }
         else if(String(c.updatedAt).localeCompare(String(state.companies[idx].updatedAt || '')) > 0){ state.companies[idx] = c; updated++; }
