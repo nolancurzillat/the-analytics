@@ -252,7 +252,7 @@ svg{display:block;}
 .tour-actions{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .tour-btns{ display:flex; gap:8px; }
 /* Liens légaux : uniquement en pied de l'accueil depuis le 2026-09-29 (demande de Nolan), plus dans la barre latérale */
-.home-legal-links{ display:flex; flex-wrap:wrap; justify-content:center; gap:6px 18px; margin-top:14px; }
+.home-legal-links{ display:flex; flex-wrap:wrap; justify-content:center; gap:6px 18px; margin-top:14px; padding-bottom:56px; }
 .home-legal-links button{ background:none; border:none; padding:0; cursor:pointer; font:inherit; font-size:12.5px; color:var(--ink-soft); text-decoration:underline; text-underline-offset:3px; }
 .home-legal-links button:hover{ color:var(--ink); }
 /* Page "Nous contacter" (2026-09-29) : adresse en clair + bouton copier, pour éviter la fenêtre "choisir une application" du lien mailto quand il n'y a pas de messagerie par défaut */
@@ -10734,6 +10734,7 @@ const LEGAL_CONTENT = {
   contact: [
     LH('Une question, une suggestion, un problème ?'),
     LP(`Écrivez-nous directement depuis cette page, nous répondons personnellement à chaque message.`),
+    LP(`<strong>Vous avez une idée pour améliorer l'application ?</strong> Une fonctionnalité qui vous manque, un détail qui vous gêne, une manière plus simple de faire ? Envoyez-la nous : toutes les suggestions sont lues, et celles qui sont pertinentes peuvent être appliquées dans une prochaine version.`),
     { t:'raw', x:CONTACT_FORM_HTML },
     LH('Ou directement par e-mail'),
     LP(`<span class="contact-email"><b id="contactEmailText">the.analytics.app@gmail.com</b><button type="button" class="btn btn-outline btn-sm" id="contactCopyBtn" data-copy-email="the.analytics.app@gmail.com">Copier l'adresse</button><span class="contact-copied" id="contactCopiedMsg" hidden>Adresse copiée</span></span>`),
