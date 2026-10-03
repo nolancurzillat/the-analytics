@@ -1890,7 +1890,7 @@ tr:hover .ct-del-btn, .ct-del-btn:focus-visible{ opacity:1; }
 .tip-scale .custom-tooltip{ position:relative; z-index:auto; opacity:1; transform:none; max-width:none; box-shadow:none; }
 .tip-nav{ display:flex; gap:10px; margin-top:18px; }
 
-.pref-grid{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:28px; }
+.pref-grid{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); grid-template-rows:auto 1fr; gap:28px; align-items:start; }
 .pref{ display:flex; flex-direction:column; gap:10px; align-items:flex-start; }
 .pref-l{ font-size:14.5px; font-weight:600; }
 .pref-h{ font-size:13.5px; line-height:1.55; color:var(--ink-soft); }
@@ -1902,6 +1902,14 @@ tr:hover .ct-del-btn, .ct-del-btn:focus-visible{ opacity:1; }
 .pref-toggle{ display:flex; align-items:center; gap:10px; font-size:14.5px; font-weight:600; cursor:pointer; }
 .pref-toggle input{ width:18px; height:18px; accent-color:var(--accent); }
 .pref-btns{ display:flex; gap:10px; flex-wrap:wrap; }
+.pref-wide{ grid-column:1 / 3; }
+.pref-grid > .pref:last-child{ grid-column:3; grid-row:1 / span 2; }
+.pref-keys{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:22px; width:100%; }
+.pref-key{ display:flex; flex-direction:column; gap:9px; align-items:flex-start; min-width:0; }
+.pref-key input[type=text]{ max-width:none; }
+.pref-k{ font-size:14px; font-weight:600; }
+.pref-k span{ display:block; font-size:13px; font-weight:500; color:var(--ink-soft); margin-top:2px; }
+a.btn{ text-decoration:none; }
 .bk-panel{ display:flex; flex-direction:column; gap:10px; align-items:flex-start; }
 .bk-err{ color:var(--ink); font-weight:600; }
 .backup-remind{ display:flex; gap:14px 22px; align-items:center; justify-content:space-between; flex-wrap:wrap; padding:14px 18px; margin:0 0 22px; border:1px solid var(--border); border-left:4px solid var(--blue); border-radius:12px; background:var(--card); }
@@ -1911,7 +1919,9 @@ tr:hover .ct-del-btn, .ct-del-btn:focus-visible{ opacity:1; }
   .space-kpis{ grid-template-columns:repeat(3, minmax(0,1fr)); }
   .s5, .s6, .s7{ grid-column:1 / -1; }
   .pipe{ grid-template-columns:repeat(3, minmax(0,1fr)); }
-  .pref-grid{ grid-template-columns:1fr; }
+  .pref-grid{ grid-template-columns:1fr; grid-template-rows:none; }
+  .pref-wide, .pref-grid > .pref:last-child{ grid-column:auto; grid-row:auto; }
+  .pref-keys{ grid-template-columns:1fr; }
   .onboard-grid{ grid-template-columns:repeat(2, minmax(0,1fr)); }
   .cap-grid{ grid-template-columns:repeat(2, minmax(0,1fr)); }
 }
@@ -8223,24 +8233,27 @@ function buildPrefsCard(){
       <input type="text" id="prefName" maxlength="30" placeholder="Votre prénom" value="${escapeHtml(s.firstName || '')}">
     </div>
     <div class="pref">
-      <div class="pref-l">Logos des entreprises</div>
-      <div class="pref-h">Trouvés automatiquement (seul le nom de l'entreprise est envoyé).</div>
-      <button class="btn btn-outline btn-sm" id="prefRefreshLogos">Relancer la recherche de logos</button>
+      <div class="pref-l">Outils</div>
+      <div class="pref-btns">
+        <button class="btn btn-outline btn-sm" id="prefRefreshLogos">Relancer la recherche de logos</button>
+        <button class="btn btn-outline btn-sm" data-start-tour>Revoir la visite guidée</button>
+      </div>
     </div>
-    <div class="pref">
-      <label class="pref-l" for="prefPriceKey">Mise à jour automatique du prix actuel</label>
-      <input type="text" id="prefPriceKey" placeholder="Clé API Twelve Data" value="${escapeHtml(s.twelveDataApiKey || '')}" autocomplete="off" spellcheck="false">
-      <div class="pref-h">Clé gratuite Twelve Data : le cours se met à jour tout seul (actions américaines, en dollars).</div>
-      <button class="btn btn-outline btn-sm" data-open-price-guide>Guide pour obtenir ma clé</button>
-    </div>
-    <div class="pref">
-      <label class="pref-l" for="prefAvKey">Prix des actions en euros (cours différé)</label>
-      <input type="text" id="prefAvKey" placeholder="Clé API Alpha Vantage" value="${escapeHtml(s.alphaVantageApiKey || '')}" autocomplete="off" spellcheck="false">
-      <div class="pref-h">Clé gratuite Alpha Vantage, utilisée pour les analyses en euros (cours de la dernière séance ou différé, environ 25 mises à jour par jour). <a href="https://www.alphavantage.co/support/#api-key" target="_blank" rel="noopener noreferrer">Obtenir ma clé</a> (quelques secondes, il suffit d'une adresse e-mail).</div>
-    </div>
-    <div class="pref">
-      <div class="pref-l">Visite guidée</div>
-      <button class="btn btn-outline btn-sm" data-start-tour>Revoir la visite guidée</button>
+    <div class="pref pref-wide">
+      <div class="pref-l">Prix actuel automatique</div>
+      <div class="pref-keys">
+        <div class="pref-key">
+          <label class="pref-k" for="prefPriceKey">Actions américaines ($) <span>Twelve Data</span></label>
+          <input type="text" id="prefPriceKey" placeholder="Clé API" value="${escapeHtml(s.twelveDataApiKey || '')}" autocomplete="off" spellcheck="false">
+          <button class="btn btn-outline btn-sm" data-open-price-guide>Guide pour obtenir la clé</button>
+        </div>
+        <div class="pref-key">
+          <label class="pref-k" for="prefAvKey">Actions en euros (€) <span>Alpha Vantage, cours différé</span></label>
+          <input type="text" id="prefAvKey" placeholder="Clé API" value="${escapeHtml(s.alphaVantageApiKey || '')}" autocomplete="off" spellcheck="false">
+          <a class="btn btn-outline btn-sm" href="https://www.alphavantage.co/support/#api-key" target="_blank" rel="noopener noreferrer">Obtenir la clé</a>
+        </div>
+      </div>
+      <div class="pref-h">Clés gratuites : le cours se met à jour tout seul. En euros, il est différé et limité à environ 25 mises à jour par jour.</div>
     </div>
     <div class="pref">
       <div class="pref-l">Sauvegarde de vos analyses</div>
