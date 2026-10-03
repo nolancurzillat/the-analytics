@@ -7091,6 +7091,7 @@ async function savePriceGuideKey(){
   res.textContent = tab === 'eur' ? 'Clé valide et enregistrée. Le cours des actions en euros se mettra à jour automatiquement (différé).' : 'Clé valide et enregistrée. Le prix se mettra à jour automatiquement.';
   const pref = document.getElementById(g.prefId);
   if(pref) pref.value = key;
+  if(currentView === 'home') render();   // l'encart « Prix automatique » de l'accueil disparaît quand les deux clés sont posées
   const c = getActive();
   if(currentView === 'company' && c) paintPriceStatus(c.id);
   ensurePrices();
@@ -11236,7 +11237,7 @@ function renderHomeView(){
       ${accountCards}
     </section>` : ''}
 
-    <section class="hsec" id="prices">
+    ${(String(state.settings.twelveDataApiKey || '').trim() && String(state.settings.alphaVantageApiKey || '').trim()) ? '' : `<section class="hsec" id="prices">
       <div class="home-price">
         <div>
           <div class="kicker">Prix automatique</div>
@@ -11245,7 +11246,7 @@ function renderHomeView(){
         </div>
         <button class="btn btn-primary" data-open-price-guide>Voir le guide pas à pas</button>
       </div>
-    </section>
+    </section>`}
 
     ${isInstalledApp() ? '' : `<div class="home-install" data-install-wrap><span><strong>Installez The Analytics</strong> sur votre ordinateur ou votre téléphone : sa propre fenêtre, son icône, et toujours la dernière version, automatiquement.</span><button class="btn btn-primary btn-sm" data-install-open>Installer l'application</button></div>`}
     <div class="legal" style="margin-top:64px">The Analytics est un outil d'aide à l'analyse fondamentale, à but pédagogique et informatif. Il ne constitue ni un conseil en investissement, ni une recommandation d'achat ou de vente. Investir comporte un risque de perte en capital.</div>
@@ -11628,7 +11629,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 211;
+const APP_BUILD = 212;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de Nolan : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
