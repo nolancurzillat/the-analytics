@@ -2269,6 +2269,9 @@ a.btn{ text-decoration:none; }
 .update-banner{ position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:90; display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:10px 18px; width:min(640px, calc(100vw - 32px)); padding:14px 18px; border:1px solid var(--border-strong); border-left:4px solid var(--accent); border-radius:14px; background:var(--card); color:var(--ink); box-shadow:0 16px 40px rgba(0,0,0,.35); font-size:14.5px; line-height:1.5; }
 .update-banner .update-btns{ display:flex; gap:8px; flex:0 0 auto; }
 
+.guide-sub{ margin:14px 0 8px 0; font-size:15px; font-weight:700; }
+.home-install{ display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:10px 16px; margin:44px auto 0 auto; padding:16px 22px; max-width:760px; border:1px solid var(--border); border-radius:14px; background:var(--card); text-align:center; font-size:14.5px; color:var(--ink-soft); }
+.home-install strong{ color:var(--ink); }
 </style>
 </head>
 <body>
@@ -2359,6 +2362,10 @@ a.btn{ text-decoration:none; }
 
 <div class="modal-overlay hidden" id="tradeModal">
   <div class="modal-box trade-box" id="tradeBox"></div>
+</div>
+
+<div class="modal-overlay hidden" id="installModal">
+  <div class="modal-box guide-box" id="installBox"></div>
 </div>
 
 <div class="modal-overlay hidden" id="shareModal">
@@ -8672,8 +8679,8 @@ function buildPrefsCard(){
       <div class="pref-h">Clés gratuites : le cours se met à jour tout seul. En euros, il est différé et limité à environ 25 mises à jour par jour.</div>
     </div>
     <div class="pref">
-      <div class="pref-l">Visite guidée</div>
-      <button class="btn btn-outline btn-sm" data-start-tour>Revoir la visite guidée</button>
+      <div class="pref-l">Application</div>
+      <div class="pref-btns">${isInstalledApp() ? '' : '<button class="btn btn-primary btn-sm" data-install-open>Installer l\'application</button>'}<button class="btn btn-outline btn-sm" data-start-tour>Revoir la visite guidée</button></div>
     </div>
     <div class="pref">
       <div class="pref-l">Version de l'application</div>
@@ -11231,6 +11238,8 @@ function renderHomeView(){
       </div>
     </section>
 
+C:\Users\nolan
+    ${isInstalledApp() ? '' : `<div class="home-install" data-install-wrap><span><strong>Installez The Analytics</strong> sur votre ordinateur ou votre téléphone : sa propre fenêtre, son icône, et toujours la dernière version, automatiquement.</span><button class="btn btn-primary btn-sm" data-install-open>Installer l'application</button></div>`}
     <div class="legal" style="margin-top:64px">The Analytics est un outil d'aide à l'analyse fondamentale, à but pédagogique et informatif. Il ne constitue ni un conseil en investissement, ni une recommandation d'achat ou de vente. Investir comporte un risque de perte en capital.</div>
     <div class="home-legal-links"><button type="button" data-legal="confidentialite">Confidentialité</button><button type="button" data-legal="conditions">Conditions</button><button type="button" data-legal="mentions">Mentions légales</button><button type="button" data-legal="contact">Nous contacter</button></div>
   `;
@@ -11611,7 +11620,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 204;
+const APP_BUILD = 205;
 const updateInfo = { latest:null, checking:false, dismissedAt:0, lastCheck:0 };
 async function fetchLatestBuild(){
   const r = await fetch('service-worker.js?check=' + Date.now(), { cache:'no-store' });
@@ -11676,6 +11685,106 @@ function initUpdateCheck(){
   window.addEventListener('online', () => checkForUpdate(false));
   setInterval(() => { if(document.visibilityState === 'visible') checkForUpdate(false); }, 30 * 60 * 1000);
   setTimeout(() => checkForUpdate(false), 4000);
+}
+
+// ============================================================
+// INSTALLATION COMME VRAIE APPLICATION (2026-10-04, demande de Nolan : « rendre le logiciel téléchargeable »). The Analytics est une application web
+// installable (PWA : manifest.json + service-worker.js). Installée, elle a sa propre fenêtre et son icône, et elle se met à jour toute seule car elle
+// charge toujours la dernière version du site (voir VERSION DE L'APPLICATION ET MISES À JOUR). Chrome, Edge et Android proposent l'installation par
+// un événement (`beforeinstallprompt`) : le bouton « Installer l'application » le déclenche. Ailleurs (iPhone, Safari, Firefox) il affiche les étapes.
+// ============================================================
+let deferredInstall = null;
+function isInstalledApp(){
+  return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+}
+function installPlatform(){
+  const ua = navigator.userAgent || '';
+  const iOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const android = /Android/.test(ua);
+  const firefox = /Firefox|FxiOS/.test(ua);
+  const edge = /Edg\//.test(ua);
+  const chrome = /Chrome|CriOS/.test(ua) && !edge;
+  const safari = /Safari/.test(ua) && !/Chrome|Chromium|CriOS|FxiOS|Edg\//.test(ua);
+  return { iOS, android, firefox, edge, chrome, safari };
+}
+function installStepsHtml(){
+  const p = installPlatform();
+  const ol = items => `<ol class="guide-steps">${items.map(s => `<li><span>${s}</span></li>`).join('')}</ol>`;
+  let title, body;
+  if(p.iOS){
+    title = 'Sur iPhone et iPad';
+    body = ol([
+      `Ouvrez ce site dans <strong>Safari</strong> (l'installation ne marche pas depuis un autre navigateur).`,
+      `Touchez le bouton <strong>Partager</strong> (le carré avec une flèche vers le haut).`,
+      `Faites défiler et choisissez <strong>« Sur l'écran d'accueil »</strong>, puis <strong>Ajouter</strong>.`,
+    ]) + `<div class="modal-hint">Sur iPhone, l'application installée a son propre espace de données, séparé de Safari : créez un compte gratuit (et connectez-vous dans l'application) pour y retrouver vos analyses.</div>`;
+  }else if(p.android){
+    title = 'Sur Android';
+    body = ol([
+      `Ouvrez ce site dans <strong>Chrome</strong>.`,
+      `Touchez le menu <strong>⋮</strong> en haut à droite.`,
+      `Choisissez <strong>« Installer l'application »</strong> (ou « Ajouter à l'écran d'accueil »), puis confirmez.`,
+    ]);
+  }else if(p.firefox){
+    title = 'Avec Firefox';
+    body = `<p class="guide-lead">Firefox ne permet pas d'installer ce type d'application sur ordinateur. Ouvrez simplement ce site avec <strong>Google Chrome</strong> ou <strong>Microsoft Edge</strong>, puis suivez les étapes de l'installation depuis l'un d'eux.</p>`;
+  }else if(p.safari){
+    title = 'Sur Mac avec Safari';
+    body = ol([
+      `Dans la barre de menus de Safari, ouvrez <strong>Fichier</strong>.`,
+      `Choisissez <strong>« Ajouter au Dock… »</strong>.`,
+      `Confirmez le nom <strong>The Analytics</strong> et cliquez sur <strong>Ajouter</strong>.`,
+    ]);
+  }else{
+    title = p.edge ? 'Sur ordinateur avec Edge' : 'Sur ordinateur avec Chrome';
+    body = ol([
+      `Cherchez l'icône d'<strong>installation</strong> tout à droite de la barre d'adresse (un petit écran avec une flèche vers le bas) et cliquez dessus.`,
+      p.edge ? `Sinon, ouvrez le menu <strong>···</strong>, puis <strong>Applications</strong>, puis <strong>« Installer ce site en tant qu'application »</strong>.` : `Sinon, ouvrez le menu <strong>⋮</strong>, puis <strong>« Enregistrer et partager »</strong>, puis <strong>« Installer The Analytics »</strong>.`,
+      `Cliquez sur <strong>Installer</strong> : l'application s'ouvre dans sa propre fenêtre, avec une icône sur votre bureau ou dans votre menu.`,
+    ]);
+  }
+  return `<h3 class="guide-sub">${title}</h3>${body}`;
+}
+function openInstallModal(){
+  const box = document.getElementById('installBox');
+  if(isInstalledApp()){
+    box.innerHTML = `<h2>The Analytics est déjà installée</h2><p class="guide-lead">Vous utilisez l'application installée sur cet appareil. Elle se met à jour toute seule : vous avez toujours la dernière version.</p><div class="modal-actions"><button class="primary" data-install="close">Fermer</button></div>`;
+  }else{
+    box.innerHTML = `<h2>Installer The Analytics</h2>
+      <p class="guide-lead">Installée, The Analytics devient une vraie application : sa propre fenêtre, son icône, et elle <strong>se met à jour toute seule</strong> (vous avez toujours la dernière version). Gratuit, sans magasin d'applications.</p>
+      ${installStepsHtml()}
+      <div class="modal-actions" style="margin-top:14px"><button data-install="close">Fermer</button>${deferredInstall ? `<button class="primary" data-install="go">Installer maintenant</button>` : ''}</div>`;
+  }
+  document.getElementById('installModal').classList.remove('hidden');
+}
+function closeInstallModal(){ document.getElementById('installModal').classList.add('hidden'); }
+async function runInstallPrompt(){
+  if(!deferredInstall){ openInstallModal(); return; }
+  const ev = deferredInstall;
+  deferredInstall = null;
+  try{
+    ev.prompt();
+    const choice = await ev.userChoice;
+    if(choice && choice.outcome === 'accepted') showToast('Installation en cours : The Analytics va s\'ouvrir dans sa propre fenêtre.');
+  }catch(e){ openInstallModal(); }
+  paintInstallButtons();
+}
+// Les boutons « Installer l'application » (accueil, Préférences) disparaissent quand l'application est déjà installée
+function paintInstallButtons(){
+  const hide = isInstalledApp();
+  document.querySelectorAll('[data-install-open]').forEach(el => { el.style.display = hide ? 'none' : ''; });
+}
+function initInstall(){
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; paintInstallButtons(); });
+  window.addEventListener('appinstalled', () => { deferredInstall = null; closeInstallModal(); showToast('The Analytics est installée.'); paintInstallButtons(); });
+  document.addEventListener('click', e => {
+    const t = e.target;
+    if(!t || !t.closest) return;
+    if(t.closest('[data-install-open]')) runInstallPrompt();
+    else if(t.closest('[data-install="close"]') || t.id === 'installModal') closeInstallModal();
+    else if(t.closest('[data-install="go"]')){ closeInstallModal(); runInstallPrompt(); }
+  });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape' && !document.getElementById('installModal').classList.contains('hidden')) closeInstallModal(); });
 }
 
 function render(){
@@ -12529,6 +12638,8 @@ initFileBackup();
 bindAuth();
 bindShare();
 initUpdateCheck();
+initInstall();
+paintInstallButtons();
 initDecisionPicker();
 bindReadOnlyGuard();
 handleShareLink();
