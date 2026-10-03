@@ -185,6 +185,8 @@ svg{display:block;}
 .sort-opt:hover{ background:rgba(255,255,255,.08); color:#fff; }
 .sort-opt.current{ color:#fff; font-weight:600; }
 .sort-opt .sort-check{ width:14px; flex:0 0 14px; color:var(--accent); font-weight:700; }
+.sort-lbl{ display:flex; flex-direction:column; align-items:flex-start; gap:2px; }
+.sort-dir-note{ font-size:12.5px; font-weight:500; color:#9aa8c4; }
 .sort-hint{ padding:8px 10px 6px 10px; max-width:230px; font-size:12.5px; line-height:1.45; color:#9aa8c4; }
 .sort-sep{ height:1px; background:rgba(255,255,255,.1); margin:6px 4px; }
 /* Tri de "Toutes vos analyses" (2026-09-27) : même bouton/menu que la barre latérale, réutilise .sort-btn/.sort-menu/.sort-opt, juste une nouvelle ancre positionnée. */
@@ -6996,10 +6998,15 @@ function sortMenuHtml(keys, curKey, curDir, columnHint){
       + keys.map(k => `<button type="button" class="sort-opt" data-sort-key="${k.key}" role="menuitemradio" aria-checked="false">${check(false)}${k.label}</button>`).join('')
       + `<div class="sort-hint">Le tableau est trié par une colonne. Cliquez sur son en-tête pour inverser l'ordre, ou sur un autre en-tête pour changer.</div>`;
   }
+  // Plus de section « Sens » (2026-10-03, demande de Nolan) : on inverse l'ordre en recliquant sur le critère déjà choisi ; le sens
+  // courant est écrit sous le critère actif.
   return `<div class="sort-title">Trier par</div>`
-    + keys.map(k => `<button type="button" class="sort-opt${k.key === cur.key ? ' current' : ''}" data-sort-key="${k.key}" role="menuitemradio" aria-checked="${k.key === cur.key}">${check(k.key === cur.key)}${k.label}</button>`).join('')
-    + `<div class="sort-sep"></div><div class="sort-title">Sens</div>`
-    + cur.dirs.map((label, i) => { const d = i === 0 ? 'asc' : 'desc'; const arrow = i === 0 ? '&uarr;' : '&darr;'; return `<button type="button" class="sort-opt${curDir === d ? ' current' : ''}" data-sort-dir="${d}" role="menuitemradio" aria-checked="${curDir === d}">${check(curDir === d)}<span>${arrow} ${label}</span></button>`; }).join('');
+    + keys.map(k => {
+      const on = k.key === cur.key;
+      const note = on ? `<small class="sort-dir-note">${curDir === 'desc' ? '&darr;' : '&uarr;'} ${k.dirs[curDir === 'desc' ? 1 : 0]}</small>` : '';
+      return `<button type="button" class="sort-opt${on ? ' current' : ''}" data-sort-key="${k.key}" role="menuitemradio" aria-checked="${on}">${check(on)}<span class="sort-lbl">${k.label}${note}</span></button>`;
+    }).join('')
+    + `<div class="sort-hint">Cliquez à nouveau sur le critère choisi pour inverser l'ordre.</div>`;
 }
 function paintSortMenu(){
   const menu = document.getElementById('sortMenu');
@@ -7010,7 +7017,9 @@ function paintTableSortMenu(){
   if(menu) menu.innerHTML = sortMenuHtml(TABLE_MENU_KEYS, state.settings.tableSortKey, state.settings.tableSortDir, true);
 }
 function setSidebarSort(key, dir){
-  if(key && key !== state.settings.sortKey){
+  if(key && key === state.settings.sortKey && !dir){
+    state.settings.sortDir = state.settings.sortDir === 'desc' ? 'asc' : 'desc';
+  }else if(key && key !== state.settings.sortKey){
     state.settings.sortKey = key;
     state.settings.sortDir = (SORT_KEYS.find(k => k.key === key) || SORT_KEYS[0]).natural;
   }
@@ -7027,7 +7036,9 @@ function sortByHeader(key){
 }
 // Ne remplace que le tableau (#companiesTableWrap), jamais l'en-tête de la carte : sinon le menu de tri, recréé fermé, se refermerait à chaque choix.
 function setTableSort(key, dir){
-  if(key && key !== state.settings.tableSortKey){
+  if(key && key === state.settings.tableSortKey && !dir){
+    state.settings.tableSortDir = state.settings.tableSortDir === 'desc' ? 'asc' : 'desc';
+  }else if(key && key !== state.settings.tableSortKey){
     state.settings.tableSortKey = key;
     state.settings.tableSortDir = (TABLE_SORT_KEYS.find(k => k.key === key) || TABLE_SORT_KEYS[0]).natural;
   }
