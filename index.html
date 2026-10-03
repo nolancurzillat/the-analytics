@@ -2157,6 +2157,31 @@ a.btn{ text-decoration:none; }
   .lr-h1{ font-size:26px; }
   .lr-defs, .lr-defs.lr-defs-2, .lr-gl{ grid-template-columns:1fr; }
 }
+/* Partage d'analyses : fenêtre, liste des reçues, bandeau */
+.share-box{ max-width:560px; }
+.share-opt{ margin:14px 0 6px 0; align-items:flex-start; }
+.share-opt input{ margin-top:3px; flex:0 0 auto; }
+.share-link{ display:flex; gap:8px; margin-top:12px; }
+.share-link input{ flex:1; min-width:0; padding:10px 12px; border:1px solid var(--border); border-radius:9px; background:var(--field); color:var(--ink); font-size:14px; font-family:var(--font-mono); }
+.share-list{ margin-top:18px; padding-top:12px; border-top:1px solid var(--border); }
+.share-list-t{ font-size:12.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:6px; }
+.share-row{ display:flex; justify-content:space-between; align-items:center; gap:12px; font-size:14px; padding:6px 0; }
+.share-btn{ display:inline-flex; align-items:center; gap:7px; margin-bottom:8px; }
+.recv-label .side-label-right{ color:#9aa8c4; }
+.recv-dot{ color:#f2994a; font-weight:700; }
+.recv-new{ font-style:normal; font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:1px 6px; border-radius:6px; background:#f2994a; color:#1a1206; margin-left:6px; vertical-align:middle; }
+.recv-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:14px; margin-top:18px; }
+.recv-card{ display:flex; align-items:center; gap:14px; text-align:left; width:100%; padding:16px; border:1px solid var(--border); border-left:4px solid var(--blue); border-radius:12px; background:var(--card); color:var(--ink); font:inherit; cursor:pointer; transition:transform .12s ease, border-color .12s ease; }
+.recv-card:hover{ transform:translateY(-2px); border-color:var(--border-strong); border-left-color:var(--blue); }
+.recv-card .si-ico{ flex:0 0 auto; }
+.recv-card-t{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+.recv-card-n{ font-weight:600; font-size:15.5px; }
+.recv-card-s{ font-size:13px; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.recv-card-r{ flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-end; gap:4px; font-size:22px; }
+.recv-card-r small{ font-size:12px; color:var(--ink-soft); margin-left:2px; }
+.recv-added{ font-size:11.5px; font-weight:600; padding:2px 8px; border-radius:7px; background:color-mix(in srgb, var(--blue) 14%, transparent); color:var(--ink); }
+.recv-recap{ max-width:560px; margin:18px 0; }
+.side-item.recv .si-sub{ color:#9aa8c4; }
 </style>
 </head>
 <body>
@@ -2176,6 +2201,7 @@ a.btn{ text-decoration:none; }
       <div class="sort-menu hidden" id="sortMenu" role="menu"></div>
     </div>
     <div id="tabs"></div>
+    <div id="recvTabs"></div>
   </div>
   <button class="side-new" id="sideNewBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Nouvelle analyse</button>
 </aside>
@@ -2246,6 +2272,10 @@ a.btn{ text-decoration:none; }
 
 <div class="modal-overlay hidden" id="tradeModal">
   <div class="modal-box trade-box" id="tradeBox"></div>
+</div>
+
+<div class="modal-overlay hidden" id="shareModal">
+  <div class="modal-box guide-box share-box" id="shareBox"></div>
 </div>
 
 <div class="modal-overlay hidden" id="authModal">
@@ -2723,7 +2753,7 @@ const BACKUP_REMIND_MS = 7 * 24 * 3600 * 1000;
 function buildBackupPayload(forCloud){
   const settings = Object.assign({}, state.settings);
   if(!forCloud){ delete settings.twelveDataApiKey; delete settings.alphaVantageApiKey; }
-  return { app:'the-analytics', version:1, exportedAt:new Date().toISOString(), settings, companies:state.companies, deleted:state.deleted || {}, history:state.history || {} };
+  return { app:'the-analytics', version:1, exportedAt:new Date().toISOString(), settings, companies:state.companies, deleted:state.deleted || {}, history:state.history || {}, received:state.received || [] };
 }
 function backupKv(mode, fn){
   return new Promise((resolve, reject) => {
@@ -3014,6 +3044,20 @@ function mergeRemote(remote){
     if(!r || companyStamp(c) > companyStamp(r)) push = true;
   });
   if(mergeHistory(remote.history).push) push = true;
+  // Analyses reçues : union par identifiant, sauf celles supprimées (pierre tombale `r_<rid>` dans `deleted`) ; « vue » et « ajoutée » se propagent
+  const rrec = Array.isArray(remote.received) ? remote.received : [];
+  rrec.forEach(raw => {
+    const x = cleanReceived(raw);
+    if(!x || deleted['r_' + x.rid]) return;
+    const ex = state.received.find(y => y.rid === x.rid);
+    if(!ex){ state.received.push(x); changed = true; return; }
+    if(x.seen && !ex.seen){ ex.seen = true; changed = true; }
+    if(x.addedId && !ex.addedId){ ex.addedId = x.addedId; changed = true; }
+  });
+  const beforeRecv = state.received.length;
+  state.received = state.received.filter(y => !deleted['r_' + y.rid]);
+  if(state.received.length !== beforeRecv) changed = true;
+  state.received.forEach(y => { const z = rrec.find(w => w && w.rid === y.rid); if(!z || (y.seen && !z.seen) || (y.addedId && !z.addedId)) push = true; });
   const rs = remote.settings || {};
   // Clé API Twelve Data : adoptée seulement si CET appareil n'en a pas encore (jamais d'écrasement d'une clé déjà collée ici), pour ne pas la ressaisir sur un nouvel appareil.
   if(!String(state.settings.twelveDataApiKey || '').trim() && typeof rs.twelveDataApiKey === 'string' && rs.twelveDataApiKey.trim()){
@@ -3351,6 +3395,7 @@ function bindAuth(){
 let state = loadState();
 if(!state.deleted || typeof state.deleted !== 'object' || Array.isArray(state.deleted)) state.deleted = {};
 if(!state.history || typeof state.history !== 'object' || Array.isArray(state.history)) state.history = {};
+if(!Array.isArray(state.received)) state.received = [];   // analyses reçues d'autres utilisateurs (voir PARTAGE D'ANALYSES), séparées de state.companies
 state.companies.forEach(migrateCompany);
 // Préférences personnelles (ajoutées après la V1, sans effet sur les analyses existantes)
 state.settings = Object.assign({ defaultCurrency:'$', twelveDataApiKey:'', alphaVantageApiKey:'', sortKey:'created', sortDir:'asc', tableSortKey:'created', tableSortDir:'asc', learnRead:[], lastBackupAt:0, backupSnoozeUntil:0, recentSearchIds:[] },(state.settings && typeof state.settings === 'object') ? state.settings : {});
@@ -7566,8 +7611,27 @@ function sectorFilterChipsHtml(withCompare){
   return `<div class="pf-chips" style="margin-bottom:12px"><span class="pf-chips-l">Secteur :</span><button type="button" class="lr-chip${sectorFilter ? '' : ' on'}" data-sector-filter="">Tous</button>${sc.map(x => `<button type="button" class="lr-chip${x.sector === sectorFilter ? ' on' : ''}" data-sector-filter="${escapeHtml(x.sector)}">${escapeHtml(x.sector)} <small>${x.n}</small></button>`).join('')}${cmp}</div>`;
 }
 
+// Liste « Analyses reçues » de la barre latérale : seulement s'il y en a, à part de « Mes analyses » (pastille « nouveau » tant qu'elle n'a pas été ouverte)
+function renderRecvTabs(){
+  const box = document.getElementById('recvTabs');
+  if(!box) return;
+  if(!state.received.length){ box.innerHTML = ''; return; }
+  const unseen = state.received.filter(r => !r.seen).length;
+  box.innerHTML = `<div class="side-label recv-label"><span>Analyses reçues</span><span class="side-label-right"><span>${state.received.length}${unseen ? ` · <b class="recv-dot">${unseen} nouvelle${unseen > 1 ? 's' : ''}</b>` : ''}</span></span></div>`;
+  state.received.forEach(r => {
+    const c = r.company, av = avatarInner(c);
+    const el = document.createElement('div');
+    el.className = 'side-item recv' + (currentView === 'received' && receivedId === r.rid ? ' active' : '');
+    el.onclick = () => goReceived(r.rid);
+    el.innerHTML = `<span class="si-ico${av.cls}">${av.html}</span>
+      <span class="si-text"><span class="si-line1"><span class="si-name">${escapeHtml(c.name || 'Sans nom')}</span>${r.seen ? '' : '<em class="recv-new">Nouveau</em>'}</span>
+      <span class="si-sub">${r.by ? 'de ' + escapeHtml(r.by) : 'Reçue'}</span></span>`;
+    box.appendChild(el);
+  });
+}
 function renderTabs(){
   refreshNotifBadge();
+  renderRecvTabs();
   const list = document.getElementById('tabs');
   list.innerHTML = '';
   document.getElementById('navHome').classList.toggle('active', currentView === 'home');
@@ -8473,6 +8537,22 @@ function importDataFile(file){
   reader.onload = () => {
     try{
       const data = JSON.parse(String(reader.result));
+      // Fichier d'ANALYSE PARTAGÉE (bouton « Partager » > fichier) : va dans « Analyses reçues », jamais dans « Mes analyses »
+      if(data && data.share && Array.isArray(data.companies)){
+        let first = null, added = 0;
+        data.companies.slice(0, 20).forEach(raw => {
+          const c = cleanImportedCompany(raw);
+          if(!c) return;
+          sanitizeSharedCompany(c, true);
+          const res = addReceived(c, { token:'', by:data.share.by, sharedAt:(typeof data.share.at === 'string' && !isNaN(Date.parse(data.share.at))) ? new Date(data.share.at).toISOString() : '' });
+          if(res.isNew) added++;
+          if(!first) first = res.rec;
+        });
+        if(!first) throw new Error('vide');
+        showToast(added ? 'Analyse reçue : elle est dans « Analyses reçues », séparée de vos analyses.' : 'Cette analyse était déjà dans vos analyses reçues.');
+        goReceived(first.rid);
+        return;
+      }
       if(!data || !Array.isArray(data.companies)) throw new Error('format');
       let added = 0, updated = 0, kept = 0;
       data.companies.forEach(raw => {
@@ -8486,6 +8566,11 @@ function importDataFile(file){
         if(idx < 0){ state.companies.push(c); added++; }
         else if(String(c.updatedAt).localeCompare(String(state.companies[idx].updatedAt || '')) > 0){ state.companies[idx] = c; updated++; }
         else kept++;
+      });
+      // Analyses reçues contenues dans une sauvegarde complète : ajoutées si elles n'y sont pas déjà
+      (Array.isArray(data.received) ? data.received : []).slice(0, 500).forEach(raw => {
+        const x = cleanReceived(raw);
+        if(x && !state.received.some(y => y.rid === x.rid)){ delete state.deleted['r_' + x.rid]; state.received.push(x); added++; }
       });
       if(!added && !updated && !kept) throw new Error('vide');
       mergeHistory(data.history);
@@ -8939,9 +9024,10 @@ function compareRadarHtml(cs, axesBy, cols){
     return `<div class="cmp-radar-box"><div class="cmp-leg"><span class="cmp-leg-dot" style="background:${cols[k]}"></span>${escapeHtml(c.name || 'Sans nom')}</div><svg viewBox="-56 0 332 215" class="cmp-radar-svg" role="img" aria-label="Radar des 5 axes du score de ${escapeHtml(c.name || 'Sans nom')}">${grid}${shape}${labels}</svg></div>`;
   }).join('')}</div>`;
 }
-function compareTableHtml(){
-  const cs = compareIds.map(id => state.companies.find(c => c.id === id)).filter(Boolean);
-  if(cs.length < 2) return `<div class="s-empty">Choisissez au moins deux analyses ci-dessus pour les comparer.</div>`;
+function compareTableHtml(list, opts){
+  const received = !!(opts && opts.received);   // analyse reçue : une seule colonne, lecture seule (voir PARTAGE D'ANALYSES)
+  const cs = list || compareIds.map(id => state.companies.find(c => c.id === id)).filter(Boolean);
+  if(!list && cs.length < 2) return `<div class="s-empty">Choisissez au moins deux analyses ci-dessus pour les comparer.</div>`;
   const infos = cs.map(c => computeScoreInfo(c));
   const axesBy = cs.map((c, i) => infos[i].axes);
   // La meilleure valeur d'une ligne (note la plus haute, au moins deux notes comparables) est mise en valeur, mais
@@ -8965,7 +9051,7 @@ function compareTableHtml(){
     const cells = cs.map(c => { const h = getter(c); return richToPlain(h) ? `<div class="cmp-rich">${sanitizeRichHtml(h)}</div>` : '—'; });
     return `<tr class="cmp-textrow" style="--sec-c:${curCol}"><th scope="row">${label}</th>${cells.map(h => `<td>${h}</td>`).join('')}</tr>`;
   };
-  const head = `<tr><th></th>${cs.map(c => `<th class="cmp-co"><button type="button" class="jr-co" data-cmp-open="${escapeHtml(c.id)}">${miniAv(c)}<span>${escapeHtml(c.name || 'Sans nom')}</span><span class="jr-meta">${escapeHtml((c.fields.identite || {}).ticker || '')}</span></button></th>`.replace('<th class="cmp-co">', `<th class="cmp-co" style="--co-c:${cmpCols[cs.indexOf(c)]}">`)).join('')}</tr>`;
+  const head = `<tr><th></th>${cs.map(c => `<th class="cmp-co"><button type="button" class="jr-co"${received ? '' : ' data-cmp-open="' + escapeHtml(c.id) + '"'}>${miniAv(c)}<span>${escapeHtml(c.name || 'Sans nom')}</span><span class="jr-meta">${escapeHtml((c.fields.identite || {}).ticker || '')}</span></button></th>`.replace('<th class="cmp-co">', `<th class="cmp-co" style="--co-c:${cmpCols[cs.indexOf(c)]}">`)).join('')}</tr>`;
   const globalScores = infos.map(x => x.score);
   let body = section("Vue d'ensemble", SEC_COL.overview);
   body += row('Score global', infos.map(x => x.score === null ? '—' : `<span class="cmp-score" style="color:${scoreColor5(x.score)}">${Math.round(x.score)}</span><span class="jr-meta"> / 100${x.provisional ? ' · provisoire' : ''}</span>`), bestIdx(globalScores), 'cmp-main');
@@ -9021,11 +9107,24 @@ function compareTableHtml(){
       body += row(`<span class="rv-sub">${escapeHtml(parts[0].label)}</span>`, parts.map(p => p.val === null ? '—' : `<span class="cmp-dot" style="background:${p.tier ? TIER_COLORS[p.tier] : 'var(--border-strong)'}"></span>${escapeHtml(cmpPartText(p))}`), bestIdx(cmpScores));
     });
   });
-  body += section('Votre analyse', SEC_COL.analyse);
+  body += section(received ? "Analyse de l'expéditeur" : 'Votre analyse', SEC_COL.analyse);
+  if(received){
+    // Texte de la fiche, pour une analyse reçue : on lit ce que l'auteur a écrit (les cases vides s'affichent « — »)
+    body += textRow('Activité principale', c => c.fields.identite.activitePrincipale);
+    body += textRow('Avantage concurrentiel (MOAT)', c => c.fields.identite.moatDescription);
+    body += textRow('Croissance du marché', c => c.fields.croissance.marcheEnCroissance);
+    body += textRow('Part de marché', c => c.fields.croissance.partMarche);
+    body += textRow('Innovation tech', c => c.fields.croissance.innovationTech);
+    body += textRow('Catalyseurs potentiels', c => c.fields.croissance.catalyseurs);
+    body += textRow('Risque', c => c.fields.croissance.risque);
+    body += textRow('Conclusion sur la valorisation', c => c.fields.valorisation.conclusionValorisation);
+  }
   body += textRow('Paysage concurrentiel', c => c.fields.croissance.concurrents);
   body += textRow('Points forts', c => c.fields.personnelle.pointsForts);
   body += textRow('Points faibles', c => c.fields.personnelle.pointsFaibles);
   body += textRow("Thèse d'investissement", c => c.fields.personnelle.these);
+  if(received) return `<div class="cmp-wrap"><table class="cmp-table"><thead>${head}</thead><tbody>${body}</tbody></table></div>
+    <div class="s-note">Analyse reçue, en lecture seule. Le « Score détaillé » liste tous les indicateurs qui entrent dans la note ; un indicateur non renseigné s'affiche « — » et est ignoré dans le calcul. Les montants sont dans la devise de l'analyse, sans conversion. Les chiffres sont ceux de son auteur : vérifiez-les avant de vous y fier. Aucun conseil en investissement.</div>`;
   return `<div class="cmp-wrap"><table class="cmp-table"><thead>${head}</thead><tbody>${body}</tbody></table></div>
     <div class="s-note">La case teintée en vert marque la meilleure valeur d'une ligne notée, seulement quand elle est la seule à l'être : à égalité, rien n'est surligné. Le « Score détaillé » liste tous les indicateurs qui entrent dans chaque note ; un indicateur non renseigné s'affiche « — » et est ignoré dans le calcul, comme dans le score. Les montants sont dans la devise de chaque analyse, sans conversion. Aucun conseil en investissement.</div>`;
 }
@@ -9534,6 +9633,7 @@ const LEARN_FAQ = [
   [`À quelle fréquence faut-il mettre une analyse à jour ?`, `À chaque publication de résultats (trimestrielle ou annuelle), et quand un événement important change la situation de l'entreprise. Le prix, lui, peut se mettre à jour automatiquement.`],
   [`L'application me dit-elle quoi acheter ?`, `Non. Elle vous aide à structurer votre réflexion et à comparer vos idées. Elle ne recommande jamais d'acheter ou de vendre : la décision vous appartient.`],
   [`Comment être prévenu d'un rapport ou d'un cours à surveiller ?`, `Renseignez la « Date du prochain rapport » dans l'Identité d'une analyse, et créez des alertes de cours dans la section Décision. La cloche en haut vous signale ce qui demande votre attention. Ce sont des rappels dans l'application : aucun e-mail n'est envoyé.`],
+  [`Comment envoyer une analyse à quelqu'un ?`, `Ouvrez l'analyse et cliquez sur « Partager » en haut à droite. Avec un compte, créez un <strong>lien</strong> à envoyer par message ; sans compte, téléchargez un <strong>fichier</strong>. Vous choisissez d'inclure ou non vos notes, et votre position, vos ordres, votre journal et vos alertes ne partent jamais. Le destinataire (avec ou sans compte) reçoit l'analyse dans « Analyses reçues », séparée des siennes, et peut l'ajouter ou non à ses analyses.`],
   [`Comment supprimer une analyse ou ajouter un champ personnalisé ?`, `Pour supprimer, survolez l'analyse dans la barre de gauche et cliquez sur la croix. Pour ajouter un champ, utilisez le bouton « Ajouter un champ » en bas de chaque section.`],
   [`Puis-je installer l'application ?`, `Oui : c'est une application web installable. Cherchez « Installer » dans le menu de votre navigateur pour obtenir une icône sur votre bureau ou votre écran d'accueil.`],
 ];
@@ -10294,9 +10394,10 @@ const LEGAL_CONTENT = {
     LUL([
       `<strong>Sans compte</strong> : ce que vous saisissez est stocké dans le stockage local de votre navigateur, sur votre appareil. Nous n'y avons pas accès.`,
       `<strong>Adresse e-mail et mot de passe</strong> (avec un compte) : pour créer et protéger votre compte. Le mot de passe est stocké sous forme chiffrée par notre prestataire d'authentification, nous ne le voyons jamais. Base légale : l'exécution du service que vous demandez.`,
-      `<strong>Vos analyses et préférences</strong> (avec un compte) : contenu de vos fiches, prénom facultatif, devise par défaut, ordre de tri, progression dans l'apprentissage. Elles servent uniquement à la synchronisation entre vos appareils. Base légale : l'exécution du service.`,
+      `<strong>Vos analyses et préférences</strong> (avec un compte) : contenu de vos fiches, devise par défaut, ordre de tri, progression dans l'apprentissage. Elles servent uniquement à la synchronisation entre vos appareils. Base légale : l'exécution du service.`,
       `<strong>Date et version de votre acceptation</strong> de ces règles, enregistrées à la création du compte, pour pouvoir prouver votre accord. Base légale : notre intérêt légitime à conserver cette preuve.`,
       `<strong>Vos clés API Twelve Data et Alpha Vantage</strong>, si vous en utilisez : elles sont stockées sur votre appareil. Avec un compte, elles sont aussi synchronisées avec vos analyses pour que vous n'ayez pas à les ressaisir sur chaque appareil.`,
+      `<strong>Analyses partagées par lien</strong> (avec un compte, si vous cliquez sur « Partager » puis « Créer un lien ») : une copie de l'analyse choisie est stockée à part sur nos serveurs, et lisible par toute personne qui possède le lien (sans compte). Vous décidez des notes incluses (thèse, points forts et faibles, conviction, décision, prix cible) et du nom affiché ; votre position, vos ordres clôturés, votre journal de décisions et vos alertes ne sont jamais envoyés. Vous pouvez révoquer un lien à tout moment, ce qui le rend inutilisable, et la suppression de votre compte supprime tous vos liens. Les analyses que d'autres vous envoient (« Analyses reçues ») sont enregistrées comme vos propres données : sur votre appareil, et en ligne si vous avez un compte.`,
     ]),
     LP(`Vos analyses contiennent ce que vous y écrivez librement (notes, thèses d'investissement, positions, prix d'achat). Ces informations peuvent révéler votre situation financière : ne saisissez en ligne que ce que vous acceptez d'y stocker. Vous pouvez à tout moment vous en passer en n'utilisant pas de compte. N'y indiquez aucune information sur d'autres personnes.`),
     LH(`Qui d'autre reçoit des données`),
@@ -10879,6 +10980,325 @@ function renderHomeView(){
   });
 }
 
+// ============================================================
+// PARTAGE D'ANALYSES (2026-10-03, demande de Nolan : envoyer une analyse à quelqu'un, avec ou sans compte, et que les analyses
+// reçues vivent à part dans l'application, avec le choix de les ajouter ou non aux siennes)
+// - Envoi : un LIEN (table Supabase `shared_analyses`, script supabase/partage-setup.sql) ou un FICHIER (marche pour tout le monde,
+//   même sans compte). On n'envoie jamais la position, les ordres clôturés, le journal de décisions ni les alertes.
+// - Réception : ouvrir un lien (#partage=...) ou importer un fichier ajoute l'analyse à « Analyses reçues » (state.received), en
+//   lecture seule. Elle n'entre dans « Mes analyses » que si la personne clique « Ajouter à mes analyses » (copie avec un nouvel id).
+// ============================================================
+let receivedId = '';
+const SHARE_MAX_BYTES = 1400000;
+let shareUi = { id:'', link:'', busy:false, msg:'', cls:'', links:null };
+
+// Retire d'une analyse tout ce qui est personnel (position, ordres, journal, alertes, tags...) : appliqué à l'envoi ET à la réception
+// (un fichier modifié à la main ne doit rien faire apparaître de tout cela). Sans les notes : thèse, points forts/faibles, conviction,
+// décision et prix cible sont aussi vidés.
+function sanitizeSharedCompany(c, withNotes){
+  c.position = { active:false, quantite:'', prixAchat:'', montantInvesti:'' };
+  c.decisionLog = []; c.closedTrades = []; c.alerts = []; c.thesisHistory = []; c.tags = [];
+  ['reviewedTs', 'priceError', 'priceUpdatedAt', 'priceMicCode', 'priceMicCodeFor', 'priceSource', 'priceDay', 'avSymbol', 'avSymbolFor'].forEach(k => { delete c[k]; });
+  if(c.fields.identite) c.fields.identite.prochainRapport = '';
+  const p = c.fields.personnelle || (c.fields.personnelle = {});
+  if(!withNotes){
+    ['pointsForts', 'pointsFaibles', 'these', 'prixAchatCible'].forEach(k => { p[k] = ''; });
+    p.conviction = 0; p.decision = '';
+  }
+  return c;
+}
+function buildShareSnapshot(c, withNotes){
+  const s = sanitizeSharedCompany(JSON.parse(JSON.stringify(c)), withNotes);
+  // Trop lourd (image du graphique, logo importé) : on retire d'abord les images, jamais les chiffres
+  if(JSON.stringify(s).length > SHARE_MAX_BYTES){
+    if(s.fields.valorisation) s.fields.valorisation.graphique = '';
+    if(s.logo && String(s.logo.url).indexOf('data:') === 0) s.logo = null;
+  }
+  return s;
+}
+function shareUrl(token){ return location.origin + location.pathname + '#partage=' + token; }
+
+// --- Envoi par lien (nécessite un compte : le lien appartient à son auteur, qui peut le révoquer) ---
+async function createShareLink(c, withNotes, by){
+  const token = await cloudToken();
+  const snap = buildShareSnapshot(c, withNotes);
+  const payload = { v:1, by:String(by || '').slice(0, 40), sharedAt:new Date().toISOString(), company:snap };
+  if(JSON.stringify(payload).length > SHARE_MAX_BYTES + 100000) throw new Error('TOO_BIG');
+  const r = await sbFetch('/rest/v1/shared_analyses', { method:'POST', token, headers:{ Prefer:'return=representation' },
+    body:{ company_id:c.id, company_name:String(c.name || '').slice(0, 120), data:payload } });
+  if(!r.ok){
+    if(r.status === 404 || (r.data && /schema cache|does not exist/i.test(String(r.data.message || '')))) throw new Error('SETUP');
+    throw new Error((r.data && r.data.message) || 'Le serveur a refusé la demande.');
+  }
+  const row = Array.isArray(r.data) ? r.data[0] : r.data;
+  if(!row || !row.token) throw new Error('Réponse inattendue du serveur.');
+  return row.token;
+}
+async function listShareLinks(companyId){
+  const token = await cloudToken();
+  const r = await sbFetch('/rest/v1/shared_analyses?select=token,created_at&company_id=eq.' + encodeURIComponent(companyId) + '&order=created_at.desc', { token });
+  return (r.ok && Array.isArray(r.data)) ? r.data : [];
+}
+async function revokeShareLink(t){
+  const token = await cloudToken();
+  const r = await sbFetch('/rest/v1/shared_analyses?token=eq.' + encodeURIComponent(t), { method:'DELETE', token });
+  if(!r.ok) throw new Error('La suppression du lien a échoué.');
+}
+// --- Envoi par fichier (pour tout le monde) ---
+function downloadShareFile(c, withNotes, by){
+  const data = { app:'the-analytics', version:1, share:{ by:String(by || '').slice(0, 40), at:new Date().toISOString() }, companies:[buildShareSnapshot(c, withNotes)] };
+  const slug = String(c.name || 'analyse').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'analyse';
+  const blob = new Blob([JSON.stringify(data)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'the-analytics-' + slug + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+// --- Fenêtre « Partager » ---
+function openShareModal(id){
+  const c = state.companies.find(x => x.id === id);
+  if(!c) return;
+  shareUi = { id, link:'', busy:false, msg:'', cls:'', links:null };
+  paintShareModal();
+  document.getElementById('shareModal').classList.remove('hidden');
+  if(cloud.session) listShareLinks(id).then(l => { if(shareUi.id === id){ shareUi.links = l; paintShareModal(true); } }).catch(() => {});
+}
+function closeShareModal(){ document.getElementById('shareModal').classList.add('hidden'); }
+function paintShareModal(keepInputs){
+  const box = document.getElementById('shareBox');
+  const c = state.companies.find(x => x.id === shareUi.id);
+  if(!c){ closeShareModal(); return; }
+  const prevNotes = keepInputs ? (document.getElementById('shareNotes') || {}).checked : undefined;
+  const prevBy = keepInputs ? (document.getElementById('shareBy') || {}).value : undefined;
+  const notes = prevNotes === undefined ? true : prevNotes;
+  const by = prevBy === undefined ? (state.settings.shareBy || '') : prevBy;
+  const logged = !!cloud.session;
+  const links = (shareUi.links || []).map(l => `<div class="share-row"><span>Lien créé le ${escapeHtml(formatDateFr(String(l.created_at).slice(0, 10)))}</span><span><button type="button" class="link-btn" data-share="copy-old" data-token="${escapeHtml(l.token)}">Copier</button> · <button type="button" class="link-btn" data-share="revoke" data-token="${escapeHtml(l.token)}">Révoquer</button></span></div>`).join('');
+  const linkBlock = shareUi.link
+    ? `<div class="share-link"><input type="text" id="shareLinkInput" readonly value="${escapeHtml(shareUi.link)}"><button type="button" class="btn btn-primary btn-sm" data-share="copy">Copier</button>${navigator.share ? '<button type="button" class="btn btn-outline btn-sm" data-share="native">Envoyer…</button>' : ''}</div>`
+    : '';
+  box.innerHTML = `<h2>Partager « ${escapeHtml(c.name || 'Sans nom')} »</h2>
+    <p class="guide-lead">La personne reçoit l'analyse dans <strong>Analyses reçues</strong>, séparée des siennes. Elle peut la lire sans compte, puis choisir de l'ajouter ou non à ses propres analyses.</p>
+    <label class="pref-toggle share-opt"><input type="checkbox" id="shareNotes"${notes ? ' checked' : ''}> Inclure mes notes : thèse, points forts et faibles, conviction, décision, prix cible</label>
+    <label class="modal-label" for="shareBy">Votre nom, affiché au destinataire (facultatif)</label>
+    <input type="text" id="shareBy" maxlength="40" placeholder="Par exemple : Nolan" value="${escapeHtml(by)}" autocomplete="off">
+    <div class="modal-hint">Jamais envoyés : votre position, vos ordres clôturés, votre journal de décisions et vos alertes.</div>
+    <div class="guide-result ${shareUi.cls}" id="shareResult" aria-live="polite">${escapeHtml(shareUi.msg)}</div>
+    ${linkBlock}
+    <div class="modal-actions" style="margin-top:16px;flex-wrap:wrap">
+      <button type="button" data-share="close">Fermer</button>
+      <button type="button" data-share="file">Télécharger un fichier</button>
+      ${logged ? `<button type="button" class="primary" data-share="create"${shareUi.busy ? ' disabled' : ''}>${shareUi.link ? 'Créer un autre lien' : 'Créer un lien'}</button>` : ''}
+    </div>
+    ${logged ? '' : `<div class="modal-hint" style="margin-top:12px">Pour créer un <strong>lien</strong>, connectez-vous (gratuit) : <button type="button" class="link-btn" data-auth-open="login">Se connecter</button> ou <button type="button" class="link-btn" data-auth-open="signup">créer un compte</button>. Sans compte, envoyez le <strong>fichier</strong> : le destinataire l'ouvre avec « Importer » dans The Analytics.</div>`}
+    ${links ? `<div class="share-list"><div class="share-list-t">Liens déjà créés pour cette analyse</div>${links}</div>` : ''}`;
+}
+function shareOptions(){
+  const by = String((document.getElementById('shareBy') || {}).value || '').trim().slice(0, 40);
+  state.settings.shareBy = by;
+  return { notes:!!(document.getElementById('shareNotes') || {}).checked, by };
+}
+async function copyShareText(text){
+  try{ await Promise.race([navigator.clipboard.writeText(text), new Promise((_, rej) => setTimeout(() => rej(new Error('t')), 2500))]); return true; }
+  catch(e){
+    const i = document.getElementById('shareLinkInput');
+    if(i){ i.select(); try{ return document.execCommand('copy'); }catch(e2){} }
+    return false;
+  }
+}
+function bindShare(){
+  document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-share-open]'); if(b){ const c = getActive(); if(c) openShareModal(c.id); } });
+  const modal = document.getElementById('shareModal');
+  modal.addEventListener('click', async e => {
+    if(e.target.id === 'shareModal'){ closeShareModal(); return; }
+    const b = e.target.closest('[data-share]');
+    if(!b) return;
+    const a = b.dataset.share, c = state.companies.find(x => x.id === shareUi.id);
+    if(!c) return;
+    if(a === 'close') closeShareModal();
+    else if(a === 'file'){
+      const o = shareOptions(); saveState();
+      downloadShareFile(c, o.notes, o.by);
+      shareUi.msg = 'Fichier téléchargé. Envoyez-le par message ou e-mail : le destinataire utilise « Importer » dans The Analytics.'; shareUi.cls = 'ok';
+      paintShareModal(true);
+    }
+    else if(a === 'create'){
+      const o = shareOptions(); saveState();
+      shareUi.busy = true; shareUi.msg = 'Création du lien...'; shareUi.cls = ''; paintShareModal(true);
+      try{
+        const t = await createShareLink(c, o.notes, o.by);
+        shareUi.link = shareUrl(t); shareUi.msg = 'Lien créé. Copiez-le et envoyez-le : il reste valable jusqu\'à ce que vous le révoquiez.'; shareUi.cls = 'ok';
+        shareUi.links = await listShareLinks(c.id).catch(() => shareUi.links);
+      }catch(err){
+        const m = String(err && err.message);
+        shareUi.msg = m === 'SETUP' ? "Le partage par lien n'est pas encore disponible sur ce serveur. Utilisez le fichier en attendant."
+          : m === 'TOO_BIG' ? "Cette analyse est trop volumineuse pour un lien (images ?). Utilisez le fichier."
+          : (err instanceof TypeError || m === 'network') ? 'Connexion impossible : vérifiez votre connexion internet.'
+          : m === 'expired' ? 'Votre session a expiré : reconnectez-vous.' : m;
+        shareUi.cls = 'ko';
+      }
+      shareUi.busy = false; paintShareModal(true);
+    }
+    else if(a === 'copy' || a === 'copy-old'){
+      const url = a === 'copy' ? shareUi.link : shareUrl(b.dataset.token);
+      const ok = await copyShareText(url);
+      shareUi.msg = ok ? 'Lien copié.' : 'Copie impossible : sélectionnez le lien et copiez-le à la main.'; shareUi.cls = ok ? 'ok' : 'ko';
+      if(a === 'copy-old' && !shareUi.link) shareUi.link = url;
+      paintShareModal(true);
+    }
+    else if(a === 'native'){ try{ await navigator.share({ title:'Analyse partagée sur The Analytics', url:shareUi.link }); }catch(err){} }
+    else if(a === 'revoke'){
+      if(b.dataset.armed !== '1'){ b.dataset.armed = '1'; b.textContent = 'Confirmer ?'; setTimeout(() => { if(b.isConnected){ b.dataset.armed = ''; b.textContent = 'Révoquer'; } }, 3000); return; }
+      try{
+        await revokeShareLink(b.dataset.token);
+        if(shareUi.link && shareUi.link.endsWith(b.dataset.token)) shareUi.link = '';
+        shareUi.links = (shareUi.links || []).filter(l => l.token !== b.dataset.token);
+        shareUi.msg = 'Lien révoqué : il ne donne plus accès à l\'analyse.'; shareUi.cls = 'ok';
+      }catch(err){ shareUi.msg = String(err && err.message); shareUi.cls = 'ko'; }
+      paintShareModal(true);
+    }
+  });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape' && !modal.classList.contains('hidden')) closeShareModal(); });
+}
+
+// --- Réception : analyses reçues (state.received), lecture seule ---
+function cleanReceived(r){
+  if(!r || typeof r !== 'object') return null;
+  const rid = String(r.rid || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40);
+  if(!rid) return null;
+  const company = cleanImportedCompany(r.company);
+  if(!company) return null;
+  sanitizeSharedCompany(company, true);
+  const iso = v => (typeof v === 'string' && !isNaN(Date.parse(v))) ? new Date(v).toISOString() : '';
+  return { rid, token:String(r.token || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 64), by:String(r.by || '').slice(0, 40), sharedAt:iso(r.sharedAt),
+    receivedAt:iso(r.receivedAt) || new Date().toISOString(), seen:!!r.seen, addedId:String(r.addedId || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40), company };
+}
+function addReceived(company, meta){
+  const same = x => (meta.token && x.token === meta.token) || (!meta.token && meta.sharedAt && x.sharedAt === meta.sharedAt && x.company.id === company.id);
+  const dupe = state.received.find(same);
+  if(dupe) return { rec:dupe, isNew:false };
+  const rec = { rid:'r' + Date.now() + Math.random().toString(36).slice(2, 7), token:String(meta.token || ''), by:String(meta.by || '').slice(0, 40),
+    sharedAt:meta.sharedAt || '', receivedAt:new Date().toISOString(), seen:false, addedId:'', company };
+  state.received.unshift(rec);
+  saveState();
+  return { rec, isNew:true };
+}
+async function handleShareLink(){
+  const m = /^#partage=([A-Za-z0-9]{16,64})$/.exec(location.hash);
+  if(!m) return;
+  const token = m[1];
+  history.replaceState(null, '', location.pathname + location.search);
+  showToast("Ouverture de l'analyse partagée...");
+  try{
+    const r = await sbFetch('/rest/v1/rpc/get_shared_analysis', { method:'POST', body:{ p_token:token } });
+    if(!r.ok) throw new Error('net');
+    const d = r.data;
+    if(!d || !d.data || !d.data.company){ showToast("Ce lien n'est plus valide : son auteur a peut-être retiré l'analyse."); return; }
+    const company = cleanImportedCompany(d.data.company);
+    if(!company) throw new Error('format');
+    sanitizeSharedCompany(company, true);
+    const { rec, isNew } = addReceived(company, { token, by:d.data.by, sharedAt:d.data.sharedAt || d.created_at });
+    goReceived(rec.rid);
+    showToast(isNew ? 'Analyse reçue : elle est dans « Analyses reçues », séparée de vos analyses.' : 'Cette analyse était déjà dans vos analyses reçues.');
+  }catch(e){
+    showToast("Impossible d'ouvrir cette analyse. Vérifiez votre connexion et réessayez avec le même lien.");
+  }
+}
+function goReceived(rid){
+  currentView = 'received';
+  receivedId = rid || '';
+  const r = state.received.find(x => x.rid === receivedId);
+  if(r && !r.seen){ r.seen = true; saveState(); }
+  render();
+  window.scrollTo(0, 0);
+  closeMenu();
+}
+function deleteReceived(rid){
+  state.received = state.received.filter(x => x.rid !== rid);
+  state.deleted['r_' + rid] = Date.now();   // pierre tombale : sans elle, la synchronisation la ramènerait depuis un autre appareil
+  saveState();
+  goReceived('');
+}
+function addReceivedToMine(rid){
+  const r = state.received.find(x => x.rid === rid);
+  if(!r) return;
+  if(r.addedId && state.companies.some(c => c.id === r.addedId)){ selectCompany(r.addedId); return; }
+  const c = JSON.parse(JSON.stringify(r.company));
+  c.id = 'c' + Date.now() + Math.random().toString(36).slice(2, 7);
+  const today = new Date().toISOString().slice(0, 10);
+  c.createdAt = today; c.updatedAt = today; c.updatedTs = Date.now();
+  c.tags = ['Reçue'];
+  migrateCompany(c);
+  state.companies.push(c);
+  r.addedId = c.id;
+  saveState();
+  renderTabs();
+  schedulePriceRefresh(c.id, 800);
+  showToast('Ajoutée à vos analyses (étiquette « Reçue »). Vous pouvez maintenant la modifier.');
+  renderReceivedView();
+}
+function receivedByLabel(r){
+  const d = r.sharedAt || r.receivedAt;
+  return (r.by ? 'de ' + escapeHtml(r.by) + ' · ' : '') + 'reçue le ' + escapeHtml(formatDateFr(String(d).slice(0, 10)));
+}
+function renderReceivedView(){
+  const main = document.getElementById('main');
+  const rec = state.received.find(x => x.rid === receivedId);
+  if(!rec){
+    receivedId = '';
+    const cards = state.received.map(r => {
+      const c = r.company, idn = c.fields.identite || {}, sect = idn.secteur && idn.secteur.secteur;
+      const sc = computeScoreInfo(c).score, av = avatarInner(c);
+      const mine = r.addedId && state.companies.some(x => x.id === r.addedId);
+      return `<button type="button" class="recv-card" data-recv-open="${escapeHtml(r.rid)}">
+        <span class="si-ico${av.cls}">${av.html}</span>
+        <span class="recv-card-t"><span class="recv-card-n">${escapeHtml(c.name || 'Sans nom')}${r.seen ? '' : ' <em class="recv-new">Nouveau</em>'}</span>
+          <span class="recv-card-s">${escapeHtml([idn.ticker, sect].filter(Boolean).join(' · ') || '—')}</span>
+          <span class="recv-card-s">${receivedByLabel(r)}</span></span>
+        <span class="recv-card-r">${sc === null ? '—' : `<b style="color:${scoreColor5(sc)}">${Math.round(sc)}</b><small>/100</small>`}${mine ? '<span class="recv-added">Ajoutée</span>' : ''}</span>
+      </button>`;
+    }).join('');
+    main.innerHTML = `<div class="wrap page space">
+      <div class="space-head"><div>
+        <div class="kicker">Analyses reçues</div>
+        <h1 class="space-title">Analyses reçues</h1>
+        <p class="space-sub">Les analyses que l'on vous a envoyées, séparées des vôtres. Vous pouvez les lire, puis choisir de les ajouter ou non à vos analyses.</p>
+      </div><div class="space-actions"><button class="btn btn-outline" id="recvImport">Importer un fichier reçu</button></div></div>
+      ${state.received.length ? `<div class="recv-grid">${cards}</div>` : `<section class="scard"><div class="scard-t">Rien reçu pour l'instant</div><p class="pref-h" style="margin:10px 0 0 0">Quand quelqu'un vous envoie une analyse, ouvrez son lien : elle apparaît ici. Vous pouvez aussi importer un fichier reçu avec le bouton ci-dessus. Pour envoyer l'une de vos analyses, ouvrez-la et cliquez sur « Partager ».</p></section>`}
+    </div>`;
+    main.querySelectorAll('[data-recv-open]').forEach(b => b.addEventListener('click', () => goReceived(b.dataset.recvOpen)));
+    const imp = document.getElementById('recvImport');
+    if(imp) imp.addEventListener('click', () => document.getElementById('importFile').click());
+    return;
+  }
+  const c = rec.company, idn = c.fields.identite || {};
+  const mine = rec.addedId && state.companies.some(x => x.id === rec.addedId);
+  const visitor = !cloud.session;
+  main.innerHTML = `<div class="wrap page space cmp-page">
+    <div class="crumbs"><button class="back-home-btn" id="recvBack">&larr; Analyses reçues</button></div>
+    <div class="space-head"><div>
+      <div class="kicker">Analyse reçue · ${receivedByLabel(rec)}</div>
+      <h1 class="space-title">${escapeHtml(c.name || 'Sans nom')}</h1>
+      <p class="space-sub">Lecture seule : cette analyse n'est <strong>pas dans vos analyses</strong> tant que vous ne l'ajoutez pas. Les chiffres et les notes sont ceux de son auteur.</p>
+    </div><div class="space-actions">
+      <button class="btn btn-primary" id="recvAdd">${mine ? 'Ouvrir dans mes analyses' : 'Ajouter à mes analyses'}</button>
+      <button class="btn btn-outline" id="recvDel">Supprimer</button>
+    </div></div>
+    <div class="recv-recap">${buildGlobalRecap(c)}</div>
+    ${visitor ? `<div class="backup-remind keys-tip"><div class="br-t"><strong>Pas encore de compte ?</strong> Créez-en un, gratuit, pour retrouver cette analyse et les vôtres sur tous vos appareils.</div><div class="pref-btns"><button class="btn btn-primary btn-sm" data-auth-open="signup">Créer un compte</button></div></div>` : ''}
+    <div id="cmpBody">${compareTableHtml([c], { received:true })}</div>
+  </div>`;
+  document.getElementById('recvBack').addEventListener('click', () => goReceived(''));
+  document.getElementById('recvAdd').addEventListener('click', () => addReceivedToMine(rec.rid));
+  const del = document.getElementById('recvDel');
+  del.addEventListener('click', () => {
+    if(del.dataset.armed !== '1'){ del.dataset.armed = '1'; del.textContent = 'Confirmer ?'; setTimeout(() => { if(del.isConnected){ del.dataset.armed = ''; del.textContent = 'Supprimer'; } }, 3000); return; }
+    deleteReceived(rec.rid);
+  });
+}
+
 function render(){
   renderTabs();
   if(currentView === 'home'){
@@ -10913,6 +11333,10 @@ function render(){
     renderCompareView();
     return;
   }
+  if(currentView === 'received'){
+    renderReceivedView();
+    return;
+  }
   const main = document.getElementById('main');
   const c = getActive();
   if(!c){
@@ -10938,6 +11362,7 @@ function render(){
           <div class="tags-bar" id="tagsBar">${tagsBarHtml(c)}</div>
         </div>
         <div class="chead-side">
+          <button type="button" class="btn btn-outline btn-sm share-btn" data-share-open data-tooltip="<div class='tt-desc'>Envoyer cette analyse à quelqu'un : par lien ou par fichier. Il la reçoit à part de ses analyses et choisit de l'ajouter ou non.</div>"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg>Partager</button>
           <div class="currency-toggle" id="companyCurrencyToggle" data-tooltip="<div class='tt-desc'>Devise de cette analyse : appliquée automatiquement à toutes les valeurs monétaires (prix, chiffres financiers, position...), sans avoir à écrire le symbole. Changer la devise ne convertit pas les montants déjà saisis.</div>">
             <button type="button" class="cur-opt${c.currency === '$' ? ' active' : ''}" data-currency="$">$ Dollar</button>
             <button type="button" class="cur-opt${c.currency === '€' ? ' active' : ''}" data-currency="€">€ Euro</button>
@@ -11722,6 +12147,8 @@ ensurePrices();
 scheduleSnapshot(6000);
 initFileBackup();
 bindAuth();
+bindShare();
+handleShareLink();
 initTour();
 initPieHover();
 initGotoLinks();
