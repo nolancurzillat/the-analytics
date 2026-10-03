@@ -5087,13 +5087,6 @@ function computePeRelatif(c){
   if(pa === null || secteur === null || secteur === 0) return null;
   return pa / secteur;
 }
-function parseCount(v){
-  if(v === undefined || v === null) return null;
-  const s = String(v).trim().replace(/\s/g,'').replace(/,/g,'.');
-  if(!s) return null;
-  const n = parseFloat(s);
-  return isNaN(n) ? null : n;
-}
 function computeRevenuEmploye(c){
   const ca = parseMoney(c.fields.financier.chiffreAffaires);
   const emp = parseMoney(c.fields.identite.nbEmployes);
@@ -5560,10 +5553,6 @@ function buildValuationSummaryBlock(c){
       ${chip('Position short', `<span style="color:${shortColor}">${shortV === null ? '—' : fmtNum(shortV, 1) + '%'}</span>`)}
     </div>
   </div>`;
-}
-function tierScoreVal(tier){
-  const map = { tresbon:100, bon:75, moyen:50, mauvais:25 };
-  return map[tier] !== undefined ? map[tier] : null;
 }
 function continuousScore(val, thresholds, inverse){
   if(val === null || val === undefined) return null;
@@ -11074,6 +11063,13 @@ function render(){
     b.addEventListener('click', () => setCompanyCurrency(b.dataset.currency));
   });
   bindSectionNav();
+  // Accessibilité : chaque case de saisie reprend le libellé de son champ (les libellés sont des <div>, pas des <label>, donc les lecteurs d'écran ne les associaient pas)
+  main.querySelectorAll('.field-row').forEach(row => {
+    const lab = row.querySelector('.field-label');
+    const t = lab ? lab.textContent.replace(/\s+/g, ' ').trim() : '';
+    if(!t) return;
+    row.querySelectorAll('input:not([aria-label]), select:not([aria-label]), textarea:not([aria-label]), [contenteditable="true"]:not([aria-label])').forEach(i => i.setAttribute('aria-label', t));
+  });
   const thesisChangeBtn = document.getElementById('thesisChangeBtn');
   if(thesisChangeBtn) thesisChangeBtn.addEventListener('click', archiveThesisAndClear);
   bindReportDone(document.getElementById('reportNote'));
