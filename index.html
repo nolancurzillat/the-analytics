@@ -2268,7 +2268,7 @@ tr:hover .ct-del-btn, .ct-del-btn:focus-visible{ opacity:1; }
     </ol>
     <input type="text" id="guideKeyInput" placeholder="Collez votre clé API ici" autocomplete="off" spellcheck="false">
     <div class="guide-result" id="guideResult" aria-live="polite"></div>
-    <div class="modal-hint">Le compte gratuit couvre les actions américaines (NASDAQ, NYSE) : privilégiez le dollar. Les bourses européennes demandent un abonnement payant chez Twelve Data ; pour ces actions, vous pouvez toujours saisir le prix à la main. Seul le ticker est envoyé, jamais le contenu de vos analyses.</div>
+    <div class="modal-hint">Le compte gratuit couvre les actions américaines (NASDAQ, NYSE) : privilégiez le dollar. Pour les actions européennes (euros), une clé gratuite Alpha Vantage donne un cours différé (Préférences, Mon espace) ; sinon vous pouvez saisir le prix à la main. Seul le ticker est envoyé, jamais le contenu de vos analyses.</div>
     <div class="modal-actions" style="margin-top:16px;">
       <button id="guideClose">Fermer</button>
       <button class="primary" id="guideSave">Enregistrer et tester</button>
@@ -2707,7 +2707,7 @@ const BACKUP_REMIND_MS = 7 * 24 * 3600 * 1000;
 // mais conservée quand le payload part vers Supabase (`syncNow`), protégé par les règles RLS de `user_data`, pour ne pas avoir à la ressaisir sur chaque appareil.
 function buildBackupPayload(forCloud){
   const settings = Object.assign({}, state.settings);
-  if(!forCloud) delete settings.twelveDataApiKey;
+  if(!forCloud){ delete settings.twelveDataApiKey; delete settings.alphaVantageApiKey; }
   return { app:'the-analytics', version:1, exportedAt:new Date().toISOString(), settings, companies:state.companies, deleted:state.deleted || {}, history:state.history || {} };
 }
 function backupKv(mode, fn){
@@ -2998,6 +2998,11 @@ function mergeRemote(remote){
   // Clé API Twelve Data : adoptée seulement si CET appareil n'en a pas encore (jamais d'écrasement d'une clé déjà collée ici), pour ne pas la ressaisir sur un nouvel appareil.
   if(!String(state.settings.twelveDataApiKey || '').trim() && typeof rs.twelveDataApiKey === 'string' && rs.twelveDataApiKey.trim()){
     state.settings.twelveDataApiKey = rs.twelveDataApiKey.trim();
+    changed = true;
+    ensurePrices();
+  }
+  if(!String(state.settings.alphaVantageApiKey || '').trim() && typeof rs.alphaVantageApiKey === 'string' && /^[A-Za-z0-9]{6,64}$/.test(rs.alphaVantageApiKey.trim())){
+    state.settings.alphaVantageApiKey = rs.alphaVantageApiKey.trim();
     changed = true;
     ensurePrices();
   }
@@ -3328,7 +3333,7 @@ if(!state.deleted || typeof state.deleted !== 'object' || Array.isArray(state.de
 if(!state.history || typeof state.history !== 'object' || Array.isArray(state.history)) state.history = {};
 state.companies.forEach(migrateCompany);
 // Préférences personnelles (ajoutées après la V1, sans effet sur les analyses existantes)
-state.settings = Object.assign({ firstName:'', defaultCurrency:'$', twelveDataApiKey:'', sortKey:'created', sortDir:'asc', tableSortKey:'created', tableSortDir:'asc', learnRead:[], lastBackupAt:0, backupSnoozeUntil:0, recentSearchIds:[] },(state.settings && typeof state.settings === 'object') ? state.settings : {});
+state.settings = Object.assign({ firstName:'', defaultCurrency:'$', twelveDataApiKey:'', alphaVantageApiKey:'', sortKey:'created', sortDir:'asc', tableSortKey:'created', tableSortDir:'asc', learnRead:[], lastBackupAt:0, backupSnoozeUntil:0, recentSearchIds:[] },(state.settings && typeof state.settings === 'object') ? state.settings : {});
 if(!Array.isArray(state.settings.recentSearchIds)) state.settings.recentSearchIds = [];
 if(state.settings.tourDone === undefined) state.settings.tourDone = state.companies.length > 0;
 if(['created','name','stars','updated','marketCap'].indexOf(state.settings.sortKey) < 0) state.settings.sortKey = 'created';
@@ -6447,14 +6452,78 @@ async function fetchTwelveDataQuote(ticker, apiKey, currencyCode, knownMicCode){
   return { price, currency: String((data && data.currency) || '').toUpperCase(), micCode };
 }
 
+// ---- Cours DIFFÉRÉ des actions en euros (Alpha Vantage, 2026-10-03, demande de Nolan) ----
+// Le compte gratuit de Twelve Data ne couvre pas les bourses européennes. Pour une analyse en euros, si l'utilisateur a collé
+// une clé Alpha Vantage (gratuite, environ 25 requêtes par jour), on l'utilise à la place : cours différé (dernière séance
+// ou quelques minutes de retard), jamais du temps réel. Une analyse en dollars continue de passer par Twelve Data.
+// Le symbole Alpha Vantage (ex. MC.PAR) est trouvé UNE fois par SYMBOL_SEARCH puis mis en cache (c.avSymbol / c.avSymbolFor).
+const AV_REFRESH_MIN_INTERVAL_MS = 60 * 60 * 1000;
+const AV_RETRY_AFTER_ERROR_MS = 15 * 60 * 1000;
+const AV_REGIONS = { 'France':'France', 'Pays-Bas':'Netherlands', 'Allemagne':'Germany', 'Italie':'Italy', 'Espagne':'Spain' };
+function avKeyOf(){ return String(state.settings.alphaVantageApiKey || '').trim(); }
+// Alpha Vantage refuse les rafales (environ 1 requête par seconde en version gratuite) : les appels sont espacés à la file.
+let avQueue = Promise.resolve();
+function avThrottle(){
+  const slot = avQueue.then(() => new Promise(r => setTimeout(r, 1300)));
+  avQueue = slot.catch(() => {});
+  return slot;
+}
+async function avRequest(params, key){
+  await avThrottle();
+  const r = await fetch('https://www.alphavantage.co/query?' + new URLSearchParams(Object.assign({}, params, { apikey:key })));
+  const d = await r.json();
+  const msg = String((d && (d['Error Message'] || d.Note || d.Information)) || '');
+  if(msg){
+    if(/apikey/i.test(msg) && /invalid|missing/i.test(msg)) throw new Error('AV_KEY');
+    if(/rate limit|requests per day|call frequency|per minute|premium/i.test(msg)) throw new Error('AV_LIMIT');
+    throw new Error(d['Error Message'] ? 'AV_NOSYMBOL' : 'AV_INFO:' + msg);
+  }
+  return d;
+}
+async function resolveAvSymbol(ticker, exchange, key){
+  const d = await avRequest({ function:'SYMBOL_SEARCH', keywords:ticker }, key);
+  const base = ticker.toUpperCase();
+  const list = (Array.isArray(d.bestMatches) ? d.bestMatches : []).filter(m => String(m['8. currency'] || '').toUpperCase() === 'EUR' && String(m['1. symbol'] || '').toUpperCase().split('.')[0] === base);
+  const region = exchange ? AV_REGIONS[exchange.country] : '';
+  const best = list.find(m => region && m['4. region'] === region) || list[0];
+  return best ? String(best['1. symbol']) : null;
+}
+async function fetchAlphaVantageQuote(ticker, exchange, key, knownSymbol){
+  const symbol = knownSymbol || await resolveAvSymbol(ticker, exchange, key);
+  if(!symbol) throw new Error('AV_NOSYMBOL');
+  const d = await avRequest({ function:'GLOBAL_QUOTE', symbol }, key);
+  const q = (d && d['Global Quote']) || {};
+  const price = num(q['05. price']);
+  if(price === null || price <= 0) throw new Error('AV_NOSYMBOL');
+  const day = /^\d{4}-\d{2}-\d{2}$/.test(String(q['07. latest trading day'] || '')) ? q['07. latest trading day'] : '';
+  return { price, currency:'EUR', micCode:null, av:{ symbol, day } };
+}
+function avErrorText(e, ticker){
+  const m = String((e && e.message) || '');
+  if(m === 'AV_KEY') return "La clé Alpha Vantage n'est pas valide. Vérifiez-la dans Préférences (Mon espace).";
+  if(m === 'AV_LIMIT') return "Limite quotidienne de la clé Alpha Vantage atteinte (environ 25 mises à jour par jour en version gratuite). Le cours reprendra demain, ou saisissez-le à la main.";
+  if(m === 'AV_NOSYMBOL') return `Alpha Vantage ne trouve pas le ticker "${ticker}" coté en euros. Vérifiez-le (sans suffixe de bourse) ou saisissez le prix à la main.`;
+  if(m.indexOf('AV_INFO:') === 0) return 'Alpha Vantage a refusé la demande : ' + m.slice(8);
+  return m || 'Connexion au service de cours de bourse impossible.';
+}
 function priceStatusText(c){
   const ticker = String((c.fields.identite && c.fields.identite.ticker) || '').trim();
   const apiKey = String(state.settings.twelveDataApiKey || '').trim();
+  const useAv = c.currency === '€' && !!avKeyOf();
   if(priceInFlight[c.id]) return 'Actualisation en cours...';
   if(!ticker) return 'Renseignez un ticker (section Identité) pour activer la mise à jour automatique.';
-  if(!apiKey) return 'Ajoutez une clé API Twelve Data dans Préférences (Mon espace) pour activer la mise à jour automatique.';
+  if(!apiKey && !useAv) return c.currency === '€'
+    ? 'Ajoutez une clé API gratuite Alpha Vantage dans Préférences (Mon espace) pour un cours différé des actions en euros.'
+    : 'Ajoutez une clé API Twelve Data dans Préférences (Mon espace) pour activer la mise à jour automatique.';
   if(c.priceError) return c.priceError;
-  if(c.priceUpdatedAt) return 'Mis à jour à ' + new Date(c.priceUpdatedAt).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+  if(c.priceUpdatedAt){
+    let t = 'Mis à jour à ' + new Date(c.priceUpdatedAt).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+    if(useAv && c.priceSource === 'av'){
+      const p = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(c.priceDay || ''));
+      t += ' (cours différé' + (p ? ', séance du ' + p[3] + '/' + p[2] : '') + ')';
+    }
+    return t;
+  }
   return "Pas encore actualisé automatiquement.";
 }
 
@@ -6481,11 +6550,13 @@ async function refreshCurrentPrice(id, force){
   if(!c0) return;
   const ticker = String((c0.fields.identite && c0.fields.identite.ticker) || '').trim();
   const apiKey = String(state.settings.twelveDataApiKey || '').trim();
-  if(!ticker || !apiKey) return;
+  const avKey = avKeyOf();
+  const useAv = c0.currency === '€' && !!avKey;
+  if(!ticker || (!apiKey && !useAv)) return;
   const storedPrice = String((c0.fields.valorisation && c0.fields.valorisation.prixActuel) || '');
   const needsRounding = !c0.priceError && /[.,]\d{2,}$/.test(storedPrice);
   if(!force && !needsRounding && c0.priceUpdatedAt){
-    const minInterval = c0.priceError ? PRICE_RETRY_AFTER_ERROR_MS : PRICE_REFRESH_MIN_INTERVAL_MS;
+    const minInterval = useAv ? (c0.priceError ? AV_RETRY_AFTER_ERROR_MS : AV_REFRESH_MIN_INTERVAL_MS) : (c0.priceError ? PRICE_RETRY_AFTER_ERROR_MS : PRICE_REFRESH_MIN_INTERVAL_MS);
     if((Date.now() - new Date(c0.priceUpdatedAt).getTime()) < minInterval) return;
   }
   if(priceInFlight[id]) return;
@@ -6503,11 +6574,21 @@ async function refreshCurrentPrice(id, force){
   const knownMicCode = chosenExchange ? chosenExchange.mic : ((c0.priceMicCodeFor === micCacheKey) ? c0.priceMicCode : null);
   let result = null, error = null;
   try{
-    result = await fetchTwelveDataQuote(ticker, apiKey, currencyCode, knownMicCode);
+    if(useAv){
+      const avKnown = (c0.avSymbolFor === micCacheKey && c0.avSymbol) ? c0.avSymbol : null;
+      try{ result = await fetchAlphaVantageQuote(ticker, chosenExchange, avKey, avKnown); }
+      catch(e){
+        // Symbole mis en cache refusé : on l'oublie pour repartir d'une recherche fraîche à la prochaine tentative
+        if(avKnown && String(e && e.message) === 'AV_NOSYMBOL'){ c0.avSymbol = ''; c0.avSymbolFor = ''; }
+        throw new Error(avErrorText(e, ticker));
+      }
+    }else{
+      result = await fetchTwelveDataQuote(ticker, apiKey, currencyCode, knownMicCode);
+    }
   }catch(e){
     const raw = (e && e.message) ? e.message : '';
-    if(/plan|upgrad/i.test(raw)){
-      error = `Cette bourse n'est pas incluse dans l'offre gratuite de Twelve Data (réservée à un abonnement payant). Les actions américaines (NASDAQ, NYSE...) fonctionnent bien avec le compte gratuit : pour profiter de la mise à jour automatique, utilisez plutôt le dollar pour cette analyse. Sinon, mettez à jour ce prix manuellement.`;
+    if(!useAv && /plan|upgrad/i.test(raw)){
+      error = `Cette bourse n'est pas incluse dans l'offre gratuite de Twelve Data (réservée à un abonnement payant). Les actions américaines (NASDAQ, NYSE...) fonctionnent bien avec le compte gratuit. Pour une action en euros, ajoutez plutôt une clé gratuite Alpha Vantage dans Préférences (Mon espace) : cours différé, sans abonnement. Sinon, mettez à jour ce prix manuellement.`;
     }else{
       error = raw || 'Connexion au service de cours de bourse impossible.';
     }
@@ -6531,6 +6612,9 @@ async function refreshCurrentPrice(id, force){
     }else{
       c.fields.valorisation.prixActuel = String(Math.round(result.price * 10) / 10);
       c.priceError = null;
+      c.priceSource = result.av ? 'av' : 'td';
+      c.priceDay = result.av ? result.av.day : '';
+      if(result.av){ c.avSymbol = result.av.symbol; c.avSymbolFor = micCacheKey; }
       applyLegacyWallStreet(c);
       touchUpdated(c, true);
     }
@@ -8150,6 +8234,11 @@ function buildPrefsCard(){
       <button class="btn btn-outline btn-sm" data-open-price-guide>Guide pour obtenir ma clé</button>
     </div>
     <div class="pref">
+      <label class="pref-l" for="prefAvKey">Prix des actions en euros (cours différé)</label>
+      <input type="text" id="prefAvKey" placeholder="Clé API Alpha Vantage" value="${escapeHtml(s.alphaVantageApiKey || '')}" autocomplete="off" spellcheck="false">
+      <div class="pref-h">Clé gratuite Alpha Vantage, utilisée pour les analyses en euros (cours de la dernière séance ou différé, environ 25 mises à jour par jour). <a href="https://www.alphavantage.co/support/#api-key" target="_blank" rel="noopener noreferrer">Obtenir ma clé</a> (quelques secondes, il suffit d'une adresse e-mail).</div>
+    </div>
+    <div class="pref">
       <div class="pref-l">Visite guidée</div>
       <button class="btn btn-outline btn-sm" data-start-tour>Revoir la visite guidée</button>
     </div>
@@ -8855,6 +8944,17 @@ function bindSpace(){
       showToast('Clé API retirée.');
     }
   });
+  const avKeyInput = document.getElementById('prefAvKey');
+  if(avKeyInput) avKeyInput.addEventListener('change', e => {
+    const v = e.target.value.trim();
+    if(v && !/^[A-Za-z0-9]{6,64}$/.test(v)){ showToast('Cette clé ne semble pas valide : copiez-la en entier, sans espace.'); e.target.value = state.settings.alphaVantageApiKey || ''; return; }
+    state.settings.alphaVantageApiKey = v;
+    // Les analyses en euros repartent d'une tentative fraîche (une erreur Twelve Data précédente ne doit pas les bloquer)
+    state.companies.forEach(c => { if(c.currency === '€'){ c.priceError = null; c.priceUpdatedAt = null; } });
+    saveState();
+    if(v){ showToast('Clé enregistrée. Actualisation des analyses en euros...'); ensurePrices(); const a = getActive(); if(currentView === 'company' && a) refreshCurrentPrice(a.id, true); }
+    else showToast('Clé retirée.');
+  });
   const refresh = document.getElementById('prefRefreshLogos');
   if(refresh) refresh.addEventListener('click', () => {
     state.companies.forEach(c => { if(!c.logo || c.logo.src === 'auto') c.logo = null; });
@@ -8973,7 +9073,7 @@ const LEARN_CHAPTERS = [
         `Un texte collé depuis un site web perd sa mise en forme d'origine, pour rester lisible et uniforme.`,
       ]),
       LH(`Le prix automatique`),
-      LP(`Pour éviter de ressaisir le cours chaque jour, l'application peut le récupérer toute seule via un service gratuit (Twelve Data). Il faut créer un compte gratuit, une seule fois, et coller sa clé dans les Préférences : un guide pas à pas vous accompagne. Le compte gratuit couvre les <strong>actions américaines</strong> (NASDAQ, NYSE), une raison de plus de privilégier le dollar. Pour une bourse européenne, saisissez le prix à la main.`),
+      LP(`Pour éviter de ressaisir le cours chaque jour, l'application peut le récupérer toute seule via un service gratuit (Twelve Data). Il faut créer un compte gratuit, une seule fois, et coller sa clé dans les Préférences : un guide pas à pas vous accompagne. Le compte gratuit couvre les <strong>actions américaines</strong> (NASDAQ, NYSE), une raison de plus de privilégier le dollar. Pour une action en euros, ajoutez dans les Préférences une clé gratuite Alpha Vantage : le cours est alors différé (dernière séance ou quelques minutes de retard), pas en temps réel.`),
       { t:'btn', x:`Ouvrir le guide du prix automatique`, a:'data-open-price-guide' },
       LH(`Les pages de l'application`),
       LDEFS([
@@ -9259,7 +9359,7 @@ const LEARN_FAQ = [
   [`Où trouver les informations sur une entreprise ?`, `Commencez par le site web de l'entreprise (rubrique « Investisseurs » : rapports annuels, résultats trimestriels, présentations). Complétez avec <a href="https://www.tradingview.com" target="_blank" rel="noopener noreferrer">TradingView</a> et <a href="https://www.alphaspread.com" target="_blank" rel="noopener noreferrer">Alpha Spread</a>, dont les versions gratuites sont assez complètes. Le chapitre « Remplir chaque section » détaille tout cela.`],
   [`Faut-il tout remplir ?`, `Non. Remplissez ce que vous savez : l'analyse s'affine au fur et à mesure et la barre de progression de chaque section vous montre où vous en êtes. Un score n'est fiable que si les données principales sont renseignées.`],
   [`Puis-je utiliser l'application sans connexion internet ?`, `Oui, une fois l'application chargée ou installée, vous pouvez consulter et modifier vos analyses. Seuls la recherche d'entreprise, le logo, le prix automatique et la synchronisation ont besoin d'internet.`],
-  [`Le prix automatique ne s'affiche pas, que vérifier ?`, `Vérifiez dans l'ordre : le ticker est renseigné, la cotation correspond à la bonne bourse, la clé Twelve Data est enregistrée dans les Préférences (le guide vous aide à l'obtenir) et la devise de l'analyse correspond à celle de la bourse. Le service gratuit ne couvre que les bourses américaines (en dollars) : pour une action européenne, saisissez le prix à la main. Un message sous « Prix actuel » explique le problème.`],
+  [`Le prix automatique ne s'affiche pas, que vérifier ?`, `Vérifiez dans l'ordre : le ticker est renseigné, la cotation correspond à la bonne bourse, la clé Twelve Data est enregistrée dans les Préférences (le guide vous aide à l'obtenir) et la devise de l'analyse correspond à celle de la bourse. Le service Twelve Data ne couvre que les bourses américaines (en dollars) : pour une action en euros, ajoutez une clé gratuite Alpha Vantage (cours différé, environ 25 mises à jour par jour), ou saisissez le prix à la main. Un message sous « Prix actuel » explique le problème.`],
   [`Que fait la bascule $ / € en haut de la fiche ?`, `Elle change la devise affichée dans toute l'analyse. Elle ne convertit jamais les montants déjà saisis : si vous changez de devise, ressaisissez vos chiffres dans la nouvelle.`],
   [`À quelle fréquence faut-il mettre une analyse à jour ?`, `À chaque publication de résultats (trimestrielle ou annuelle), et quand un événement important change la situation de l'entreprise. Le prix, lui, peut se mettre à jour automatiquement.`],
   [`L'application me dit-elle quoi acheter ?`, `Non. Elle vous aide à structurer votre réflexion et à comparer vos idées. Elle ne recommande jamais d'acheter ou de vendre : la décision vous appartient.`],
@@ -9318,7 +9418,7 @@ const LEARN_INDICATORS = {
   risque: { how:`Ce qui pourrait mal tourner : concurrence, réglementation, dépendance à un client, dette, technologie.` },
   croissanceAttendueCA: { how:`La croissance annuelle du chiffre d'affaires que vous attendez sur 3 ans (CAGR), et le total calculé.`, ex:`8 % par an pendant 3 ans donne environ +26 % au total (1,08 puissance 3 = 1,26).` },
   croissanceAttendueBenef: { how:`La croissance annuelle du bénéfice net que vous attendez sur 3 ans (CAGR), et le total calculé. À côté de la croissance attendue du CA : si le bénéfice croît plus vite que le CA, c'est que les marges s'améliorent.`, ex:`10 % par an pendant 3 ans donne environ +33 % au total (1,10 puissance 3 = 1,33).` },
-  prixActuel: { how:`Le cours de l'action. Il se met à jour automatiquement avec une clé Twelve Data (actions américaines) ou se saisit à la main.` },
+  prixActuel: { how:`Le cours de l'action. Il se met à jour automatiquement avec une clé Twelve Data (actions américaines) ou Alpha Vantage (actions en euros, cours différé), ou se saisit à la main.` },
   epsActuel: { how:`Bénéfice par action des 12 derniers mois : bénéfice net ÷ nombre d'actions.`, ex:`Bénéfice net de 100 M$ pour 20 M d'actions : EPS de 5 $.` },
   epsEstime1an: { how:`Bénéfice par action attendu dans 12 mois (estimation des analystes ou la vôtre).` },
   peActuel: { how:`Le PE (ou PER) : Prix ÷ EPS. Il indique combien d'années de bénéfices vous payez.`, ex:`Prix de 100 $ et EPS de 5 $ : PE de 20.`, warn:`Un PE bas n'est pas forcément une bonne affaire, un PE élevé n'est pas forcément cher : tout dépend de la croissance.` },
@@ -10003,8 +10103,8 @@ const CONTACT_FORM_HTML = `<form id="contactForm" class="contact-form" novalidat
 
 // ---------- Informations légales : confidentialité, conditions, mentions légales ----------
 // Textes rédigés comme base de travail, à faire relire avant une ouverture large au public. Pas de `${` ni de guillemet oblique dans les textes.
-const LEGAL_VERSION = '2026-10-02';
-const LEGAL_DATE_TXT = '2 octobre 2026';
+const LEGAL_VERSION = '2026-10-03';
+const LEGAL_DATE_TXT = '3 octobre 2026';
 const LEGAL_PUBLISHER = 'Nolan Curzillat';
 const LEGAL_CONTACT = `<a href="mailto:the.analytics.app@gmail.com">the.analytics.app@gmail.com</a>`;
 const LEGAL_TABS = [
@@ -10025,7 +10125,7 @@ const LEGAL_CONTENT = {
       `<strong>Adresse e-mail et mot de passe</strong> (avec un compte) : pour créer et protéger votre compte. Le mot de passe est stocké sous forme chiffrée par notre prestataire d'authentification, nous ne le voyons jamais. Base légale : l'exécution du service que vous demandez.`,
       `<strong>Vos analyses et préférences</strong> (avec un compte) : contenu de vos fiches, prénom facultatif, devise par défaut, ordre de tri, progression dans l'apprentissage. Elles servent uniquement à la synchronisation entre vos appareils. Base légale : l'exécution du service.`,
       `<strong>Date et version de votre acceptation</strong> de ces règles, enregistrées à la création du compte, pour pouvoir prouver votre accord. Base légale : notre intérêt légitime à conserver cette preuve.`,
-      `<strong>Votre clé API Twelve Data</strong>, si vous en utilisez une : elle est stockée sur votre appareil. Avec un compte, elle est aussi synchronisée avec vos analyses pour que vous n'ayez pas à la ressaisir sur chaque appareil.`,
+      `<strong>Vos clés API Twelve Data et Alpha Vantage</strong>, si vous en utilisez : elles sont stockées sur votre appareil. Avec un compte, elles sont aussi synchronisées avec vos analyses pour que vous n'ayez pas à les ressaisir sur chaque appareil.`,
     ]),
     LP(`Vos analyses contiennent ce que vous y écrivez librement (notes, thèses d'investissement, positions, prix d'achat). Ces informations peuvent révéler votre situation financière : ne saisissez en ligne que ce que vous acceptez d'y stocker. Vous pouvez à tout moment vous en passer en n'utilisant pas de compte. N'y indiquez aucune information sur d'autres personnes.`),
     LH(`Qui d'autre reçoit des données`),
@@ -10034,7 +10134,7 @@ const LEGAL_CONTENT = {
       `<strong>GitHub Pages</strong> (hébergement du site) : comme tout site web, reçoit votre adresse IP quand vous ouvrez l'application.`,
       `<strong>Google Fonts</strong> : les polices d'écriture sont chargées depuis Google, qui reçoit votre adresse IP.`,
       `<strong>Wikidata, Wikimedia, le service d'icônes de Google et Clearbit</strong> (logos des entreprises) : reçoivent uniquement le nom de l'entreprise analysée, pour retrouver son logo automatiquement.`,
-      `<strong>Twelve Data</strong> (prix actuels) : reçoit uniquement le ticker de l'action et votre clé API, si vous en avez renseigné une.`,
+      `<strong>Twelve Data</strong> (prix actuels en dollars) et <strong>Alpha Vantage</strong> (prix différés en euros) : reçoivent uniquement le ticker de l'action et votre clé API, si vous en avez renseigné une.`,
       `<strong>Google (Gmail)</strong> : sert à envoyer les e-mails de l'application (confirmation de compte, réinitialisation du mot de passe). Reçoit votre adresse e-mail et le contenu du message.`,
       `<strong>Web3Forms</strong> (formulaire « Nous contacter ») : reçoit votre nom (si indiqué), votre adresse e-mail et le contenu de votre message, uniquement si vous utilisez ce formulaire, pour nous transmettre votre message par e-mail.`,
     ]),
