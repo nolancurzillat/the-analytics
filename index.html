@@ -607,19 +607,19 @@ main{ display:block; }
 }
 .home-rename-btn:hover{ opacity:1; color:var(--blue); background:var(--paper-line); }
 .home-stars{ color:var(--star); letter-spacing:1px; font-family:var(--font-mono); font-size:13.5px; }
-.home-updated{ font-family:var(--font-mono); font-size:13px; color:var(--ink-soft); }
-.home-td-cap{ font-family:var(--font-mono); font-size:13px; color:var(--ink-soft); }
+.home-updated{ font-size:13px; color:var(--ink-soft); }
+.home-td-cap{ font-size:13px; color:var(--ink-soft); }
 /* En-têtes cliquables de "Toutes vos analyses" (2026-09-29) : premier clic décroissant, reclic sur la même colonne croissant */
 .th-sort{ cursor:pointer; }
 .th-sort:hover{ color:var(--ink); }
 .th-sort-active{ color:var(--ink); }
 .th-sort-arrow{ margin-left:4px; }
-.score-chip{ font-family:var(--font-mono); font-weight:600; font-size:14px; display:inline-flex; align-items:center; gap:8px; }
+.score-chip{ font-weight:600; font-size:14px; display:inline-flex; align-items:center; gap:8px; }
 .score-chip i{ width:9px; height:9px; border-radius:50%; display:inline-block; }
 .ct-empty{ color:var(--ink-soft); }
 /* Pastille chiffrée : teinte du palier (--c posé en ligne), texte assombri ou éclairci vers la couleur du texte pour rester lisible dans les deux thèmes */
 .vchip{ display:inline-flex; align-items:center; justify-content:center; min-width:42px; padding:3px 9px; border-radius:9px;
-  font-family:var(--font-mono); font-weight:700; font-size:14px; line-height:1.3; white-space:nowrap;
+  font-weight:700; font-size:14px; line-height:1.3; white-space:nowrap;
   color:color-mix(in srgb, var(--c) 62%, var(--ink)); background:color-mix(in srgb, var(--c) 17%, transparent); border:1px solid color-mix(in srgb, var(--c) 50%, transparent); }
 .vchip-lg{ min-width:52px; padding:4px 12px; font-size:17px; border-radius:10px; border-width:1.5px; }
 .vchip.is-prov{ border-style:dashed; }
@@ -644,7 +644,7 @@ main{ display:block; }
 .home-table--tight .home-rename-btn{ margin-left:4px; }
 .home-table--tight .comp-cell{ gap:7px; }
 .home-table--tight .comp-cell .hbar-track{ width:40px; height:8px; }
-.home-table--tight .comp-cell b{ font-family:var(--font-mono); font-size:13px; }
+.home-table--tight .comp-cell b{ font-size:13px; }
 .home-table--tight .home-updated{ font-size:12px; }
 .home-table--tight .vchip{ font-size:13.5px; padding:3px 8px; min-width:40px; }
 .home-table--tight .vchip-lg{ font-size:16.5px; padding:4px 11px; min-width:50px; }
@@ -2235,8 +2235,8 @@ a.btn{ text-decoration:none; }
 /* « Vos positions » (2026-10-04, demande de Nolan : plus beau visuellement) */
 .pf-pos thead th{ padding:13px 16px; white-space:nowrap; }
 .pf-pos td{ padding:13px 16px; }
-.pf-pos .pf-num{ text-align:right; font-variant-numeric:tabular-nums; }
-.pf-pos thead th.pf-num{ text-align:right; }
+.pf-pos .pf-num{ text-align:left; font-variant-numeric:tabular-nums; }
+.pf-pos thead th.pf-num{ text-align:left; }
 .pf-pos .pf-mid, .pf-pos thead th.pf-mid{ text-align:center; }
 .pf-pos tbody tr:hover{ background:color-mix(in srgb, var(--accent) 6%, var(--card)); }
 .pf-co-in{ display:flex; align-items:center; gap:14px; min-width:190px; }
@@ -2244,10 +2244,10 @@ a.btn{ text-decoration:none; }
 .pf-co-t{ display:flex; flex-direction:column; gap:2px; min-width:0; }
 .pf-co-name{ font-weight:600; font-size:15px; color:var(--ink); }
 .pf-co-tk{ font-family:var(--font-mono); font-size:12.5px; font-weight:500; color:var(--blue); }
-.pf-resbox{ display:inline-flex; flex-direction:column; align-items:flex-end; gap:1px; padding:5px 12px; border-radius:10px; background:color-mix(in srgb, var(--rc) 13%, transparent); border:1px solid color-mix(in srgb, var(--rc) 22%, transparent); }
+.pf-resbox{ display:inline-flex; flex-direction:column; align-items:flex-start; gap:1px; padding:5px 12px; border-radius:10px; background:color-mix(in srgb, var(--rc) 13%, transparent); border:1px solid color-mix(in srgb, var(--rc) 22%, transparent); }
 .pf-resbox .pf-res{ color:var(--rc); font-weight:700; font-size:14px; }
 .pf-resbox .pf-res-s{ color:var(--rc); font-weight:600; font-size:12px; opacity:1; }
-.pf-w{ display:inline-flex; flex-direction:column; align-items:flex-end; gap:6px; }
+.pf-w{ display:inline-flex; flex-direction:column; align-items:flex-start; gap:6px; }
 .pf-w b{ font-weight:600; }
 .pf-w-bar{ display:block; width:86px; height:6px; border-radius:99px; background:var(--border); overflow:hidden; }
 .pf-w-bar i{ display:block; height:100%; border-radius:99px; background:linear-gradient(90deg, var(--blue), var(--accent)); }
