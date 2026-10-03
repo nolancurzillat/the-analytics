@@ -1020,23 +1020,23 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
 .moat-gauge{ display:block; }
 
 /* Liste de clients */
-.client-list{ display:flex; flex-direction:column; gap:8px; max-width:640px; }
+.client-list{ display:flex; flex-direction:column; gap:10px; max-width:none; }
 .client-item{ display:flex; align-items:flex-start; gap:10px; border-radius:9px; transition:opacity .12s ease; }
 .client-item.dragging{ opacity:.35; }
 .client-item.drag-over{ box-shadow:0 -2px 0 var(--blue) inset; }
 /* Seule cette petite zone (six points + numéro) déplace la ligne ; le reste de la ligne sert à saisir le texte. */
-.client-grip{ flex:0 0 auto; display:flex; align-items:center; gap:6px; padding:10px 0; cursor:grab; user-select:none; -webkit-user-select:none; }
+.client-grip{ flex:0 0 auto; display:flex; align-items:center; gap:6px; padding:15px 0; cursor:grab; user-select:none; -webkit-user-select:none; }
 .client-handle{ color:var(--ink-soft); font-size:15px; letter-spacing:-2px; line-height:1.4; }
 .client-num{ min-width:24px; color:var(--ink-soft); font-family:var(--font-mono); font-size:14px; line-height:1.4; }
 .client-item textarea{
   flex:1; min-width:0; width:100%; resize:none; overflow:hidden; display:block;
   background:var(--field); border:1px solid var(--border); border-radius:9px; color:var(--ink);
-  font-family:var(--font-ui); font-size:var(--fs-value); font-weight:400; padding:10px 13px; line-height:1.4;
+  font-family:var(--font-ui); font-size:var(--fs-value); font-weight:400; padding:14px 16px; line-height:1.4; min-height:52px;
   transition:border-color .12s ease, box-shadow .12s ease;
 }
 .client-item textarea:hover{ border-color:var(--border-strong); }
 .client-item textarea:focus{ outline:none; border-color:var(--blue); box-shadow:0 0 0 3px var(--ring); }
-.client-item .field-remove{ margin-top:8px; }
+.client-item .field-remove{ margin-top:13px; }
 .add-client-btn{
   margin-top:6px; background:none; border:1px dashed var(--border-strong); color:var(--ink-soft);
   font-size:14px; padding:8px 14px; border-radius:9px; cursor:pointer; width:fit-content;
@@ -11240,7 +11240,8 @@ function render(){
         return;
       }
       if(field.type === 'list'){
-        const arr = Array.isArray(value) ? value : [];
+        // Toujours au moins UNE case de client affichée (2026-10-03, demande de Nolan) : la donnée reste une liste vide tant que rien n'est saisi
+        const arr = Array.isArray(value) && value.length ? value : [''];
         let items = arr.map((v, idx) => `
           <div class="client-item" data-drag-idx="${idx}">
             <span class="client-grip" draggable="true" title="Glisser pour réordonner"><span class="client-handle">⋮⋮</span><span class="client-num">${idx+1}.</span></span>
