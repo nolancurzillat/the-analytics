@@ -3490,7 +3490,7 @@ function openNewCompanyModal(){
   const overlay = document.getElementById('newCompanyModal');
   const input = document.getElementById('newCompanyInput');
   overlay.querySelector('h2').textContent = 'Nouvelle analyse';
-  input.placeholder = "Rechercher une entreprise (ex. Nvidia, LVMH…)";
+  input.placeholder = "Rechercher une entreprise (ex. Nvidia, Apple…)";
   document.getElementById('newCompanyConfirm').textContent = 'Créer';
   document.getElementById('newCompanyCurrencyField').style.display = '';
   newCompanyCurrency = state.settings.defaultCurrency === '€' ? '€' : '$';
@@ -9243,8 +9243,8 @@ const LEARN_FAQ = [
 
 // Compléments du dictionnaire des indicateurs, par clé de champ (how = en pratique, ex = exemple, warn = attention)
 const LEARN_INDICATORS = {
-  ticker: { how:`Le code court qui identifie l'action sur sa place boursière.`, ex:`AAPL pour Apple, MSFT pour Microsoft, MC pour LVMH (Euronext Paris).`, warn:`Un même ticker peut désigner des entreprises différentes selon la bourse : renseignez aussi la Cotation.` },
-  cotation: { how:`La place boursière où l'action est cotée. Elle sert à retrouver le bon prix automatiquement.`, ex:`NASDAQ pour Apple, Euronext Paris pour LVMH.`, warn:`Avec le compte gratuit du prix automatique, seules les bourses américaines sont couvertes.` },
+  ticker: { how:`Le code court qui identifie l'action sur sa place boursière.`, ex:`AAPL pour Apple, MSFT pour Microsoft, NVDA pour Nvidia.`, warn:`Un même ticker peut désigner des entreprises différentes selon la bourse : renseignez aussi la Cotation.` },
+  cotation: { how:`La place boursière où l'action est cotée. Elle sert à retrouver le bon prix automatiquement.`, ex:`NASDAQ pour Apple, NYSE pour Coca-Cola.`, warn:`Avec le compte gratuit du prix automatique, seules les bourses américaines sont couvertes.` },
   paysSiege: { how:`Le pays de cotation et le siège social. Utile pour la répartition géographique de vos analyses dans Mon espace.` },
   secteur: { how:`Le secteur et l'industrie précise. Ils servent à comparer l'entreprise à ses vraies concurrentes et à répartir vos analyses.`, warn:`Comparez toujours les ratios entre entreprises du même secteur.` },
   marketCap: { how:`La taille de l'entreprise en bourse. Les très grandes entreprises sont généralement plus stables, mais croissent souvent moins vite que les petites.`, ex:`Cours de 190 $ × 15 Md d'actions = 2 850 Md$, soit 2,85 T$.`, warn:`Valeur du moment : pas de notion de TTM ici.` },
