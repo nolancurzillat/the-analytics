@@ -2284,6 +2284,16 @@ a.btn{ text-decoration:none; }
 .guide-sub{ margin:14px 0 8px 0; font-size:15px; font-weight:700; }
 .home-install{ display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:10px 16px; margin:44px auto 0 auto; padding:16px 22px; max-width:760px; border:1px solid var(--border); border-radius:14px; background:var(--card); text-align:center; font-size:14.5px; color:var(--ink-soft); }
 .home-install strong{ color:var(--ink); }
+/* Largeur de la barre de gauche réglable par l'utilisateur (ordinateur seulement) : la variable --side-w, déjà lue par la barre et le contenu, prend la valeur choisie */
+@media (min-width:901px){ :root{ --side-w:var(--side-w-user, 268px); } }
+.side-resizer{ position:absolute; top:0; right:-5px; width:10px; height:100%; z-index:70; cursor:col-resize; touch-action:none; }
+.side-resizer::after{ content:''; position:absolute; top:0; bottom:0; left:4px; width:2px; border-radius:2px; background:transparent; transition:background .12s ease; }
+.side-resizer:hover::after, .side-resizer:focus-visible::after, body.side-resizing .side-resizer::after{ background:var(--accent); }
+.side-resizer:focus-visible{ outline:none; }
+body.side-resizing{ cursor:col-resize; user-select:none; -webkit-user-select:none; }
+@media (max-width:900px){ .side-resizer{ display:none; } }
+@media print{ .side-resizer{ display:none; } }
+
 </style>
 </head>
 <body>
@@ -11629,7 +11639,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 214;
+const APP_BUILD = 216;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de Nolan : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -11840,6 +11850,58 @@ function initInstall(){
     else if(t.closest('[data-install="go"]')){ closeInstallModal(); runInstallPrompt(); }
   });
   document.addEventListener('keydown', e => { if(e.key === 'Escape' && !document.getElementById('installModal').classList.contains('hidden')) closeInstallModal(); });
+}
+
+// ============================================================
+// BARRE DE GAUCHE REDIMENSIONNABLE (2026-10-04, demande de Nolan : « extensible et rétractable jusqu'à une certaine limite »). Une poignée verticale au bord
+// droit de la barre (glisser, flèches gauche/droite, double-clic pour revenir à la largeur d'origine). Largeur entre 220 et 440 px (au plus 40 % de
+// l'écran), mémorisée sur l'appareil. Ordinateur seulement : sur téléphone la barre est un tiroir de largeur fixe.
+// ============================================================
+const SIDE_W_KEY = 'analytics-side-w', SIDE_W_MIN = 220, SIDE_W_MAX = 440, SIDE_W_DEFAULT = 268;
+function sideWidthLimits(){ return { min:SIDE_W_MIN, max:Math.max(SIDE_W_MIN, Math.min(SIDE_W_MAX, Math.round(window.innerWidth * 0.4))) }; }
+let sideDesired = SIDE_W_DEFAULT;   // la largeur VOULUE par la personne ; la largeur affichée en est une version limitée à 40 % de l'écran
+function applySideWidth(w, save){
+  sideDesired = w;
+  const lim = sideWidthLimits();
+  const v = Math.max(lim.min, Math.min(lim.max, Math.round(w)));
+  document.documentElement.style.setProperty('--side-w-user', v + 'px');
+  const h = document.getElementById('sideResizer');
+  if(h) h.setAttribute('aria-valuenow', String(v));
+  if(save){ try{ localStorage.setItem(SIDE_W_KEY, String(v)); }catch(e){} }
+  return v;
+}
+function initSideResizer(){
+  const side = document.getElementById('sidebar');
+  if(!side || document.getElementById('sideResizer')) return;
+  const h = document.createElement('div');
+  h.id = 'sideResizer';
+  h.className = 'side-resizer';
+  h.setAttribute('role', 'separator');
+  h.setAttribute('aria-orientation', 'vertical');
+  h.setAttribute('aria-label', 'Largeur de la liste des analyses : glissez, ou utilisez les flèches');
+  h.setAttribute('aria-valuemin', String(SIDE_W_MIN));
+  h.setAttribute('aria-valuemax', String(SIDE_W_MAX));
+  h.setAttribute('tabindex', '0');
+  h.setAttribute('data-tooltip', "<div class='tt-desc'>Glissez pour agrandir ou réduire la liste. Double-clic : taille d'origine.</div>");
+  side.appendChild(h);
+  let saved = null;
+  try{ saved = Number(localStorage.getItem(SIDE_W_KEY)); }catch(e){}
+  applySideWidth(saved && isFinite(saved) ? saved : SIDE_W_DEFAULT, false);
+  let drag = false;
+  h.addEventListener('pointerdown', e => { drag = true; h.setPointerCapture(e.pointerId); document.body.classList.add('side-resizing'); e.preventDefault(); });
+  h.addEventListener('pointermove', e => { if(drag) applySideWidth(e.clientX, false); });
+  const stop = e => { if(!drag) return; drag = false; document.body.classList.remove('side-resizing'); applySideWidth(e.clientX, true); };
+  h.addEventListener('pointerup', stop);
+  h.addEventListener('pointercancel', () => { drag = false; document.body.classList.remove('side-resizing'); });
+  h.addEventListener('dblclick', () => applySideWidth(SIDE_W_DEFAULT, true));
+  h.addEventListener('keydown', e => {
+    if(e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Home') return;
+    e.preventDefault();
+    const cur = parseInt(getComputedStyle(side).width, 10) || SIDE_W_DEFAULT;
+    applySideWidth(e.key === 'Home' ? SIDE_W_DEFAULT : cur + (e.key === 'ArrowRight' ? 16 : -16), true);
+  });
+  // Fenêtre rétrécie : la largeur choisie est ramenée dans les limites (40 % de l'écran)
+  window.addEventListener('resize', () => applySideWidth(sideDesired, false));
 }
 
 function render(){
@@ -12693,6 +12755,7 @@ initFileBackup();
 bindAuth();
 bindShare();
 initUpdateCheck();
+initSideResizer();
 initInstall();
 paintInstallButtons();
 initDecisionPicker();
