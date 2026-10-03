@@ -1659,6 +1659,9 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
 .space-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-bottom:26px; }
 .space-title{ font-family:var(--font-serif); font-weight:700; font-size:clamp(30px, 3.6vw, 44px); line-height:1.1; letter-spacing:-.01em; margin:10px 0 8px 0; }
 .space-sub{ margin:0; max-width:680px; font-size:16px; line-height:1.6; color:var(--ink-soft); }
+/* Liens de texte sans classe (mentions légales, FAQ, aides...) : bleu clair lisible en thème sombre au lieu du bleu foncé par défaut du navigateur (demande de Nolan, 2026-10-04) */
+a:not([class]){ color:var(--blue); text-decoration:underline; text-underline-offset:3px; }
+a:not([class]):hover{ filter:brightness(1.15); }
 .link-btn{ background:none; border:none; padding:0; color:var(--blue); font-size:inherit; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
 .space-kpis{ display:grid; grid-template-columns:repeat(6, minmax(0,1fr)); gap:14px; }
 .dkpi-unit{ font-family:var(--font-ui); font-size:15px; font-weight:400; color:var(--ink-soft); }
@@ -10638,9 +10641,9 @@ const CONTACT_FORM_HTML = `<form id="contactForm" class="contact-form" novalidat
 
 // ---------- Informations légales : confidentialité, conditions, mentions légales ----------
 // Textes rédigés comme base de travail, à faire relire avant une ouverture large au public. Pas de `${` ni de guillemet oblique dans les textes.
-const LEGAL_VERSION = '2026-10-03';
-const LEGAL_DATE_TXT = '3 octobre 2026';
-const LEGAL_PUBLISHER = 'Nolan Curzillat';
+const LEGAL_VERSION = '2026-10-04';
+const LEGAL_DATE_TXT = '4 octobre 2026';
+// Le nom de l'éditeur n'apparaît plus dans les textes (demande de Nolan, 2026-10-04) : éditeur anonyme, voir « Éditeur du site » des mentions légales.
 const LEGAL_CONTACT = `<a href="mailto:the.analytics.app@gmail.com">the.analytics.app@gmail.com</a>`;
 const LEGAL_TABS = [
   { id:'confidentialite', label:'Confidentialité', title:'Politique de confidentialité' },
@@ -10653,7 +10656,7 @@ const LEGAL_CONTENT = {
     LH('En bref'),
     LP(`The Analytics est un outil d'analyse d'actions. Vous pouvez l'utiliser <strong>sans compte</strong> : vos analyses restent alors uniquement dans votre navigateur, et nous n'en recevons rien. Si vous <strong>créez un compte</strong>, vos analyses sont enregistrées en ligne pour que vous les retrouviez sur vos appareils. Nous ne vendons pas vos données, nous n'affichons aucune publicité et nous n'utilisons aucun outil de statistiques ou de suivi.`),
     LH('Qui est responsable de vos données'),
-    LP(`Le responsable du traitement est l'éditeur du site, ${LEGAL_PUBLISHER} (voir les mentions légales). Pour toute question sur vos données : ${LEGAL_CONTACT}.`),
+    LP(`Le responsable du traitement est l'éditeur du site (voir les mentions légales). Pour toute question sur vos données : ${LEGAL_CONTACT}.`),
     LH('Quelles données, pourquoi'),
     LUL([
       `<strong>Sans compte</strong> : ce que vous saisissez est stocké dans le stockage local de votre navigateur, sur votre appareil. Nous n'y avons pas accès.`,
@@ -10717,7 +10720,7 @@ const LEGAL_CONTENT = {
   ],
   mentions: [
     LH('Éditeur du site'),
-    LP(`${LEGAL_PUBLISHER}, personne physique, éditeur non professionnel. Directeur de la publication : ${LEGAL_PUBLISHER}. Contact : ${LEGAL_CONTACT}.`),
+    LP(`Le site est édité par une personne physique, à titre non professionnel, qui a choisi de ne pas rendre publique son identité. Conformément à l'article 6, III, 2° de la loi n° 2004-575 du 21 juin 2004 pour la confiance dans l'économie numérique, les éléments d'identification de l'éditeur ont été communiqués à l'hébergeur du site (voir ci-dessous). Directeur de la publication : l'éditeur. Contact : ${LEGAL_CONTACT}.`),
     LH('Hébergement'),
     LUL([
       `<strong>Site</strong> : GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis (GitHub Pages, github.com).`,
