@@ -2287,8 +2287,8 @@ a.btn{ text-decoration:none; }
 /* Largeur de la barre de gauche réglable par l'utilisateur (ordinateur seulement) : la variable --side-w, déjà lue par la barre et le contenu, prend la valeur choisie */
 @media (min-width:901px){ :root{ --side-w:var(--side-w-user, 268px); } }
 .side-resizer{ position:absolute; top:0; right:-5px; width:10px; height:100%; z-index:70; cursor:col-resize; touch-action:none; }
-.side-resizer::after{ content:''; position:absolute; top:0; bottom:0; left:4px; width:2px; border-radius:2px; background:transparent; transition:background .12s ease; }
-.side-resizer:hover::after, .side-resizer:focus-visible::after, body.side-resizing .side-resizer::after{ background:var(--accent); }
+/* Aucune ligne visible au survol ni pendant le glissement (demande de Nolan, 2026-10-04) : seul le curseur change */
+
 .side-resizer:focus-visible{ outline:none; }
 body.side-resizing{ cursor:col-resize; user-select:none; -webkit-user-select:none; }
 @media (max-width:900px){ .side-resizer{ display:none; } }
@@ -11639,7 +11639,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 216;
+const APP_BUILD = 217;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de Nolan : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
