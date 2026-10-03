@@ -3655,10 +3655,7 @@ async function searchByTickerIds(query){
     return ((j.results && j.results.bindings) || []).map(b => b.item.value.split('/').pop());
   }catch(err){ return []; }
 }
-async function searchCompanies(query){
-  const seq = ++companySearchSeq;
-  const q = String(query || '').trim();
-  if(q.length < 2) return { seq, results: [] };
+async function searchWikidataCompanies(q){
   let e;
   try{
     // limit:20 (au lieu de 8) : avec le filtre "ticker $/€ obligatoire" du 2026-10-01, une recherche courte comme
@@ -3671,7 +3668,7 @@ async function searchCompanies(query){
     ]);
     const nameIds = (s.search || []).map(x => x.id);
     const ids = nameIds.concat(tickerIds.filter(id => nameIds.indexOf(id) < 0));
-    if(!ids.length) return { seq, results: [] };
+    if(!ids.length) return [];
     // props inclut labels : un candidat trouvé par ticker n'a pas de .label tout prêt (contrairement à un résultat de
     // wbsearchentities), il faut le lire sur l'entité elle-même, pour les deux pistes uniformément.
     e = await wdJson({ action:'wbgetentities', ids:ids.join('|'), props:'claims|descriptions|labels', languages:'fr|en' });
@@ -3717,10 +3714,77 @@ async function searchCompanies(query){
       const labels = await resolveWikidataLabels(idSet);
       top.forEach(r => { r.country = r.countryId ? matchKnownCountry(labels[r.countryId]) : ''; });
     }
-    return { seq, results: top };
+    return top;
   }catch(err){
-    return { seq, results: [], failed: true };
+    throw err;
   }
+}
+// Seconde source (2026-10-03, demande de Nolan : « SK hynix SKHY est introuvable dans la barre de recherche alors que le logo
+// et le prix marchent ») : Wikidata ne connaît pas toujours le ticker américain d'une action (ici l'ADR SKHY, que Wikidata
+// ne rattache qu'à la bourse de Séoul), alors que Twelve Data le connaît, sa recherche de symboles étant déjà utilisée
+// pour le prix. Utilisée UNIQUEMENT avec la clé Twelve Data de l'utilisateur (1 crédit par recherche, jamais la clé de démo,
+// réservée aux tests). outputsize 120 : sur « sk hynix » l'ADR est classé après des dizaines de warrants et de produits dérivés,
+// hors des 30 premiers résultats. On ne garde que les actions et certificats de dépôt des bourses gérées par l'app (EXCHANGES),
+// une seule cotation par entreprise (US d'abord, puis Paris, Amsterdam, Xetra, Madrid, Milan), et on écarte celles que Wikidata
+// a déjà données (même ticker ou même nom). Limite de débit : si Twelve Data répond « trop de requêtes », on se tait 60 s.
+const TD_MIC_EXCHANGE = { XNGS:'NASDAQ', XNMS:'NASDAQ', XNCM:'NASDAQ', XNAS:'NASDAQ', XNYS:'NYSE', XPAR:'Euronext Paris', XAMS:'Euronext Amsterdam', XETR:'Xetra', XMAD:'Bolsa de Madrid', XMIL:'Borsa Italiana' };
+const TD_MIC_RANK = ['XNGS', 'XNMS', 'XNCM', 'XNAS', 'XNYS', 'XPAR', 'XAMS', 'XETR', 'XMAD', 'XMIL'];
+const tdSearchCache = {};
+let tdSearchBlockedUntil = 0;
+function cleanTdName(s){
+  let n = String(s || '').trim();
+  for(let i = 0; i < 3; i++){
+    const m = n.replace(/[\s,]+(ADR|ADS|GDR|Inc\.?|Corp\.?|Corporation|Co\.?|Ltd\.?|Limited|plc|PLC|SE|SA|S\.A\.|N\.V\.|NV|AG|Holdings?)$/i, '').trim();
+    if(m === n || !m) break;
+    n = m;
+  }
+  return n || String(s || '').trim();
+}
+async function searchTwelveData(q){
+  const key = String(state.settings.twelveDataApiKey || '').trim();
+  if(!key || q.length < 2 || Date.now() < tdSearchBlockedUntil) return [];
+  const ck = normName(q);
+  if(tdSearchCache[ck]) return tdSearchCache[ck];
+  try{
+    const r = await fetch(`https://api.twelvedata.com/symbol_search?symbol=${encodeURIComponent(q)}&outputsize=120&apikey=${encodeURIComponent(key)}`);
+    const d = await r.json();
+    if(!d || d.status === 'error'){
+      if(d && (Number(d.code) === 429 || /limit|credit/i.test(String(d.message || '')))) tdSearchBlockedUntil = Date.now() + 60000;
+      return [];
+    }
+    const best = {};
+    (Array.isArray(d.data) ? d.data : []).forEach(i => {
+      const ex = TD_MIC_EXCHANGE[i.mic_code];
+      if(!ex || !/^(Common Stock|American Depositary Receipt|Depositary Receipt)$/i.test(String(i.instrument_type || ''))) return;
+      const cur = String(i.currency || '').toUpperCase();
+      if(cur !== (ex === 'NASDAQ' || ex === 'NYSE' ? 'USD' : 'EUR')) return;
+      const name = cleanTdName(i.instrument_name);
+      const k = normName(name);
+      const rank = TD_MIC_RANK.indexOf(i.mic_code);
+      if(!best[k] || rank < best[k].rank){
+        const adr = /Depositary/i.test(String(i.instrument_type));
+        best[k] = { rank, name, desc: (adr ? 'Certificat de dépôt (ADR) · ' : '') + ex, ticker: String(i.symbol || '').toUpperCase(), exchange: ex, logoUrl: '', country: '', sc: 0, idx: 0 };
+      }
+    });
+    const out = Object.keys(best).map(k => best[k]).filter(x => x.ticker).sort((a, b) => a.rank - b.rank).slice(0, 6);
+    tdSearchCache[ck] = out;
+    return out;
+  }catch(err){ return []; }
+}
+async function searchCompanies(query){
+  const seq = ++companySearchSeq;
+  const q = String(query || '').trim();
+  if(q.length < 2) return { seq, results: [] };
+  let failed = false;
+  const [wiki, td] = await Promise.all([ searchWikidataCompanies(q).catch(() => { failed = true; return []; }), searchTwelveData(q) ]);
+  const seenT = {}, seenN = {};
+  wiki.forEach(r => { seenT[r.ticker] = 1; seenN[normName(r.name)] = 1; });
+  const extra = td.filter(r => !seenT[r.ticker] && !seenN[normName(r.name)]);
+  const qT = q.toUpperCase();
+  // Le ticker tapé tel quel, trouvé seulement par Twelve Data, passe devant : c'est ce que la personne cherche
+  const exact = extra.filter(r => r.ticker === qT), rest = extra.filter(r => r.ticker !== qT);
+  const results = exact.concat(wiki, rest.slice(0, 3)).slice(0, 10);
+  return { seq, results, failed: failed && !results.length };
 }
 function companyAvatarHtml(name, url){
   const ini = escapeHtml(initialsOf(name));
