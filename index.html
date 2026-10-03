@@ -1377,7 +1377,12 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
 @media (max-width:760px){ .position-section .section-title{ flex-wrap:wrap; } }
 .position-body{ display:block; }
 .position-toggle{ flex:0 0 auto; display:flex; align-items:center; gap:10px; font-size:14.5px; color:var(--ink-soft); cursor:pointer; }
-.position-toggle input[type=checkbox]{ width:18px; height:18px; accent-color:var(--sec-c, var(--accent)); cursor:pointer; }
+/* Case « J'ai une position » (2026-10-04, demande de Nolan) : une croix ROUGE dans l'encoche tant qu'il n'y a pas de position ouverte, une coche sur fond de la couleur de la section sinon */
+.position-toggle input[type=checkbox]{ -webkit-appearance:none; appearance:none; width:24px; height:24px; margin:0; display:grid; place-content:center; border:2px solid var(--red); border-radius:7px; background:transparent; cursor:pointer; transition:background .12s ease, border-color .12s ease; }
+.position-toggle input[type=checkbox]::before{ content:'\2715'; color:var(--red); font-size:15px; font-weight:800; line-height:1; }
+.position-toggle input[type=checkbox]:checked{ background:var(--sec-c, var(--accent)); border-color:var(--sec-c, var(--accent)); }
+.position-toggle input[type=checkbox]:checked::before{ content:'\2713'; color:#fff; }
+.position-toggle input[type=checkbox]:focus-visible{ outline:2px solid var(--blue); outline-offset:3px; }
 .position-fields{ margin-top:0; display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:22px 28px; }
 .pos-result{ display:inline-flex; align-items:baseline; gap:10px; padding:9px 14px; border-radius:10px; font-size:16px; font-weight:700; color:var(--sec-c); background:color-mix(in srgb, var(--sec-c) 12%, transparent); border:1px solid color-mix(in srgb, var(--sec-c) 35%, transparent); }
 .pos-result-p{ font-size:14px; font-weight:600; opacity:.9; }
@@ -2201,6 +2206,25 @@ a.btn{ text-decoration:none; }
 #companiesTableWrap .home-td-name-txt{ max-width:240px; }
 /* Secteur affiché EN ENTIER (2026-10-04, demande de Nolan : il y a maintenant de la place) : plus de points de suspension, retour à la ligne au-delà de 260px */
 #companiesTableWrap .ht-sec{ max-width:260px; overflow:visible; text-overflow:clip; white-space:normal; line-height:1.3; }
+/* Sélecteur de la décision personnelle */
+.decision-picker{ position:relative; max-width:340px; }
+.decision-picker .dp-native{ position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
+.dp-btn{ width:100%; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px 14px; min-height:46px; border:1px solid var(--border); border-radius:11px; background:var(--field); color:var(--ink); font:inherit; font-size:var(--fs-value); cursor:pointer; text-align:left; transition:border-color .12s ease, box-shadow .12s ease; }
+.dp-btn:hover{ border-color:var(--border-strong); }
+.dp-btn:focus-visible, .dp-btn[aria-expanded="true"]{ outline:none; border-color:var(--blue); box-shadow:0 0 0 3px var(--ring); }
+.dp-face{ display:inline-flex; align-items:center; min-width:0; }
+.dp-pill{ font-size:14px; padding:4px 14px; }
+.dp-none{ color:var(--ink-soft); }
+.dp-chev{ flex:0 0 auto; color:var(--ink-soft); transition:transform .15s ease; }
+.dp-btn[aria-expanded="true"] .dp-chev{ transform:rotate(180deg); }
+.dp-list{ position:absolute; z-index:30; left:0; right:0; top:calc(100% + 6px); padding:6px; border:1px solid var(--border-strong); border-radius:12px; background:var(--card); box-shadow:0 14px 34px rgba(0,0,0,.28); }
+.dp-list.hidden{ display:none; }
+.dp-opt{ width:100%; display:flex; align-items:center; gap:11px; padding:10px 12px; border:none; border-radius:8px; background:transparent; color:var(--ink); font:inherit; font-size:15px; text-align:left; cursor:pointer; }
+.dp-opt:hover, .dp-opt:focus-visible{ outline:none; background:color-mix(in srgb, var(--ink) 8%, transparent); }
+.dp-opt.on{ font-weight:600; }
+.dp-dot{ width:11px; height:11px; border-radius:50%; flex:0 0 11px; }
+.dp-dot[data-none]{ border:2px dashed var(--border-strong); }
+.dp-check{ margin-left:auto; color:var(--accent); font-weight:700; }
 </style>
 </head>
 <body>
@@ -6197,6 +6221,66 @@ function bindPosMontantInput(){
     e.target.size = Math.max(e.target.value.length, 2) + 1;
   });
 }
+// Sélecteur de la DÉCISION personnelle (2026-10-04, demande de Nolan : « rendre la case de sélection plus belle ») : remplace la liste native par un
+// menu aux couleurs des pastilles de décision. Le <select> d'origine reste dans la page, invisible : c'est lui qui porte les attributs
+// data-section/data-field et le gestionnaire change de la fiche (enregistrement, journal de décisions, en-tête) ; le menu ne fait que le piloter.
+function decisionPickerFace(v){
+  const st = DECISION_STYLE[v];
+  return st ? `<span class="pill ${st.cls} dp-pill">${escapeHtml(v)}</span>` : `<span class="dp-none">À définir</span>`;
+}
+function buildDecisionPicker(sectionKey, field, v){
+  const native = field.options.map(o => `<option value="${escapeHtml(o)}"${o === v ? ' selected' : ''}>${o || '—'}</option>`).join('');
+  const opts = field.options.map(o => {
+    const s = DECISION_STYLE[o];
+    return `<button type="button" class="dp-opt${o === v ? ' on' : ''}" role="option" aria-selected="${o === v}" data-dp-value="${escapeHtml(o)}"><span class="dp-dot"${s ? ` style="background:${s.color}"` : ' data-none="1"'}></span><span>${o ? escapeHtml(o) : 'À définir'}</span><span class="dp-check">${o === v ? '&#10003;' : ''}</span></button>`;
+  }).join('');
+  return `<div class="decision-picker" data-decision-picker>
+    <select class="dp-native" tabindex="-1" aria-hidden="true" data-section="${sectionKey}" data-field="${field.key}" data-type="select">${native}</select>
+    <button type="button" class="dp-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Décision personnelle"><span class="dp-face">${decisionPickerFace(v)}</span><svg class="dp-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="dp-list hidden" role="listbox">${opts}</div>
+  </div>`;
+}
+function closeDecisionPickers(except){
+  document.querySelectorAll('[data-decision-picker]').forEach(p => {
+    if(p === except) return;
+    p.querySelector('.dp-list').classList.add('hidden');
+    p.querySelector('.dp-btn').setAttribute('aria-expanded', 'false');
+  });
+}
+function initDecisionPicker(){
+  document.addEventListener('click', e => {
+    const picker = e.target.closest && e.target.closest('[data-decision-picker]');
+    if(!picker){ closeDecisionPickers(); return; }
+    const btn = e.target.closest('.dp-btn'), opt = e.target.closest('.dp-opt');
+    const list = picker.querySelector('.dp-list');
+    if(btn){
+      const open = list.classList.contains('hidden');
+      closeDecisionPickers(picker);
+      list.classList.toggle('hidden', !open);
+      btn.setAttribute('aria-expanded', String(open));
+    }else if(opt){
+      const sel = picker.querySelector('.dp-native');
+      const v = opt.dataset.dpValue;
+      if(sel.value !== v){ sel.value = v; sel.dispatchEvent(new Event('change', { bubbles:true })); }
+      picker.querySelector('.dp-face').innerHTML = decisionPickerFace(v);
+      picker.querySelectorAll('.dp-opt').forEach(o => { const on = o.dataset.dpValue === v; o.classList.toggle('on', on); o.setAttribute('aria-selected', String(on)); o.querySelector('.dp-check').innerHTML = on ? '&#10003;' : ''; });
+      closeDecisionPickers();
+      picker.querySelector('.dp-btn').focus();
+    }
+  });
+  document.addEventListener('keydown', e => {
+    const picker = e.target.closest && e.target.closest('[data-decision-picker]');
+    if(e.key === 'Escape'){ closeDecisionPickers(); return; }
+    if(!picker || (e.key !== 'ArrowDown' && e.key !== 'ArrowUp')) return;
+    e.preventDefault();
+    const list = picker.querySelector('.dp-list');
+    if(list.classList.contains('hidden')){ closeDecisionPickers(picker); list.classList.remove('hidden'); picker.querySelector('.dp-btn').setAttribute('aria-expanded', 'true'); }
+    const opts = [...list.querySelectorAll('.dp-opt')];
+    const i = opts.indexOf(document.activeElement);
+    const next = opts[(i + (e.key === 'ArrowDown' ? 1 : -1) + opts.length) % opts.length];
+    if(next) next.focus();
+  });
+}
 function buildPositionBlock(c){
   const pos = (c.position && typeof c.position === 'object') ? c.position : { active:false, quantite:'', prixAchat:'', montantInvesti:'' };
   let inner;
@@ -7854,6 +7938,7 @@ function fieldInput(sectionKey, field, value){
     // Date du prochain rapport financier : sélecteur de date natif, valeur AAAA-MM-JJ (ou vide)
     return `<input type="date" class="report-date-input" data-section="${sectionKey}" data-field="${field.key}" data-type="date" value="${escapeHtml(/^\d{4}-\d{2}-\d{2}$/.test(String(v)) ? v : '')}">`;
   }
+  if(field.type === 'select' && field.key === 'decision') return buildDecisionPicker(sectionKey, field, v);
   if(field.type === 'select'){
     const opts = field.options.map(o => `<option value="${escapeHtml(o)}" ${o===v?'selected':''}>${o || '—'}</option>`).join('');
     return `<select data-section="${sectionKey}" data-field="${field.key}" data-type="select">${opts}</select>`;
@@ -12223,6 +12308,7 @@ scheduleSnapshot(6000);
 initFileBackup();
 bindAuth();
 bindShare();
+initDecisionPicker();
 bindReadOnlyGuard();
 handleShareLink();
 initTour();
