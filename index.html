@@ -2810,8 +2810,9 @@ function fmtBackupDate(ts){
 function backupPanelHtml(){
   // Réduit à l'essentiel (2026-10-03, demande de Nolan) : le compte, la sauvegarde manuelle, et UNE ligne pour le fichier
   // automatique seulement s'il est déjà configuré (on l'active depuis le rappel de sauvegarde de Mon espace).
+  // Connecté : rien ici (le bouton du haut donne déjà accès au compte, demande de Nolan le 2026-10-03)
   const acct = cloud.session
-    ? `<div class="pref-h"><strong>Compte en ligne</strong> : ${escapeHtml(cloud.session.email)}. ${escapeHtml(cloudStatusText())}</div><div class="pref-btns"><button class="btn btn-outline btn-sm" data-auth-open="login">Mon compte</button></div>`
+    ? ''
     : `<div class="pref-h">Un compte gratuit retrouve vos analyses sur tous vos appareils.</div><div class="pref-btns"><button class="btn btn-primary btn-sm" data-auth-open="signup">Créer un compte</button><button class="btn btn-outline btn-sm" data-auth-open="login">Se connecter</button></div>`;
   let auto = '';
   if(fileBackup.supported && fileBackup.handle){
@@ -2997,7 +2998,6 @@ function mergeRemote(remote){
   });
   if(mergeHistory(remote.history).push) push = true;
   const rs = remote.settings || {};
-  if(!String(state.settings.firstName || '').trim() && typeof rs.firstName === 'string' && rs.firstName.trim()){ state.settings.firstName = rs.firstName.slice(0, 30); changed = true; }
   // Clé API Twelve Data : adoptée seulement si CET appareil n'en a pas encore (jamais d'écrasement d'une clé déjà collée ici), pour ne pas la ressaisir sur un nouvel appareil.
   if(!String(state.settings.twelveDataApiKey || '').trim() && typeof rs.twelveDataApiKey === 'string' && rs.twelveDataApiKey.trim()){
     state.settings.twelveDataApiKey = rs.twelveDataApiKey.trim();
@@ -3336,8 +3336,9 @@ if(!state.deleted || typeof state.deleted !== 'object' || Array.isArray(state.de
 if(!state.history || typeof state.history !== 'object' || Array.isArray(state.history)) state.history = {};
 state.companies.forEach(migrateCompany);
 // Préférences personnelles (ajoutées après la V1, sans effet sur les analyses existantes)
-state.settings = Object.assign({ firstName:'', defaultCurrency:'$', twelveDataApiKey:'', alphaVantageApiKey:'', sortKey:'created', sortDir:'asc', tableSortKey:'created', tableSortDir:'asc', learnRead:[], lastBackupAt:0, backupSnoozeUntil:0, recentSearchIds:[] },(state.settings && typeof state.settings === 'object') ? state.settings : {});
+state.settings = Object.assign({ defaultCurrency:'$', twelveDataApiKey:'', alphaVantageApiKey:'', sortKey:'created', sortDir:'asc', tableSortKey:'created', tableSortDir:'asc', learnRead:[], lastBackupAt:0, backupSnoozeUntil:0, recentSearchIds:[] },(state.settings && typeof state.settings === 'object') ? state.settings : {});
 if(!Array.isArray(state.settings.recentSearchIds)) state.settings.recentSearchIds = [];
+delete state.settings.firstName; // fonctionnalité « prénom » retirée le 2026-10-03 (demande de Nolan)
 if(state.settings.tourDone === undefined) state.settings.tourDone = state.companies.length > 0;
 if(['created','name','stars','updated','marketCap'].indexOf(state.settings.sortKey) < 0) state.settings.sortKey = 'created';
 if(state.settings.sortDir !== 'desc') state.settings.sortDir = 'asc';
@@ -8221,14 +8222,6 @@ function buildTipCard(){
 function buildPrefsCard(){
   const s = state.settings;
   return spaceCard('s12', 'Préférences et données', '', `<div class="pref-grid">
-    <div class="pref">
-      <label class="pref-l" for="prefName">Comment souhaitez-vous être appelé ?</label>
-      <input type="text" id="prefName" maxlength="30" placeholder="Votre prénom" value="${escapeHtml(s.firstName || '')}">
-    </div>
-    <div class="pref">
-      <div class="pref-l">Visite guidée</div>
-      <button class="btn btn-outline btn-sm" data-start-tour>Revoir la visite guidée</button>
-    </div>
     <div class="pref pref-wide">
       <div class="pref-l">Prix actuel automatique</div>
       <div class="pref-keys">
@@ -8244,6 +8237,10 @@ function buildPrefsCard(){
         </div>
       </div>
       <div class="pref-h">Clés gratuites : le cours se met à jour tout seul. En euros, il est différé et limité à environ 25 mises à jour par jour.</div>
+    </div>
+    <div class="pref">
+      <div class="pref-l">Visite guidée</div>
+      <button class="btn btn-outline btn-sm" data-start-tour>Revoir la visite guidée</button>
     </div>
     <div class="pref">
       <div class="pref-l">Sauvegarde de vos analyses</div>
@@ -8344,20 +8341,18 @@ function importDataFile(file){
 function renderSpaceView(){
   const main = document.getElementById('main');
   const cs = state.companies;
-  const name = (state.settings.firstName || '').trim();
   const last = cs.length ? sortedByRecent()[0] : null;
   const todo = unfinishedAnalyses().length;
   let sub;
   if(!cs.length) sub = "Bienvenue. Créez votre première analyse pour que cet espace prenne vie : récapitulatif, recommandations et suivi de vos idées.";
   else sub = `Vous suivez ${cs.length} entreprise${cs.length > 1 ? 's' : ''}. ` + (todo ? `${todo} analyse${todo > 1 ? 's restent' : ' reste'} à terminer.` : 'Toutes vos analyses sont terminées.');
-  const nameLink = name ? '' : ` <button class="link-btn" id="askName">Comment vous appeler ?</button>`;
 
   let html = `<div class="wrap page space">
     <div class="space-head">
       <div>
         <div class="kicker">Mon espace · ${todayFr()}</div>
-        <h1 class="space-title"><span id="spaceHello">${greetingWord()}${name ? ', ' + escapeHtml(name) : ''}</span></h1>
-        <p class="space-sub">${sub}${nameLink}</p>
+        <h1 class="space-title"><span id="spaceHello">${greetingWord()}</span></h1>
+        <p class="space-sub">${sub}</p>
       </div>
       <div class="space-actions"><button class="btn btn-primary" data-new-analysis>+ Nouvelle analyse</button></div>
     </div>${buildBackupReminder()}`;
@@ -8927,15 +8922,6 @@ function bindSpace(){
   const repaintTip = () => { document.getElementById('tipBody').innerHTML = buildTipBody(); };
   if(prev) prev.addEventListener('click', () => { spaceTipIdx = (spaceTipIdx - 1 + TIP_KEYS.length) % TIP_KEYS.length; repaintTip(); });
   if(next) next.addEventListener('click', () => { spaceTipIdx = (spaceTipIdx + 1) % TIP_KEYS.length; repaintTip(); });
-  const nameInput = document.getElementById('prefName');
-  if(nameInput) nameInput.addEventListener('input', e => {
-    state.settings.firstName = e.target.value.slice(0, 30);
-    saveState();
-    const nm = state.settings.firstName.trim();
-    document.getElementById('spaceHello').textContent = greetingWord() + (nm ? ', ' + nm : '');
-  });
-  const ask = document.getElementById('askName');
-  if(ask) ask.addEventListener('click', () => { nameInput.scrollIntoView({ behavior:'smooth', block:'center' }); setTimeout(() => nameInput.focus(), 350); });
   const priceKey = document.getElementById('prefPriceKey');
   if(priceKey) priceKey.addEventListener('change', e => {
     state.settings.twelveDataApiKey = e.target.value.trim();
