@@ -11629,7 +11629,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 212;
+const APP_BUILD = 213;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de Nolan : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -11718,9 +11718,16 @@ let deferredInstall = null;
 // masquer « Installer l'application » aussi dans l'onglet (2026-10-04, demande de Nolan). Il est retiré si le navigateur re-propose l'installation
 // (événement `beforeinstallprompt` = l'application a été désinstallée).
 const INSTALLED_KEY = 'analytics-installed';
+// Trois signaux supplémentaires pour un onglet de navigateur (2026-10-04, Nolan voyait encore l'encart dans Chrome alors que l'application était installée) :
+// (1) `getInstalledRelatedApps()` (le navigateur dit lui-même si cette application web est installée, voir `related_applications` du manifest) ;
+// (2) Chrome/Edge ne proposent JAMAIS l'installation d'une application déjà installée : si l'événement `beforeinstallprompt` n'est pas arrivé 10 s
+// après le chargement alors que le navigateur le gère, on en déduit qu'elle l'est (`inferredInstalled`, non mémorisé, annulé si l'événement arrive) ;
+// (3) le drapeau mémorisé quand elle a été vue en fenêtre d'application.
+let inferredInstalled = false;
 function isInstalledApp(){
   const standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
   if(standalone){ try{ localStorage.setItem(INSTALLED_KEY, '1'); }catch(e){} return true; }
+  if(inferredInstalled) return true;
   try{ return localStorage.getItem(INSTALLED_KEY) === '1'; }catch(e){ return false; }
 }
 function installPlatform(){
@@ -11805,10 +11812,25 @@ function initInstall(){
   const rerender = () => { if(currentView === 'home' || currentView === 'space') render(); };
   window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault(); deferredInstall = e;
-    let was = false; try{ was = localStorage.getItem(INSTALLED_KEY) === '1'; localStorage.removeItem(INSTALLED_KEY); }catch(err){}
+    let was = inferredInstalled; inferredInstalled = false;
+    try{ was = was || localStorage.getItem(INSTALLED_KEY) === '1'; localStorage.removeItem(INSTALLED_KEY); }catch(err){}
     if(was) rerender();   // le navigateur propose l'installation : l'application n'est plus installée, le bouton revient
     paintInstallButtons();
   });
+  // (1) Le navigateur sait-il qu'elle est installée ?
+  try{
+    if(navigator.getInstalledRelatedApps){
+      navigator.getInstalledRelatedApps().then(list => {
+        if(list && list.length && !inferredInstalled){ inferredInstalled = true; try{ localStorage.setItem(INSTALLED_KEY, '1'); }catch(err){} rerender(); }
+      }).catch(() => {});
+    }
+  }catch(err){}
+  // (2) Pas d'invite d'installation 10 s après le chargement, dans un navigateur qui sait la proposer : l'application est déjà installée
+  setTimeout(() => {
+    const ua = navigator.userAgent || '';
+    const canPrompt = 'onbeforeinstallprompt' in window && !/iPhone|iPad|iPod/.test(ua);
+    if(canPrompt && !deferredInstall && !isInstalledApp()){ inferredInstalled = true; rerender(); }
+  }, 10000);
   window.addEventListener('appinstalled', () => { deferredInstall = null; try{ localStorage.setItem(INSTALLED_KEY, '1'); }catch(err){} closeInstallModal(); showToast('The Analytics est installée.'); rerender(); });
   document.addEventListener('click', e => {
     const t = e.target;

@@ -13,6 +13,8 @@
   "theme_color": "#0a1224",
   "orientation": "any",
   "categories": ["finance", "education", "productivity"],
+  "prefer_related_applications": false,
+  "related_applications": [ { "platform": "webapp", "url": "https://the-analytics.fr/manifest.json" } ],
   "icons": [
     { "src": "icon-192.png?v=3", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icon-512.png?v=2", "sizes": "512x512", "type": "image/png", "purpose": "any" },
