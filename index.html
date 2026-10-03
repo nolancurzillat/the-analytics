@@ -2220,7 +2220,7 @@ a.btn{ text-decoration:none; }
         <button type="button" class="cur-opt" data-currency="$">$ Dollar</button>
         <button type="button" class="cur-opt" data-currency="€">€ Euro</button>
       </div>
-      <div class="modal-hint">Le dollar est recommandé : c'est la devise qui permet la mise à jour automatique gratuite du prix.</div>
+      <div class="modal-hint">Dollar ou euro : le prix se met à jour automatiquement avec vos clés API gratuites (Préférences, Mon espace).</div>
     </div>
     <div class="modal-actions">
       <button id="newCompanyCancel">Annuler</button>
@@ -2278,7 +2278,7 @@ a.btn{ text-decoration:none; }
     </ol>
     <input type="text" id="guideKeyInput" placeholder="Collez votre clé API ici" autocomplete="off" spellcheck="false">
     <div class="guide-result" id="guideResult" aria-live="polite"></div>
-    <div class="modal-hint">Le compte gratuit couvre les actions américaines (NASDAQ, NYSE) : privilégiez le dollar. Pour les actions européennes (euros), une clé gratuite Alpha Vantage donne un cours différé (Préférences, Mon espace) ; sinon vous pouvez saisir le prix à la main. Seul le ticker est envoyé, jamais le contenu de vos analyses.</div>
+    <div class="modal-hint">Cette clé couvre les actions américaines (NASDAQ, NYSE, en dollars). Pour les actions européennes (en euros), ajoutez aussi une clé gratuite Alpha Vantage (Préférences, Mon espace) : le cours est alors différé. Seul le ticker est envoyé, jamais le contenu de vos analyses.</div>
     <div class="modal-actions" style="margin-top:16px;">
       <button id="guideClose">Fermer</button>
       <button class="primary" id="guideSave">Enregistrer et tester</button>
@@ -2306,7 +2306,7 @@ const STORAGE_KEY = 'carnet-analyse-data-v1';
 // --- Modèle des champs de base (identiques à la structure du carnet papier) ---
 const FIELD_DESCRIPTIONS = {
   ticker: "Le symbole boursier qui identifie l'entreprise sur son marché (ex : AAPL, NVDA).",
-  cotation: "La place boursière sur laquelle l'action est cotée. Elle sert à récupérer le bon prix automatiquement : un même ticker peut désigner des entreprises différentes selon la bourse. Les bourses américaines (NASDAQ, NYSE) sont les seules couvertes gratuitement, on privilégie donc le dollar. « Automatique » laisse l'application choisir selon la devise de l'analyse.",
+  cotation: "La place boursière sur laquelle l'action est cotée. Elle sert à récupérer le bon prix automatiquement : un même ticker peut désigner des entreprises différentes selon la bourse. Les bourses américaines (en dollars) passent par une clé Twelve Data, les bourses européennes (en euros) par une clé Alpha Vantage, toutes deux gratuites. Sans choix, l'application cherche la bonne bourse selon la devise de l'analyse.",
   paysSiege: "Le pays d'origine et le lieu où se trouve le siège social de l'entreprise.",
   secteur: "Le secteur d'activité large, et l'industrie précise dans laquelle elle opère.",
   marketCap: "La valeur totale de l'entreprise en bourse (prix de l'action × nombre d'actions). Valeur du moment.",
@@ -2478,8 +2478,8 @@ function buildCountryPicker(sectionKey, fieldKey, subKey, current){
 }
 
 // Principales places boursières proposées dans "Cotation" (Identité). `mic` = code de marché attendu par Twelve Data,
-// `cur` = devise de cotation. Le compte gratuit de Twelve Data ne couvre que les bourses américaines : les autres
-// affichent un message clair (voir refreshCurrentPrice), c'est pourquoi le dollar est privilégié.
+// `cur` = devise de cotation. Le compte gratuit de Twelve Data ne couvre que les bourses américaines : pour les bourses
+// en euros, refreshCurrentPrice passe par Alpha Vantage (cours différé) quand l'utilisateur a collé sa clé.
 const EXCHANGES = [
   { label:'NASDAQ', country:'États-Unis', mic:'XNGS', cur:'$' },
   { label:'NYSE', country:'États-Unis', mic:'XNYS', cur:'$' },
@@ -2836,6 +2836,18 @@ function buildBackupReminder(){
     ? `Votre dernière sauvegarde date du ${fmtBackupDate(s.lastBackupAt)}.`
     : `Vos analyses ne sont enregistrées que dans ce navigateur et vous n'avez encore fait aucune sauvegarde.`;
   return `<div class="backup-remind" id="backupRemind"><div class="br-t"><strong>Pensez à sauvegarder vos analyses.</strong> ${msg}</div><div class="pref-btns"><button class="btn btn-primary btn-sm" data-auth-open="signup">Créer un compte</button><button class="btn btn-outline btn-sm" data-backup-action="download">Télécharger une sauvegarde</button>${fileBackup.supported ? '<button class="btn btn-outline btn-sm" data-backup-action="choose">Activer la sauvegarde automatique</button>' : ''}<button class="btn btn-outline btn-sm" data-backup-action="snooze">Plus tard</button></div></div>`;
+}
+// Petit mot de conseil (2026-10-03, demande de Nolan) : les clés API gratuites débloquent le prix automatique (Twelve Data en $,
+// Alpha Vantage en €) et la recherche des actions absentes de Wikidata. Affiché dans Mon espace tant qu'il en manque une, masqué
+// 14 jours par « Plus tard ». Ne mentionne que la ou les clés réellement absentes.
+const KEYS_TIP_SNOOZE_MS = 14 * 24 * 3600 * 1000;
+function buildKeysTip(){
+  const s = state.settings;
+  const noTd = !String(s.twelveDataApiKey || '').trim(), noAv = !String(s.alphaVantageApiKey || '').trim();
+  if(!(noTd || noAv) || Date.now() < (s.keysTipSnoozeUntil || 0)) return '';
+  const what = noTd && noAv ? 'vos clés API gratuites (Twelve Data pour les actions en dollars, Alpha Vantage pour celles en euros)'
+    : noTd ? 'votre clé API gratuite Twelve Data (actions en dollars)' : 'votre clé API gratuite Alpha Vantage (actions en euros)';
+  return `<div class="backup-remind keys-tip" id="keysTip"><div class="br-t"><strong>Profitez pleinement de The Analytics.</strong> Ajoutez ${what} : le prix actuel de vos entreprises se met à jour tout seul${noTd ? ', et la recherche retrouve aussi les actions étrangères (ADR)' : ''}. Deux minutes, sans carte bancaire.</div><div class="pref-btns"><button class="btn btn-primary btn-sm" data-keys-tip="go">Ajouter mes clés</button><button class="btn btn-outline btn-sm" data-keys-tip="snooze">Plus tard</button></div></div>`;
 }
 function paintBackupPanel(){
   const panel = document.getElementById('backupPanel');
@@ -6676,7 +6688,7 @@ async function refreshCurrentPrice(id, force){
     if(!sym){
       c.priceError = `Devise reçue (${result.currency || '?'}) non prise en charge automatiquement par l'application. Mettez à jour le prix manuellement.`;
     }else if(sym !== c.currency){
-      c.priceError = `Twelve Data ne semble pas proposer de cotation en ${c.currency === '€' ? 'euros' : 'dollars'} pour le ticker "${ticker}". Vérifiez le ticker, ou choisissez plutôt le dollar pour cette analyse : c'est la devise la plus largement disponible.`;
+      c.priceError = `Twelve Data ne semble pas proposer de cotation en ${c.currency === '€' ? 'euros' : 'dollars'} pour le ticker "${ticker}". Vérifiez le ticker${c.currency === '€' ? ', ou ajoutez une clé gratuite Alpha Vantage dans Préférences (Mon espace) pour un cours différé des actions en euros' : ''}.`;
     }else{
       c.fields.valorisation.prixActuel = String(Math.round(result.price * 10) / 10);
       c.priceError = null;
@@ -8422,7 +8434,7 @@ function renderSpaceView(){
         <p class="space-sub">${sub}</p>
       </div>
       <div class="space-actions"><button class="btn btn-primary" data-new-analysis>+ Nouvelle analyse</button></div>
-    </div>${buildBackupReminder()}`;
+    </div>${buildBackupReminder()}${buildKeysTip()}`;
   if(!cs.length){
     html += `<section class="scard onboard">
       <div class="scard-t">Ce que vous trouverez ici</div>
@@ -8989,6 +9001,16 @@ function bindSpace(){
   const repaintTip = () => { document.getElementById('tipBody').innerHTML = buildTipBody(); };
   if(prev) prev.addEventListener('click', () => { spaceTipIdx = (spaceTipIdx - 1 + TIP_KEYS.length) % TIP_KEYS.length; repaintTip(); });
   if(next) next.addEventListener('click', () => { spaceTipIdx = (spaceTipIdx + 1) % TIP_KEYS.length; repaintTip(); });
+  document.querySelectorAll('[data-keys-tip]').forEach(b => b.addEventListener('click', () => {
+    if(b.dataset.keysTip === 'snooze'){
+      state.settings.keysTipSnoozeUntil = Date.now() + KEYS_TIP_SNOOZE_MS;
+      saveState();
+      const tip = document.getElementById('keysTip'); if(tip) tip.remove();
+      return;
+    }
+    const target = document.getElementById(String(state.settings.twelveDataApiKey || '').trim() ? 'prefAvKey' : 'prefPriceKey');
+    if(target){ target.scrollIntoView({ behavior:'smooth', block:'center' }); setTimeout(() => target.focus(), 400); }
+  }));
   const priceKey = document.getElementById('prefPriceKey');
   if(priceKey) priceKey.addEventListener('change', e => {
     state.settings.twelveDataApiKey = e.target.value.trim();
@@ -9089,7 +9111,7 @@ const LEARN_CHAPTERS = [
       LP(`Un ETF vous expose à tout un marché sans avoir à choisir d'entreprises : c'est simple et diversifié. Choisir des actions individuelles demande un travail d'analyse, en échange de la possibilité de sélectionner de belles entreprises et de comprendre ce que l'on détient. Cette application sert à analyser des <strong>entreprises individuelles</strong> ; elle ne remplace pas la réflexion sur la façon de répartir son épargne.`),
       LH(`Places boursières et devises`),
       LP(`Le même ticker peut désigner des entreprises différentes selon la place boursière. Par exemple, « MC » désigne LVMH à Paris (en euros) mais une tout autre société à New York (en dollars). C'est pourquoi l'application propose le champ <strong>Cotation</strong> dans la section Identité.`),
-      LTIP('astuce', `Chaque analyse a une seule devise ($ ou €). L'application ne convertit jamais les montants d'une devise à l'autre : saisissez tous les chiffres dans la devise de la cotation. Le dollar est recommandé, car c'est lui qui permet la mise à jour automatique gratuite du prix.`),
+      LTIP('astuce', `Chaque analyse a une seule devise ($ ou €). L'application ne convertit jamais les montants d'une devise à l'autre : saisissez tous les chiffres dans la devise de la cotation. Le prix se met à jour automatiquement dans les deux devises, avec une clé gratuite (Twelve Data en dollars, Alpha Vantage en euros).`),
     ],
   },
   {
@@ -9098,7 +9120,7 @@ const LEARN_CHAPTERS = [
     blocks:[
       LH(`Votre première analyse en 7 étapes`),
       LSTEPS([
-        [`Créez l'analyse`, `Tapez le nom de l'entreprise dans la recherche en haut (ou cliquez sur « Nouvelle analyse » à gauche) : le ticker, la bourse et le logo se remplissent tout seuls. Le dollar est la devise recommandée.`],
+        [`Créez l'analyse`, `Tapez le nom de l'entreprise dans la recherche en haut (ou cliquez sur « Nouvelle analyse » à gauche) : le ticker, la bourse et le logo se remplissent tout seuls. Choisissez la devise de la cotation, dollar ou euro.`],
         [`Renseignez l'identité`, `Dans la section 1, indiquez le ticker et choisissez la place de cotation. L'application retrouve alors le logo et, avec une clé gratuite, le prix actuel.`],
         [`Remplissez les sections dans l'ordre`, `Identité, Financier, Croissance, Valorisation, puis Décision. Vous n'avez pas besoin de tout remplir : chaque section a une barre de progression et l'analyse s'affine au fur et à mesure. Les chiffres se trouvent sur le site web de l'entreprise, sur TradingView ou sur Alpha Spread : voir le chapitre <button type="button" class="link-btn" data-go-learn="sections">Remplir chaque section</button>.`],
         [`Repérez les couleurs`, `Une pastille verte, jaune ou rouge à côté d'un chiffre vous dit s'il est très bon, moyen ou mauvais. Survolez-la pour voir le barème exact.`],
@@ -9122,7 +9144,7 @@ const LEARN_CHAPTERS = [
         `Un texte collé depuis un site web perd sa mise en forme d'origine, pour rester lisible et uniforme.`,
       ]),
       LH(`Le prix automatique`),
-      LP(`Pour éviter de ressaisir le cours chaque jour, l'application peut le récupérer toute seule via un service gratuit (Twelve Data). Il faut créer un compte gratuit, une seule fois, et coller sa clé dans les Préférences : un guide pas à pas vous accompagne. Le compte gratuit couvre les <strong>actions américaines</strong> (NASDAQ, NYSE), une raison de plus de privilégier le dollar. Pour une action en euros, ajoutez dans les Préférences une clé gratuite Alpha Vantage : le cours est alors différé (dernière séance ou quelques minutes de retard), pas en temps réel.`),
+      LP(`Pour éviter de ressaisir le cours chaque jour, l'application peut le récupérer toute seule via des services gratuits. Il faut créer un compte gratuit une seule fois, et coller sa clé dans les Préférences (Mon espace) : <strong>Twelve Data</strong> pour les actions américaines (en dollars), <strong>Alpha Vantage</strong> pour les actions européennes (en euros, cours différé : dernière séance ou quelques minutes de retard, pas de temps réel). Un guide pas à pas vous accompagne pour Twelve Data. Ces clés servent aussi à la recherche d'entreprises : <strong>nous vous conseillons de les ajouter pour profiter pleinement de The Analytics</strong>.`),
       { t:'btn', x:`Ouvrir le guide du prix automatique`, a:'data-open-price-guide' },
       LH(`Les pages de l'application`),
       LDEFS([
@@ -9398,7 +9420,7 @@ const LEARN_QUIZ = [
   { q:`Un bêta de 1,5 signifie que l'action est...`, o:[`50 % moins volatile que le marché`, `plus volatile que le marché`, `assortie d'un dividende de 1,5 %`, `en croissance de 50 %`], a:1, e:`Un bêta supérieur à 1 indique une action qui amplifie les mouvements du marché, à la hausse comme à la baisse.` },
   { q:`Dans l'application, une case sur fond bleu est...`, o:[`un champ obligatoire`, `un champ calculé automatiquement`, `une erreur de saisie`, `un champ verrouillé`], a:1, e:`Les cases sur fond bleu se calculent toutes seules à partir de vos autres saisies : PE, PEG, marges, dette nette / FCF...` },
   { q:`Pourquoi écrire sa thèse d'investissement avant d'acheter ?`, o:[`Pour que l'application calcule un meilleur score`, `Pour rester rationnel quand le cours chute`, `Pour payer moins d'impôts`, `Pour connaître le cours de demain`], a:1, e:`Une thèse écrite vous rappelle pourquoi vous avez investi et ce qui devrait vous faire changer d'avis, au lieu de réagir à l'émotion.` },
-  { q:`Pourquoi recommande-t-on le dollar pour les analyses ?`, o:[`Le dollar est toujours plus stable`, `Le prix automatique gratuit couvre les bourses américaines`, `Les analyses en euros sont interdites`, `Le dollar rapporte plus`], a:1, e:`Le compte gratuit du service de prix couvre le NASDAQ et le NYSE. Pour les bourses européennes, le prix se saisit à la main.` },
+  { q:`Comment le prix actuel d'une action se met-il à jour automatiquement ?`, o:[`Avec des clés API gratuites : Twelve Data en dollars, Alpha Vantage en euros`, `Il faut un abonnement payant à l'application`, `Il se met à jour sans rien configurer`, `Ce n'est possible que pour les actions américaines`], a:0, e:`Chaque service gratuit demande une clé personnelle, collée une fois dans les Préférences. Pour les actions en euros, le cours est différé (pas en temps réel).` },
   { q:`Bénéfice net : 100. Free cash flow : 40. Que peut-on en conclure ?`, o:[`Seuls 40 % du bénéfice se transforment en cash : à surveiller`, `L'entreprise est excellente`, `C'est impossible`, `Le dividende va doubler`], a:0, e:`La conversion FCF ÷ bénéfice net vaut 40 %, ce qui est faible. Un bénéfice qui ne devient pas du cash mérite une vérification.` },
 ];
 
@@ -9408,7 +9430,7 @@ const LEARN_FAQ = [
   [`Où trouver les informations sur une entreprise ?`, `Commencez par le site web de l'entreprise (rubrique « Investisseurs » : rapports annuels, résultats trimestriels, présentations). Complétez avec <a href="https://www.tradingview.com" target="_blank" rel="noopener noreferrer">TradingView</a> et <a href="https://www.alphaspread.com" target="_blank" rel="noopener noreferrer">Alpha Spread</a>, dont les versions gratuites sont assez complètes. Le chapitre « Remplir chaque section » détaille tout cela.`],
   [`Faut-il tout remplir ?`, `Non. Remplissez ce que vous savez : l'analyse s'affine au fur et à mesure et la barre de progression de chaque section vous montre où vous en êtes. Un score n'est fiable que si les données principales sont renseignées.`],
   [`Puis-je utiliser l'application sans connexion internet ?`, `Oui, une fois l'application chargée ou installée, vous pouvez consulter et modifier vos analyses. Seuls la recherche d'entreprise, le logo, le prix automatique et la synchronisation ont besoin d'internet.`],
-  [`Le prix automatique ne s'affiche pas, que vérifier ?`, `Vérifiez dans l'ordre : le ticker est renseigné, la cotation correspond à la bonne bourse, la clé Twelve Data est enregistrée dans les Préférences (le guide vous aide à l'obtenir) et la devise de l'analyse correspond à celle de la bourse. Le service Twelve Data ne couvre que les bourses américaines (en dollars) : pour une action en euros, ajoutez une clé gratuite Alpha Vantage (cours différé, environ 25 mises à jour par jour), ou saisissez le prix à la main. Un message sous « Prix actuel » explique le problème.`],
+  [`Le prix automatique ne s'affiche pas, que vérifier ?`, `Vérifiez dans l'ordre : le ticker est renseigné, la cotation correspond à la bonne bourse, la clé Twelve Data est enregistrée dans les Préférences (le guide vous aide à l'obtenir) et la devise de l'analyse correspond à celle de la bourse. Twelve Data couvre les bourses américaines (en dollars) : pour une action en euros, ajoutez une clé gratuite Alpha Vantage (cours différé, environ 25 mises à jour par jour), ou saisissez le prix à la main. Un message sous « Prix actuel » explique le problème.`],
   [`Que fait la bascule $ / € en haut de la fiche ?`, `Elle change la devise affichée dans toute l'analyse. Elle ne convertit jamais les montants déjà saisis : si vous changez de devise, ressaisissez vos chiffres dans la nouvelle.`],
   [`À quelle fréquence faut-il mettre une analyse à jour ?`, `À chaque publication de résultats (trimestrielle ou annuelle), et quand un événement important change la situation de l'entreprise. Le prix, lui, peut se mettre à jour automatiquement.`],
   [`L'application me dit-elle quoi acheter ?`, `Non. Elle vous aide à structurer votre réflexion et à comparer vos idées. Elle ne recommande jamais d'acheter ou de vendre : la décision vous appartient.`],
@@ -9420,7 +9442,7 @@ const LEARN_FAQ = [
 // Compléments du dictionnaire des indicateurs, par clé de champ (how = en pratique, ex = exemple, warn = attention)
 const LEARN_INDICATORS = {
   ticker: { how:`Le code court qui identifie l'action sur sa place boursière.`, ex:`AAPL pour Apple, MSFT pour Microsoft, NVDA pour Nvidia.`, warn:`Un même ticker peut désigner des entreprises différentes selon la bourse : renseignez aussi la Cotation.` },
-  cotation: { how:`La place boursière où l'action est cotée. Elle sert à retrouver le bon prix automatiquement.`, ex:`NASDAQ pour Apple, NYSE pour Coca-Cola.`, warn:`Avec le compte gratuit du prix automatique, seules les bourses américaines sont couvertes.` },
+  cotation: { how:`La place boursière où l'action est cotée. Elle sert à retrouver le bon prix automatiquement.`, ex:`NASDAQ pour Apple, NYSE pour Coca-Cola.`, warn:`Les bourses américaines utilisent la clé Twelve Data, les bourses européennes la clé Alpha Vantage (cours différé).` },
   paysSiege: { how:`Le pays de cotation et le siège social. Utile pour la répartition géographique de vos analyses dans Mon espace.` },
   secteur: { how:`Le secteur et l'industrie précise. Ils servent à comparer l'entreprise à ses vraies concurrentes et à répartir vos analyses.`, warn:`Comparez toujours les ratios entre entreprises du même secteur.` },
   marketCap: { how:`La taille de l'entreprise en bourse. Les très grandes entreprises sont généralement plus stables, mais croissent souvent moins vite que les petites.`, ex:`Cours de 190 $ × 15 Md d'actions = 2 850 Md$, soit 2,85 T$.`, warn:`Valeur du moment : pas de notion de TTM ici.` },
@@ -10727,7 +10749,7 @@ function renderHomeView(){
         <div>
           <div class="kicker">Prix automatique</div>
           <h2>Le prix de vos actions se met à jour tout seul</h2>
-          <p>Renseignez le ticker : le cours est récupéré automatiquement et vos positions restent à jour. Gratuit pour les actions américaines (NASDAQ, NYSE, en dollars), avec une clé personnelle à créer en deux minutes. Pour les autres bourses, vous saisissez le prix à la main.</p>
+          <p>Renseignez le ticker : le cours est récupéré automatiquement et vos positions restent à jour. C'est gratuit, avec une clé personnelle à créer en deux minutes : Twelve Data pour les actions américaines (en dollars), Alpha Vantage pour les actions européennes (en euros, cours différé). Ajoutez vos clés pour profiter pleinement de The Analytics.</p>
         </div>
         <button class="btn btn-primary" data-open-price-guide>Voir le guide pas à pas</button>
       </div>
