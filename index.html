@@ -2182,6 +2182,15 @@ a.btn{ text-decoration:none; }
 .recv-added{ font-size:11.5px; font-weight:600; padding:2px 8px; border-radius:7px; background:color-mix(in srgb, var(--blue) 14%, transparent); color:var(--ink); }
 .recv-recap{ max-width:560px; margin:18px 0; }
 .side-item.recv .si-sub{ color:#9aa8c4; }
+.ro-banner{ display:flex; gap:14px 24px; align-items:center; justify-content:space-between; flex-wrap:wrap; padding:16px 20px; margin:0 0 18px 0; border:1px solid var(--border); border-left:4px solid #f2994a; border-radius:12px; background:var(--card); }
+.ro-banner-t{ flex:1 1 360px; font-size:14.5px; line-height:1.6; }
+.ro-visitor{ margin:-6px 0 18px 0; font-size:14px; color:var(--ink-soft); }
+.ro-cur{ font-size:13.5px; color:var(--ink-soft); margin-bottom:8px; }
+.ro-fiche .add-field-btn, .ro-fiche .add-client-btn, .ro-fiche .field-remove, .ro-fiche [data-pie-add-section], .ro-fiche [data-pie-remove-idx], .ro-fiche #chartDropzone, .ro-fiche #removeChartImg, .ro-fiche .av-edit, .ro-fiche .client-handle{ display:none !important; }
+.ro-fiche .chead-av-edit, .ro-fiche .star-slot, .ro-fiche .client-grip{ cursor:default; }
+.ro-fiche input[readonly], .ro-fiche textarea[readonly]{ cursor:default; }
+.ro-fiche input:disabled, .ro-fiche select:disabled{ opacity:1; color:var(--ink); -webkit-text-fill-color:var(--ink); }
+
 </style>
 </head>
 <body>
@@ -3571,7 +3580,11 @@ function migrateCompany(c){
   return c;
 }
 
+// Fiche d'une analyse REÇUE ouverte en lecture seule (voir PARTAGE D'ANALYSES) : getActive() la renvoie alors à la place de l'analyse active,
+// pour que la fiche normale s'affiche telle quelle. Remis à null par render() dès qu'on quitte la vue « received ».
+let roCompany = null;
 function getActive(){
+  if(roCompany) return roCompany;
   return state.companies.find(c => c.id === state.activeId) || null;
 }
 
@@ -11189,6 +11202,7 @@ async function handleShareLink(){
   const m = /^#partage=([A-Za-z0-9]{16,64})$/.exec(location.hash);
   if(!m) return;
   const token = m[1];
+  state.settings.tourDone = true;   // quelqu'un qui arrive par un lien veut lire l'analyse, pas suivre la visite guidée par-dessus
   history.replaceState(null, '', location.pathname + location.search);
   showToast("Ouverture de l'analyse partagée...");
   try{
@@ -11206,6 +11220,58 @@ async function handleShareLink(){
     showToast("Impossible d'ouvrir cette analyse. Vérifiez votre connexion et réessayez avec le même lien.");
   }
 }
+// Verrouille la fiche normale d'une analyse reçue (lecture seule) : cases non modifiables, boutons d'édition masqués, bandeau d'actions.
+// Double sécurité : les attributs readOnly/disabled/contenteditable ET un garde en phase de capture (bindReadOnlyGuard) qui coupe tout clic,
+// saisie ou glisser dans la fiche avant qu'un gestionnaire n'atteigne l'analyse. Seules les navigations (sections, liens, bandeau) restent actives.
+function applyReadOnlyFiche(){
+  const rec = state.received.find(x => x.rid === receivedId);
+  const main = document.getElementById('main');
+  const page = main.querySelector('.wrap.page');
+  if(!rec || !page) return;
+  page.classList.add('ro-fiche');
+  main.querySelectorAll('input, textarea, select').forEach(el => {
+    if(el.type === 'checkbox' || el.type === 'radio' || el.type === 'range' || el.type === 'file' || el.tagName === 'SELECT') el.disabled = true;
+    else el.readOnly = true;
+  });
+  main.querySelectorAll('[contenteditable]').forEach(el => el.setAttribute('contenteditable', 'false'));
+  main.querySelectorAll('[draggable="true"]').forEach(el => el.setAttribute('draggable', 'false'));
+  ['#alertsBlock', '#position-card', '.tags-bar', '.share-btn', '#thesisChangeBtn', '.snav [data-jump="position-card"]'].forEach(s => {
+    main.querySelectorAll(s).forEach(el => el.parentNode.removeChild(el));
+  });
+  const cur = document.getElementById('companyCurrencyToggle');
+  if(cur) cur.outerHTML = `<div class="ro-cur">Devise : <b>${escapeHtml(rec.company.currency)}</b></div>`;
+  const crumbs = page.querySelector('.crumbs');
+  const mine = rec.addedId && state.companies.some(x => x.id === rec.addedId);
+  const visitor = !cloud.session;
+  const banner = `<div class="ro-banner"><div class="ro-banner-t"><strong>Analyse reçue</strong> · ${receivedByLabel(rec)}<br>Lecture seule : elle n'est <strong>pas dans vos analyses</strong> tant que vous ne l'ajoutez pas. Les chiffres et les notes sont ceux de son auteur : vérifiez-les avant de vous y fier.</div>
+    <div class="pref-btns"><button class="btn btn-primary" id="recvAdd">${mine ? 'Ouvrir dans mes analyses' : 'Ajouter à mes analyses'}</button><button class="btn btn-outline" id="recvDel">Supprimer</button></div></div>
+    ${visitor ? `<div class="ro-visitor">Pas encore de compte ? <button type="button" class="link-btn" data-auth-open="signup">Créez-en un, gratuit,</button> pour retrouver cette analyse et les vôtres sur tous vos appareils.</div>` : ''}`;
+  if(crumbs){
+    crumbs.innerHTML = `<button class="back-home-btn" id="recvBack">&larr; Analyses reçues</button><span class="sep">/</span><span class="cur">${escapeHtml(rec.company.name || 'Sans nom')}</span>`;
+    crumbs.insertAdjacentHTML('afterend', banner);
+  }
+  document.getElementById('recvBack').addEventListener('click', () => goReceived(''));
+  document.getElementById('recvAdd').addEventListener('click', () => addReceivedToMine(rec.rid));
+  const del = document.getElementById('recvDel');
+  del.addEventListener('click', () => {
+    if(del.dataset.armed !== '1'){ del.dataset.armed = '1'; del.textContent = 'Confirmer ?'; setTimeout(() => { if(del.isConnected){ del.dataset.armed = ''; del.textContent = 'Supprimer'; } }, 3000); return; }
+    deleteReceived(rec.rid);
+  });
+}
+function bindReadOnlyGuard(){
+  const main = document.getElementById('main');
+  const allow = '.ro-banner, .ro-visitor, .crumbs, .snav, .kpi-link, a[href], [data-goto], [data-auth-open]';
+  ['click', 'input', 'change', 'paste', 'drop', 'dragstart', 'pointerdown', 'keydown'].forEach(type => main.addEventListener(type, e => {
+    if(!roCompany) return;
+    const t = e.target;
+    if(!t || !t.closest || t.closest(allow)) return;
+    if(!t.closest('.wrap.page.ro-fiche')) return;
+    if(type === 'keydown' && !t.closest('input, textarea, select, [contenteditable]')) return;   // le clavier reste libre pour naviguer
+    e.stopImmediatePropagation();
+    if(type !== 'input' && type !== 'change') e.preventDefault();
+  }, true));
+}
+
 function goReceived(rid){
   currentView = 'received';
   receivedId = rid || '';
@@ -11237,7 +11303,7 @@ function addReceivedToMine(rid){
   renderTabs();
   schedulePriceRefresh(c.id, 800);
   showToast('Ajoutée à vos analyses (étiquette « Reçue »). Vous pouvez maintenant la modifier.');
-  renderReceivedView();
+  render();
 }
 function receivedByLabel(r){
   const d = r.sharedAt || r.receivedAt;
@@ -11273,33 +11339,10 @@ function renderReceivedView(){
     if(imp) imp.addEventListener('click', () => document.getElementById('importFile').click());
     return;
   }
-  const c = rec.company, idn = c.fields.identite || {};
-  const mine = rec.addedId && state.companies.some(x => x.id === rec.addedId);
-  const visitor = !cloud.session;
-  main.innerHTML = `<div class="wrap page space cmp-page">
-    <div class="crumbs"><button class="back-home-btn" id="recvBack">&larr; Analyses reçues</button></div>
-    <div class="space-head"><div>
-      <div class="kicker">Analyse reçue · ${receivedByLabel(rec)}</div>
-      <h1 class="space-title">${escapeHtml(c.name || 'Sans nom')}</h1>
-      <p class="space-sub">Lecture seule : cette analyse n'est <strong>pas dans vos analyses</strong> tant que vous ne l'ajoutez pas. Les chiffres et les notes sont ceux de son auteur.</p>
-    </div><div class="space-actions">
-      <button class="btn btn-primary" id="recvAdd">${mine ? 'Ouvrir dans mes analyses' : 'Ajouter à mes analyses'}</button>
-      <button class="btn btn-outline" id="recvDel">Supprimer</button>
-    </div></div>
-    <div class="recv-recap">${buildGlobalRecap(c)}</div>
-    ${visitor ? `<div class="backup-remind keys-tip"><div class="br-t"><strong>Pas encore de compte ?</strong> Créez-en un, gratuit, pour retrouver cette analyse et les vôtres sur tous vos appareils.</div><div class="pref-btns"><button class="btn btn-primary btn-sm" data-auth-open="signup">Créer un compte</button></div></div>` : ''}
-    <div id="cmpBody">${compareTableHtml([c], { received:true })}</div>
-  </div>`;
-  document.getElementById('recvBack').addEventListener('click', () => goReceived(''));
-  document.getElementById('recvAdd').addEventListener('click', () => addReceivedToMine(rec.rid));
-  const del = document.getElementById('recvDel');
-  del.addEventListener('click', () => {
-    if(del.dataset.armed !== '1'){ del.dataset.armed = '1'; del.textContent = 'Confirmer ?'; setTimeout(() => { if(del.isConnected){ del.dataset.armed = ''; del.textContent = 'Supprimer'; } }, 3000); return; }
-    deleteReceived(rec.rid);
-  });
 }
 
 function render(){
+  if(currentView !== 'received') roCompany = null;
   renderTabs();
   if(currentView === 'home'){
     renderHomeView();
@@ -11334,8 +11377,9 @@ function render(){
     return;
   }
   if(currentView === 'received'){
-    renderReceivedView();
-    return;
+    const recView = state.received.find(x => x.rid === receivedId);
+    if(!recView){ roCompany = null; renderReceivedView(); return; }
+    roCompany = recView.company;   // la suite de render() affiche la fiche normale de cette analyse, puis applyReadOnlyFiche() la verrouille
   }
   const main = document.getElementById('main');
   const c = getActive();
@@ -12049,6 +12093,7 @@ function render(){
       });
     });
   }
+  if(roCompany) applyReadOnlyFiche();
 }
 
 document.getElementById('newCompanyCancel').addEventListener('click', closeNewCompanyModal);
@@ -12148,6 +12193,7 @@ scheduleSnapshot(6000);
 initFileBackup();
 bindAuth();
 bindShare();
+bindReadOnlyGuard();
 handleShareLink();
 initTour();
 initPieHover();
