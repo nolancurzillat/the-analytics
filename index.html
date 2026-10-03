@@ -794,7 +794,8 @@ input.company-name:focus{ outline:none; border-bottom-color:var(--blue); }
 /* Pastille « Reçue » : analyse ajoutée depuis une analyse reçue (remplace les anciens tags, retirés le 2026-10-03) */
 .recv-tag{ display:inline-block; font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:1px 7px; border-radius:6px; margin-left:6px; vertical-align:middle; color:var(--ink); background:color-mix(in srgb, var(--blue) 16%, transparent); border:1px solid color-mix(in srgb, var(--blue) 35%, transparent); }
 .recv-tag-block{ display:inline-block; margin:6px 0 0 0; }
-.recv-new-soft{ background:color-mix(in srgb, var(--blue) 30%, transparent); color:#dbe5fb; }
+/* Repère « Reçue » de la barre latérale : discret, sur la ligne du ticker, pour ne jamais raccourcir le nom de l'entreprise */
+.si-recv{ display:inline-block; margin-left:8px; padding:0 6px; border:1px solid rgba(157,180,232,.38); border-radius:5px; font-family:var(--font-ui); font-size:10px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:#9db4e8; vertical-align:1px; }
 .chip-recv{ font-weight:700; background:color-mix(in srgb, var(--blue) 16%, var(--card)); border-color:color-mix(in srgb, var(--blue) 35%, transparent); }
 .lr-chip small{ opacity:.7; margin-left:2px; }
 .chip-progress{ gap:8px; }
@@ -7613,8 +7614,8 @@ function renderTabs(){
     const av = avatarInner(c);
     el.innerHTML = `<span class="si-ico${av.cls}">${av.html}</span>
       <span class="si-text">
-        <span class="si-line1"><span class="si-name">${escapeHtml(c.name || 'Sans nom')}</span>${c.fromShare ? '<em class="recv-new recv-new-soft">Reçue</em>' : ''}${reportFlagHtml(c)}${alertFlagHtml(c)}${conviction ? starsRowHtml(conviction, 'si-stars') : ''}</span>
-        ${ticker ? `<span class="si-sub">${escapeHtml(ticker)}</span>` : ''}
+        <span class="si-line1"><span class="si-name">${escapeHtml(c.name || 'Sans nom')}</span>${reportFlagHtml(c)}${alertFlagHtml(c)}${conviction ? starsRowHtml(conviction, 'si-stars') : ''}</span>
+        ${(ticker || c.fromShare) ? `<span class="si-sub">${escapeHtml(ticker)}${c.fromShare ? '<span class="si-recv">Reçue</span>' : ''}</span>` : ''}
       </span>
       <span class="del" title="Supprimer">✕</span>`;
     el.querySelector('.del').onclick = (e) => deleteCompany(c.id, e);
