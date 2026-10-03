@@ -2352,7 +2352,7 @@ const FIELD_DESCRIPTIONS = {
   revenuPays: "La répartition du chiffre d'affaires par zone géographique.",
   marcheEnCroissance: "La dynamique et le potentiel de croissance du marché de l'entreprise.",
   partMarche: "La proportion du marché total captée par l'entreprise face à ses concurrents.",
-  concurrents: "Les principaux concurrents directs de l'entreprise, et en quoi elle se distingue d'eux (prix, technologie, marque, taille).",
+  concurrents: "Les acteurs qui comptent autour de l'entreprise, concurrents directs ou non (substituts, géants d'un métier voisin, nouveaux entrants), et en quoi elle se distingue d'eux (prix, technologie, marque, taille).",
   innovationTech: "Les innovations technologiques qui soutiennent la croissance future.",
   croissanceAttendueCA: "La croissance du chiffre d'affaires anticipée par les analystes sur 3 ans.",
   croissanceAttendueBenef: "La croissance du bénéfice net anticipée par les analystes sur 3 ans.",
@@ -2570,7 +2570,7 @@ const SECTIONS = [
     fields:[
       {key:'marcheEnCroissance', label:'Croissance du marché', type:'textarea', span:6, group:'Marché et positionnement'},
       {key:'partMarche', label:'Part de marché', type:'textarea', span:6},
-      {key:'concurrents', label:'Concurrents', type:'textarea', span:6},
+      {key:'concurrents', label:'Paysage concurrentiel', type:'textarea', span:6},
       {key:'diversificationSecteur', label:'Diversification de secteur', type:'textarea', span:6},
       {key:'croissanceAttendueCA', label:'Croissance attendue du CA (3 ans)', type:'growthDuo', years:3, span:6, group:'Perspectives chiffrées'},
       {key:'croissanceAttendueBenef', label:'Croissance attendue du bénéfice net (3 ans)', type:'growthDuo', years:3, span:6},
@@ -9022,7 +9022,7 @@ function compareTableHtml(){
     });
   });
   body += section('Votre analyse', SEC_COL.analyse);
-  body += textRow('Concurrents', c => c.fields.croissance.concurrents);
+  body += textRow('Paysage concurrentiel', c => c.fields.croissance.concurrents);
   body += textRow('Points forts', c => c.fields.personnelle.pointsForts);
   body += textRow('Points faibles', c => c.fields.personnelle.pointsFaibles);
   body += textRow("Thèse d'investissement", c => c.fields.personnelle.these);
@@ -9342,7 +9342,7 @@ const LEARN_CHAPTERS = [
         `<strong>Répartition du chiffre d'affaires</strong> par produit et par pays : plus elle est diversifiée, moins l'entreprise dépend d'un seul marché.`,
       ]),
       LH(`Section 3, Croissance future`),
-      LP(`<strong>Objectif</strong> : juger si l'entreprise peut encore grandir. Décrivez la croissance de son marché, sa part de marché, ses concurrents, ses innovations, sa diversification, ses catalyseurs (événements qui pourraient faire monter l'action) et ses risques. Chiffrez enfin la croissance attendue du chiffre d'affaires sur 3 ans.`),
+      LP(`<strong>Objectif</strong> : juger si l'entreprise peut encore grandir. Décrivez la croissance de son marché, sa part de marché, son paysage concurrentiel, ses innovations, sa diversification, ses catalyseurs (événements qui pourraient faire monter l'action) et ses risques. Chiffrez enfin la croissance attendue du chiffre d'affaires sur 3 ans.`),
       LTIP('astuce', `Une bonne croissance passée n'est pas une garantie : demandez-vous toujours ce qui pourrait la freiner.`),
       LH(`Section 4, Valorisation`),
       LP(`<strong>Objectif</strong> : savoir si le prix demandé est justifié. Renseignez le cours (automatique si possible), le bénéfice par action actuel et estimé, le PE du secteur et la croissance estimée du bénéfice. L'application en déduit le PE, le PEG et l'écart avec vos estimations de valeur (valeur intrinsèque, avec un Bear case et un Bull case si vous le souhaitez). Les prévisions des analystes de Wall Street s'affichent dans un graphique en éventail.`),
@@ -9582,7 +9582,7 @@ const LEARN_INDICATORS = {
   revenuPays: { how:`Le poids de chaque pays dans le chiffre d'affaires, affiché en camembert.`, warn:`Une forte dépendance à un seul pays est un risque.` },
   marcheEnCroissance: { how:`Le marché de l'entreprise grandit-il, stagne-t-il ou se contracte-t-il ? Une entreprise qui grandit dans un marché en croissance a le vent dans le dos.` },
   partMarche: { how:`La place de l'entreprise face à ses concurrents : leader, challenger ou petit acteur.` },
-  concurrents: { how:`Qui lui fait concurrence, et ce qui la distingue : prix, technologie, marque, taille. Citez les noms et une phrase sur chacun.`, ex:`Concurrents d'un constructeur de smartphones : Samsung (plus de volumes), Xiaomi (prix bas). Notre entreprise se distingue par son écosystème.`, warn:`Choisissez des concurrents du même métier, pas seulement du même secteur : comparez avec eux dans le Comparateur.` },
+  concurrents: { how:`Le paysage autour de l'entreprise : qui lui fait concurrence, directement ou non (produits de substitution, géants d'un métier voisin, nouveaux entrants), et ce qui la distingue : prix, technologie, marque, taille. Citez les noms et une phrase sur chacun.`, ex:`Pour un constructeur de smartphones : Samsung (plus de volumes), Xiaomi (prix bas), et les fabricants de puces qui se lancent dans les appareils. Notre entreprise se distingue par son écosystème.`, warn:`Ce ne sont pas toujours des concurrents directs : notez surtout ceux qui peuvent réellement lui prendre des clients ou des marges. Pour les comparer chiffre à chiffre, utilisez le Comparateur avec des entreprises du même métier.` },
   innovationTech: { how:`Les innovations qui renforcent l'entreprise, ou qui pourraient la menacer.` },
   diversificationSecteur: { how:`L'entreprise dépend-elle d'un seul secteur, ou opère-t-elle dans plusieurs ? La diversification réduit le risque.` },
   catalyseurs: { how:`Les événements à venir qui pourraient faire monter l'action : nouveau produit, expansion, acquisition, changement de réglementation.` },
