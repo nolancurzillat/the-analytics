@@ -11041,7 +11041,7 @@ function paintShareModal(keepInputs){
     <p class="guide-lead">La personne reçoit l'analyse dans <strong>Analyses reçues</strong>, séparée des siennes. Elle peut la lire sans compte, puis choisir de l'ajouter ou non à ses propres analyses.</p>
     <label class="pref-toggle share-opt"><input type="checkbox" id="shareNotes"${notes ? ' checked' : ''}> Inclure mes notes : thèse, points forts et faibles, conviction, décision, prix cible</label>
     <label class="modal-label" for="shareBy">Votre nom, affiché au destinataire (facultatif)</label>
-    <input type="text" id="shareBy" maxlength="40" placeholder="Par exemple : Nolan" value="${escapeHtml(by)}" autocomplete="off">
+    <input type="text" id="shareBy" maxlength="40" placeholder="Votre nom" value="${escapeHtml(by)}" autocomplete="off">
     <div class="modal-hint">Jamais envoyés : votre position, vos ordres clôturés, votre journal de décisions et vos alertes.</div>
     <div class="guide-result ${shareUi.cls}" id="shareResult" aria-live="polite">${escapeHtml(shareUi.msg)}</div>
     ${linkBlock}
