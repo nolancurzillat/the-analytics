@@ -791,15 +791,11 @@ input.company-name:focus{ outline:none; border-bottom-color:var(--blue); }
 .alt-unit{ font-weight:700; color:var(--ink); }
 .alt-err{ min-height:16px; margin-top:6px; font-size:12.5px; color:var(--red); }
 @media (max-width:640px){ .alerts-block{ margin-left:14px; margin-right:14px; } }
-/* Tags (2026-10-02) */
-.tags-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:10px; }
-.tag-chip{ display:inline-flex; align-items:center; gap:4px; padding:3px 6px 3px 11px; border-radius:999px; font-size:12.5px; font-weight:600; color:var(--ink); background:color-mix(in srgb, var(--accent) 12%, var(--card)); border:1px solid color-mix(in srgb, var(--accent) 30%, transparent); }
-.tag-x{ border:none; background:none; color:var(--ink-soft); font-size:16px; line-height:1; cursor:pointer; padding:0 4px; border-radius:50%; }
-.tag-x:hover{ color:var(--red); }
-.tag-input{ width:150px; border:1px dashed var(--border-strong); background:transparent; color:var(--ink); border-radius:999px; padding:4px 12px; font:inherit; font-size:12.5px; }
-.tag-input:focus{ outline:none; border-style:solid; border-color:var(--blue); box-shadow:0 0 0 3px var(--ring); }
-.ht-tags{ display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
-.tag-chip-sm{ padding:1px 9px; font-size:11.5px; font-weight:600; }
+/* Pastille « Reçue » : analyse ajoutée depuis une analyse reçue (remplace les anciens tags, retirés le 2026-10-03) */
+.recv-tag{ display:inline-block; font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:1px 7px; border-radius:6px; margin-left:6px; vertical-align:middle; color:var(--ink); background:color-mix(in srgb, var(--blue) 16%, transparent); border:1px solid color-mix(in srgb, var(--blue) 35%, transparent); }
+.recv-tag-block{ display:inline-block; margin:6px 0 0 0; }
+.recv-new-soft{ background:color-mix(in srgb, var(--blue) 30%, transparent); color:#dbe5fb; }
+.chip-recv{ font-weight:700; background:color-mix(in srgb, var(--blue) 16%, var(--card)); border-color:color-mix(in srgb, var(--blue) 35%, transparent); }
 .lr-chip small{ opacity:.7; margin-left:2px; }
 .chip-progress{ gap:8px; }
 .chip-progress .hbar-track{ width:56px; height:7px; }
@@ -3574,9 +3570,12 @@ function migrateCompany(c){
   if(!Array.isArray(c.decisionLog)) c.decisionLog = [];
   // Ordres clôturés (2026-10-02) : voir la section ORDRES CLÔTURÉS
   if(!Array.isArray(c.closedTrades)) c.closedTrades = [];
-  // Alertes personnalisées et tags (2026-10-02) : voir les sections ALERTES et TAGS
+  // Alertes personnalisées (2026-10-02) : voir la section ALERTES. Les tags ont été retirés le 2026-10-03 (demande de Nolan) : seul le tag « Reçue »
+  // est gardé, sous la forme d'un indicateur `fromShare` (analyse ajoutée depuis une analyse reçue) ; tous les autres tags sont ignorés.
   if(!Array.isArray(c.alerts)) c.alerts = [];
-  if(!Array.isArray(c.tags)) c.tags = [];
+  if(Array.isArray(c.tags) && c.tags.some(x => /^re[cç]ue$/i.test(String(x).trim()))) c.fromShare = true;
+  delete c.tags;
+  if(c.fromShare !== true) delete c.fromShare;
   return c;
 }
 
@@ -3940,7 +3939,7 @@ function matchExistingCompanies(query){
   return state.companies.filter(c => {
     const name = normName(c.name);
     const ticker = String((c.fields.identite || {}).ticker || '').toUpperCase();
-    return name.indexOf(qn) >= 0 || (qt && ticker.indexOf(qt) >= 0) || (c.tags || []).some(t => normName(t).indexOf(qn) >= 0);   // on retrouve aussi une analyse par un de ses tags
+    return name.indexOf(qn) >= 0 || (qt && ticker.indexOf(qt) >= 0);
   }).slice(0, 8);
 }
 function globalSearchExistingItemHtml(c, idx){
@@ -5013,7 +5012,7 @@ function autoCapitalizeFirst(el){
 const MONEY_UNIT_RE = /^(\s*-?\d[\d\s  ]*(?:[.,]\d+)?\s*)(mds|mrd|md|m)(\s*[$€]?\s*)$/i;
 const MONEY_UNIT_FIX = { m:'M', md:'Md', mds:'Mds', mrd:'Mrd' };
 function fixMoneyUnit(el){
-  if(el.tagName !== 'INPUT' || el.type !== 'text' || el.classList.contains('tag-input') || !el.closest('#main')) return;
+  if(el.tagName !== 'INPUT' || el.type !== 'text' || !el.closest('#main')) return;
   const m = MONEY_UNIT_RE.exec(el.value);
   if(!m) return;
   const unit = MONEY_UNIT_FIX[m[2].toLowerCase()];
@@ -7075,8 +7074,8 @@ function sortedForSidebar(){
 function sortedForTable(){
   const key = state.settings.tableSortKey, sign = state.settings.tableSortDir === 'desc' ? -1 : 1;
   const idx = new Map(state.companies.map((c, i) => [c.id, i]));
-  // Filtres par secteur et par tag (rangées de pastilles de « Toutes vos analyses »)
-  return state.companies.filter(c => (!tagFilter || (c.tags || []).some(t => sameTag(t, tagFilter))) && (!sectorFilter || companySector(c) === sectorFilter)).sort((a, b) => sortCompare(a, b, key, sign, idx));
+  // Filtre par secteur (rangée de pastilles de « Toutes vos analyses »)
+  return state.companies.filter(c => !sectorFilter || companySector(c) === sectorFilter).sort((a, b) => sortCompare(a, b, key, sign, idx));
 }
 // Menu du tableau « Toutes vos analyses » (double flèche) : seulement les critères SANS colonne cliquable (2026-10-03, demande
 // de Nolan : « enlève dans les doubles flèches les filtres déjà applicables en appuyant sur le nom, par exemple la conviction »).
@@ -7543,60 +7542,8 @@ function initNotifCenter(){
   refreshNotifBadge();
 }
 
-// ============================================================
-// TAGS (2026-10-02, demande de Nolan) : `c.tags = ['dividende', 'à surveiller', ...]`, étiquettes libres pour classer ses analyses.
-// Éditées sous le nom dans la fiche (#tagsBar), affichées dans « Toutes vos analyses », où une rangée de pastilles filtre la liste.
-// ============================================================
-const TAG_MAX = 8, TAG_LEN = 24;
-let tagFilter = '';
-function normTag(s){ return String(s || '').replace(/\s+/g, ' ').trim().slice(0, TAG_LEN); }
-function sameTag(a, b){ return a.toLocaleLowerCase('fr') === b.toLocaleLowerCase('fr'); }
-function tagCounts(){
-  const m = {};
-  state.companies.forEach(c => (c.tags || []).forEach(t => { const k = Object.keys(m).find(x => sameTag(x, t)) || t; m[k] = (m[k] || 0) + 1; }));
-  return Object.keys(m).sort((a, b) => (m[b] - m[a]) || a.localeCompare(b, 'fr')).map(k => ({ tag:k, n:m[k] }));
-}
-function tagsBarHtml(c){
-  const mine = c.tags || [];
-  const chips = mine.map(t => `<span class="tag-chip">${escapeHtml(t)}<button type="button" class="tag-x" data-tag-remove="${escapeHtml(t)}" aria-label="Retirer le tag ${escapeHtml(t)}">&times;</button></span>`).join('');
-  const sugg = tagCounts().filter(x => !mine.some(m => sameTag(m, x.tag))).map(x => `<option value="${escapeHtml(x.tag)}">`).join('');
-  const input = mine.length >= TAG_MAX ? '' : `<input type="text" class="tag-input" id="tagInput" list="tagList" maxlength="${TAG_LEN}" placeholder="+ Ajouter un tag" aria-label="Ajouter un tag"><datalist id="tagList">${sugg}</datalist>`;
-  return `${chips}${input}`;
-}
-function bindTagsBar(){
-  const bar = document.getElementById('tagsBar'), c = getActive();
-  if(!bar || !c) return;
-  const repaint = refocus => { bar.innerHTML = tagsBarHtml(c); bindTagsBar(); renderTabs(); if(refocus){ const i = document.getElementById('tagInput'); if(i) i.focus(); } };
-  const input = document.getElementById('tagInput');
-  const add = raw => {
-    const t = normTag(raw);
-    if(!t) return;
-    if(!Array.isArray(c.tags)) c.tags = [];
-    if(c.tags.length >= TAG_MAX || c.tags.some(x => sameTag(x, t))) { repaint(true); return; }
-    // même orthographe que l'existant si le tag est déjà utilisé ailleurs (« Dividende » et « dividende » ne sont qu'un seul tag)
-    const known = tagCounts().find(x => sameTag(x.tag, t));
-    c.tags.push(known ? known.tag : t);
-    touchUpdated(c);
-    saveState();
-    repaint(true);
-  };
-  if(input){
-    input.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ','){ e.preventDefault(); add(input.value); } });
-    input.addEventListener('change', () => add(input.value));   // choix dans la liste de suggestions
-  }
-  bar.querySelectorAll('[data-tag-remove]').forEach(b => b.addEventListener('click', () => {
-    c.tags = (c.tags || []).filter(x => x !== b.dataset.tagRemove);
-    touchUpdated(c);
-    saveState();
-    repaint(false);
-  }));
-}
-function tagFilterChipsHtml(){
-  const tc = tagCounts();
-  if(!tc.length) return '';
-  if(tagFilter && !tc.some(x => sameTag(x.tag, tagFilter))) tagFilter = '';
-  return `<div class="pf-chips" style="margin-bottom:12px"><span class="pf-chips-l">Tag :</span><button class="lr-chip${tagFilter ? '' : ' on'}" data-tag-filter="">Tous</button>${tc.map(x => `<button class="lr-chip${sameTag(x.tag, tagFilter) ? ' on' : ''}" data-tag-filter="${escapeHtml(x.tag)}">${escapeHtml(x.tag)} <small>${x.n}</small></button>`).join('')}</div>`;
-}
+// Pastille « Reçue » (2026-10-03) : visible sur les analyses ajoutées depuis une analyse reçue (barre latérale, tableau, en-tête de la fiche).
+function fromShareBadge(c){ return c && c.fromShare ? '<span class="recv-tag" data-tooltip="<div class=\'tt-desc\'>Analyse ajoutée depuis une analyse que l\'on vous a envoyée.</div>">Reçue</span>' : ''; }
 
 // ---------- Filtre par SECTEUR (2026-10-03, demande de Nolan : « ne choisir que des entreprises du même secteur pour comparer ») ----------
 // Rangée de pastilles « Secteur : Tous / Technologie 5 / ... » dans « Toutes vos analyses » et dans le Comparateur (même variable
@@ -7666,7 +7613,7 @@ function renderTabs(){
     const av = avatarInner(c);
     el.innerHTML = `<span class="si-ico${av.cls}">${av.html}</span>
       <span class="si-text">
-        <span class="si-line1"><span class="si-name">${escapeHtml(c.name || 'Sans nom')}</span>${reportFlagHtml(c)}${alertFlagHtml(c)}${conviction ? starsRowHtml(conviction, 'si-stars') : ''}</span>
+        <span class="si-line1"><span class="si-name">${escapeHtml(c.name || 'Sans nom')}</span>${c.fromShare ? '<em class="recv-new recv-new-soft">Reçue</em>' : ''}${reportFlagHtml(c)}${alertFlagHtml(c)}${conviction ? starsRowHtml(conviction, 'si-stars') : ''}</span>
         ${ticker ? `<span class="si-sub">${escapeHtml(ticker)}</span>` : ''}
       </span>
       <span class="del" title="Supprimer">✕</span>`;
@@ -7755,7 +7702,8 @@ function buildCompanyMeta(c){
   // Alertes déclenchées : un chip par alerte (deux au plus, puis « +N »)
   const alerts = activeAlerts(c);
   const alertChips = alerts.slice(0, 2).map(a => `<span class="chip chip-alert">${ALERT_ZAP} ${escapeHtml(alertText(c, a))}</span>`).join('') + (alerts.length > 2 ? `<span class="chip chip-alert">+${alerts.length - 2}</span>` : '');
-  return progressChip + reportChip + alertChips + out;
+  const shareChip = c.fromShare ? `<span class="chip chip-recv" data-tooltip="<div class='tt-desc'>Analyse ajoutée depuis une analyse que l'on vous a envoyée. Elle est maintenant à vous : vous pouvez la modifier.</div>">Reçue</span>` : '';
+  return progressChip + shareChip + reportChip + alertChips + out;
 }
 function buildCompanyKpis(c){
   const sinfo = computeScoreInfo(c);
@@ -8397,7 +8345,7 @@ function buildCompaniesTableRows(){
     return `<tr data-open-company="${c.id}">
       <td><div class="ht-co">${miniAv(c)}<div class="ht-id">
         <div class="home-td-name"><span class="home-td-name-txt">${escapeHtml(c.name || 'Sans nom')}</span>${reportFlagHtml(c)}${alertFlagHtml(c)}${ticker ? `<span class="home-ticker">${escapeHtml(ticker)}</span>` : ''}</div>
-        <div class="ht-sec">${sect ? escapeHtml(sect) : 'Secteur non renseigné'}</div>${(c.tags || []).length ? `<div class="ht-tags">${c.tags.map(t => `<span class="tag-chip tag-chip-sm">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+        <div class="ht-sec">${sect ? escapeHtml(sect) : 'Secteur non renseigné'}</div>${c.fromShare ? `<div>${fromShareBadge(c).replace('recv-tag', 'recv-tag recv-tag-block')}</div>` : ''}
       </div></div></td>
       <td>${chip(gs, gsColor, gs === null ? '' : Math.round(gs), { lg:true, prov:sinfo.provisional })}</td>
       <td>${chip(peg, pegTier ? TIER_COLORS[pegTier] : 'var(--border-strong)', peg === null ? '' : peg.toFixed(2))}</td>
@@ -8423,8 +8371,8 @@ function buildCompaniesTableRows(){
 function buildCompaniesTable(){
   const sortCtrl = `<span class="table-sort-wrap"><button type="button" class="sort-btn" id="tableSortBtn" aria-label="Trier les analyses" aria-haspopup="true" aria-expanded="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20V4M7 4L3.5 7.5M7 4l3.5 3.5"/><path d="M17 4v16M17 20l-3.5-3.5M17 20l3.5-3.5"/></svg></button><div class="sort-menu hidden" id="tableSortMenu" role="menu">${sortMenuHtml(TABLE_MENU_KEYS, state.settings.tableSortKey, state.settings.tableSortDir, true)}</div></span>`;
   const shown = sortedForTable().length;
-  const sub = `<span class="scard-s-row">${(tagFilter || sectorFilter) && shown !== state.companies.length ? `${shown} sur ${state.companies.length}` : `${state.companies.length} au total`}${sortCtrl}</span>`;
-  return spaceCard('s12', 'Toutes vos analyses', sub, sectorFilterChipsHtml(true) + tagFilterChipsHtml() + buildCompaniesTableRows());
+  const sub = `<span class="scard-s-row">${sectorFilter && shown !== state.companies.length ? `${shown} sur ${state.companies.length}` : `${state.companies.length} au total`}${sortCtrl}</span>`;
+  return spaceCard('s12', 'Toutes vos analyses', sub, sectorFilterChipsHtml(true) + buildCompaniesTableRows());
 }
 
 function buildMilestones(){
@@ -8532,12 +8480,10 @@ function cleanImportedCompany(raw){
   // Ordres clôturés importés : dates, nombres, devise et textes revalidés (affichés en HTML)
   c.closedTrades = (Array.isArray(c.closedTrades) ? c.closedTrades : []).filter(t => t && isoRe.test(String(t.date)) && Number.isFinite(Number(t.qty)) && Number(t.qty) > 0 && Number.isFinite(Number(t.buy)) && Number(t.buy) > 0 && Number.isFinite(Number(t.sell)) && Number(t.sell) >= 0).slice(0, 2000)
     .map((t, i) => ({ id:String(t.id || ('t' + i)).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40) || ('t' + i), date:t.date, qty:Number(t.qty), buy:Number(t.buy), sell:Number(t.sell), cur:t.cur === '€' ? '€' : '$', note:String(t.note || '').slice(0, 140) }));
-  // Alertes et tags importés (NON fiables) : types connus, valeurs numériques, identifiants nettoyés, tags courts et sans doublon
+  // Alertes importées (NON fiables) : types connus, valeurs numériques, identifiants nettoyés
   c.alerts = (Array.isArray(c.alerts) ? c.alerts : []).filter(a => a && ALERT_TYPES[a.type] && (!ALERT_TYPES[a.type].needs || (Number.isFinite(Number(a.value)) && Number(a.value) > 0))).slice(0, ALERT_MAX)
     .map((a, i) => ({ id:String(a.id || ('a' + i)).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40) || ('a' + i), type:a.type, value:ALERT_TYPES[a.type].needs ? Number(a.value) : null, on:a.on !== false, fired:!!a.fired, ack:!!a.ack, firedAt:(typeof a.firedAt === 'string' && !isNaN(Date.parse(a.firedAt))) ? new Date(a.firedAt).toISOString() : '' }));
-  const seenTags = [];
-  (Array.isArray(c.tags) ? c.tags : []).forEach(t => { const n = normTag(t); if(n && !seenTags.some(x => sameTag(x, n)) && seenTags.length < TAG_MAX) seenTags.push(n); });
-  c.tags = seenTags;
+  c.fromShare = c.fromShare === true;   // seul l'indicateur « Reçue » survit (voir migrateCompany, qui convertit aussi l'ancien tag « Reçue »)
   if(!Number.isFinite(c.reviewedTs)) delete c.reviewedTs;
   if(c.logo &&!(typeof c.logo.url === 'string' && /^(https:\/\/|data:image\/(png|jpeg|webp|gif);base64,)/.test(c.logo.url))) c.logo = null;
   // La devise (c.currency) est validée par migrateCompany, appelé juste après : toute valeur qui n'est pas exactement '$' ou '€' est ignorée.
@@ -9185,7 +9131,6 @@ function bindSpace(){
     renderTabs();
     renderSpaceView();
   }));
-  main.querySelectorAll('[data-tag-filter]').forEach(b => b.addEventListener('click', () => { tagFilter = b.dataset.tagFilter; renderSpaceView(); }));
   main.querySelectorAll('[data-sector-filter]').forEach(b => b.addEventListener('click', () => { sectorFilter = b.dataset.sectorFilter; renderSpaceView(); }));
   main.querySelectorAll('[data-sector-compare]').forEach(b => b.addEventListener('click', () => {
     const ids = topBySector(sectorFilter).map(c => c.id);
@@ -9359,7 +9304,7 @@ const LEARN_CHAPTERS = [
       { t:'btn', x:`Ouvrir le guide du prix automatique`, a:'data-open-price-guide' },
       LH(`Les pages de l'application`),
       LDEFS([
-        [`Mon espace`, `La vue d'ensemble de toutes vos analyses : tableau, classements, rappels, tags pour les trier. Le journal de bord et le bilan annuel s'ouvrent depuis la carte « Votre capital ».`],
+        [`Mon espace`, `La vue d'ensemble de toutes vos analyses : tableau, classements, rappels, filtre par secteur. Le journal de bord et le bilan annuel s'ouvrent depuis la carte « Votre capital ».`],
         [`Portefeuille`, `Vos positions réelles : capital investi, résultat, dividendes attendus et ordres clôturés.`],
         [`Comparateur`, `Jusqu'à 3 entreprises côte à côte, sur les mêmes indicateurs.`],
         [`Notifications (la cloche)`, `Ce qui demande votre attention : alertes de cours déclenchées et rapports publiés dont il faut mettre à jour les données.`],
@@ -11005,12 +10950,12 @@ let receivedId = '';
 const SHARE_MAX_BYTES = 1400000;
 let shareUi = { id:'', link:'', busy:false, msg:'', cls:'', links:null };
 
-// Retire d'une analyse tout ce qui est personnel (position, ordres, journal, alertes, tags...) : appliqué à l'envoi ET à la réception
+// Retire d'une analyse tout ce qui est personnel (position, ordres, journal, alertes...) : appliqué à l'envoi ET à la réception
 // (un fichier modifié à la main ne doit rien faire apparaître de tout cela). Sans les notes : thèse, points forts/faibles, conviction,
 // décision et prix cible sont aussi vidés.
 function sanitizeSharedCompany(c, withNotes){
   c.position = { active:false, quantite:'', prixAchat:'', montantInvesti:'' };
-  c.decisionLog = []; c.closedTrades = []; c.alerts = []; c.thesisHistory = []; c.tags = [];
+  c.decisionLog = []; c.closedTrades = []; c.alerts = []; c.thesisHistory = []; delete c.tags; delete c.fromShare;
   ['reviewedTs', 'priceError', 'priceUpdatedAt', 'priceMicCode', 'priceMicCodeFor', 'priceSource', 'priceDay', 'avSymbol', 'avSymbolFor'].forEach(k => { delete c[k]; });
   if(c.fields.identite) c.fields.identite.prochainRapport = '';
   const p = c.fields.personnelle || (c.fields.personnelle = {});
@@ -11235,7 +11180,7 @@ function applyReadOnlyFiche(){
   });
   main.querySelectorAll('[contenteditable]').forEach(el => el.setAttribute('contenteditable', 'false'));
   main.querySelectorAll('[draggable="true"]').forEach(el => el.setAttribute('draggable', 'false'));
-  ['#alertsBlock', '#position-card', '.tags-bar', '.share-btn', '#thesisChangeBtn', '.snav [data-jump="position-card"]'].forEach(s => {
+  ['#alertsBlock', '#position-card', '.share-btn', '#thesisChangeBtn', '.snav [data-jump="position-card"]'].forEach(s => {
     main.querySelectorAll(s).forEach(el => el.parentNode.removeChild(el));
   });
   const cur = document.getElementById('companyCurrencyToggle');
@@ -11295,7 +11240,7 @@ function addReceivedToMine(rid){
   c.id = 'c' + Date.now() + Math.random().toString(36).slice(2, 7);
   const today = new Date().toISOString().slice(0, 10);
   c.createdAt = today; c.updatedAt = today; c.updatedTs = Date.now();
-  c.tags = ['Reçue'];
+  c.fromShare = true;
   migrateCompany(c);
   state.companies.push(c);
   r.addedId = c.id;
@@ -11403,7 +11348,6 @@ function render(){
         <div class="chead-id">
           <input class="company-name" value="${escapeHtml(c.name)}" id="companyNameInput" placeholder="Nom de l'entreprise">
           <div class="chead-meta" id="company-meta">${buildCompanyMeta(c)}</div>
-          <div class="tags-bar" id="tagsBar">${tagsBarHtml(c)}</div>
         </div>
         <div class="chead-side">
           <button type="button" class="btn btn-outline btn-sm share-btn" data-share-open data-tooltip="<div class='tt-desc'>Envoyer cette analyse à quelqu'un : par lien ou par fichier. Il la reçoit à part de ses analyses et choisit de l'ajouter ou non.</div>"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg>Partager</button>
@@ -11862,7 +11806,6 @@ function render(){
   if(thesisChangeBtn) thesisChangeBtn.addEventListener('click', archiveThesisAndClear);
   bindReportDone(document.getElementById('reportNote'));
   bindAlertsBlock();
-  bindTagsBar();
 
   main.querySelectorAll('[data-section][data-field]').forEach(el => {
     if(el.dataset.type === 'richtext'){
