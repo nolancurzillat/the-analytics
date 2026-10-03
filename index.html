@@ -820,15 +820,20 @@ input.company-name:focus{ outline:none; border-bottom-color:var(--blue); }
 .cur-opt:not(:last-child){ border-right:1px solid var(--border-strong); }
 .cur-opt:hover:not(.active){ background:var(--paper-line); color:var(--ink); }
 .cur-opt.active{ background:var(--accent); color:#fff; }
-.kpis{ display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:14px; margin-top:24px; }
+/* Bande des indicateurs de la fiche (2026-10-04, demande de Nolan : mieux exploiter la place, ajouter le PE, plus beau) : 7 cartes de largeurs adaptées
+   (le prix actuel et le score, qui portent le plus de texte, sont les plus larges), chacune avec un filet de sa couleur (--k) et un léger dégradé. */
+.kpis{ display:grid; grid-template-columns:1.3fr 1.2fr 1fr .85fr .85fr 1fr 1.5fr; gap:12px; margin-top:24px; }
 .kpi{
-  border:1px solid var(--border); border-radius:12px; padding:14px 16px;
-  background:var(--paper-line); min-width:0;
+  position:relative; min-width:0; padding:15px 16px 14px; border-radius:14px;
+  border:1px solid var(--border); border-top:3px solid var(--k, var(--border-strong));
+  background:linear-gradient(180deg, color-mix(in srgb, var(--k, var(--border-strong)) 11%, var(--paper-line)) 0%, var(--paper-line) 75%);
+  box-shadow:0 1px 0 rgba(255,255,255,.02) inset;
 }
 .kpi-l{ font-size:13px; color:var(--ink-soft); font-weight:500; white-space:nowrap; }
-.kpi-v{ font-family:var(--font-mono); font-weight:600; font-size:24px; margin-top:6px; line-height:1.15; white-space:nowrap; }
+.kpi-v{ font-family:var(--font-mono); font-weight:600; font-size:27px; margin-top:6px; line-height:1.15; white-space:nowrap; }
 .kpi-v small{ font-size:13px; color:var(--ink-soft); font-weight:400; }
-.kpi-s{ font-size:13px; color:var(--ink-soft); margin-top:3px; line-height:1.35; }
+.kpi-s{ font-size:13px; color:var(--ink-soft); margin-top:4px; line-height:1.4; }
+.kpi-s b{ font-weight:700; }
 .kpi-score{ display:flex; align-items:center; gap:12px; }
 .kpi-link{ cursor:pointer; transition:border-color .12s ease, box-shadow .12s ease; }
 .kpi-link:hover{ border-color:var(--blue); box-shadow:0 0 0 1px var(--blue) inset; }
@@ -1547,7 +1552,8 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
   .field-row[data-span="12"]{ grid-column:1 / -1; }
   .field-row:has(:where(.rich-textarea, .pie-wrap, .client-list, .checklist, .image-dropzone, .chart-image-wrap, .moat-row, .ws-chart, .ws-chart-empty, input[data-duo-field="nbActions"])),
   .field-row[data-span]:has(:where(.rich-textarea, .pie-wrap, .client-list, .checklist, .image-dropzone, .chart-image-wrap, .moat-row, .ws-chart, .ws-chart-empty, input[data-duo-field="nbActions"])){ grid-column:1 / -1; }
-  .kpis{ grid-template-columns:repeat(3, minmax(0,1fr)); }
+  .kpis{ grid-template-columns:repeat(4, minmax(0,1fr)); }
+  .kpis .kpi-score{ grid-column:span 2; }
   .valuation-summary{ grid-template-columns:repeat(3, minmax(0,1fr)); }
   .learn{ grid-template-columns:1fr; padding:34px; }
   .insight-card-radar, .insights-side{ grid-column:1 / -1; }
@@ -1568,6 +1574,7 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
 @media (max-width:640px){
   .feature-grid{ grid-template-columns:1fr; }
   .kpis{ grid-template-columns:repeat(2, minmax(0,1fr)); }
+  .kpis .kpi-score{ grid-column:1 / -1; }
   .chead{ padding:20px; }
   .chead-top{ flex-wrap:wrap; }
   .chead-side{ align-items:flex-start; }
@@ -7849,18 +7856,37 @@ function buildCompanyKpis(c){
   const val = c.fields.valorisation || {};
   const conviction = parseFloat(pers.conviction) || 0;
   const devise = c.currency;
-  const ecart = ecartCompact(computeEcart(c, 'valeurIntrinseque'));
-  const kpi = (label, inner, sub) => `<div class="kpi"><div class="kpi-l">${label}</div>${inner}${sub !== undefined ? `<div class="kpi-s">${sub}</div>` : ''}</div>`;
+  // Prix actuel : « Surévaluation » / « Sous-évaluation » écrits en toutes lettres (demande de Nolan le 2026-10-04), même formule et même convention de signe que partout (computeEcart)
+  const e = computeEcart(c, 'valeurIntrinseque');
+  const pct1 = x => fmtNum(Math.abs(x), 1) + ' %';
+  let priceSub, priceColor = 'var(--accent)';
+  if(e === null) priceSub = '<span>Valeur intrinsèque à saisir</span>';
+  else if(e > 0.05){ priceColor = 'var(--red)'; priceSub = `<b style="color:var(--red)">Surévaluation de ${pct1(e)}</b><br>par rapport à la valeur intrinsèque`; }
+  else if(e < -0.05){ priceColor = 'var(--green)'; priceSub = `<b style="color:var(--green)">Sous-évaluation de ${pct1(e)}</b><br>par rapport à la valeur intrinsèque`; }
+  else priceSub = `<b>Prix proche de la valeur</b><br>intrinsèque`;
+  // Décision : « Conserver » affiche le PRIX D'ACHAT (ce qu'on a payé), les autres décisions gardent le prix cible (demande de Nolan le 2026-10-04)
+  const decision = pers.decision || '';
+  const decStyle = DECISION_STYLE[decision];
+  let decSub;
+  if(decision === 'Conserver'){
+    const buy = c.position && String(c.position.prixAchat || '').trim();
+    decSub = buy ? 'Prix d\'achat : ' + escapeHtml(buy) + ' ' + devise : 'Prix d\'achat à renseigner';
+  }else decSub = pers.prixAchatCible ? 'Cible d\'achat : ' + escapeHtml(String(pers.prixAchatCible)) + ' ' + devise : 'Aucun prix cible';
+  // PE : cours ÷ bénéfice par action ; le PE forward (bénéfice estimé) en sous-titre quand il est calculable
+  const pe = computePeActuel(c), peF = computePeForward(c);
+  const peSub = pe === null ? 'EPS et prix à renseigner' : (peF !== null && peF > 0 ? 'PE forward : ' + fmtNum(peF, 1) : 'cours ÷ bénéfice par action');
+  // Chaque carte porte sa couleur (--k) : filet en haut et léger dégradé, pour que la bande se lise d'un coup d'œil
+  const kpi = (label, inner, sub, k) => `<div class="kpi" style="--k:${k || 'var(--border-strong)'}"><div class="kpi-l">${label}</div>${inner}${sub !== undefined ? `<div class="kpi-s">${sub}</div>` : ''}</div>`;
   return [
-    `<div class="kpi kpi-score kpi-link" data-goto="insights-section" role="button" tabindex="0" aria-label="Voir le détail du score composite"><div class="kpi-ring" data-tooltip="<div class='tt-desc'>Score composite sur 100 : moyenne pondérée des 5 axes du profil global. Cliquez pour voir le détail.</div>${scoreScaleTooltip()}"><svg viewBox="0 0 54 54" width="54" height="54"><circle cx="27" cy="27" r="23" fill="none" stroke="var(--border)" stroke-width="6"/><circle cx="27" cy="27" r="23" fill="none" stroke="${gs === null ? 'transparent' : gsColor}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 27 27)"/></svg><span style="color:${gsColor}">${gs === null ? '—' : Math.round(gs)}</span></div><div><div class="kpi-l">Score composite</div><div class="kpi-s">${gs === null ? 'sur 100' : (sinfo.provisional ? 'provisoire · ' : 'sur 100 · ') + sinfo.filled + '/' + sinfo.total + ' axes'}</div></div></div>`,
-    kpi('Décision', `<div style="margin-top:9px">${decisionPill(pers.decision || '')}</div>`, pers.prixAchatCible ? 'Cible d\'achat : ' + escapeHtml(String(pers.prixAchatCible)) + ' ' + devise : 'Aucun prix cible'),
-    kpi('Conviction', `<div class="kpi-v" style="color:var(--star)">${conviction ? '★ ' + String(conviction).replace('.', ',') : '—'}<small> / 5</small></div>`, conviction ? 'Votre niveau de conviction' : 'À renseigner'),
-    kpi('PEG', `<div class="kpi-v" style="color:${pegColor}">${peg === null ? '—' : peg.toFixed(2)}</div>`, pegTier ? TIER_LABELS[pegTier] : 'Pas assez de données'),
-    kpi('Checklist Buffett', `<div class="kpi-v" style="color:${buffColor}">${buff.checked}<small> / ${buff.total}</small></div>`, buffTier ? `critères validés · ${TIER_LABELS[buffTier]}` : 'critères validés'),
-    kpi('Prix actuel', `<div class="kpi-v">${val.prixActuel ? escapeHtml(String(val.prixActuel)) + '<small> ' + devise + '</small>' : '—'}</div>`, `<span style="color:${ecart.color}">${ecart.text === '—' ? 'Valeur intrinsèque à saisir' : ecart.text + ' vs intrinsèque'}</span>`),
+    `<div class="kpi kpi-score kpi-link" style="--k:${gsColor}" data-goto="insights-section" role="button" tabindex="0" aria-label="Voir le détail du score composite"><div class="kpi-ring" data-tooltip="<div class='tt-desc'>Score composite sur 100 : moyenne pondérée des 5 axes du profil global. Cliquez pour voir le détail.</div>${scoreScaleTooltip()}"><svg viewBox="0 0 54 54" width="54" height="54"><circle cx="27" cy="27" r="23" fill="none" stroke="var(--border)" stroke-width="6"/><circle cx="27" cy="27" r="23" fill="none" stroke="${gs === null ? 'transparent' : gsColor}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 27 27)"/></svg><span style="color:${gsColor}">${gs === null ? '—' : Math.round(gs)}</span></div><div><div class="kpi-l">Score composite</div><div class="kpi-s">${gs === null ? 'sur 100' : (sinfo.provisional ? 'provisoire · ' : 'sur 100 · ') + sinfo.filled + '/' + sinfo.total + ' axes'}</div></div></div>`,
+    kpi('Décision', `<div style="margin-top:9px">${decisionPill(decision)}</div>`, decSub, decStyle ? decStyle.color : null),
+    kpi('Conviction', `<div class="kpi-v" style="color:var(--star)">${conviction ? '★ ' + String(conviction).replace('.', ',') : '—'}<small> / 5</small></div>`, conviction ? 'Votre niveau de conviction' : 'À renseigner', 'var(--star)'),
+    kpi('PEG', `<div class="kpi-v" style="color:${pegColor}">${peg === null ? '—' : peg.toFixed(2)}</div>`, pegTier ? TIER_LABELS[pegTier] : 'Pas assez de données', pegTier ? pegColor : null),
+    kpi('PE', `<div class="kpi-v">${pe === null ? '—' : fmtNum(pe, 1)}</div>`, peSub, 'var(--blue)'),
+    kpi('Checklist Buffett', `<div class="kpi-v" style="color:${buffColor}">${buff.checked}<small> / ${buff.total}</small></div>`, buffTier ? `critères validés · ${TIER_LABELS[buffTier]}` : 'critères validés', buffTier ? buffColor : null),
+    kpi('Prix actuel', `<div class="kpi-v">${val.prixActuel ? escapeHtml(String(val.prixActuel)) + '<small> ' + devise + '</small>' : '—'}</div>`, priceSub, priceColor),
   ].join('');
-}
-function refreshCompanySummary(){
+}function refreshCompanySummary(){
   const c = getActive();
   if(!c) return;
   const meta = document.getElementById('company-meta');
