@@ -2294,6 +2294,10 @@ body.side-resizing{ cursor:col-resize; user-select:none; -webkit-user-select:non
 @media (max-width:900px){ .side-resizer{ display:none; } }
 @media print{ .side-resizer{ display:none; } }
 
+/* Anneau de score dans la barre de gauche : visible seulement quand la barre est assez large (classe side-wide posée par applySideWidth) */
+.si-ring-wrap{ display:none; flex:0 0 auto; align-items:center; }
+body.side-wide .si-ring-wrap{ display:inline-flex; }
+.si-ring-wrap .pf-ring b{ font-family:var(--font-ui); }
 </style>
 </head>
 <body>
@@ -7873,6 +7877,7 @@ function renderTabs(){
         <span class="si-line1"><span class="si-name">${escapeHtml(c.name || 'Sans nom')}</span>${reportFlagHtml(c)}${alertFlagHtml(c)}${conviction ? starsRowHtml(conviction, 'si-stars') : ''}</span>
         ${ticker ? `<span class="si-sub">${escapeHtml(ticker)}</span>` : ''}
       </span>
+      ${(() => { const si = computeScoreInfo(c); return si.score === null ? '' : `<span class="si-ring-wrap">${scoreRingHtml(si.score, si.provisional, 30, true)}</span>`; })()}
       <span class="del" title="Supprimer">✕</span>`;
     el.querySelector('.del').onclick = (e) => deleteCompany(c.id, e);
     list.appendChild(el);
@@ -10089,12 +10094,13 @@ function sortPortfolioBy(key){
 }
 // Anneau de score (2026-10-04, demande de Nolan) : cercle dont la LONGUEUR de l'arc (note ÷ 100) et la COULEUR (barème à 5 paliers `scoreColor5`) dépendent
 // de la note, avec la note au centre. `provisional` : arc en pointillés, comme la note provisoire ailleurs.
-function scoreRingHtml(score, provisional){
-  if(score === null || score === undefined) return '<span class="pf-ring pf-ring-none">—</span>';
-  const r = 16, circ = 2 * Math.PI * r, col = scoreColor5(score);
-  return `<span class="pf-ring" data-tooltip="<div class='tt-desc'>Score composite : ${Math.round(score)} sur 100${provisional ? ' (provisoire)' : ''}</div>"><svg viewBox="0 0 40 40" width="42" height="42" aria-hidden="true"><circle cx="20" cy="20" r="${r}" fill="none" stroke="var(--border)" stroke-width="4"/><circle cx="20" cy="20" r="${r}" fill="none" stroke="${col}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${(Math.max(0, Math.min(100, score)) / 100 * circ).toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 20 20)"${provisional ? ' opacity=".7"' : ''}/></svg><b style="color:${col}">${Math.round(score)}</b></span>`;
-}
-// Une table par devise (demande de Nolan le 2026-09-29 : séparer les positions dollar et euro plutôt qu'une table mélangée avec des lignes de total intercalées).
+function scoreRingHtml(score, provisional, size, onDark){
+  const sz = size || 42;   // 42px dans le Portefeuille, plus petit dans la barre latérale (onDark = fond marine : teintes vives et piste claire)
+  const fs = size ? Math.max(9, Math.round(sz * 0.34)) : 13.5;
+  if(score === null || score === undefined) return `<span class="pf-ring pf-ring-none" style="width:${sz}px;height:${sz}px">—</span>`;
+  const r = 16, circ = 2 * Math.PI * r, col = scoreColor5(score, !!onDark);
+  return `<span class="pf-ring" style="width:${sz}px;height:${sz}px" data-tooltip="<div class='tt-desc'>Score composite : ${Math.round(score)} sur 100${provisional ? ' (provisoire)' : ''}</div>"><svg viewBox="0 0 40 40" width="${sz}" height="${sz}" aria-hidden="true"><circle cx="20" cy="20" r="${r}" fill="none" stroke="${onDark ? 'rgba(255,255,255,.16)' : 'var(--border)'}" stroke-width="4"/><circle cx="20" cy="20" r="${r}" fill="none" stroke="${col}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${(Math.max(0, Math.min(100, score)) / 100 * circ).toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 20 20)"${provisional ? ' opacity=".7"' : ''}/></svg><b style="color:${col};font-size:${fs}px">${Math.round(score)}</b></span>`;
+}// Une table par devise (demande de Nolan le 2026-09-29 : séparer les positions dollar et euro plutôt qu'une table mélangée avec des lignes de total intercalées).
 // Mise en forme refaite le 2026-10-04 (« Vos positions plus beau ») : logo plus grand avec nom et ticker empilés, chiffres alignés à droite en police
 // à chiffres de même largeur, résultat dans une pastille teintée, poids avec sa petite barre, score en anneau coloré, ligne Total distincte.
 function pfTableForDev(pf, d){
@@ -11639,7 +11645,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 218;
+const APP_BUILD = 219;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de Nolan : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -11858,6 +11864,7 @@ function initInstall(){
 // l'écran), mémorisée sur l'appareil. Ordinateur seulement : sur téléphone la barre est un tiroir de largeur fixe.
 // ============================================================
 const SIDE_W_KEY = 'analytics-side-w', SIDE_W_MIN = 220, SIDE_W_MAX = 440, SIDE_W_DEFAULT = 268;
+const SIDE_RING_MIN = 330;   // largeur à partir de laquelle l'anneau de score apparaît dans la barre de gauche
 function sideWidthLimits(){ return { min:SIDE_W_MIN, max:Math.max(SIDE_W_MIN, Math.min(SIDE_W_MAX, Math.round(window.innerWidth * 0.4))) }; }
 let sideDesired = SIDE_W_DEFAULT;   // la largeur VOULUE par la personne ; la largeur affichée en est une version limitée à 40 % de l'écran
 function applySideWidth(w, save){
@@ -11867,6 +11874,8 @@ function applySideWidth(w, save){
   document.documentElement.style.setProperty('--side-w-user', v + 'px');
   const h = document.getElementById('sideResizer');
   if(h) h.setAttribute('aria-valuenow', String(v));
+  // Au-delà d'une certaine largeur la barre affiche le SCORE en anneau pour chaque analyse (demande de Nolan : sinon agrandir ne sert à rien)
+  document.body.classList.toggle('side-wide', v >= SIDE_RING_MIN && window.innerWidth > 900);
   if(save){ try{ localStorage.setItem(SIDE_W_KEY, String(v)); }catch(e){} }
   return v;
 }
