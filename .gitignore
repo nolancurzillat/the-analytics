@@ -1,0 +1,12 @@
+# Fichiers personnels, jamais publies en ligne
+the-analytics-sauvegarde*.json
+*.zip
+*.bat
+.claude/
+modeles-emails/
+# Sauvegardes personnelles (analyses, positions) : ne JAMAIS les publier
+Sauvegarde/
+Save*.json
+
+# Notes de travail du projet (contiennent des details personnels) : restent en local, jamais publiees
+CLAUDE.md
