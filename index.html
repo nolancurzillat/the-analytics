@@ -3927,7 +3927,7 @@ async function submitAuth(){
       const r = await cloudSignUp(email, pw);
       if(r.needsConfirm){
         authMode = 'login';
-        authMsg = { t:'Compte créé. Ouvrez le lien de confirmation reçu par e-mail (pensez aux courriers indésirables), puis connectez-vous ici.', cls:'ok' };
+        authMsg = { t:'Si cette adresse n\'a pas encore de compte, un e-mail de confirmation vient d\'être envoyé : ouvrez le lien qu\'il contient (pensez aux courriers indésirables), puis connectez-vous ici. Si vous avez déjà un compte, connectez-vous ou utilisez « Mot de passe oublié ».', cls:'ok' };
         paintAuthModal();
         authBusy = false;
         return;
@@ -11320,8 +11320,8 @@ const CONTACT_FORM_HTML = `<form id="contactForm" class="contact-form" novalidat
 
 // ---------- Informations légales : confidentialité, conditions, mentions légales ----------
 // Textes rédigés comme base de travail, à faire relire avant une ouverture large au public. Pas de `${` ni de guillemet oblique dans les textes.
-const LEGAL_VERSION = '2026-10-05';
-const LEGAL_DATE_TXT = '5 octobre 2026';
+const LEGAL_VERSION = '2026-10-07';
+const LEGAL_DATE_TXT = '7 octobre 2026';
 // Le nom de l'éditeur n'apparaît plus dans les textes (demande de l'auteur, 2026-10-04) : éditeur anonyme, voir « Éditeur du site » des mentions légales.
 const LEGAL_CONTACT = `<a href="mailto:the.analytics.app@gmail.com">the.analytics.app@gmail.com</a>`;
 const LEGAL_TABS = [
@@ -11352,7 +11352,7 @@ const LEGAL_CONTENT = {
       `<strong>GitHub Pages</strong> (hébergement du site) : comme tout site web, reçoit votre adresse IP quand vous ouvrez l'application. Les polices d'écriture sont hébergées sur le site lui-même : aucune n'est chargée depuis un service tiers.`,
       `<strong>Wikidata, Wikimedia et le service d'icônes de Google</strong> (recherche d'entreprises et logos) : Wikidata reçoit le texte que vous tapez dans la barre de recherche (nom ou ticker) pour proposer des entreprises, et le nom de l'entreprise analysée pour retrouver son logo. Les logos sont ensuite chargés directement depuis Wikimedia ou Google à chaque affichage : ces services reçoivent alors votre adresse IP et l'adresse du logo demandé.`,
       `<strong>Twelve Data</strong> (prix actuels en dollars) et <strong>Alpha Vantage</strong> (prix différés en euros) : reçoivent le ticker de l'action et votre clé API, si vous en avez renseigné une. Twelve Data reçoit aussi le texte que vous tapez dans la recherche d'entreprises.`,
-      `<strong>Google (Gmail)</strong> : sert à envoyer les e-mails de l'application (confirmation de compte, réinitialisation du mot de passe). Reçoit votre adresse e-mail et le contenu du message.`,
+      `<strong>Resend</strong> (Resend, Inc., États-Unis, envoi depuis des serveurs situés en Europe) : sert à envoyer les e-mails de l'application (confirmation de compte, réinitialisation du mot de passe). Reçoit votre adresse e-mail et le contenu du message.`,
       `<strong>Web3Forms</strong> (formulaire « Nous contacter ») : reçoit votre nom (si indiqué), votre adresse e-mail et le contenu de votre message, uniquement si vous utilisez ce formulaire, pour nous transmettre votre message par e-mail.`,
     ]),
     LP(`Hors Supabase, aucun de ces services ne reçoit le contenu de vos analyses. Comme pour tout site web, chacun d'eux reçoit toutefois techniquement votre adresse IP lorsque votre navigateur le contacte. Certains prestataires sont des sociétés américaines : les éventuels transferts de données hors de l'Union européenne sont encadrés par les mécanismes prévus par le règlement européen (RGPD), comme les clauses contractuelles types.`),
@@ -12320,7 +12320,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 252;
+const APP_BUILD = 253;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
