@@ -4023,13 +4023,13 @@ async function checkCloudOwner(){
 async function handleAuthRedirect(){
   const p = new URLSearchParams(location.hash.replace(/^#/, ''));
   if(p.get('error_description') || p.get('error_code')){
-    history.replaceState(null, '', location.pathname + location.search);
+    history.replaceState(history.state, '', location.pathname + location.search);
     showToast('Ce lien de confirmation a expiré ou est invalide. Connectez-vous, ou recréez votre compte.');
     return;
   }
   const at = p.get('access_token'), rt = p.get('refresh_token');
   if(!at || !rt) return;
-  history.replaceState(null, '', location.pathname + location.search);
+  history.replaceState(history.state, '', location.pathname + location.search);
   try{
     const r = await sbFetch('/auth/v1/user', { token:at });
     if(!r.ok || !r.data || !r.data.id) throw new Error('user');
@@ -12258,7 +12258,7 @@ async function handleShareLink(){
   if(!m) return;
   const token = m[1];
   state.settings.tourDone = true;   // quelqu'un qui arrive par un lien veut lire l'analyse, pas suivre la visite guidée par-dessus
-  history.replaceState(null, '', location.pathname + location.search);
+  history.replaceState(history.state, '', location.pathname + location.search);
   showToast("Ouverture de l'analyse partagée...");
   try{
     const r = await sbFetch('/rest/v1/rpc/get_shared_analysis', { method:'POST', body:{ p_token:token } });
@@ -12404,7 +12404,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 263;
+const APP_BUILD = 264;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -12674,7 +12674,68 @@ function initSideResizer(){
   window.addEventListener('resize', () => applySideWidth(sideDesired, false));
 }
 
+// ============================================================
+// BOUTON « RETOUR » DU NAVIGATEUR ET DE LA SOURIS (2026-10-11, demande de l'auteur : « touche de retour en arrière via la souris,
+// revenir à la page d'avant au lieu de quitter l'app »). Chaque changement de page (vue, analyse ouverte, chapitre d'Apprentissage,
+// année du bilan, onglet légal, analyse reçue) ajoute une entrée à l'historique du navigateur SANS changer l'adresse ; « retour » (souris,
+// flèche du navigateur, geste) la restaure. Les modifications à l'intérieur d'une même page (saisie, tri, filtres) n'en créent pas.
+// ============================================================
+let navLastKey = null, navRestoring = false;
+function navKey(){
+  const v = currentView;
+  if(v === 'company') return v + ':' + state.activeId;
+  if(v === 'received') return v + ':' + receivedId;
+  if(v === 'review') return v + ':' + reviewYear;
+  if(v === 'legal') return v + ':' + legalTab;
+  if(v === 'learn') return v + ':' + learnChapterId + ':' + learnLexTab;
+  return v;
+}
+function navSnapshot(){
+  return { nav:1, view:currentView, id:state.activeId, rid:receivedId, year:reviewYear, legal:legalTab, learn:learnChapterId, lex:learnLexTab, y:0 };
+}
+function navSync(){
+  const key = navKey();
+  if(navRestoring){ navLastKey = key; try{ history.replaceState(Object.assign(navSnapshot(), { y: (history.state && history.state.y) || 0 }), '', location.pathname + location.search); }catch(e){} return; }
+  if(key === navLastKey) return;
+  try{
+    if(navLastKey === null){
+      history.replaceState(navSnapshot(), '', location.pathname + location.search);
+    }else{
+      // on mémorise la position de défilement de la page qu'on quitte, puis on ajoute la nouvelle
+      if(history.state && history.state.nav) history.replaceState(Object.assign({}, history.state, { y: window.scrollY || 0 }), '', location.pathname + location.search);
+      history.pushState(navSnapshot(), '', location.pathname + location.search);
+    }
+  }catch(e){}
+  navLastKey = key;
+}
+function navRestore(s){
+  currentView = s.view;
+  receivedId = s.rid || '';
+  if(s.year) reviewYear = s.year;
+  if(s.legal && LEGAL_TABS.some(t => t.id === s.legal)) legalTab = s.legal;
+  if(s.learn && LEARN_CHAPTERS.some(c => c.id === s.learn)) learnChapterId = s.learn;
+  if(s.lex) learnLexTab = s.lex;
+  if(s.view === 'company'){
+    if(state.companies.some(c => c.id === s.id)) state.activeId = s.id;
+    else currentView = state.companies.length ? 'space' : 'home';   // l'analyse a été supprimée depuis
+  }
+  navRestoring = true;
+  try{ render(); }finally{ navRestoring = false; }
+  window.scrollTo(0, s.y || 0);
+  closeMenu();
+  if(typeof closeGlobalSearch === 'function') closeGlobalSearch();
+  if(typeof closeProfileMenu === 'function') closeProfileMenu();
+}
+window.addEventListener('popstate', e => {
+  const s = e.state;
+  if(!s || !s.nav) return;
+  navRestore(s);
+});
 function render(){
+  renderInner();
+  navSync();
+}
+function renderInner(){
   if(currentView !== 'received') roCompany = null;
   renderTabs();
   if(currentView === 'home'){
