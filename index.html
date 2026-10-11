@@ -5719,8 +5719,8 @@ function autoCapitalizeFirst(el){
 // les cases dont TOUT le contenu est un montant (nombre + unité + devise facultative), jamais un texte libre, donc « 3 m de large »
 // dans une note n'est pas modifié. Corrigé dans la case elle-même (le curseur reste en place, la longueur ne change pas), puis un nouvel
 // événement `input` fait enregistrer la valeur corrigée par le gestionnaire du champ concerné.
-const MONEY_UNIT_RE = /^(\s*-?\d[\d\s  ]*(?:[.,]\d+)?\s*)(mds|mrd|md|m)(\s*[$€]?\s*)$/i;
-const MONEY_UNIT_FIX = { m:'M', md:'Md', mds:'Mds', mrd:'Mrd' };
+const MONEY_UNIT_RE = /^(\s*-?\d[\d\s  ]*(?:[.,]\d+)?\s*)(mds|mrd|md|bn|b|k|m|t)(\s*[$€]?\s*)$/i;
+const MONEY_UNIT_FIX = { m:'M', md:'Md', mds:'Mds', mrd:'Mrd', b:'B', bn:'Bn', k:'K', t:'T' };   // B, Bn, K et T ajoutés le 2026-10-11 (demande de l'auteur) : toutes les unités en majuscule
 function fixMoneyUnit(el){
   if(el.tagName !== 'INPUT' || el.type !== 'text' || !el.closest('#main')) return;
   const m = MONEY_UNIT_RE.exec(el.value);
@@ -12379,7 +12379,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 259;
+const APP_BUILD = 260;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
