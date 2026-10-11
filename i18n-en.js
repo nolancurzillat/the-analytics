@@ -355,6 +355,8 @@ const I18N_EN = {
   "FCF négatif": "Negative FCF",
   "FCF négatif : l'entreprise consomme plus de cash qu'elle n'en dégage (le chiffre exact est affiché ci-dessus). L'indicateur est compté comme mauvais.": "Negative FCF: the company burns more cash than it generates (the exact figure is shown above). The indicator is counted as poor.",
   "Bénéfice par action négatif : l'entreprise est en perte, le PE n'a pas de sens.": "Negative earnings per share: the company is loss-making, so the PE is meaningless.",
+  "Une analyse avait été modifiée à deux endroits : l'autre version a été conservée en copie (« {0} »).": "An analysis had been edited in two places: the other version was kept as a copy (“{0}”).",
+  "{0:n} analyses avaient été modifiées à deux endroits : les autres versions ont été conservées en copie.": "{0:n} analyses had been edited in two places: the other versions were kept as copies.",
   "Connexion annulée.": "Sign-in cancelled.",
   "Ce lien de confirmation a expiré ou est invalide. Connectez-vous, ou recréez votre compte.": "This confirmation link has expired or is invalid. Sign in, or create your account again.",
   "Lien valide : choisissez votre nouveau mot de passe.": "Valid link: choose your new password.",

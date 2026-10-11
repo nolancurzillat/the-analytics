@@ -3233,9 +3233,13 @@ function saveState(){
 // PAS comme un passage de l'utilisateur sur l'analyse (reviewedTs, utilisé par la carte "À revisiter").
 function touchUpdated(c, auto){
   if(!c) return;
+  // Mise à jour AUTOMATIQUE (prix, alertes) : on ne touche à AUCUN tampon. Avant (2026-10-11), elle posait updatedTs = maintenant : une copie périmée d'un
+  // appareil, rouverte puis connectée au compte, paraissait donc « plus récente » que les saisies faites 20 minutes plus tôt ailleurs, et les ÉCRASAIT
+  // dans le compte (analyse Oracle perdue, signalé par l'auteur). Le prix se rafraîchit de toute façon tout seul sur chaque appareil.
+  if(auto) return;
   c.updatedAt = new Date().toISOString().slice(0,10);
   c.updatedTs = Date.now();
-  if(!auto) c.reviewedTs = c.updatedTs;
+  c.reviewedTs = c.updatedTs;
 }
 
 // ---------- Sauvegarde automatique dans un fichier (Chrome et Edge sur ordinateur) ----------
@@ -3507,11 +3511,50 @@ async function cloudToken(){
   throw new Error('network');
 }
 function companyStamp(c){ return Number(c && c.updatedTs) || Date.parse(c && c.updatedAt) || 0; }
+// ----- Conflits de synchronisation : ne jamais écraser en silence (2026-10-11) -----
+// La fusion se fait analyse par analyse (la plus récente gagne). Si la même analyse a été modifiée à deux endroits depuis la dernière synchronisation de CET
+// appareil, la perdante est conservée sous forme de copie « (version conservée ...) » au lieu d'être écrasée. On reconnaît « modifiée depuis la dernière
+// synchronisation » grâce à une empreinte du contenu (hors prix, qui bouge tout seul), mémorisée à chaque synchronisation réussie (SYNC_SIGS_KEY).
+// Sans empreinte connue (premier passage de cet appareil), on ne crée aucune copie : mieux vaut rester discret que dupliquer à tort.
+const SYNC_SIGS_KEY = 'analytics-sync-sigs';
+function contentSig(c){
+  try{
+    const f = JSON.parse(JSON.stringify(c.fields || {}));
+    if(f.valorisation) delete f.valorisation.prixActuel;
+    const s = JSON.stringify([c.name, c.currency, f, c.customFields || {}, c.position || {}, c.closedTrades || [], c.alerts ? c.alerts.map(a => [a.type, a.value]) : []]);
+    let h = 5381;
+    for(let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+    return s.length + ':' + (h >>> 0).toString(36);
+  }catch(e){ return ''; }
+}
+function loadSyncSigs(){ try{ const o = JSON.parse(localStorage.getItem(SYNC_SIGS_KEY)); return (o && typeof o === 'object' && !Array.isArray(o)) ? o : {}; }catch(e){ return {}; } }
+function saveSyncSigs(){
+  try{
+    const o = {};
+    state.companies.forEach(c => { o[c.id] = contentSig(c); });
+    localStorage.setItem(SYNC_SIGS_KEY, JSON.stringify(o));
+  }catch(e){}
+}
+// Copie de la version perdante : nouvel identifiant, nom explicite, jamais synchronisée comme l'originale
+function makeConflictCopy(c){
+  const copy = JSON.parse(JSON.stringify(c));
+  copy.id = 'c' + Date.now() + Math.random().toString(36).slice(2, 7);
+  const d = new Date();
+  copy.name = (c.name || 'Analyse') + ' (version conservée du ' + String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + ' à ' + String(d.getHours()).padStart(2, '0') + 'h' + String(d.getMinutes()).padStart(2, '0') + ')';
+  copy.updatedTs = Date.now();
+  copy.updatedAt = d.toISOString().slice(0, 10);
+  copy.conflictOf = c.id;
+  // La copie est une simple trace : elle ne doit pas doubler une position dans le portefeuille ni refaire sonner les alertes de l'original
+  if(copy.position) copy.position.active = false;
+  copy.alerts = [];
+  return copy;
+}
 // Fusionne les données en ligne dans l'état local. Le plus récent gagne, par analyse. Une analyse supprimée quelque part
 // (pierre tombale dans state.deleted) est supprimée partout, sauf si elle a été modifiée après.
 // Renvoie { changed: l'état local a bougé, push: le serveur n'a pas encore tout }.
 function mergeRemote(remote){
   let changed = false, push = false;
+  const sigs = loadSyncSigs(), conflictCopies = [];
   const rc = Array.isArray(remote.companies) ? remote.companies : [];
   const rd = (remote.deleted && typeof remote.deleted === 'object' && !Array.isArray(remote.deleted)) ? remote.deleted : {};
   const deleted = Object.assign({}, state.deleted);
@@ -3530,15 +3573,33 @@ function mergeRemote(remote){
     if(isDeleted(c)) return;
     const idx = state.companies.findIndex(x => x.id === c.id);
     if(idx < 0){ state.companies.push(c); changed = true; }
-    else if(companyStamp(c) > companyStamp(state.companies[idx])){ state.companies[idx] = c; changed = true; }
+    else if(companyStamp(c) > companyStamp(state.companies[idx])){
+      // La version en ligne gagne : si celle de cet appareil avait des modifications non envoyées (différente de ce qui a été synchronisé), on la garde en copie
+      const loc = state.companies[idx], known = sigs[c.id];
+      if(known !== undefined && contentSig(loc) !== known && contentSig(loc) !== contentSig(c)) conflictCopies.push(makeConflictCopy(loc));
+      state.companies[idx] = c; changed = true;
+    }
   });
   const before = state.companies.length;
   state.companies = state.companies.filter(c => !isDeleted(c));
   if(state.companies.length !== before) changed = true;
   state.companies.forEach(c => {
     const r = remoteById[c.id];
-    if(!r || companyStamp(c) > companyStamp(r)) push = true;
+    if(!r || companyStamp(c) > companyStamp(r)){
+      push = true;
+      // La version de cet appareil gagne et va ÉCRASER celle du compte : si celle du compte avait changé depuis la dernière synchronisation de cet appareil
+      // (modifiée ailleurs), on la garde en copie plutôt que de la perdre
+      const known = sigs[c.id];
+      if(r && known !== undefined && contentSig(r) !== known && contentSig(r) !== contentSig(c) && !isDeleted(r)) conflictCopies.push(makeConflictCopy(r));
+    }
   });
+  if(conflictCopies.length){
+    conflictCopies.forEach(cp => state.companies.push(cp));
+    changed = true; push = true;
+    setTimeout(() => showToast(conflictCopies.length === 1
+      ? 'Une analyse avait été modifiée à deux endroits : l\'autre version a été conservée en copie (« ' + conflictCopies[0].name + ' »).'
+      : conflictCopies.length + ' analyses avaient été modifiées à deux endroits : les autres versions ont été conservées en copie.'), 600);
+  }
   if(mergeHistory(remote.history).push) push = true;
   // Analyses reçues : union par identifiant, sauf celles supprimées (pierre tombale `r_<rid>` dans `deleted`) ; « vue » et « ajoutée » se propagent
   const rrec = Array.isArray(remote.received) ? remote.received : [];
@@ -3618,6 +3679,7 @@ async function syncNow(){
       localStorage.setItem(OWNER_KEY, cloud.session.user_id);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }catch(e){}
+    saveSyncSigs();
     cloud.lastSync = Date.now();
     setCloudStatus('ok');
     if(res.changed){
@@ -12332,7 +12394,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 254;
+const APP_BUILD = 255;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
