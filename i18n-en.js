@@ -364,6 +364,7 @@ const I18N_EN = {
   "Quand une analyse est modifiée à deux endroits en même temps, l'application garde l'autre version en copie plutôt que de la perdre. Vérifiez vos analyses, puis supprimez ces copies si vous n'en avez plus besoin.": "When an analysis is edited in two places at the same time, the app keeps the other version as a copy instead of losing it. Check your analyses, then delete these copies if you no longer need them.",
   "Supprimer ces copies": "Delete these copies",
   "Une ancienne version de l'application est ouverte ailleurs (autre onglet, autre fenêtre ou autre appareil) : elle peut écraser vos données. Fermez-la, ou rechargez-la.": "An old version of the app is open elsewhere (another tab, window or device): it can overwrite your data. Close it, or reload it.",
+  "Le résumé final de votre analyse : pourquoi investir, ou non.": "The final summary of your analysis: why invest, or not.",
   "Connexion annulée.": "Sign-in cancelled.",
   "Ce lien de confirmation a expiré ou est invalide. Connectez-vous, ou recréez votre compte.": "This confirmation link has expired or is invalid. Sign in, or create your account again.",
   "Lien valide : choisissez votre nouveau mot de passe.": "Valid link: choose your new password.",
