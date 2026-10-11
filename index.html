@@ -3616,6 +3616,7 @@ function mergeRemote(remote){
   if(state.received.length !== beforeRecv) changed = true;
   state.received.forEach(y => { const z = rrec.find(w => w && w.rid === y.rid); if(!z || (y.seen && !z.seen) || (y.addedId && !z.addedId)) push = true; });
   const rs = remote.settings || {};
+  if(state.settings.quietToasts === undefined && typeof rs.quietToasts === 'boolean'){ state.settings.quietToasts = rs.quietToasts; changed = true; }
   if(!String(state.settings.firstName || '').trim() && typeof rs.firstName === 'string' && rs.firstName.trim()){ state.settings.firstName = rs.firstName.slice(0, 30); changed = true; paintAccount(); }
   // Clé API Twelve Data : adoptée seulement si CET appareil n'en a pas encore (jamais d'écrasement d'une clé déjà collée ici), pour ne pas la ressaisir sur un nouvel appareil.
   if(!String(state.settings.twelveDataApiKey || '').trim() && typeof rs.twelveDataApiKey === 'string' && rs.twelveDataApiKey.trim()){
@@ -3685,8 +3686,8 @@ async function syncNow(){
     if(res.changed){
       const ae = document.activeElement;
       const editing = ae && (ae.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName));
-      if(editing) showToast("Des modifications faites sur un autre appareil ont été reçues. Elles s'afficheront à votre prochaine action.");
-      else { render(); showToast('Vos analyses ont été mises à jour depuis votre compte.'); }
+      if(editing) showToast("Des modifications faites sur un autre appareil ont été reçues. Elles s'afficheront à votre prochaine action.", true);
+      else { render(); showToast('Vos analyses ont été mises à jour depuis votre compte.', true); }
     }
   }catch(e){
     const m = String(e && e.message);
@@ -3785,7 +3786,11 @@ function profileMenuHtml(){
   ].join('');
   const langBtn = (code, label, flag) => '<button type="button" data-pm="lang-' + code + '" class="' + (LANG === code ? 'on' : '') + '" aria-pressed="' + (LANG === code) + '"><span class="pm-flag">' + flagIcon(flag) + '</span>' + label + '</button>';
   const langSec = '<div class="pm-sec">Langue</div><div class="pm-lang" role="group" aria-label="Langue">' + langBtn('fr', 'Français', 'France') + langBtn('en', 'English', 'Royaume-Uni') + '</div>';
-  return head + nameSec + langSec + theme + '<div class="pm-sep"></div><div class="pm-list">' + items + '</div>'
+  const quiet = !!state.settings.quietToasts;
+  const toastSec = '<div class="pm-sec">Messages automatiques</div><div class="pm-theme" role="group" aria-label="Messages automatiques">'
+    + '<button type="button" data-pm="toasts-on" class="' + (quiet ? '' : 'on') + '" aria-pressed="' + (!quiet) + '">Affichés</button>'
+    + '<button type="button" data-pm="toasts-off" class="' + (quiet ? 'on' : '') + '" aria-pressed="' + quiet + '">Masqués</button></div>';
+  return head + nameSec + langSec + theme + toastSec + '<div class="pm-sep"></div><div class="pm-list">' + items + '</div>'
     + (s ? '<div class="pm-sep"></div><div class="pm-list">' + item('logout', 'logout', 'Se déconnecter', 'pm-danger') + '</div>' : '');
 }
 // Prénom (rétabli le 2026-10-04, demande de l'auteur, modifiable uniquement ici) : enregistré à chaque frappe, affiché dans « Bonjour, Prénom » de Mon espace, l'initiale du rond et l'en-tête du menu
@@ -3843,6 +3848,7 @@ function initProfileMenu(){
     const a = it.dataset.pm;
     if(a === 'lang-fr' || a === 'lang-en'){ setLang(a === 'lang-en' ? 'en' : 'fr'); return; }   // recharge la page dans la langue choisie
     if(a === 'theme-light' || a === 'theme-dark'){ setTheme(a === 'theme-dark' ? 'dark' : 'light'); paintProfileMenu(); return; }   // le menu reste ouvert pour voir le changement
+    if(a === 'toasts-on' || a === 'toasts-off'){ state.settings.quietToasts = (a === 'toasts-off'); saveState(); paintProfileMenu(); return; }   // le menu reste ouvert
     if(a === 'sync'){ syncNow(); return; }
     if(a === 'logout'){ it.disabled = true; it.querySelector('span').textContent = 'Déconnexion...'; logoutAndWipe().then(done => { if(!done){ it.disabled = false; it.querySelector('span').textContent = 'Se déconnecter'; } }); return; }
     closeProfileMenu();
@@ -7290,7 +7296,10 @@ function decisionPill(d){
 }
 function closeMenu(){ document.body.classList.remove('menu-open'); }
 
-function showToast(msg){
+// `bg` = message AUTOMATIQUE (synchronisation, rappels, alertes), pas une réponse à un clic : il se masque avec le réglage « Messages automatiques » du menu du profil
+// (demande de l'auteur le 2026-10-11 : « à chaque fois que j'ajoute des données j'ai une petite notification, c'est chiant »).
+function showToast(msg, bg){
+  if(bg && state.settings.quietToasts) return;
   const host = document.getElementById('toastHost');
   if(!host) return;
   const t = document.createElement('div');
@@ -8202,7 +8211,7 @@ function notifyDueReports(){
   if(state.settings.reportToastDay === today) return;
   state.settings.reportToastDay = today;
   saveState();
-  showToast(n === 1 ? 'Un rapport est publié : pensez à mettre à jour vos données.' : `${n} rapports sont publiés : pensez à mettre à jour vos données.`);
+  showToast(n === 1 ? 'Un rapport est publié : pensez à mettre à jour vos données.' : `${n} rapports sont publiés : pensez à mettre à jour vos données.`, true);
 }
 
 // ============================================================
@@ -8269,7 +8278,7 @@ function evalAlerts(c){
 }
 function alertToast(c, fresh){
   if(!fresh.length) return;
-  showToast(fresh.length === 1 ? `Alerte déclenchée sur ${c.name || 'une analyse'} : ${alertText(c, fresh[0])}` : `${fresh.length} alertes déclenchées sur ${c.name || 'une analyse'}.`);
+  showToast(fresh.length === 1 ? `Alerte déclenchée sur ${c.name || 'une analyse'} : ${alertText(c, fresh[0])}` : `${fresh.length} alertes déclenchées sur ${c.name || 'une analyse'}.`, true);
 }
 // Après une modification de l'analyse affichée (appelée par refreshDerived et updatePositionField)
 function checkActiveAlerts(){
@@ -8294,7 +8303,7 @@ function notifyActiveAlerts(){
   if(state.settings.alertToastDay === today) return;
   state.settings.alertToastDay = today;
   saveState();
-  showToast(n === 1 ? 'Une alerte est déclenchée : voir les notifications (cloche en haut).' : `${n} alertes sont déclenchées : voir les notifications (cloche en haut).`);
+  showToast(n === 1 ? 'Une alerte est déclenchée : voir les notifications (cloche en haut).' : `${n} alertes sont déclenchées : voir les notifications (cloche en haut).`, true);
 }
 function alertFlagHtml(c){
   const act = activeAlerts(c);
@@ -12394,7 +12403,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 255;
+const APP_BUILD = 256;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
