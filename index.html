@@ -3383,6 +3383,23 @@ function buildKeysTip(){
     : noTd ? 'votre clé API gratuite Twelve Data (actions en dollars)' : 'votre clé API gratuite Alpha Vantage (actions en euros)';
   return `<div class="backup-remind keys-tip" id="keysTip"><div class="br-t"><strong>Profitez pleinement de The Analytics.</strong> Ajoutez ${what} : le prix actuel de vos entreprises se met à jour tout seul${noTd ? ', et la recherche retrouve aussi les actions étrangères (ADR)' : ''}. Deux minutes, sans carte bancaire.</div><div class="pref-btns"><button class="btn btn-primary btn-sm" data-keys-tip="go">Ajouter mes clés</button><button class="btn btn-outline btn-sm" data-keys-tip="snooze">Plus tard</button></div></div>`;
 }
+// Copies « version conservée » créées par la synchronisation en cas de conflit : une carte dans Mon espace permet de les supprimer d'un coup une fois les analyses vérifiées
+function buildConflictCopiesTip(){
+  const n = state.companies.filter(isConflictCopy).length;
+  if(!n) return '';
+  return `<div class="backup-remind keys-tip" id="conflictTip"><div class="br-t"><strong>Copies de versions conservées : ${n}.</strong> Quand une analyse est modifiée à deux endroits en même temps, l'application garde l'autre version en copie plutôt que de la perdre. Vérifiez vos analyses, puis supprimez ces copies si vous n'en avez plus besoin.</div><div class="pref-btns"><button class="btn btn-primary btn-sm" data-conflict-clean="go">Supprimer ces copies</button></div></div>`;
+}
+function deleteConflictCopies(){
+  const list = state.companies.filter(isConflictCopy);
+  if(!list.length) return;
+  if(!window.confirm(LANG === 'en' ? 'Delete ' + list.length + ' kept-version cop' + (list.length > 1 ? 'ies' : 'y') + '? Your other analyses are not affected.' : 'Supprimer ' + list.length + ' copie' + (list.length > 1 ? 's' : '') + ' de version conservée ? Vos autres analyses ne sont pas touchées.')) return;
+  const ids = new Set(list.map(c => c.id));
+  ids.forEach(id => { state.deleted[id] = Date.now(); });
+  state.companies = state.companies.filter(c => !ids.has(c.id));
+  if(state.activeId && ids.has(state.activeId)) state.activeId = state.companies.length ? state.companies[0].id : null;
+  saveState();
+  render();
+}
 function paintBackupPanel(){
   const panel = document.getElementById('backupPanel');
   if(panel) panel.innerHTML = backupPanelHtml();
@@ -3517,21 +3534,26 @@ function companyStamp(c){ return Number(c && c.updatedTs) || Date.parse(c && c.u
 // synchronisation » grâce à une empreinte du contenu (hors prix, qui bouge tout seul), mémorisée à chaque synchronisation réussie (SYNC_SIGS_KEY).
 // Sans empreinte connue (premier passage de cet appareil), on ne crée aucune copie : mieux vaut rester discret que dupliquer à tort.
 const SYNC_SIGS_KEY = 'analytics-sync-sigs';
-function contentSig(c){
+const conflictToldAt = {};
+function contentSig(c, noName){
   try{
     const f = JSON.parse(JSON.stringify(c.fields || {}));
     if(f.valorisation) delete f.valorisation.prixActuel;
-    const s = JSON.stringify([c.name, c.currency, f, c.customFields || {}, c.position || {}, c.closedTrades || [], c.alerts ? c.alerts.map(a => [a.type, a.value]) : []]);
+    const s = JSON.stringify([noName ? '' : c.name, c.currency, f, c.customFields || {}, c.position || {}, c.closedTrades || [], c.alerts ? c.alerts.map(a => [a.type, a.value]) : []]);
     let h = 5381;
     for(let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
     return s.length + ':' + (h >>> 0).toString(36);
   }catch(e){ return ''; }
 }
+// Ce que cet appareil sait de la dernière synchronisation d'une analyse : { ts, sig } (les anciennes entrées en simple texte sont ignorées)
+function knownOf(sigs, id){ const k = sigs && sigs[id]; return (k && typeof k === 'object' && typeof k.ts === 'number') ? k : null; }
+const CONFLICT_COPY_RE = / \(version conservée du \d{2}\/\d{2} à \d{2}h\d{2}\)$/;
+function isConflictCopy(c){ return CONFLICT_COPY_RE.test(String((c && c.name) || '')); }
 function loadSyncSigs(){ try{ const o = JSON.parse(localStorage.getItem(SYNC_SIGS_KEY)); return (o && typeof o === 'object' && !Array.isArray(o)) ? o : {}; }catch(e){ return {}; } }
 function saveSyncSigs(){
   try{
     const o = {};
-    state.companies.forEach(c => { o[c.id] = contentSig(c); });
+    state.companies.forEach(c => { o[c.id] = { ts: companyStamp(c), sig: contentSig(c) }; });
     localStorage.setItem(SYNC_SIGS_KEY, JSON.stringify(o));
   }catch(e){}
 }
@@ -3572,12 +3594,14 @@ function mergeRemote(remote){
     remoteById[c.id] = c;
     if(isDeleted(c)) return;
     const idx = state.companies.findIndex(x => x.id === c.id);
-    if(idx < 0){ state.companies.push(c); changed = true; }
+    if(idx < 0){ state.companies.push(c); changed = true; sigs[c.id] = { ts: companyStamp(c), sig: contentSig(c) }; }
     else if(companyStamp(c) > companyStamp(state.companies[idx])){
       // La version en ligne gagne : si celle de cet appareil avait des modifications non envoyées (différente de ce qui a été synchronisé), on la garde en copie
-      const loc = state.companies[idx], known = sigs[c.id];
-      if(known !== undefined && contentSig(loc) !== known && contentSig(loc) !== contentSig(c)) conflictCopies.push(makeConflictCopy(loc));
+      // « Modifiée ici depuis la dernière synchronisation » = sa date de modification a changé depuis (les mises à jour automatiques ne la changent plus)
+      const loc = state.companies[idx], known = knownOf(sigs, c.id);
+      if(known && companyStamp(loc) !== known.ts && contentSig(loc) !== contentSig(c)) conflictCopies.push(makeConflictCopy(loc));
       state.companies[idx] = c; changed = true;
+      sigs[c.id] = { ts: companyStamp(c), sig: contentSig(c) };   // cet appareil est maintenant à jour pour cette analyse
     }
   });
   const before = state.companies.length;
@@ -3589,17 +3613,36 @@ function mergeRemote(remote){
       push = true;
       // La version de cet appareil gagne et va ÉCRASER celle du compte : si celle du compte avait changé depuis la dernière synchronisation de cet appareil
       // (modifiée ailleurs), on la garde en copie plutôt que de la perdre
-      const known = sigs[c.id];
-      if(r && known !== undefined && contentSig(r) !== known && contentSig(r) !== contentSig(c) && !isDeleted(r)) conflictCopies.push(makeConflictCopy(r));
+      const known = knownOf(sigs, c.id);
+      if(r && known && companyStamp(r) !== known.ts && contentSig(r) !== contentSig(c) && !isDeleted(r)) conflictCopies.push(makeConflictCopy(r));
     }
   });
-  if(conflictCopies.length){
-    conflictCopies.forEach(cp => state.companies.push(cp));
+  // Jamais deux copies identiques : si une copie de même contenu existe déjà pour cette analyse, on n'en recrée pas (évite l'empilement quand deux appareils se disputent)
+  const baseName = x => String(x.name || '').replace(CONFLICT_COPY_RE, '');
+  const freshCopies = conflictCopies.filter(cp => !state.companies.some(x => isConflictCopy(x) && baseName(x) === baseName(cp) && contentSig(x, true) === contentSig(cp, true)));
+  // Une seule copie « courante » par analyse : si deux appareils se disputent la même analyse (l'un d'eux sur une ancienne version de l'application,
+  // par exemple), la copie récente (moins de 30 minutes) est mise à jour au lieu d'en empiler une nouvelle à chaque synchronisation
+  const shown = [];
+  freshCopies.forEach(cp => {
+    const roll = state.companies.find(x => isConflictCopy(x) && baseName(x) === baseName(cp) && Date.now() - companyStamp(x) < 30 * 60000);
+    if(roll){
+      roll.fields = cp.fields; roll.customFields = cp.customFields; roll.position = cp.position; roll.closedTrades = cp.closedTrades;
+      roll.updatedTs = Date.now();
+    }else{
+      state.companies.push(cp);
+      shown.push(cp);
+    }
     changed = true; push = true;
-    setTimeout(() => showToast(conflictCopies.length === 1
-      ? 'Une analyse avait été modifiée à deux endroits : l\'autre version a été conservée en copie (« ' + conflictCopies[0].name + ' »).'
-      : conflictCopies.length + ' analyses avaient été modifiées à deux endroits : les autres versions ont été conservées en copie.'), 600);
+  });
+  // Le message n'apparaît qu'une fois par analyse et par demi-heure : pas à chaque saisie
+  const toTell = shown.filter(cp => Date.now() - (conflictToldAt[baseName(cp)] || 0) > 30 * 60000);
+  toTell.forEach(cp => { conflictToldAt[baseName(cp)] = Date.now(); });
+  if(toTell.length){
+    setTimeout(() => showToast(toTell.length === 1
+      ? 'Une analyse avait été modifiée à deux endroits : l\'autre version a été conservée en copie (« ' + toTell[0].name + ' »).'
+      : toTell.length + ' analyses avaient été modifiées à deux endroits : les autres versions ont été conservées en copie.'), 600);
   }
+  try{ localStorage.setItem(SYNC_SIGS_KEY, JSON.stringify(sigs)); }catch(e){}
   if(mergeHistory(remote.history).push) push = true;
   // Analyses reçues : union par identifiant, sauf celles supprimées (pierre tombale `r_<rid>` dans `deleted`) ; « vue » et « ajoutée » se propagent
   const rrec = Array.isArray(remote.received) ? remote.received : [];
@@ -9561,7 +9604,7 @@ function renderSpaceView(){
         <p class="space-sub">${sub}${nameLink}</p>
       </div>
       <div class="space-actions"><button class="btn btn-primary" data-new-analysis>+ Nouvelle analyse</button></div>
-    </div>${buildBackupReminder()}${buildKeysTip()}`;
+    </div>${buildBackupReminder()}${buildKeysTip()}${buildConflictCopiesTip()}`;
   if(!cs.length){
     html += `<section class="scard onboard">
       <div class="scard-t">Ce que vous trouverez ici</div>
@@ -10175,6 +10218,7 @@ function bindSpace(){
   const repaintTip = () => { document.getElementById('tipBody').innerHTML = buildTipBody(); };
   if(prev) prev.addEventListener('click', () => { spaceTipIdx = (spaceTipIdx - 1 + TIP_KEYS.length) % TIP_KEYS.length; repaintTip(); });
   if(next) next.addEventListener('click', () => { spaceTipIdx = (spaceTipIdx + 1) % TIP_KEYS.length; repaintTip(); });
+  document.querySelectorAll('[data-conflict-clean]').forEach(b => b.addEventListener('click', deleteConflictCopies));
   document.querySelectorAll('[data-keys-tip]').forEach(b => b.addEventListener('click', () => {
     if(b.dataset.keysTip === 'snooze'){
       state.settings.keysTipSnoozeUntil = Date.now() + KEYS_TIP_SNOOZE_MS;
@@ -12403,7 +12447,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 256;
+const APP_BUILD = 258;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
