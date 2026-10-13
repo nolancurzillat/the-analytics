@@ -939,6 +939,52 @@ body.sx-lock{ overflow:hidden; }
 .sx-stack .sx-foot{ flex-direction:column; align-items:flex-start; gap:6px; }
 @media (max-width:700px){ .sx-bar-h{ display:none; } .sx-bar{ padding:10px 14px; } .sx-bar-t{ flex:1; } }
 
+/* ----- Résumé en deux pages (2026-10-13) ----- */
+.sx-card{ width:1560px; }
+.sx-card:not(.sx-on){ display:none; }
+.sx-stacked .sx-card{ display:block; margin-bottom:16px; }
+.sx-stacked .sx-pages{ display:none; }
+.sx-gp1{ grid-template-columns:minmax(0,1fr) minmax(0,.95fr) minmax(0,1.25fr); }
+.sx-gp2{ grid-template-columns:minmax(0,1.2fr) minmax(0,1.25fr) minmax(0,.95fr); }
+.sx-pie{ display:flex; gap:2px; height:12px; border-radius:6px; overflow:hidden; margin:5px 0 8px 0; }
+.sx-pie i{ display:block; height:100%; }
+.sx-pleg{ display:flex; flex-wrap:wrap; gap:4px 14px; font-size:12.5px; color:#c9d4ea; }
+.sx-pleg span{ display:inline-flex; align-items:center; gap:6px; }
+.sx-pleg i{ display:inline-block; width:9px; height:9px; border-radius:50%; }
+.sx-pleg b{ color:#fff; }
+.sx-g4{ grid-template-columns:repeat(4,minmax(0,1fr)); }
+.sx-pages{ display:inline-flex; gap:8px; }
+.sx-pgb{ border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.05); color:#dbe4f5; font:inherit; font-size:14px; font-weight:700; padding:7px 16px; border-radius:99px; cursor:pointer; }
+.sx-pgb small{ font-weight:500; color:#8fa1c2; margin-left:6px; font-size:12px; }
+.sx-pgb:hover{ background:rgba(255,255,255,.12); }
+.sx-pgb.on{ background:#fff; color:#0a1328; border-color:#fff; }
+.sx-pgb.on small{ color:#4a5878; }
+.sx-pg{ font-weight:700; color:#c3cee5; }
+.sx-act{ font-size:14px; line-height:1.55; }
+.sx-txv{ font-size:13.5px; line-height:1.55; }
+.sx-these q{ font-size:14px; line-height:1.6; }
+.sx-pt2 b{ display:block; margin:0 0 2px 0; }
+.sx-pt2 div{ font-size:13.5px; line-height:1.55; color:#c9d4ea; }
+.sx-bottom{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:20px; align-items:end; margin-top:auto; padding-top:6px; }
+.sx-bl{ min-width:0; padding-bottom:14px; }
+.sx-vals{ display:flex; flex-direction:column; gap:6px; min-width:262px; }
+.sx-bl .sx-track{ height:10px; }
+.sx-vr{ display:grid; grid-template-columns:16px 1fr auto 62px; gap:8px; align-items:center; font-size:12.5px; color:#c3cee5; }
+.sx-vv{ font-family:var(--font-mono); font-size:14.5px; text-align:right; color:#fff; }
+.sx-vs{ font-size:11.5px; text-align:right; white-space:nowrap; }
+.sx-dot{ display:block; width:10px; height:10px; border-radius:50%; margin:0 auto; }
+.sx-vr .sx-mk-px{ width:12px; height:12px; border-width:2px; box-shadow:none; margin:0 auto; }
+.sx-vr .sx-mk-iv{ width:4px; height:14px; box-shadow:none; margin:0 auto; }
+.sx-axes{ display:flex; flex-direction:column; gap:8px; margin-top:6px; }
+.sx-ax{ display:grid; grid-template-columns:96px 1fr 30px; gap:10px; align-items:center; font-size:13px; color:#c3cee5; }
+.sx-ax-t{ display:block; height:7px; background:rgba(255,255,255,.1); border-radius:4px; overflow:hidden; }
+.sx-ax-t i{ display:block; height:100%; border-radius:4px; }
+.sx-ax b{ text-align:right; font-family:var(--font-mono); color:#fff; }
+.sx-stack .sx-bottom{ grid-template-columns:1fr; }
+.sx-stack .sx-vals{ min-width:0; }
+.sx-stack .sx-gp2{ grid-template-columns:1fr; }
+.sx-stack .sx-g4{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+
 .chead-side{ flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-end; gap:10px; }
 .company-dates{
   display:flex; flex-direction:column; gap:2px; text-align:right;
@@ -12546,7 +12592,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 265;
+const APP_BUILD = 267;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -12877,17 +12923,25 @@ window.addEventListener('popstate', e => {
 // ============================================================
 // RÉSUMÉ DE L'ANALYSE (2026-10-13, demande de l'auteur : « un bouton Afficher le résumé en haut de chaque analyse, avec toutes les données importantes dans leur section
 // respective 1 à 6, pour voir comment est l'entreprise sans tout regarder, et pour le partager en capture d'écran sur X ou Reddit »).
-// Une carte unique, toujours sur fond marine (indépendante du thème), qui montre les 6 sections en un seul écran : elle est mise à l'échelle pour tenir dans la fenêtre
-// (sxFit), donc une capture d'écran suffit. 100 % dérivée des données déjà saisies : aucune saisie, aucune donnée stockée. Aucune position (quantité, prix d'achat) n'y figure.
+// Revu le même jour (demande de l'auteur) : DEUX pages, sections 1, 2, 3 sur la page 1 et 4, 5, 6 sur la page 2, textes ENTIERS (jamais coupés), cartes plus larges (SX_W).
+// Chaque page est une carte autonome, toujours sur fond marine (indépendante du thème), mise à l'échelle pour tenir dans la fenêtre (sxFit) : une capture d'écran par page
+// suffit. 100 % dérivée des données déjà saisies : aucune saisie, aucune donnée stockée. Aucune position (quantité, prix d'achat) n'y figure.
 // ============================================================
+const SX_W = 1560;   // largeur minimale de la carte (px de dessin)
+const SX_WIDTHS = [1560, 1700, 1840, 1980, 2120, 2260];
 function sxDecode(s){ return String(s).replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&'); }
-// Texte riche -> texte brut court (coupé à un mot entier, avec « … »), déjà ÉCHAPPÉ pour le HTML
+// Texte riche -> texte brut court (coupé à un mot entier, avec « … »), déjà ÉCHAPPÉ pour le HTML : réservé aux petites cases (CEO, année de création)
 function sxShort(html, max){
   const t = sxDecode(richToPlain(html)).replace(/\s+/g, ' ').trim();
   if(!t) return '';
   if(t.length <= max) return escapeHtml(t);
   const cut = t.slice(0, max), sp = cut.lastIndexOf(' ');
   return escapeHtml((sp > max * 0.6 ? cut.slice(0, sp) : cut).replace(/[\s,;:.\-–]+$/, '')) + '…';
+}
+// Texte riche -> texte COMPLET, une ligne par saut de ligne de la saisie, déjà échappé pour le HTML
+function sxFull(html){
+  const t = String(html || '').replace(/<(br|div|\/div|p|\/p|li|\/li)\b[^>]*>/gi, '\n').replace(/<[^>]*>/g, ' ');
+  return sxDecode(t).split(/\n+/).map(s => s.replace(/\s+/g, ' ').trim()).filter(Boolean).map(s => escapeHtml(s)).join('<br>');
 }
 const sxFr = s => LANG === 'fr' ? String(s).replace('.', ',') : String(s);
 function sxPct(v, d){ return v === null || v === undefined ? '—' : fmtNum(v, d === undefined ? 1 : d) + '&nbsp;%'; }
@@ -12898,9 +12952,19 @@ function sxTile(label, value, color, sub, cls){
 function sxPanel(num, title, color, body){
   return `<section class="sx-p" style="--sc:${color}"><header class="sx-ph"><span class="sx-pn">${num}</span><span class="sx-pt">${title}</span></header><div class="sx-pb">${body}</div></section>`;
 }
-function sxText(label, html, max){
-  const t = sxShort(html, max);
+function sxText(label, html){
+  const t = sxFull(html);
   return t ? `<div class="sx-tx"><div class="sx-txl">${label}</div><div class="sx-txv">${t}</div></div>` : '';
+}
+// Répartition (revenu par source / par pays) : barre empilée + légende avec le pourcentage de chaque part
+function sxPie(label, arr){
+  const toV = s => { const v = parseMoney(s); return v !== null ? v : num(String(s === undefined || s === null ? '' : s).replace('%', '')); };
+  const items = (Array.isArray(arr) ? arr : []).map((s, i) => ({ label: String((s && s.label) || '').trim(), v: toV(s && s.value), i })).filter(x => x.label && x.v !== null && x.v > 0);
+  if(!items.length) return '';
+  const total = items.reduce((a, x) => a + x.v, 0);
+  const colors = computePieColors(arr) || {};
+  const col = x => colors[x.i] || '#6b7280';
+  return `<div class="sx-tx"><div class="sx-txl">${label}</div><div class="sx-pie">${items.map(x => `<i style="width:${(x.v / total * 100).toFixed(2)}%;background:${col(x)}"></i>`).join('')}</div><div class="sx-pleg">${items.map(x => `<span><i style="background:${col(x)}"></i>${escapeHtml(x.label)} <b>${fmtNum(x.v / total * 100, 0)}&nbsp;%</b></span>`).join('')}</div></div>`;
 }
 function sxRadarSvg(axes, color){
   const cx = 130, cy = 100, R = 66, n = axes.length;
@@ -12923,7 +12987,8 @@ function sxRadarSvg(axes, color){
   return `<svg viewBox="-50 6 360 188" class="sx-radar" aria-hidden="true">${g}</svg>`;
 }
 
-function buildSummaryCard(c){
+// Retourne les DEUX pages (HTML de deux cartes) : [sections 1, 2, 3] et [sections 4, 5, 6]
+function buildSummaryPages(c){
   const cur = c.currency;
   const idn = c.fields.identite || {}, fin = c.fields.financier || {}, cro = c.fields.croissance || {}, val = c.fields.valorisation || {}, pers = c.fields.personnelle || {};
   const none = 'rgba(255,255,255,.3)', good = TOOLTIP_TIER_COLORS.tresbon, bad = TOOLTIP_TIER_COLORS.mauvais;
@@ -12935,7 +13000,7 @@ function buildSummaryCard(c){
   const plain = v => v === null ? '—' : fmtMoney(v, cur);
   const av = avatarInner(c);
 
-  // ----- En-tête : identité rapide, prix, décision, score -----
+  // ----- En-tête (le même sur les deux pages : chaque page se partage seule) -----
   const e = computeEcart(c, 'valeurIntrinseque');
   let ecart = '';
   if(e !== null) ecart = e > 0.05 ? `<span style="color:${bad}">Surévaluation de ${fmtNum(e, 0)}&nbsp;%</span>` : (e < -0.05 ? `<span style="color:${good}">Sous-évaluation de ${fmtNum(Math.abs(e), 0)}&nbsp;%</span>` : '<span>Prix proche de la valeur intrinsèque</span>');
@@ -12949,6 +13014,7 @@ function buildSummaryCard(c){
     <div class="sx-dec" style="--c:${dst ? dst.color : '#8fa1c2'}"><div class="sx-pl">Décision</div><div class="sx-dv">${dst ? escapeHtml(decision) : 'À définir'}</div></div>
     <div class="sx-ring"><svg viewBox="0 0 92 92" width="92" height="92"><circle cx="46" cy="46" r="38" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="8"/><circle cx="46" cy="46" r="38" fill="none" stroke="${ringColor}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${gs === null ? 0 : (gs / 100 * circ).toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 46 46)"/></svg><div class="sx-ringv" style="color:${ringColor}">${gs === null ? '—' : Math.round(gs)}<small>${sinfo.provisional ? 'provisoire' : 'sur 100'}</small></div></div>
   </div>`;
+  const foot = n => `<div class="sx-foot"><span class="sx-brand"><img src="icon-192.png" alt="" width="20" height="20">The Analytics<span class="sx-mut"> · the-analytics.fr</span></span><span class="sx-mut">Analyse personnelle, pas un conseil en investissement · mise à jour le ${formatDateFr(c.updatedAt || c.createdAt)}</span><span class="sx-pg">Page ${n} sur 2</span></div>`;
 
   // ----- 1. Identité -----
   const mc = parseMoney(idn.marketCap) ?? parseMoney(fin.marketCap);
@@ -12961,34 +13027,37 @@ function buildSummaryCard(c){
     divV = y === null ? 'Oui' : sxPct(y, 2); divS = y === null ? '' : 'rendement';
     divC = good;
   }else if(dv.mode === 'aucun') divV = 'Aucun';
-  const p1 = `<div class="sx-act">${sxShort(idn.activitePrincipale, 150) ||'<span class="sx-mut">Activité à renseigner</span>'}</div>
-    <div class="sx-g">${sxTile('Market Cap', money(mc))}${sxTile('Taille', tt ? ({ tresbon:'Méga-cap.', bon:'Grande cap.', moyen:'Cap. moyenne', mauvais:'Petite cap.' })[tt] : '—', tt ? TOOLTIP_TIER_COLORS[tt] : null, '', 'sx-t-s')}${sxTile('Fondée', sxShort(idn.dateCreation, 12) || '—')}${sxTile('CEO', sxShort(idn.ceo, 20) || '—', null, '', 'sx-t-s')}${sxTile('MOAT', moat === null ? '—' : fmtNum(moat, 1) + '<small>/10</small>', sxTier('moatNote', moat))}${sxTile('Dividende', divV, divC, divS, divS ? 'sx-t-s' : '')}</div>
-    ${sxText('Avantage concurrentiel', idn.moatDescription, 95)}`;
+  const clients = (Array.isArray(idn.clients) ? idn.clients : []).map(x => String(x || '').trim()).filter(Boolean);
+  const p1 = `<div class="sx-act">${sxFull(idn.activitePrincipale) || '<span class="sx-mut">Activité à renseigner</span>'}</div>
+    ${sxText('Autres activités', idn.autresActivites)}
+    <div class="sx-g">${sxTile('Market Cap', money(mc))}${sxTile('Taille', tt ? ({ tresbon:'Méga-cap.', bon:'Grande cap.', moyen:'Cap. moyenne', mauvais:'Petite cap.' })[tt] : '—', tt ? TOOLTIP_TIER_COLORS[tt] : null, '', 'sx-t-s')}${sxTile('Fondée', sxShort(idn.dateCreation, 14) || '—')}${sxTile('CEO', sxShort(idn.ceo, 28) || '—', null, '', 'sx-t-s')}${sxTile('MOAT', moat === null ? '—' : fmtNum(moat, 1) + '<small>/10</small>', sxTier('moatNote', moat))}${sxTile('Dividende', divV, divC, divS, divS ? 'sx-t-s' : '')}</div>
+    ${sxText('Avantage concurrentiel', idn.moatDescription)}
+    ${clients.length ? `<div class="sx-tx"><div class="sx-txl">Clients</div><div class="sx-txv">${clients.map(x => escapeHtml(x)).join(' · ')}</div></div>` : ''}`;
 
   // ----- 2. Financier -----
   const cagr = k => num(fin[k] && fin[k].cagr);
   const cCA = cagr('croissanceCA'), cBen = cagr('croissanceBenef');
   const mBrute = num(fin.margeBrute), mNette = num(fin.margeNette), mFcf = computeMargeFcf(c), roe = num(fin.roe), roic = num(fin.roic), roa = num(fin.roa);
-  const conv = computeConversionFcf(c), dette = computeDetteActif(c), dta = computeDetteTotalActif ? computeDetteTotalActif(c) : null, pf = num(fin.probaFaillite);
-  const fcf = parseMoney(fin.fcf);
-  const p2 = `<div class="sx-g sx-g5">${sxTile("Chiffre d'aff.", money(parseMoney(fin.chiffreAffaires)))}${sxTile('Bénéfice net', money(parseMoney(fin.beneficeNet)), (parseMoney(fin.beneficeNet) !== null && parseMoney(fin.beneficeNet) < 0) ? bad : null)}${sxTile('Free cash flow', money(fcf), (fcf !== null && fcf < 0) ? bad : null)}
-    ${sxTile('CA (5 ans)', cCA === null ? '—' : sxPct(cCA, 1) + '<small>/an</small>', sxTier('croissanceCA', cCA))}${sxTile('Bénéf. (5 ans)', cBen === null ? '—' : sxPct(cBen, 1) + '<small>/an</small>', sxTier('croissanceBenef', cBen))}${sxTile('Marge brute', sxPct(mBrute), sxTier('margeBrute', mBrute))}
-    ${sxTile('Marge nette', sxPct(mNette), sxTier('margeNette', mNette))}${sxTile('Marge FCF', mFcf === null ? '—' : (mFcf < 0 ? '<span class="sx-tvs">' + FCF_NEGATIF_TXT + '</span>' : sxPct(mFcf)), sxTier('margeFcf', mFcf))}${sxTile('ROIC', sxPct(roic), sxTier('roic', roic))}
-    ${sxTile('ROE', sxPct(roe), sxTier('roe', roe))}${sxTile('ROA', sxPct(roa), sxTier('roa', roa))}${sxTile('Conversion FCF', conv === null ? '—' : (conv <= CONVERSION_NON_SIGNIFICATIVE ? 'n.s.' : (conv < 0 ? '<span class="sx-tvs">' + FCF_NEGATIF_TXT + '</span>' : sxPct(conv, 0))), sxTier('conversionFcf', conv))}
-    ${sxTile('Dette nette / FCF', sxFr(fmtDetteActif(dette)), sxTier('detteActif', dette))}${sxTile('Dette / actif', dta === null ? '—' : sxPct(dta, 0), sxTier('detteTotalActif', dta))}${sxTile('Risque de faillite', sxPct(pf, pf !== null && pf < 10 ? 1 : 0), sxTier('probaFaillite', pf))}</div>`;
+  const conv = computeConversionFcf(c), dette = computeDetteActif(c), dta = computeDetteTotalActif(c), pf = num(fin.probaFaillite), cxr = computeCapexRatio(c);
+  const fcf = parseMoney(fin.fcf), ben = parseMoney(fin.beneficeNet);
+  const p2 = `<div class="sx-g sx-g4">${sxTile("Chiffre d'aff.", money(parseMoney(fin.chiffreAffaires)))}${sxTile('Bénéfice net', money(ben), (ben !== null && ben < 0) ? bad : null)}${sxTile('Free cash flow', money(fcf), (fcf !== null && fcf < 0) ? bad : null)}${sxTile('Capex / CA', sxPct(cxr, 1), sxTier('capexRatio', cxr))}
+    ${sxTile('CA (5 ans)', cCA === null ? '—' : sxPct(cCA, 1) + '<small>/an</small>', sxTier('croissanceCA', cCA))}${sxTile('Bénéf. (5 ans)', cBen === null ? '—' : sxPct(cBen, 1) + '<small>/an</small>', sxTier('croissanceBenef', cBen))}${sxTile('Marge brute', sxPct(mBrute), sxTier('margeBrute', mBrute))}${sxTile('Marge nette', sxPct(mNette), sxTier('margeNette', mNette))}
+    ${sxTile('Marge FCF', mFcf === null ? '—' : (mFcf < 0 ? '<span class="sx-tvs">' + FCF_NEGATIF_TXT + '</span>' : sxPct(mFcf)), sxTier('margeFcf', mFcf))}${sxTile('ROIC', sxPct(roic), sxTier('roic', roic))}${sxTile('ROE', sxPct(roe), sxTier('roe', roe))}${sxTile('ROA', sxPct(roa), sxTier('roa', roa))}
+    ${sxTile('Conv. FCF', conv === null ? '—' : (conv <= CONVERSION_NON_SIGNIFICATIVE ? 'n.s.' : (conv < 0 ? '<span class="sx-tvs">' + FCF_NEGATIF_TXT + '</span>' : sxPct(conv, 0))), sxTier('conversionFcf', conv))}${sxTile('Dette / FCF', sxFr(fmtDetteActif(dette)), sxTier('detteActif', dette))}${sxTile('Dette / actif', dta === null ? '—' : sxPct(dta, 0), sxTier('detteTotalActif', dta))}${sxTile('Faillite', sxPct(pf, pf !== null && pf < 10 ? 1 : 0), sxTier('probaFaillite', pf))}</div>
+    ${sxPie('Revenu par source', fin.revenuSource)}${sxPie('Revenu par pays', fin.revenuPays)}`;
 
   // ----- 3. Croissance -----
   const gCA = num(cro.croissanceAttendueCA && cro.croissanceAttendueCA.cagr);
   const gBen = num(cro.croissanceAttendueBenef && cro.croissanceAttendueBenef.cagr);
   const gEps = num(val.croissanceEstimeeEps && val.croissanceEstimeeEps.cagr);
   const p3 = `<div class="sx-cap">Croissance annuelle attendue</div><div class="sx-g">${sxTile('CA (3 ans)', gCA === null ? '—' : sxPct(gCA, 1) + '<small>/an</small>', sxTier('croissanceAttendueCA', gCA))}${sxTile('Bénéf. (3 ans)', gBen === null ? '—' : sxPct(gBen, 1) + '<small>/an</small>', sxTier('croissanceAttendueBenef', gBen))}${sxTile('BPA (3 ans)', gEps === null ? '—' : sxPct(gEps, 1) + '<small>/an</small>', sxTier('croissanceEstimeeEps', gEps))}</div>
-    ${sxText('Marché', cro.marcheEnCroissance, 115)}${sxText('Catalyseurs', cro.catalyseurs, 115)}${sxText('Risque', cro.risque, 115)}`;
+    ${sxText('Marché', cro.marcheEnCroissance)}${sxText('Part de marché', cro.partMarche)}${sxText('Paysage concurrentiel', cro.concurrents)}${sxText('Diversification de secteur', cro.diversificationSecteur)}${sxText('Innovation tech', cro.innovationTech)}${sxText('Catalyseurs', cro.catalyseurs)}${sxText('Risque', cro.risque)}`;
 
   // ----- 4. Valorisation -----
-  const pe = computePeActuel(c), peF = computePeForward(c), peg = computePeg(c), peRel = computePeRelatif(c), rFcf = computeRendementFcf(c);
+  const pe = computePeActuel(c), peF = computePeForward(c), peg = computePeg(c), peRel = computePeRelatif(c), rFcf = computeRendementFcf(c), beta = num(val.beta);
   const bear = parseMoney(val.bearCase), bull = parseMoney(val.bullCase), iv = parseMoney(val.valeurIntrinseque);
   const vsPrice = v => price === null || price <= 0 || v === null ? '' : (v / price - 1 >= 0 ? '+' : '−') + fmtNum(Math.abs(v / price - 1) * 100, 0) + '&nbsp;%';
-  const vsColor = v => price === null || price <= 0 || v === null ? null : (v >= price ? good : bad);
+  const vsColor = v => price === null || price <= 0 || v === null ? '#c3cee5' : (v >= price ? good : bad);
   const ws = computeWallStreetTargets(c), wsMoy = ws ? ws.pct.moy : null;
   const reco = wsRecoValue(c), recoS = reco === null ? null : WS_RECO[wsRecoIndex(reco)];
   let bar = '';
@@ -12997,13 +13066,17 @@ function buildSummaryCard(c){
     const lo = Math.min.apply(null, bvals), hi = Math.max.apply(null, bvals), sp = (hi - lo) || 1;
     const pos = v => (6 + (v - lo) / sp * 88).toFixed(1);
     const zone = (bear !== null && bull !== null) ? `<i class="sx-zone" style="left:${pos(bear)}%;width:${(pos(bull) - pos(bear)).toFixed(1)}%"></i>` : '';
-    bar = `<div class="sx-bar-wrap"><div class="sx-track">${zone}${iv !== null ? `<i class="sx-mk-iv" style="left:${pos(iv)}%"></i>` : ''}<i class="sx-mk-px" style="left:${pos(price)}%"></i></div><div class="sx-bar-leg"><span><i class="sx-mk-px sx-static"></i>Prix actuel</span><span><i class="sx-mk-iv sx-static"></i>Valeur intrinsèque</span></div></div>`;
+    bar = `<div class="sx-track">${zone}${iv !== null ? `<i class="sx-mk-iv" style="left:${pos(iv)}%"></i>` : ''}<i class="sx-mk-px" style="left:${pos(price)}%"></i></div>`;
   }
-  const peSub = peF !== null && peF > 0 ? 'forward ' + fmtNum(peF, 1) : '';
-  const p4 = `<div class="sx-g">${sxTile('PE', pe === null ? '—' : (pe <= 0 ? 'n.s.' : fmtNum(pe, 1)), null, peSub)}${sxTile('PEG', sxFr(fmtRatioPos(peg)), sxTier('peg', peg))}${sxTile('PE / secteur', sxFr(fmtRatioPos(peRel)), sxTier('peRelatifSecteur', peRel))}
-    ${sxTile('Rendement FCF', rFcf === null ? '—' : (rFcf < 0 ? '<span class="sx-tvs">' + FCF_NEGATIF_TXT + '</span>' : sxPct(rFcf, 1)), sxTier('rendementFcf', rFcf))}${sxTile('Objectif 1 an', wsMoy === null ? '—' : (wsMoy > 0 ? '+' : '−') + fmtNum(Math.abs(wsMoy), 0) + '&nbsp;%', wsMoy === null ? null : TOOLTIP_TIER_COLORS[wallStreetTier(wsMoy)], 'moy. des analystes')}${sxTile('Consensus', recoS ? recoS.label : '—', recoS ? recoS.color : null, 'des analystes', 'sx-t-s')}</div>
-    <div class="sx-g">${sxTile('Bear case', plain(bear), null, vsPrice(bear), 'sx-t-bear')}${sxTile('Intrinsèque', plain(iv), null, e === null ? '' : (e > 0.05 ? 'surévalué' : (e < -0.05 ? 'sous-évalué' : 'au juste prix')), 'sx-t-iv')}${sxTile('Bull case', plain(bull), null, vsPrice(bull), 'sx-t-bull')}</div>
-    ${bar}`;
+  // Prix actuel, Bear, Intrinsèque et Bull : regroupés en BAS à DROITE du panneau, à côté de la barre (demande de l'auteur), ce qui libère trois cases en haut
+  const vrow = (mk, label, value, sub, color) => `<div class="sx-vr">${mk}<span class="sx-vl">${label}</span><b class="sx-vv"${color ? ` style="color:${color}"` : ''}>${value}</b><span class="sx-vs"${color ? ` style="color:${color}"` : ''}>${sub || ''}</span></div>`;
+  const ivSub = e === null ? '' : (e > 0.05 ? 'surévalué' : (e < -0.05 ? 'sous-évalué' : 'au juste prix'));
+  const values = `<div class="sx-vals">${vrow('<i class="sx-mk-px sx-static"></i>', 'Prix actuel', plain(price), '', '#fff')}${vrow('<i class="sx-dot" style="background:#f87171"></i>', 'Bear case', plain(bear), vsPrice(bear), bear === null ? null : vsColor(bear))}${vrow('<i class="sx-mk-iv sx-static"></i>', 'Valeur intrinsèque', plain(iv), ivSub, iv === null ? null : (e !== null && e < -0.05 ? good : (e !== null && e > 0.05 ? bad : '#c3cee5')))}${vrow('<i class="sx-dot" style="background:#22c55e"></i>', 'Bull case', plain(bull), vsPrice(bull), bull === null ? null : vsColor(bull))}</div>`;
+  const p4 = `<div class="sx-g">${sxTile('PE', pe === null ? '—' : (pe <= 0 ? 'n.s.' : fmtNum(pe, 1)))}${sxTile('PE forward', peF === null ? '—' : (peF <= 0 ? 'n.s.' : fmtNum(peF, 1)))}${sxTile('PEG', sxFr(fmtRatioPos(peg)), sxTier('peg', peg))}
+    ${sxTile('PE / secteur', sxFr(fmtRatioPos(peRel)), sxTier('peRelatifSecteur', peRel))}${sxTile('Rendement FCF', rFcf === null ? '—' : (rFcf < 0 ? '<span class="sx-tvs">' + FCF_NEGATIF_TXT + '</span>' : sxPct(rFcf, 1)), sxTier('rendementFcf', rFcf))}${sxTile('BPA (3 ans)', gEps === null ? '—' : sxPct(gEps, 1) + '<small>/an</small>', sxTier('croissanceEstimeeEps', gEps))}
+    ${sxTile('Objectif 1 an', wsMoy === null ? '—' : (wsMoy > 0 ? '+' : '−') + fmtNum(Math.abs(wsMoy), 0) + '&nbsp;%', wsMoy === null ? null : TOOLTIP_TIER_COLORS[wallStreetTier(wsMoy)], 'moy. des analystes')}${sxTile('Consensus', recoS ? recoS.label : '—', recoS ? recoS.color : null, 'des analystes', 'sx-t-s')}${sxTile('Bêta', beta === null ? '—' : fmtNum(beta, 2))}</div>
+    ${sxText('Conclusion', val.conclusionValorisation)}
+    <div class="sx-bottom">${bar ? `<div class="sx-bl"><div class="sx-bar-wrap">${bar}</div></div>` : '<div class="sx-bl"></div>'}${values}</div>`;
 
   // ----- 5. Décision -----
   const conv5 = parseFloat(pers.conviction) || 0;
@@ -13013,12 +13086,12 @@ function buildSummaryCard(c){
   let segs = '';
   for(let i = 0; i < buff.total; i++) segs += `<i style="background:${i < buff.checked ? buffColor : 'rgba(255,255,255,.12)'}"></i>`;
   const target = pers.prixAchatCible ? escapeHtml(String(pers.prixAchatCible)) + '&nbsp;' + escapeHtml(cur) : '—';
-  const these = sxShort(pers.these, 150);
-  const pt = (cls, label, html) => { const t = sxShort(html, 75); return t ? `<div class="sx-pt2 ${cls}"><b>${label}</b> ${t}</div>` : ''; };
+  const these = sxFull(pers.these);
+  const pmBlock = (cls, label, html) => { const t = sxFull(html); return t ? `<div class="sx-pt2 ${cls}"><b>${label}</b><div>${t}</div></div>` : ''; };
   const p5 = `<div class="sx-g sx-g3b"><div class="sx-t sx-conv"><div class="sx-tl">Conviction</div><div class="sx-stars-row">${starsRowHtml(conv5, 'sx-stars')}<b>${conv5 ? String(conv5).replace('.', LANG === 'fr' ? ',' : '.') + '<small>/5</small>' : '—'}</b></div></div>${sxTile("Prix d'achat cible", target)}</div>
     <div class="sx-t sx-buf"><div class="sx-tl">Checklist Buffett</div><div class="sx-tv" style="color:${buffTier ? buffColor : '#fff'}">${buff.checked}<small>/${buff.total}</small></div><div class="sx-segs">${segs}</div></div>
     ${these ? `<div class="sx-these"><div class="sx-txl">Thèse d'investissement</div><q>${these}</q></div>` : ''}
-    <div class="sx-pm">${pt('sx-plus', 'Points forts', pers.pointsForts)}${pt('sx-minus', 'Points faibles', pers.pointsFaibles)}</div>`;
+    <div class="sx-pm">${pmBlock('sx-plus', 'Points forts', pers.pointsForts)}${pmBlock('sx-minus', 'Points faibles', pers.pointsFaibles)}</div>`;
 
   // ----- 6. Synthèse globale -----
   const scored = sinfo.axes.filter(a => a.score !== null);
@@ -13027,32 +13100,51 @@ function buildSummaryCard(c){
     const best = scored.reduce((m, a) => a.score > m.score ? a : m), worst = scored.reduce((m, a) => a.score < m.score ? a : m);
     insight = `<div class="sx-g sx-g2">${sxTile('Point fort', '<span>' + best.label + '</span> ' + Math.round(best.score), TOOLTIP_TIER_COLORS[best.tier] || good, '', 'sx-t-s')}${sxTile('À surveiller', '<span>' + worst.label + '</span> ' + Math.round(worst.score), TOOLTIP_TIER_COLORS[worst.tier] || bad, '', 'sx-t-s')}</div>`;
   }
-  const p6 = `${insight}${sxRadarSvg(sinfo.axes, ringColor)}<div class="sx-note">${gs === null ? 'Renseignez les sections pour obtenir une note.' : 'Score composite : moyenne de 5 axes, ' + sinfo.filled + ' sur ' + sinfo.total + ' renseignés' + (sinfo.provisional ? ' (provisoire)' : '') + '.'}</div>`;
+  const axBars = sinfo.axes.map(a => { const col = a.tier ? TOOLTIP_TIER_COLORS[a.tier] : none; return `<div class="sx-ax"><span>${a.label}</span><span class="sx-ax-t"><i style="width:${a.score === null ? 0 : Math.round(a.score)}%;background:${col}"></i></span><b>${a.score === null ? '—' : Math.round(a.score)}</b></div>`; }).join('');
+  const p6 = `${insight}${sxRadarSvg(sinfo.axes, ringColor)}<div class="sx-axes">${axBars}</div><div class="sx-note">${gs === null ? 'Renseignez les sections pour obtenir une note.' : 'Score composite : moyenne de 5 axes, ' + sinfo.filled + ' sur ' + sinfo.total + ' renseignés' + (sinfo.provisional ? ' (provisoire)' : '') + '.'}</div>`;
 
-  const foot = `<div class="sx-foot"><span class="sx-brand"><img src="icon-192.png" alt="" width="20" height="20">The Analytics<span class="sx-mut"> · the-analytics.fr</span></span><span class="sx-mut">Analyse personnelle, pas un conseil en investissement · mise à jour le ${formatDateFr(c.updatedAt || c.createdAt)}</span></div>`;
-
-  return `<div class="sx-card">${head}<div class="sx-grid">${sxPanel(1, 'Identité', SECTION_COLORS.identite, p1)}${sxPanel(2, 'Financier', SECTION_COLORS.financier, p2)}${sxPanel(3, 'Croissance', SECTION_COLORS.croissance, p3)}${sxPanel(4, 'Valorisation', SECTION_COLORS.valorisation, p4)}${sxPanel(5, 'Décision', SECTION_COLORS.personnelle, p5)}${sxPanel(6, 'Synthèse globale', '#f3e9d7', p6)}</div>${foot}</div>`;
+  const page = (n, panels, cls) => `<div class="sx-card${n === 1 ? ' sx-on' : ''}" data-sx-page="${n}">${head}<div class="sx-grid ${cls}">${panels}</div>${foot(n)}</div>`;
+  return [
+    page(1, sxPanel(1, 'Identité', SECTION_COLORS.identite, p1) + sxPanel(2, 'Financier', SECTION_COLORS.financier, p2) + sxPanel(3, 'Croissance', SECTION_COLORS.croissance, p3), 'sx-gp1'),
+    page(2, sxPanel(4, 'Valorisation', SECTION_COLORS.valorisation, p4) + sxPanel(5, 'Décision', SECTION_COLORS.personnelle, p5) + sxPanel(6, 'Synthèse globale', '#f3e9d7', p6), 'sx-gp2'),
+  ];
 }
 
-// Mise à l'échelle : la carte est dessinée à 1280 px de large puis réduite (ou agrandie un peu) pour tenir EN ENTIER dans la fenêtre, afin qu'une seule capture d'écran la montre au complet.
+// Mise à l'échelle : la page affichée est dessinée à SX_W px de large puis réduite (ou agrandie un peu) pour tenir EN ENTIER dans la fenêtre, afin qu'une seule capture d'écran la montre au complet.
 function sxFit(){
   const ov = document.getElementById('sxOverlay');
   if(!ov) return;
-  const card = ov.querySelector('.sx-card'), wrap = ov.querySelector('.sx-scale'), bar = ov.querySelector('.sx-bar');
+  const cards = [...ov.querySelectorAll('.sx-card')], wrap = ov.querySelector('.sx-scale'), bar = ov.querySelector('.sx-bar');
+  const card = ov.querySelector('.sx-card.sx-on') || cards[0];
   if(!card || !wrap) return;
   const vw = document.documentElement.clientWidth, vh = window.innerHeight;
   const stack = vw < 1000;
-  card.classList.toggle('sx-stack', stack);
+  ov.classList.toggle('sx-stacked', stack);
+  cards.forEach(cd => cd.classList.toggle('sx-stack', stack));
   if(stack){
-    card.style.transform = ''; card.style.width = Math.min(vw - 20, 620) + 'px';
+    cards.forEach(cd => { cd.style.transform = ''; cd.style.width = Math.min(vw - 20, 620) + 'px'; });
     wrap.style.width = ''; wrap.style.height = '';
     return;
   }
-  card.style.width = '1280px'; card.style.transform = 'none';
-  const h = card.offsetHeight, availW = vw - 32, availH = vh - (bar ? bar.offsetHeight : 52) - 24;
-  const s = Math.max(0.4, Math.min(availW / 1280, availH / h, 1.3));
+  // La largeur de la carte s'adapte au contenu : on essaie plusieurs largeurs et on garde celle qui donne la PLUS GRANDE échelle d'affichage (texte le plus lisible dans la fenêtre)
+  const availW = vw - 32, availH = vh - (bar ? bar.offsetHeight : 52) - 24;
+  let best = null;
+  SX_WIDTHS.forEach(W => {
+    card.style.width = W + 'px'; card.style.transform = 'none';
+    const h = card.offsetHeight, s = Math.min(availW / W, availH / h, 1.3);
+    if(!best || s > best.s + 0.005) best = { W, h, s };
+  });
+  cards.forEach(cd => { cd.style.width = best.W + 'px'; cd.style.transform = 'none'; });
+  const h = card.offsetHeight, s = Math.max(0.4, Math.min(availW / best.W, availH / h, 1.3));
   card.style.transformOrigin = 'top left'; card.style.transform = 'scale(' + s.toFixed(4) + ')';
-  wrap.style.width = (1280 * s).toFixed(1) + 'px'; wrap.style.height = (h * s).toFixed(1) + 'px';
+  wrap.style.width = (best.W * s).toFixed(1) + 'px'; wrap.style.height = (h * s).toFixed(1) + 'px';
+}
+function sxShow(n){
+  const ov = document.getElementById('sxOverlay');
+  if(!ov) return;
+  ov.querySelectorAll('.sx-card').forEach(cd => cd.classList.toggle('sx-on', cd.dataset.sxPage === String(n)));
+  ov.querySelectorAll('[data-sx-go]').forEach(b => b.classList.toggle('on', b.dataset.sxGo === String(n)));
+  sxFit();
 }
 function sxOpen(){
   const c = getActive();
@@ -13061,7 +13153,7 @@ function sxOpen(){
   const ov = document.createElement('div');
   ov.className = 'sx-overlay'; ov.id = 'sxOverlay';
   ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Résumé de l\'analyse');
-  ov.innerHTML = `<div class="sx-bar"><span class="sx-bar-t">Résumé de l'analyse</span><span class="sx-bar-h">La carte tient en un seul écran : faites une capture d'écran pour la partager.</span><button type="button" class="sx-close" data-sx-close>Fermer &#10005;</button></div><div class="sx-scale">${buildSummaryCard(c)}</div>`;
+  ov.innerHTML = `<div class="sx-bar"><span class="sx-bar-t">Résumé de l'analyse</span><span class="sx-pages"><button type="button" class="sx-pgb on" data-sx-go="1">Page 1 <small>Sections 1 à 3</small></button><button type="button" class="sx-pgb" data-sx-go="2">Page 2 <small>Sections 4 à 6</small></button></span><span class="sx-bar-h">Deux pages : faites une capture d'écran de chacune pour les partager.</span><button type="button" class="sx-close" data-sx-close>Fermer &#10005;</button></div><div class="sx-scale">${buildSummaryPages(c).join('')}</div>`;
   document.body.appendChild(ov);
   document.body.classList.add('sx-lock');
   sxFit();
@@ -13077,9 +13169,16 @@ function initSummary(){
     if(e.target.closest && e.target.closest('[data-summary-open]')){ sxOpen(); return; }
     const ov = document.getElementById('sxOverlay');
     if(!ov) return;
+    const go = e.target.closest && e.target.closest('[data-sx-go]');
+    if(go){ sxShow(go.dataset.sxGo); return; }
     if(e.target.closest('[data-sx-close]') || e.target === ov || e.target.classList.contains('sx-scale')) sxClose();
   });
-  document.addEventListener('keydown', e => { if(e.key === 'Escape' && document.getElementById('sxOverlay')) sxClose(); });
+  document.addEventListener('keydown', e => {
+    if(!document.getElementById('sxOverlay')) return;
+    if(e.key === 'Escape') sxClose();
+    else if(e.key === 'ArrowRight') sxShow(2);
+    else if(e.key === 'ArrowLeft') sxShow(1);
+  });
   window.addEventListener('resize', sxFit);
 }
 
