@@ -392,7 +392,7 @@ const I18N_EN = {
   "Croissance annuelle attendue": "Expected annual growth",
   "CA (3 ans)": "Revenue (3 yr)",
   "Bénéf. (3 ans)": "Earnings (3 yr)",
-  "BPA (3 ans)": "EPS (3 yr)",
+  "EPS (3 ans)": "EPS (3 yr)",
   "Marché": "Market",
   "Catalyseurs": "Catalysts",
   "PE": "PE",
