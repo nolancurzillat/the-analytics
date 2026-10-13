@@ -1070,6 +1070,23 @@ body.sx-lock{ overflow:hidden; }
 .sx-pb > .sx-radar{ flex:1 1 auto; min-height:0; }
 .sx-pb > .sx-these{ flex:1 1 auto; display:flex; flex-direction:column; justify-content:center; }
 
+/* ----- Résumé : build 271 (plein écran identique à la page, objectifs et consensus, thèse en gras) ----- */
+.sx-zoomed .sx-scale{ display:block; position:absolute; left:-100000px; top:0; visibility:hidden; pointer-events:none; }
+.sx-arrow{ width:44px; height:44px; }
+.sx-prev{ left:8px; } .sx-next{ right:8px; }
+.sx-bar{ position:sticky; top:0; z-index:4; background:rgba(4,8,18,.92); }
+.sx-these q{ font-style:normal; font-weight:700; }
+.sx-zoomcard .sx-p{ flex:none; }
+.sx-wsc{ display:block; width:100%; height:auto; }
+.sx-obj-row{ display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:12px; align-items:stretch; margin-top:6px; }
+.sx-cons{ display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07); border-radius:12px; padding:8px 10px 10px 10px; }
+.sx-cons svg{ display:block; width:100%; max-width:240px; height:auto; }
+.sx-cons-c{ font-size:12.5px; color:#8fa1c2; margin-bottom:2px; }
+.sx-cons-l{ font-size:24px; font-weight:700; line-height:1.1; margin-top:-4px; }
+.sx-th5{ display:flex; flex-direction:column; justify-content:center; }
+.sx-th5 .sx-tv{ font-size:27px; }
+.sx-th5 .sx-ts{ white-space:normal; font-size:13px; }
+.sx-stack .sx-obj-row{ grid-template-columns:1fr; }
 .chead-side{ flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-end; gap:10px; }
 .company-dates{
   display:flex; flex-direction:column; gap:2px; text-align:right;
@@ -12677,7 +12694,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 270;
+const APP_BUILD = 272;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -13087,6 +13104,55 @@ function sxRadarSvg(axes, color){
   return `<svg viewBox="-50 6 360 188" class="sx-radar" aria-hidden="true">${g}</svg>`;
 }
 
+// Graphique des objectifs des analystes à 1 an, mis en forme pour le résumé : rayons depuis le prix actuel, étiquettes à droite (nom, variation, prix), axe discret
+function sxWsChart(c){
+  const data = computeWallStreetTargets(c);
+  if(!data) return '';
+  const rays = [['max', 'Haut'], ['moy', 'Moyen'], ['min', 'Bas']].map(a => ({ key:a[0], label:a[1], price:data.target[a[0]], pct:data.pct[a[0]] })).filter(r => r.price !== null && r.price >= 0);
+  if(!rays.length) return '';
+  const cur = c.currency, accent = '#5b8cf7';
+  const prices = [data.price].concat(rays.map(r => r.price));
+  const lo = Math.min.apply(null, prices), hi = Math.max.apply(null, prices), pad = Math.max((hi - lo) * 0.16, hi * 0.03, 1);
+  const axis = niceAxisTicks(Math.max(0, lo - pad), hi + pad, 4);
+  const W = 560, H = 238, top = 16, bot = 30, x0 = 34, x1 = 322, xl = 338, xa = W - 4, xg = W - 62;
+  const y = v => top + (1 - (v - axis.min) / (axis.max - axis.min)) * (H - top - bot);
+  const y0 = y(data.price);
+  const sgn = v => (v > 0 ? '+' : '−') + fmtNum(Math.abs(v), 1) + ' %';
+  let g = '';
+  axis.ticks.forEach(t => {
+    const yy = y(t).toFixed(1);
+    g += `<line x1="${x0}" y1="${yy}" x2="${xg}" y2="${yy}" stroke="rgba(255,255,255,.07)"/><text x="${xa}" y="${(y(t) + 4).toFixed(1)}" text-anchor="end" font-size="11.5" fill="rgba(255,255,255,.42)" font-family="Inter, sans-serif">${fmtMoney(t, cur)}</text>`;
+  });
+  const items = [{ key:'px', label:'Actuel', price:data.price, color:accent, top:'Actuel' }].concat(rays.map(r => ({ key:r.key, label:r.label, price:r.price, color:TOOLTIP_TIER_COLORS[wallStreetTier(r.pct)] || '#c3cee5', top:r.label + ' ' + sgn(r.pct) })));
+  const byP = items.slice().sort((a, b) => a.price - b.price);
+  let bands = '';
+  for(let i = 0; i < byP.length - 1; i++){
+    const a = byP[i], b = byP[i + 1], col = b.key === 'px' ? TOOLTIP_TIER_COLORS.mauvais : b.color;
+    bands += `<polygon points="${x0},${y0.toFixed(1)} ${x1},${y(a.price).toFixed(1)} ${x1},${y(b.price).toFixed(1)}" fill="${col}" fill-opacity="0.16"/>`;
+  }
+  let lines = '';
+  items.forEach(r => { lines += `<line x1="${x0}" y1="${y0.toFixed(1)}" x2="${x1}" y2="${y(r.price).toFixed(1)}" stroke="${r.color}" stroke-width="${r.key === 'px' ? 2.6 : 2.2}"${r.key === 'px' ? '' : ' stroke-dasharray="7 5"'} stroke-linecap="round"/><circle cx="${x1}" cy="${y(r.price).toFixed(1)}" r="3.6" fill="${r.color}"/>`; });
+  lines += `<circle cx="${x0}" cy="${y0.toFixed(1)}" r="5" fill="${accent}" stroke="#fff" stroke-width="1.6"/>`;
+  // étiquettes décalées si deux niveaux sont trop proches (triées de haut en bas à l'écran)
+  const byY = items.slice().sort((a, b) => y(a.price) - y(b.price)), ly = byY.map(r => y(r.price)), gap = 36;
+  for(let i = 1; i < ly.length; i++) if(ly[i] < ly[i - 1] + gap) ly[i] = ly[i - 1] + gap;
+  const over = ly[ly.length - 1] - (H - bot - 2); if(over > 0) for(let i = 0; i < ly.length; i++) ly[i] -= over;
+  const under = (top + 6) - ly[0]; if(under > 0) for(let i = 0; i < ly.length; i++) ly[i] += under;
+  let labels = '';
+  byY.forEach((r, i) => {
+    labels += `<text x="${xl}" y="${(ly[i] - 2).toFixed(1)}" font-size="13.5" font-weight="700" fill="${r.color}" font-family="Inter, sans-serif">${r.top}</text><text x="${xl}" y="${(ly[i] + 13).toFixed(1)}" font-size="13" fill="#e6ecf8" font-family="'IBM Plex Mono', monospace">${fmtMoney(r.price, cur)}</text>`;
+  });
+  const foot = `<text x="${x0}" y="${H - 8}" text-anchor="start" font-size="11.5" fill="rgba(255,255,255,.5)" font-family="Inter, sans-serif">Aujourd'hui</text><text x="${x1}" y="${H - 8}" text-anchor="middle" font-size="11.5" fill="rgba(255,255,255,.5)" font-family="Inter, sans-serif">+1 an</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" class="sx-wsc" role="img" aria-label="Objectifs des analystes à 1 an">${g}${bands}${lines}${labels}${foot}</svg>`;
+}
+// Consensus des analystes : demi-cercle de 5 zones, la zone du consensus est mise en valeur (sans la note sur 5)
+function sxConsGauge(c){
+  const reco = wsRecoValue(c);
+  if(reco === null) return '';
+  const idx = wsRecoIndex(reco), s = WS_RECO[idx];
+  const segs = WS_RECO.map((z, i) => `<path d="${wsGaugeArc(i)}" fill="none" stroke="${z.color}" stroke-width="${i === idx ? 28 : 14}" stroke-linecap="round" opacity="${i === idx ? 1 : 0.3}"/>`).join('');
+  return `<div class="sx-cons"><div class="sx-cons-c">Consensus des analystes</div><svg viewBox="6 8 288 156" aria-hidden="true">${segs}</svg><div class="sx-cons-l" style="color:${s.color}">${s.label}</div></div>`;
+}
 // Retourne les DEUX pages (HTML de deux cartes) : [sections 1, 2, 3] et [sections 4, 5, 6]
 function buildSummaryPages(c){
   const cur = c.currency;
@@ -13195,10 +13261,19 @@ function buildSummaryPages(c){
     bottoms.forEach(x => { const top = trackY + 10 + 10 + x.row * rowH; inner += line(x, trackY + 5, top) + lab(x, top, 'sx-fl-bot'); });
     bar = `<div class="sx-fr" style="height:${H}px">${inner}</div>`;
   }
+  const lt = computeLongTerm(c);
+  const eps = parseMoney(val.epsActuel), epsF = parseMoney(val.epsEstime1an);
+  const wsC = sxWsChart(c), consG = sxConsGauge(c), hasLt = lt.cours5 !== null;
+  let thTile = sxTile('Cours théorique dans 5 ans', '—', null, 'à PE constant', 'sx-th5');
+  if(hasLt){
+    const gain = (lt.cours5 / lt.price - 1) * 100, gc = gain >= 0 ? good : bad;
+    thTile = `<div class="sx-t sx-th5"><div class="sx-tl">Cours théorique dans 5 ans</div><div class="sx-tv" style="color:${gc}">${plain(lt.cours5)}</div><div class="sx-ts" style="color:${gc}">${(gain >= 0 ? '+' : '−') + fmtNum(Math.abs(gain), 0)}&nbsp;%${lt.cagrB !== null ? ' · ' + (lt.cagrB >= 0 ? '+' : '−') + fmtNum(Math.abs(lt.cagrB), 1) + '&nbsp;%/an' : ''}</div><div class="sx-ts">à PE constant</div></div>`;
+  }
+  const objBlock = (wsC || consG || hasLt) ? `<div class="sx-tx sx-wsb"><div class="sx-txl">Objectifs et consensus des analystes</div>${wsC}<div class="sx-obj-row">${consG}${thTile}</div></div>` : '';
   const hasWs = ws && (ws.target.max !== null || ws.target.moy !== null || ws.target.min !== null);
   const p4 = `<div class="sx-g sx-g4 sx-grow">${sxTile('PE', pe === null ? '—' : (pe <= 0 ? 'n.s.' : fmtNum(pe, 1)))}${sxTile('PE forward', peF === null ? '—' : (peF <= 0 ? 'n.s.' : fmtNum(peF, 1)))}${sxTile('PEG', sxFr(fmtRatioPos(peg)), sxTier('peg', peg))}
-    ${sxTile('PE / secteur', sxFr(fmtRatioPos(peRel)), sxTier('peRelatifSecteur', peRel), peSect === null ? '' : 'PE secteur : ' + fmtNum(peSect, 1))}${sxTile('Rendement FCF', rFcf === null ? '—' : (rFcf < 0 ? neg : sxPct(rFcf, 1)), sxTier('rendementFcf', rFcf))}${sxTile('Consensus', recoS ? recoS.label : '—', recoS ? recoS.color : null, 'des analystes', 'sx-t-s')}${sxTile('Bêta', beta === null ? '—' : fmtNum(beta, 2))}${sxTile('Position short', pshort === null ? '—' : sxPct(pshort, 1), sxTier('positionShort', pshort))}</div>
-    ${hasWs ? `<div class="sx-tx sx-wsb"><div class="sx-txl">Objectif des analystes à 1 an</div><div class="sx-wschart">${buildWallStreetChart(c).replace(' id="wsChartWrap"', '')}</div></div>` : ''}
+    ${sxTile('PE / secteur', sxFr(fmtRatioPos(peRel)), sxTier('peRelatifSecteur', peRel), peSect === null ? '' : 'PE secteur : ' + fmtNum(peSect, 1))}${sxTile('Rendement FCF', rFcf === null ? '—' : (rFcf < 0 ? neg : sxPct(rFcf, 1)), sxTier('rendementFcf', rFcf))}${sxTile('EPS', eps === null ? '—' : plain(eps), null, epsF === null ? '' : 'estimé : ' + plain(epsF))}${sxTile('Bêta', beta === null ? '—' : fmtNum(beta, 2))}${sxTile('Position short', pshort === null ? '—' : sxPct(pshort, 1), sxTier('positionShort', pshort))}</div>
+    ${objBlock}
     ${sxText('Conclusion', val.conclusionValorisation)}
     ${bar ? `<div class="sx-tx sx-frb"><div class="sx-txl">Fourchette de valorisation</div>${bar}</div>` : ''}`;
 
@@ -13238,53 +13313,69 @@ function buildSummaryPages(c){
 
 // Mise à l'échelle : on essaie plusieurs largeurs de carte et on garde celle qui donne la PLUS GRANDE échelle d'affichage ; les DEUX pages ont toujours exactement la même taille
 // (la hauteur retenue est celle de la plus haute des deux). La carte est ensuite réduite pour tenir EN ENTIER dans la fenêtre (une capture d'écran suffit).
-// Une section affichée seule en plein écran (sxZoomTo) est agrandie de la même façon, jusqu'à 2,6 fois.
+// Une section affichée seule en plein écran (sxZoomTo) a EXACTEMENT la même mise en forme et les mêmes proportions que dans la page (même largeur et même hauteur de case),
+// elle est simplement agrandie (jusqu'à 3 fois) pour remplir la fenêtre.
 let sxZoomN = 0, sxPage = 1;   // sxZoomN : 0 = les deux pages, 1 à 6 = une section en plein écran
-const SX_ZOOM_WIDTHS = [520, 600, 680, 760, 860, 980, 1100, 1240];
+const SX_ZOOM_PAD = 20;
 function sxFit(){
   const ov = document.getElementById('sxOverlay');
   if(!ov) return;
   const cards = [...ov.querySelectorAll('.sx-scale .sx-card')], wrap = ov.querySelector('.sx-scale'), bar = ov.querySelector('.sx-bar');
-  const zc = ov.querySelector('.sx-zoomcard'), host = ov.querySelector('.sx-zoomhost');
   const card = ov.querySelector('.sx-scale .sx-card.sx-on') || cards[0];
   if(!card || !wrap) return;
   const vw = document.documentElement.clientWidth, vh = window.innerHeight;
   const stack = vw < 1000;
   ov.classList.toggle('sx-stacked', stack);
-  cards.concat(zc ? [zc] : []).forEach(cd => cd.classList.toggle('sx-stack', stack));
-  const availW = vw - 150, availH = vh - (bar ? bar.offsetHeight : 52) - 24;   // 150 : place pour les deux flèches de chaque côté
-  if(zc && host){
-    if(stack){ zc.style.transform = ''; zc.style.width = Math.min(vw - 20, 620) + 'px'; host.style.width = ''; host.style.height = ''; return; }
-    let bz = null;
-    SX_ZOOM_WIDTHS.forEach(W => {
-      zc.style.width = W + 'px'; zc.style.transform = 'none';
-      const H = zc.offsetHeight, s = Math.min(availW / W, availH / H, 2.6);
-      if(!bz || s > bz.s + 0.005) bz = { W, H, s };
-    });
-    zc.style.width = bz.W + 'px'; zc.style.transform = 'none';
-    const hz = zc.offsetHeight, sz = Math.max(0.4, Math.min(availW / bz.W, availH / hz, 2.6));
-    zc.style.transformOrigin = 'top left'; zc.style.transform = 'scale(' + sz.toFixed(4) + ')';
-    host.style.width = (bz.W * sz).toFixed(1) + 'px'; host.style.height = (hz * sz).toFixed(1) + 'px';
-    return;
-  }
+  cards.forEach(cd => cd.classList.toggle('sx-stack', stack));
+  const availW = vw - 104, availH = vh - (bar ? bar.offsetHeight : 52) - 24;   // 104 : place pour les deux flèches de chaque côté
   if(stack){
     cards.forEach(cd => { cd.style.transform = ''; cd.style.minHeight = ''; cd.style.width = Math.min(vw - 20, 620) + 'px'; });
     wrap.style.width = ''; wrap.style.height = '';
+    if(sxZoomN > 0) sxBuildZoom(ov, availW, availH, true);
     return;
   }
   ov.classList.add('sx-measuring');
-  let best = null;
+  // La carte remplit TOUTE la largeur de la fenêtre (échelle = largeur disponible ÷ largeur de la carte). On retient la plus petite largeur de dessin (donc le plus gros texte)
+  // dont la hauteur ne dépasse la fenêtre que de 35 % au plus (le reste se fait défiler) ; si aucune ne convient, celle qui déborde le moins.
+  const res = [];
   SX_WIDTHS.forEach(W => {
     let H = 0;
     cards.forEach(cd => { cd.style.width = W + 'px'; cd.style.minHeight = ''; cd.style.transform = 'none'; H = Math.max(H, cd.offsetHeight); });
-    const s = Math.min(availW / W, availH / H, 1.3);
-    if(!best || s > best.s + 0.005) best = { W, H, s };
+    res.push({ W, H, s:Math.min(availW / W, 1.3) });
   });
+  let best = null;
+  res.forEach(r => { if(r.H * r.s <= availH * 1.35 && (!best || r.s > best.s + 0.005)) best = r; });
+  if(!best) best = res.reduce((m, r) => (r.H * r.s < m.H * m.s ? r : m), res[0]);
   cards.forEach(cd => { cd.style.width = best.W + 'px'; cd.style.minHeight = best.H + 'px'; cd.style.transform = 'none'; });
   ov.classList.remove('sx-measuring');
-  const h = card.offsetHeight, s = Math.max(0.4, Math.min(availW / best.W, availH / h, 1.3));
+  const h = card.offsetHeight, s = Math.max(0.4, Math.min(availW / best.W, 1.3));
   card.style.transformOrigin = 'top left'; card.style.transform = 'scale(' + s.toFixed(4) + ')';
   wrap.style.width = (best.W * s).toFixed(1) + 'px'; wrap.style.height = (h * s).toFixed(1) + 'px';
+  if(sxZoomN > 0) sxBuildZoom(ov, availW, availH, false);
+}
+// (Re)construit la carte du plein écran : copie de la case telle qu'elle est dans la page (mêmes dimensions), puis mise à l'échelle
+function sxBuildZoom(ov, availW, availH, stack){
+  const n = sxZoomN;
+  const src = ov.querySelector('.sx-scale .sx-p[data-sx-sec="' + n + '"]');
+  const old = ov.querySelector('.sx-zoomhost'); if(old) old.remove();
+  if(!src) return;
+  let pw = 0, ph = 0;
+  if(!stack){ ov.classList.add('sx-measuring'); pw = src.offsetWidth; ph = src.offsetHeight; ov.classList.remove('sx-measuring'); }
+  const clone = src.cloneNode(true);
+  const zb = clone.querySelector('.sx-zb'); if(zb) zb.remove();
+  if(!stack) clone.style.cssText += ';width:' + pw + 'px;height:' + ph + 'px;flex:none;';
+  const foot = src.closest('.sx-card').querySelector('.sx-foot').cloneNode(true);
+  const pg = foot.querySelector('.sx-pg'); if(pg) pg.textContent = 'Section ' + n + ' sur 6';
+  const zc = document.createElement('div'); zc.className = 'sx-card sx-on sx-zoomcard' + (stack ? ' sx-stack' : '');
+  zc.appendChild(clone); zc.appendChild(foot);
+  const host = document.createElement('div'); host.className = 'sx-zoomhost'; host.appendChild(zc);
+  ov.appendChild(host);
+  if(stack){ zc.style.width = Math.min(document.documentElement.clientWidth - 20, 620) + 'px'; return; }
+  const cw = pw + 2 * SX_ZOOM_PAD;
+  zc.style.width = cw + 'px';
+  const ch = zc.offsetHeight, s = Math.max(0.4, Math.min(availW / cw, availH / ch, 3));
+  zc.style.transformOrigin = 'top left'; zc.style.transform = 'scale(' + s.toFixed(4) + ')';
+  host.style.width = (cw * s).toFixed(1) + 'px'; host.style.height = (ch * s).toFixed(1) + 'px';
 }
 // Flèches : entre les pages, ou entre les sections quand l'une d'elles est en plein écran
 function sxArrows(){
@@ -13313,17 +13404,6 @@ function sxZoomTo(n){
   if(!ov) return;
   n = Math.max(0, Math.min(6, parseInt(n, 10) || 0));
   if(n === 0){ sxShow(sxPage); return; }
-  const src = ov.querySelector('.sx-scale .sx-p[data-sx-sec="' + n + '"]');
-  if(!src) return;
-  const old = ov.querySelector('.sx-zoomhost'); if(old) old.remove();
-  const clone = src.cloneNode(true);
-  const zb = clone.querySelector('.sx-zb'); if(zb) zb.remove();
-  const foot = src.closest('.sx-card').querySelector('.sx-foot').cloneNode(true);
-  const pg = foot.querySelector('.sx-pg'); if(pg) pg.textContent = 'Section ' + n + ' sur 6';
-  const card = document.createElement('div'); card.className = 'sx-card sx-on sx-zoomcard';
-  card.appendChild(clone); card.appendChild(foot);
-  const host = document.createElement('div'); host.className = 'sx-zoomhost'; host.appendChild(card);
-  ov.appendChild(host);
   sxZoomN = n;
   ov.classList.add('sx-zoomed');
   ov.querySelectorAll('.sx-pgb[data-sx-go]').forEach(b => b.classList.remove('on'));
