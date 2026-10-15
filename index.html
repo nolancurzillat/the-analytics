@@ -1114,6 +1114,43 @@ body.sx-lock{ overflow:hidden; }
 .sx-act{ line-height:1.5; }
 .sx-txv{ line-height:1.45; }
 .sx-pt2 div{ line-height:1.45; }
+/* ----- Résumé : build 276, textes plus grands, score en anneau dans la synthèse, MOAT et thèse adaptés à leur texte ----- */
+.sx-act{ font-size:16px; line-height:1.5; }
+.sx-p[data-sx-sec="1"] .sx-act{ font-size:16.5px; line-height:1.55; }
+.sx-txv{ font-size:15px; line-height:1.45; }
+.sx-p[data-sx-sec="1"] .sx-txv{ font-size:15.5px; }
+.sx-txl, .sx-cap{ font-size:12.5px; }
+.sx-pt2 div{ font-size:15px; line-height:1.45; }
+.sx-pt2 b{ font-size:12.5px; }
+.sx-tl{ font-size:13px; }
+.sx-ts{ font-size:13px; }
+.sx-compact .sx-tl{ font-size:12.5px; }
+.sx-dleg{ font-size:13.5px; }
+.sx-note{ font-size:12.5px; }
+.sx-who{ font-size:14px; }
+/* MOAT et thèse : la case suit la taille de son texte, mais reste généreuse (texte plus grand, marges larges) */
+.sx-pb > .sx-moat{ flex:0 0 auto; padding:14px 18px; gap:20px; }
+.sx-gauge{ flex:0 0 168px; width:168px; }
+.sx-gauge svg{ width:168px; }
+.sx-gv b{ font-size:29px; }
+.sx-moat .sx-txv{ font-size:16.5px; line-height:1.5; }
+.sx-pb > .sx-these{ flex:0 0 auto; display:block; padding:14px 18px 16px 18px; }
+.sx-these q{ font-size:17.5px; line-height:1.55; }
+.sx-these .sx-txl{ font-size:13px; margin-bottom:5px; }
+/* Synthèse globale : score en anneau de couleur, axes lisibles */
+.sx-sc{ display:flex; align-items:center; gap:16px; }
+.sx-sc .sx-g1{ flex:1; min-width:0; display:grid; grid-template-columns:1fr; gap:6px; }
+.sx-sring{ position:relative; width:128px; height:128px; flex:0 0 128px; }
+.sx-sring svg{ display:block; width:128px; height:128px; }
+.sx-sringv{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1; }
+.sx-sringv b{ font-family:var(--font-mono); font-size:42px; font-weight:700; }
+.sx-sringv small{ font-size:13px; margin-top:5px; font-family:var(--font-ui); font-weight:600; }
+.sx-axes{ gap:11px; margin-top:8px; }
+.sx-ax{ grid-template-columns:118px 1fr 36px; gap:12px; font-size:15.5px; font-weight:600; color:#e6ecf8; }
+.sx-ax-t{ height:11px; border-radius:6px; }
+.sx-ax-t i{ border-radius:6px; }
+.sx-ax b{ font-size:18px; }
+.sx-stack .sx-sc{ flex-wrap:wrap; }
 .chead-side{ flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-end; gap:10px; }
 .company-dates{
   display:flex; flex-direction:column; gap:2px; text-align:right;
@@ -12721,7 +12758,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 275;
+const APP_BUILD = 276;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -13110,6 +13147,11 @@ function sxDonut(label, arr){
   });
   return `<div class="sx-dn"><div class="sx-txl">${label}</div><svg viewBox="0 0 110 110" aria-hidden="true">${arcs}</svg><div class="sx-dleg">${items.map(x => `<span><i style="background:${col(x)}"></i><em>${escapeHtml(x.label)}</em><b>${fmtNum(x.v / total * 100, 0)}&nbsp;%</b></span>`).join('')}</div></div>`;
 }
+// Score global de la synthèse : anneau de couleur (la couleur suit les 5 paliers de la note) avec la note au centre
+function sxScoreRing(gs, color, provisional){
+  const r = 52, circ = 2 * Math.PI * r;
+  return `<div class="sx-sring"><svg viewBox="0 0 128 128" aria-hidden="true"><circle cx="64" cy="64" r="${r}" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="12"/><circle cx="64" cy="64" r="${r}" fill="none" stroke="${color}" stroke-width="12" stroke-linecap="round" stroke-dasharray="${gs === null ? 0 : (gs / 100 * circ).toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 64 64)"/></svg><div class="sx-sringv" style="color:${color}"><b>${gs === null ? '—' : Math.round(gs)}</b><small>${provisional ? 'provisoire' : 'sur 100'}</small></div></div>`;
+}
 function sxRadarSvg(axes, color){
   const cx = 130, cy = 100, R = 66, n = axes.length;
   const ang = i => Math.PI * 2 * i / n - Math.PI / 2;
@@ -13316,8 +13358,8 @@ function buildSummaryPages(c){
   const pmBlock = (cls, label, html) => { const t = sxFull(html); return t ? `<div class="sx-pt2 ${cls}"><b>${label}</b><div>${t}</div></div>` : ''; };
   // La décision est dans la case 5 (plus dans l'en-tête de la page) : demande de l'auteur
   const decTile = `<div class="sx-t sx-dect" style="--c:${dst ? dst.color : '#8fa1c2'}"><div class="sx-tl">Décision</div><div class="sx-dv">${dst ? escapeHtml(decision) : 'À définir'}</div></div>`;
-  const p5 = `<div class="sx-g sx-g2">${decTile}${sxTile("Prix d'achat cible", target)}</div>
-    <div class="sx-g sx-g2"><div class="sx-t sx-conv"><div class="sx-tl">Conviction</div><div class="sx-stars-row">${starsRowHtml(conv5, 'sx-stars')}<b>${conv5 ? String(conv5).replace('.', LANG === 'fr' ? ',' : '.') + '<small>/5</small>' : '—'}</b></div></div><div class="sx-t sx-bf"><div class="sx-tl">Checklist Buffett</div><div class="sx-tv" style="color:${buffTier ? buffColor : '#fff'}">${buff.checked}<small>/${buff.total}</small></div><div class="sx-segs">${segs}</div></div></div>
+  const p5 = `<div class="sx-g sx-g2 sx-grow">${decTile}${sxTile("Prix d'achat cible", target)}</div>
+    <div class="sx-g sx-g2 sx-grow"><div class="sx-t sx-conv"><div class="sx-tl">Conviction</div><div class="sx-stars-row">${starsRowHtml(conv5, 'sx-stars')}<b>${conv5 ? String(conv5).replace('.', LANG === 'fr' ? ',' : '.') + '<small>/5</small>' : '—'}</b></div></div><div class="sx-t sx-bf"><div class="sx-tl">Checklist Buffett</div><div class="sx-tv" style="color:${buffTier ? buffColor : '#fff'}">${buff.checked}<small>/${buff.total}</small></div><div class="sx-segs">${segs}</div></div></div>
     ${these ? `<div class="sx-these"><div class="sx-txl">Thèse d'investissement</div><q>${these}</q></div>` : ''}
     <div class="sx-pm">${pmBlock('sx-plus', 'Points forts', pers.pointsForts)}${pmBlock('sx-minus', 'Points faibles', pers.pointsFaibles)}</div>`;
 
@@ -13326,10 +13368,10 @@ function buildSummaryPages(c){
   let insight = '';
   if(scored.length >= 2){
     const best = scored.reduce((m, a) => a.score > m.score ? a : m), worst = scored.reduce((m, a) => a.score < m.score ? a : m);
-    insight = `<div class="sx-g sx-g2">${sxTile('Point fort', '<span>' + best.label + '</span> ' + Math.round(best.score), TOOLTIP_TIER_COLORS[best.tier] || good, '', 'sx-t-s')}${sxTile('À surveiller', '<span>' + worst.label + '</span> ' + Math.round(worst.score), TOOLTIP_TIER_COLORS[worst.tier] || bad, '', 'sx-t-s')}</div>`;
+    insight = `<div class="sx-g sx-g1">${sxTile('Point fort', '<span>' + best.label + '</span> ' + Math.round(best.score), TOOLTIP_TIER_COLORS[best.tier] || good, '', 'sx-t-s')}${sxTile('À surveiller', '<span>' + worst.label + '</span> ' + Math.round(worst.score), TOOLTIP_TIER_COLORS[worst.tier] || bad, '', 'sx-t-s')}</div>`;
   }
-  const axBars = sinfo.axes.map(a => { const col = a.tier ? TOOLTIP_TIER_COLORS[a.tier] : none; return `<div class="sx-ax"><span>${a.label}</span><span class="sx-ax-t"><i style="width:${a.score === null ? 0 : Math.round(a.score)}%;background:${col}"></i></span><b>${a.score === null ? '—' : Math.round(a.score)}</b></div>`; }).join('');
-  const p6 = `${insight}${sxRadarSvg(sinfo.axes, ringColor)}<div class="sx-axes">${axBars}</div><div class="sx-note">${gs === null ? 'Renseignez les sections pour obtenir une note.' : 'Score composite : moyenne de 5 axes, ' + sinfo.filled + ' sur ' + sinfo.total + ' renseignés' + (sinfo.provisional ? ' (provisoire)' : '') + '.'}</div>`;
+  const axBars = sinfo.axes.map(a => { const col = a.tier ? TOOLTIP_TIER_COLORS[a.tier] : none; return `<div class="sx-ax"><span>${a.label}</span><span class="sx-ax-t"><i style="width:${a.score === null ? 0 : Math.round(a.score)}%;background:${col}"></i></span><b style="color:${a.score === null ? '#fff' : col}">${a.score === null ? '—' : Math.round(a.score)}</b></div>`; }).join('');
+  const p6 = `<div class="sx-sc">${sxScoreRing(gs, ringColor, sinfo.provisional)}${insight}</div>${sxRadarSvg(sinfo.axes, ringColor)}<div class="sx-axes">${axBars}</div><div class="sx-note">${gs === null ? 'Renseignez les sections pour obtenir une note.' : 'Score composite : moyenne de 5 axes, ' + sinfo.filled + ' sur ' + sinfo.total + ' renseignés' + (sinfo.provisional ? ' (provisoire)' : '') + '.'}</div>`;
 
   const page = (n, panels) => `<div class="sx-card${n === 1 ? ' sx-on' : ''}" data-sx-page="${n}">${head}<div class="sx-grid">${panels}</div>${foot(n)}</div>`;
   return [
