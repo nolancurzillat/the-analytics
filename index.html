@@ -6922,7 +6922,8 @@ const SCORE_PART_UNITS = { moatNote:'/10', consensus:'/5', buffett:' %', margeBr
 // vert clair (60 à 80), vert foncé (80 à 100). Distinct du barème à 4 paliers des indicateurs (TIER_COLORS), qui reste inchangé.
 // scoreColor5(note, true) donne les teintes vives pour les cartes à fond marine.
 const SCORE5_LABELS = ['Moins de 20', '20 à 40', '40 à 60', '60 à 80', '80 et plus'];
-function scoreTier5(s){ return s === null || s === undefined ? null : (s >= 80 ? 4 : (s >= 60 ? 3 : (s >= 40 ? 2 : (s >= 20 ? 1 : 0)))); }
+function scoreTier5(s){ if(s === null || s === undefined) return null; s = Math.round(s);   // la couleur suit la note ARRONDIE affichée (79,6 affiché « 80 » est vert foncé)
+  return (s >= 80 ? 4 : (s >= 60 ? 3 : (s >= 40 ? 2 : (s >= 20 ? 1 : 0)))); }
 function scoreColor5(s, onDark){
   const i = scoreTier5(s);
   if(i === null) return '';
@@ -6930,6 +6931,8 @@ function scoreColor5(s, onDark){
   const dark = [TOOLTIP_TIER_COLORS.mauvais, '#fb923c', TOOLTIP_TIER_COLORS.moyen, TOOLTIP_TIER_COLORS.bon, TOOLTIP_TIER_COLORS.tresbon];
   return (onDark ? dark : light)[i];
 }
+// Nom du palier de la note globale (mêmes 5 paliers que les couleurs ci-dessus) : utilisé pour la légende des 5 axes
+const SCORE5_NAMES = ['Mauvais', 'Faible', 'Moyen', 'Bon', 'Très bon'];
 function scoreScaleTooltip(){
   const dark = [TOOLTIP_TIER_COLORS.mauvais, '#fb923c', TOOLTIP_TIER_COLORS.moyen, TOOLTIP_TIER_COLORS.bon, TOOLTIP_TIER_COLORS.tresbon];
   return `<div class='tt-tiers'>` + [4, 3, 2, 1, 0].map(i => `<div class='tt-row'><span class='tt-dot' style='background:${dark[i]}'></span><span style='color:${dark[i]}'>${SCORE5_LABELS[i]}</span></div>`).join('') + `</div>`;
@@ -7020,7 +7023,7 @@ function computeScoreInfo(c){
 }
 function axisTooltip(a){
   const rows = a.parts.map(p => {
-    const col = p.tier ? TOOLTIP_TIER_COLORS[p.tier] : 'rgba(255,255,255,.5)';
+    const col = p.score !== null ? scoreColor5(p.score, true) : 'rgba(255,255,255,.5)';   // le point suit la note /100 affichée à côté (barème à 5 couleurs)
     const v = p.val === null ? (p.key === 'buffett' ? 'aucun critère validé' : 'non renseigné') : (p.key === 'buffett' ? Math.round(p.val * BUFFETT_RULES.length / 100) + '/' + BUFFETT_RULES.length : (p.key === 'consensus' ? WS_RECO[wsRecoIndex(p.val)].label + ', ' + fmtNum(p.val, 1) + '/5' : ((RATIO_POSITIF_SEUL.has(p.key) && p.val <= 0) || (p.key === 'conversionFcf' && p.val <= CONVERSION_NON_SIGNIFICATIVE) ? 'non significatif' : (FCF_NEG_KEYS.has(p.key) && p.val < 0 ? FCF_NEGATIF_TXT : fmtNum(p.val, 2) + SCORE_PART_UNITS[p.key]))));
     return `<div class='tt-row'><span class='tt-dot' style='background:${col}'></span><span>${escapeHtml(p.label)} : ${escapeHtml(v)}${p.score === null ? '' : ' (' + Math.round(p.score) + '/100)'}</span></div>`;
   }).join('');
@@ -7057,7 +7060,7 @@ function buildRadarSvg(axes){
     const [x,y] = pointAt(i, 1.42);
     const cosA = Math.cos(angle);
     const anchor = Math.abs(cosA) < 0.3 ? 'middle' : (cosA > 0 ? 'start' : 'end');
-    const dotColor = a.tier ? TIER_COLORS[a.tier] : '#9c998f';
+    const dotColor = a.score !== null && a.score !== undefined ? scoreColor5(a.score) : '#9c998f';   // même barème à 5 couleurs que la note globale
     // Le point de couleur est placé entre le texte et le graphique (à côté pour les axes latéraux, sous le texte pour l'axe du haut)
     const ty = y + 7;
     const dotDx = anchor === 'start' ? -9 : (anchor === 'end' ? 9 : 0);
@@ -7237,8 +7240,8 @@ function buildInsightsSection(c){
   const info = computeScoreInfo(c);
   const reliab = info.filled === 0 ? '' : `<div class="radar-reliab${info.provisional ? ' is-prov' : ''}">${info.provisional ? '<strong>Note provisoire</strong> : ' : ''}basée sur ${info.filled} axe${info.filled > 1 ? 's' : ''} sur ${info.total}${info.provisional ? '. Renseignez d\'autres indicateurs pour la fiabiliser.' : ''}</div>`;
   const radarLegend = `<div class="radar-legend">` + axes.map(a => {
-    const color = a.tier ? TIER_COLORS[a.tier] : 'var(--border)';
-    const label = a.tier ? TIER_LABELS[a.tier] : 'Pas de donnée';
+    const color = a.score !== null ? scoreColor5(a.score) : 'var(--border)';
+    const label = a.score !== null ? SCORE5_NAMES[scoreTier5(a.score)] : 'Pas de donnée';
     return `<div class="radar-legend-row" data-tooltip="${axisTooltip(a).replace(/"/g, '&quot;')}"><span class="radar-legend-dot" style="background:${color}"></span><span class="radar-legend-name">${a.label}</span><span class="radar-legend-value" style="color:${color}">${label}</span></div>`;
   }).join('') + reliab + `</div>`;
   const targetCardHtml = buildTargetPriceCard(c);
@@ -9257,7 +9260,7 @@ function buildGlobalRecap(c){
   const idn = c.fields.identite || {}, fin = c.fields.financier || {}, pers = c.fields.personnelle || {};
   const sinfo = computeScoreInfo(c);
   const gs = sinfo.score;
-  const axes = sinfo.axes.map(a => ({ label: a.label, v: a.score === null ? null : Math.round(a.score), color: a.tier ? pal[a.tier] : none }));
+  const axes = sinfo.axes.map(a => ({ label: a.label, v: a.score === null ? null : Math.round(a.score), color: a.score !== null ? scoreColor5(a.score, true) : none }));
   const roic = num(fin.roic), margeNette = num(fin.margeNette);
   const croiss = num(fin.croissanceBenef && fin.croissanceBenef.cagr);
   const dette = computeDetteActif(c), peg = computePeg(c), moat = num(idn.moatNote);
@@ -12762,7 +12765,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 277;
+const APP_BUILD = 278;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -13171,7 +13174,7 @@ function sxRadarSvg(axes, color){
     const [x, y] = pt(i, 1.22), cs = Math.cos(ang(i)), sn = Math.sin(ang(i));
     const anchor = Math.abs(cs) < 0.3 ? 'middle' : (cs > 0 ? 'start' : 'end');
     const ty = y + (sn > 0.3 ? 12 : (sn < -0.3 ? -3 : 4));
-    const sc = a.tier ? TOOLTIP_TIER_COLORS[a.tier] : 'rgba(255,255,255,.4)';
+    const sc = a.score !== null ? scoreColor5(a.score, true) : 'rgba(255,255,255,.4)';
     g += `<text x="${x.toFixed(1)}" y="${ty.toFixed(1)}" text-anchor="${anchor}" font-size="12.5" font-weight="600" fill="#dbe4f5" font-family="Inter, sans-serif">${a.label} <tspan fill="${sc}" font-weight="700">${a.score === null ? '—' : Math.round(a.score)}</tspan></text>`;
   });
   return `<svg viewBox="-50 6 360 188" class="sx-radar" aria-hidden="true">${g}</svg>`;
@@ -13372,9 +13375,9 @@ function buildSummaryPages(c){
   let insight = '';
   if(scored.length >= 2){
     const best = scored.reduce((m, a) => a.score > m.score ? a : m), worst = scored.reduce((m, a) => a.score < m.score ? a : m);
-    insight = `<div class="sx-g sx-g1">${sxTile('Point fort', '<span>' + best.label + '</span> ' + Math.round(best.score), TOOLTIP_TIER_COLORS[best.tier] || good, '', 'sx-t-s')}${sxTile('À surveiller', '<span>' + worst.label + '</span> ' + Math.round(worst.score), TOOLTIP_TIER_COLORS[worst.tier] || bad, '', 'sx-t-s')}</div>`;
+    insight = `<div class="sx-g sx-g1">${sxTile('Point fort', '<span>' + best.label + '</span> ' + Math.round(best.score), scoreColor5(best.score, true) || good, '', 'sx-t-s')}${sxTile('À surveiller', '<span>' + worst.label + '</span> ' + Math.round(worst.score), scoreColor5(worst.score, true) || bad, '', 'sx-t-s')}</div>`;
   }
-  const axBars = sinfo.axes.map(a => { const col = a.tier ? TOOLTIP_TIER_COLORS[a.tier] : none; return `<div class="sx-ax"><span>${a.label}</span><span class="sx-ax-t"><i style="width:${a.score === null ? 0 : Math.round(a.score)}%;background:${col}"></i></span><b style="color:${a.score === null ? '#fff' : col}">${a.score === null ? '—' : Math.round(a.score)}</b></div>`; }).join('');
+  const axBars = sinfo.axes.map(a => { const col = a.score !== null ? scoreColor5(a.score, true) : none; return `<div class="sx-ax"><span>${a.label}</span><span class="sx-ax-t"><i style="width:${a.score === null ? 0 : Math.round(a.score)}%;background:${col}"></i></span><b style="color:${a.score === null ? '#fff' : col}">${a.score === null ? '—' : Math.round(a.score)}</b></div>`; }).join('');
   const p6 = `<div class="sx-sc">${sxScoreRing(gs, ringColor, sinfo.provisional)}${insight}</div>${sxRadarSvg(sinfo.axes, ringColor)}<div class="sx-axes">${axBars}</div><div class="sx-note">${gs === null ? 'Renseignez les sections pour obtenir une note.' : 'Score composite : moyenne de 5 axes, ' + sinfo.filled + ' sur ' + sinfo.total + ' renseignés' + (sinfo.provisional ? ' (provisoire)' : '') + '.'}</div>`;
 
   const page = (n, panels) => `<div class="sx-card${n === 1 ? ' sx-on' : ''}" data-sx-page="${n}">${head}<div class="sx-grid">${panels}</div>${foot(n)}</div>`;

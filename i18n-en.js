@@ -452,6 +452,7 @@ const I18N_EN = {
   "Haut {0}": "High {0}",
   "Moyen {0}": "Average {0}",
   "Bas {0}": "Low {0}",
+  "Faible": "Weak",
   "Connexion annulée.": "Sign-in cancelled.",
   "Ce lien de confirmation a expiré ou est invalide. Connectez-vous, ou recréez votre compte.": "This confirmation link has expired or is invalid. Sign in, or create your account again.",
   "Lien valide : choisissez votre nouveau mot de passe.": "Valid link: choose your new password.",
