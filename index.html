@@ -190,6 +190,7 @@ svg{display:block;}
 .sort-opt .sort-check{ width:14px; flex:0 0 14px; color:var(--accent); font-weight:700; }
 .sort-lbl{ display:flex; flex-direction:column; align-items:flex-start; gap:2px; }
 .sort-dir-note{ font-size:12.5px; font-weight:500; color:#9aa8c4; }
+.sort-sep{ margin-top:6px; padding-top:9px; border-top:1px solid rgba(255,255,255,.1); }
 .sort-hint{ padding:8px 10px 6px 10px; max-width:230px; font-size:12.5px; line-height:1.45; color:#9aa8c4; }
 .sort-sep{ height:1px; background:rgba(255,255,255,.1); margin:6px 4px; }
 /* Tri de "Toutes vos analyses" (2026-09-27) : même bouton/menu que la barre latérale, réutilise .sort-btn/.sort-menu/.sort-opt, juste une nouvelle ancre positionnée. */
@@ -8511,7 +8512,15 @@ const TABLE_SORT_KEYS = SORT_KEYS.concat([
   { key:'buffett', label:'Checklist Buffett', natural:'desc', dirs:['Moins de critères d\'abord', 'Plus de critères d\'abord'] },
   { key:'decision', label:'Décision', natural:'desc', dirs:['A → Z', 'Z → A'] },
   { key:'progress', label:'Progrès', natural:'desc', dirs:['Moins avancées d\'abord', 'Plus avancées d\'abord'] },
+  // Tri par la note /100 d'UN des 5 critères du score (2026-10-16, demande de l'auteur) : une colonne avec cette note s'ajoute au tableau tant qu'on trie ainsi.
+  { key:'axis_qualite', axis:'qualite', label:'Qualité', natural:'desc', dirs:['Moins bien notées d\'abord', 'Mieux notées d\'abord'] },
+  { key:'axis_rentabilite', axis:'rentabilite', label:'Rentabilité', natural:'desc', dirs:['Moins bien notées d\'abord', 'Mieux notées d\'abord'] },
+  { key:'axis_croissance', axis:'croissance', label:'Croissance', natural:'desc', dirs:['Moins bien notées d\'abord', 'Mieux notées d\'abord'] },
+  { key:'axis_solidite', axis:'solidite', label:'Solidité', natural:'desc', dirs:['Moins bien notées d\'abord', 'Mieux notées d\'abord'] },
+  { key:'axis_valorisation', axis:'valorisation', label:'Valorisation', natural:'desc', dirs:['Moins bien notées d\'abord', 'Mieux notées d\'abord'] },
 ]);
+// Note /100 d'un critère du score pour une analyse (null si le critère n'est pas noté)
+function axisScoreOf(c, axisId){ const a = computeRadarAxes(c).find(x => x.id === axisId); return a && a.score !== null ? a.score : null; }
 // Comparateur partagé entre la barre latérale et "Toutes vos analyses" : seule la clé/le sens/la liste changent selon l'appelant.
 function sortCompare(a, b, key, sign, idx){
   const stars = c => parseFloat(c.fields.personnelle && c.fields.personnelle.conviction) || 0;
@@ -8531,6 +8540,13 @@ function sortCompare(a, b, key, sign, idx){
     if(ma === null) return 1;
     if(mb === null) return -1;
     return sign * (ma - mb) || tie;
+  }
+  if(key.indexOf('axis_') === 0){
+    const ax = key.slice(5), sa = axisScoreOf(a, ax), sb = axisScoreOf(b, ax);
+    if(sa === null && sb === null) return tie;
+    if(sa === null) return 1;
+    if(sb === null) return -1;
+    return sign * (sa - sb) || tie;
   }
   if(key === 'score'){
     const sa = computeGlobalScore(a), sb = computeGlobalScore(b);
@@ -8589,23 +8605,25 @@ function sortedForTable(){
 // de l'auteur : « enlève dans les doubles flèches les filtres déjà applicables en appuyant sur le nom, par exemple la conviction »).
 // Score, PEG, MOAT, Buffett, Décision, Conv., Progrès, Cap. et Date se trient en cliquant sur leur en-tête ; il ne reste ici que
 // la date de création et l'ordre alphabétique. `TABLE_SORT_KEYS` garde la liste complète (sens naturel de chaque colonne).
-const TABLE_MENU_KEYS = TABLE_SORT_KEYS.filter(k => k.key === 'created' || k.key === 'name');
+const TABLE_MENU_KEYS = TABLE_SORT_KEYS.filter(k => k.key === 'created' || k.key === 'name' || k.axis);
+// Intertitre avant le premier critère du score dans le menu du tableau
+function sortSep(keys, i){ return (keys[i].axis && !(i > 0 && keys[i - 1].axis)) ? '<div class="sort-title sort-sep">Note d\'un critère du score</div>' : ''; }
 function sortMenuHtml(keys, curKey, curDir, columnHint){
   const byColumn = columnHint && !keys.some(k => k.key === curKey);
   const cur = keys.find(k => k.key === curKey) || keys[0];
   const check = on => `<span class="sort-check">${on && !byColumn ? '&#10003;' : ''}</span>`;
   if(byColumn){
     return `<div class="sort-title">Trier par</div>`
-      + keys.map(k => `<button type="button" class="sort-opt" data-sort-key="${k.key}" role="menuitemradio" aria-checked="false">${check(false)}${k.label}</button>`).join('')
+      + keys.map((k, i) => sortSep(keys, i) + `<button type="button" class="sort-opt" data-sort-key="${k.key}" role="menuitemradio" aria-checked="false">${check(false)}${k.label}</button>`).join('')
       + `<div class="sort-hint">Le tableau est trié par une colonne. Cliquez sur son en-tête pour inverser l'ordre, ou sur un autre en-tête pour changer.</div>`;
   }
   // Plus de section « Sens » (2026-10-03, demande de l'auteur) : on inverse l'ordre en recliquant sur le critère déjà choisi ; le sens
   // courant est écrit sous le critère actif.
   return `<div class="sort-title">Trier par</div>`
-    + keys.map(k => {
+    + keys.map((k, i) => {
       const on = k.key === cur.key;
       const note = on ? `<small class="sort-dir-note">${curDir === 'desc' ? '&darr;' : '&uarr;'} ${k.dirs[curDir === 'desc' ? 1 : 0]}</small>` : '';
-      return `<button type="button" class="sort-opt${on ? ' current' : ''}" data-sort-key="${k.key}" role="menuitemradio" aria-checked="${on}">${check(on)}<span class="sort-lbl">${k.label}${note}</span></button>`;
+      return sortSep(keys, i) + `<button type="button" class="sort-opt${on ? ' current' : ''}" data-sort-key="${k.key}" role="menuitemradio" aria-checked="${on}">${check(on)}<span class="sort-lbl">${k.label}${note}</span></button>`;
     }).join('')
     + `<div class="sort-hint">Cliquez à nouveau sur le critère choisi pour inverser l'ordre.</div>`;
 }
@@ -9873,6 +9891,7 @@ function buildCompaniesTableRows(){
     const o = opt || {};
     return `<span class="vchip${o.lg ? ' vchip-lg' : ''}${o.prov ? ' is-prov' : ''}" style="--c:${color}"${o.prov ? ` data-tooltip="<div class='tt-desc'>Note provisoire : moins de ${SCORE_MIN_AXES} axes renseignés</div>"` : ''}>${text}</span>`;
   };
+  const axisKey = String(state.settings.tableSortKey || ''), axisCol = axisKey.indexOf('axis_') === 0 ? axisKey.slice(5) : '';   // colonne de la note du critère, seulement quand on trie par critère
   const rows = sortedForTable().map(c => {
     const idn = c.fields.identite || {};
     const ticker = idn.ticker || '';
@@ -9897,6 +9916,7 @@ function buildCompaniesTableRows(){
         <div class="home-td-name"><span class="home-td-name-txt">${escapeHtml(c.name || 'Sans nom')}</span>${reportFlagHtml(c)}${alertFlagHtml(c)}${ticker ? `<span class="home-ticker">${escapeHtml(ticker)}</span>` : ''}</div>
         <div class="ht-sec">${sect ? escapeHtml(sect) : 'Secteur non renseigné'}</div>
       </div></div></td>
+      ${axisCol ? (() => { const av = axisScoreOf(c, axisCol); return `<td>${chip(av, av === null ? 'var(--border-strong)' : scoreColor5(av), av === null ? '' : Math.round(av), { lg:true })}</td>`; })() : ''}
       <td>${chip(gs, gsColor, gs === null ? '' : Math.round(gs), { lg:true, prov:sinfo.provisional })}</td>
       <td>${chip(peg, pegTier ? TIER_COLORS[pegTier] : 'var(--border-strong)', peg === null ? '' : fmtRatioPos(peg))}</td>
       <td>${chip(moat, moatTier ? TIER_COLORS[moatTier] : 'var(--border-strong)', moat === null ? '' : escapeHtml(idn.moatNote) + '/10')}</td>
@@ -9915,7 +9935,8 @@ function buildCompaniesTableRows(){
     const arrow = active ? `<span class="th-sort-arrow">${state.settings.tableSortDir === 'desc' ? '&darr;' : '&uarr;'}</span>` : '';
     return `<th class="th-sort${active ? ' th-sort-active' : ''}" data-sort-th="${key}"${tooltip ? ` data-tooltip="${tooltip}"` : ''}>${label}${arrow}</th>`;
   };
-  const head = `<th>Entreprise</th>${th('score', 'Score')}${th('peg', 'PEG')}${th('moat', 'MOAT')}${th('buffett', 'Buffett')}${th('decision', 'Décision')}${th('stars', 'Conv.', "<div class='tt-desc'>Conviction</div>")}${th('progress', 'Progrès', "<div class='tt-desc'>Fiche complétée</div>")}${th('marketCap', 'Cap.', "<div class='tt-desc'>Capitalisation boursière</div>")}${th('updated', 'Date', "<div class='tt-desc'>Dernière mise à jour</div>")}`;
+  const axisInfo = axisCol ? SCORE_AXES.find(a => a.id === axisCol) : null;
+  const head = `<th>Entreprise</th>${axisInfo ? th(axisKey, ({ rentabilite:'Rentab.', croissance:'Croiss.', valorisation:'Valoris.' })[axisInfo.id] || axisInfo.label, "<div class='tt-desc'>Note /100 du critère « ${axisInfo.label} »</div>") : ''}${th('score', 'Score')}${th('peg', 'PEG')}${th('moat', 'MOAT')}${th('buffett', 'Buffett')}${th('decision', 'Décision')}${th('stars', 'Conv.', "<div class='tt-desc'>Conviction</div>")}${th('progress', 'Progrès', "<div class='tt-desc'>Fiche complétée</div>")}${th('marketCap', 'Cap.', "<div class='tt-desc'>Capitalisation boursière</div>")}${th('updated', 'Date', "<div class='tt-desc'>Dernière mise à jour</div>")}`;
   return `<div class="home-table-wrap home-table-wrap--tight" id="companiesTableWrap"><table class="home-table home-table--tight"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 function buildCompaniesTable(){
@@ -13100,7 +13121,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 287;
+const APP_BUILD = 288;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
