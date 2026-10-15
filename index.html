@@ -5366,7 +5366,11 @@ function commitPrixCible(id){
   if(!c) return;
   const to = String(c.fields.personnelle.prixAchatCible || '');
   if(String(from) === to) return;
-  logDecisionEvent(c, `Prix d'achat cible : ${from || '—'} → ${to || '—'} ${c.currency}`);
+  journalChange(c, 'target', from, to, (a, b) => {
+    const x = parseMoney(a), y = parseMoney(b);
+    const dir = (x !== null && y !== null && x !== y) ? (y > x ? 'relevé' : 'abaissé') : 'modifié';
+    return `Prix d'achat cible ${dir} : de ${a} ${c.currency} à ${b} ${c.currency}.`;
+  });
   saveState();
 }
 // Journal de décisions : une ligne horodatée à chaque changement RÉELLEMENT COMMIS (pas à chaque frappe) de
@@ -5381,6 +5385,40 @@ function logDecisionEvent(c, text, tid){
   c.decisionLog.push(e);
   if(c.decisionLog.length > 200) c.decisionLog.splice(0, c.decisionLog.length - 200);
 }
+// Journal de bord : seules les MODIFICATIONS d'une valeur déjà posée sont journalisées (jamais la première saisie), et seulement si la valeur
+// d'origine date d'au moins un jour (demande de l'auteur, 2026-10-16 : éviter d'archiver des erreurs de clic). `c.decisionBase[kind] = { v, t }` mémorise la
+// valeur « en vigueur » et le moment où elle a été posée. Un changement moins d'un jour après est une correction : la valeur de référence est remplacée sans rien écrire.
+// `from` est la valeur juste avant ce changement, `to` la nouvelle (chaînes ou nombres ; vide = pas de valeur). `phrase(a, b)` fabrique la phrase du journal.
+const JOURNAL_MIN_GAP_MS = 24 * 3600 * 1000;
+function journalChange(c, kind, from, to, phrase){
+  if(!c) return;
+  const f = (from === undefined || from === null || from === 0 || from === '0') ? '' : String(from);
+  const n = (to === undefined || to === null || to === 0 || to === '0') ? '' : String(to);
+  if(!c.decisionBase || typeof c.decisionBase !== 'object') c.decisionBase = {};
+  const base = c.decisionBase, now = Date.now();
+  if(!n){ delete base[kind]; return; }                 // valeur retirée : la prochaine saisie sera de nouveau « nouvelle »
+  if(!f){ base[kind] = { v:n, t:now }; return; }       // première saisie : une nouveauté, pas une modification
+  let cur = base[kind];
+  if(!cur){
+    // Donnée d'avant ce mécanisme : on date la valeur de la dernière ligne de journal du même type, sinon on la juge ancienne
+    const last = (c.decisionLog || []).filter(e => journalDecisionKind(e.text) === (kind === 'target' ? 'target' : kind)).map(e => Date.parse(e.date)).filter(x => !isNaN(x)).sort((a, b) => b - a)[0];
+    cur = base[kind] = { v:f, t:last || 0 };
+  }
+  if(String(cur.v) !== f) cur.v = f;                   // la valeur a changé ailleurs (synchronisation, import) : on repart de la valeur réelle
+  if(String(cur.v) === n) return;                      // retour à la valeur d'origine
+  if(now - cur.t >= JOURNAL_MIN_GAP_MS){
+    logDecisionEvent(c, phrase(cur.v, n));
+    base[kind] = { v:n, t:now };
+  }else{
+    cur.v = n;                                         // correction dans la journée : silencieuse
+  }
+}
+function starsWord(n){ const x = parseFloat(n); return `${String(n).replace('.', ',')} étoile${x > 1 ? 's' : ''}`; }
+function convictionPhrase(a, b){
+  const x = parseFloat(a), y = parseFloat(b);
+  const dir = y > x ? 'renforcée' : 'dégradée';
+  return `Conviction ${dir} : de ${String(a).replace('.', ',')} à ${starsWord(b)}.`;
+}
 function updateField(sectionKey, fieldKey, value, fieldType){
   const c = getActive();
   if(!c) return;
@@ -5392,7 +5430,7 @@ function updateField(sectionKey, fieldKey, value, fieldType){
   const prevValue = c.fields[sectionKey][fieldKey];
   c.fields[sectionKey][fieldKey] = value;
   if(sectionKey === 'personnelle' && fieldKey === 'decision' && prevValue !== value){
-    logDecisionEvent(c, value ? `Décision : ${value}` : 'Décision retirée');
+    journalChange(c, 'decision', prevValue, value, (a, b) => `Décision modifiée : de ${a} à ${b}.`);
   }
   if(sectionKey === 'personnelle' && fieldKey === 'prixAchatCible'){
     if(!(c.id in prixCibleBase)) prixCibleBase[c.id] = String(prevValue || '');
@@ -5474,7 +5512,7 @@ function setStars(n){
   if(!c) return;
   const prev = parseFloat(c.fields.personnelle.conviction) || 0;
   c.fields.personnelle.conviction = n;
-  if(n !== prev) logDecisionEvent(c, `Conviction : ${prev || '—'} → ${n}/5`);
+  if(n !== prev) journalChange(c, 'conviction', prev, n, convictionPhrase);
   touchUpdated(c);
   saveState();
   render();
@@ -9998,6 +10036,12 @@ function cleanImportedCompany(raw){
     .map((a, i) => ({ id:String(a.id || ('a' + i)).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40) || ('a' + i), type:a.type, value:ALERT_TYPES[a.type].needs ? Number(a.value) : null, on:a.on !== false, fired:!!a.fired, ack:!!a.ack, firedAt:(typeof a.firedAt === 'string' && !isNaN(Date.parse(a.firedAt))) ? new Date(a.firedAt).toISOString() : '' }));
   c.fromShare = c.fromShare === true;   // seul l'indicateur « Reçue » survit (voir migrateCompany, qui convertit aussi l'ancien tag « Reçue »)
   if(!Number.isFinite(c.reviewedTs)) delete c.reviewedTs;
+  // Valeurs de référence du journal de bord (journalChange) : types connus, chaînes courtes, horodatages numériques
+  if(c.decisionBase && typeof c.decisionBase === 'object' && !Array.isArray(c.decisionBase)){
+    const b = {};
+    ['conviction', 'decision', 'target'].forEach(k => { const e = c.decisionBase[k]; if(e && typeof e === 'object' && Number.isFinite(e.t) && (typeof e.v === 'string' || typeof e.v === 'number')) b[k] = { v:String(e.v).slice(0, 60), t:e.t }; });
+    c.decisionBase = b;
+  }else delete c.decisionBase;
   // Logo : seules les adresses que l'application fabrique elle-même (Wikimedia Commons, favicon Google) ou une image intégrée sont acceptées.
   // Une adresse https quelconque dans un fichier ou un lien de partage servirait de « pixel espion » (le serveur de son auteur verrait l'adresse IP
   // de qui ouvre l'analyse). Un logo écarté est simplement retrouvé automatiquement par ensureLogos().
@@ -10304,7 +10348,8 @@ function reviewData(year){
   state.companies.forEach(c => {
     const ev = events.filter(e => e.c === c && e.kind === 'conviction');
     if(!ev.length) return;
-    const first = /Conviction : (—|[\d.,]+) →/.exec(ev[0].text), last = /→ ([\d.,]+)\/5/.exec(ev[ev.length - 1].text);
+    // Deux formats : ancien « Conviction : 3 → 4/5 » et nouveau « Conviction renforcée : de 3 à 4 étoiles. »
+    const first = /Conviction : (—|[\d.,]+) →/.exec(ev[0].text) || /: de ([\d.,]+) à /.exec(ev[0].text), last = /→ ([\d.,]+)\/5/.exec(ev[ev.length - 1].text) || / à ([\d.,]+) étoiles?\./.exec(ev[ev.length - 1].text);
     if(!first || !last) return;
     const from = first[1] === '—' ? null : parseFloat(first[1].replace(',', '.')), to = parseFloat(last[1].replace(',', '.'));
     if(from !== to) conv.push({ c, from, to });
@@ -13055,7 +13100,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 285;
+const APP_BUILD = 286;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
