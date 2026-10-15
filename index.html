@@ -9336,7 +9336,7 @@ function buildRecapCard(d){
     <div class="preview-body">
       <div class="preview-ring"${d.ringTooltip ? ` data-tooltip="${d.ringTooltip}"` : ''}>
         <svg viewBox="0 0 112 112" width="112" height="112"><circle cx="56" cy="56" r="48" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="9"/><circle cx="56" cy="56" r="48" fill="none" stroke="${d.ringColor}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${hasScore ? (d.score / 100 * circ).toFixed(1) : 0} ${circ.toFixed(1)}" transform="rotate(-90 56 56)"/></svg>
-        <div class="preview-ring-val">${hasScore ? Math.round(d.score) : '—'}<small>${d.scoreNote || 'sur 100'}</small></div>
+        <div class="preview-ring-val">${hasScore ? Math.round(d.score) : '—'}${d.scoreNote ? '<small>' + d.scoreNote + '</small>' : ''}</div>
       </div>
       <div class="preview-bars">${bars}</div>
     </div>
@@ -13008,7 +13008,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 282;
+const APP_BUILD = 283;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -13401,7 +13401,7 @@ function sxDonut(label, arr){
 // Score global de la synthèse : anneau de couleur (la couleur suit les 5 paliers de la note) avec la note au centre
 function sxScoreRing(gs, color, provisional){
   const r = 52, circ = 2 * Math.PI * r;
-  return `<div class="sx-sring"><svg viewBox="0 0 128 128" aria-hidden="true"><circle cx="64" cy="64" r="${r}" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="12"/><circle cx="64" cy="64" r="${r}" fill="none" stroke="${color}" stroke-width="12" stroke-linecap="round" stroke-dasharray="${gs === null ? 0 : (gs / 100 * circ).toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 64 64)"/></svg><div class="sx-sringv" style="color:${color}"><b>${gs === null ? '—' : Math.round(gs)}</b><small>${provisional ? 'provisoire' : 'sur 100'}</small></div></div>`;
+  return `<div class="sx-sring"><svg viewBox="0 0 128 128" aria-hidden="true"><circle cx="64" cy="64" r="${r}" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="12"/><circle cx="64" cy="64" r="${r}" fill="none" stroke="${color}" stroke-width="12" stroke-linecap="round" stroke-dasharray="${gs === null ? 0 : (gs / 100 * circ).toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 64 64)"/></svg><div class="sx-sringv" style="color:${color}"><b>${gs === null ? '—' : Math.round(gs)}</b>${provisional ? '<small>provisoire</small>' : ''}</div></div>`;
 }
 function sxRadarSvg(axes, color){
   const cx = 130, cy = 100, R = 66, n = axes.length;
@@ -13506,7 +13506,7 @@ function buildSummaryPages(c){
     <div class="preview-avatar sx-av${av.cls}">${av.html}</div>
     <div class="sx-id"><div class="sx-name">${escapeHtml(c.name || 'Sans nom')}</div><div class="sx-meta">${chips}</div></div>
     <div class="sx-price"><div class="sx-pl">Prix actuel</div><div class="sx-pv">${price === null ? '—' : fmtNum(price, price >= 1000 ? 0 : 2) + '<small>&nbsp;' + escapeHtml(cur) + '</small>'}</div><div class="sx-pe">${ecart}</div></div>
-    <div class="sx-ring"><svg viewBox="0 0 92 92" width="92" height="92"><circle cx="46" cy="46" r="38" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="8"/><circle cx="46" cy="46" r="38" fill="none" stroke="${ringColor}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${gs === null ? 0 : (gs / 100 * circ).toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 46 46)"/></svg><div class="sx-ringv" style="color:${ringColor}">${gs === null ? '—' : Math.round(gs)}<small>${sinfo.provisional ? 'provisoire' : 'sur 100'}</small></div></div>
+    <div class="sx-ring"><svg viewBox="0 0 92 92" width="92" height="92"><circle cx="46" cy="46" r="38" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="8"/><circle cx="46" cy="46" r="38" fill="none" stroke="${ringColor}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${gs === null ? 0 : (gs / 100 * circ).toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 46 46)"/></svg><div class="sx-ringv" style="color:${ringColor}">${gs === null ? '—' : Math.round(gs)}${sinfo.provisional ? '<small>provisoire</small>' : ''}</div></div>
   </div>`;
   const foot = n => `<div class="sx-foot"><span class="sx-brand"><img src="icon-192.png" alt="" width="20" height="20">The Analytics<span class="sx-mut"> · the-analytics.fr</span></span><span class="sx-mut">Analyse personnelle, pas un conseil en investissement · mise à jour le ${formatDateFr(c.updatedAt || c.createdAt)}</span><span class="sx-pg">Page ${n} sur 2</span></div>`;
 
@@ -13676,18 +13676,22 @@ function sxFit(){
   ov.classList.add('sx-measuring');
   // TOUTE la page doit être visible, sans défilement : on retient la largeur de dessin qui donne la plus grande échelle, c'est-à-dire celle où la carte remplit le mieux la fenêtre
   // en largeur ET en hauteur (la hauteur d'une page ne change presque pas avec sa largeur, donc la meilleure largeur est celle où les deux limites se rejoignent).
-  const res = [];
-  (ov.dataset.mode === 'cmp' ? SX_CMP_WIDTHS : SX_WIDTHS).forEach(W => {
+  // TOUS les résumés ont le même format : la carte prend TOUJOURS toute la largeur de la fenêtre (demande de l'auteur, 2026-10-16 : « effet étiré en hauteur » sur les analyses chargées).
+  // On cherche donc la plus PETITE largeur de dessin pour laquelle la carte, mise à l'échelle sur toute la largeur disponible, tient aussi en hauteur ; plus la carte est dessinée large,
+  // plus ses textes passent sur peu de lignes, donc plus elle est basse. Une analyse peu remplie reste à la largeur de départ (elle a simplement plus de marge en bas).
+  const startW = ov.dataset.mode === 'cmp' ? 1100 : 1440, maxW = Math.min(3600, Math.floor(availW / 0.34));
+  let best = null, fallback = null;
+  for(let W = startW; W <= maxW; W += 80){
     let H = 0;
     cards.forEach(cd => { cd.style.width = W + 'px'; cd.style.minHeight = ''; cd.style.transform = 'none'; H = Math.max(H, cd.offsetHeight); });
-    res.push({ W, H, s:Math.min(availW / W, availH / H, 1.3) });
-  });
-  let best = res[0];
-  res.forEach(r => { if(r.s > best.s + 0.003) best = r; });
-  // à 3 % près, on préfère la carte la plus LARGE : elle remplit mieux la fenêtre (moins de bandes vides sur les côtés) et les textes y prennent moins de lignes
-  res.forEach(r => { if(r.s >= best.s * 0.97 && r.W > best.W) best = r; });  cards.forEach(cd => { cd.style.width = best.W + 'px'; cd.style.minHeight = best.H + 'px'; cd.style.transform = 'none'; });
+    const sw = availW / W, sh = availH / H;
+    if(!fallback || Math.min(sw, sh) > fallback.s) fallback = { W, H, s:Math.min(sw, sh) };
+    if(sw <= sh){ best = { W, H, s:sw }; break; }
+  }
+  if(!best) best = fallback;   // même à la largeur maximale la carte est trop haute : on garde la meilleure échelle (rare)
+  cards.forEach(cd => { cd.style.width = best.W + 'px'; cd.style.minHeight = best.H + 'px'; cd.style.transform = 'none'; });
   ov.classList.remove('sx-measuring');
-  const h = card.offsetHeight, s = Math.max(0.4, Math.min(availW / best.W, availH / h, 1.3));
+  const h = card.offsetHeight, s = Math.max(0.3, Math.min(availW / best.W, availH / h, 3));
   card.style.transformOrigin = 'top left'; card.style.transform = 'scale(' + s.toFixed(4) + ')';
   wrap.style.width = (best.W * s).toFixed(1) + 'px'; wrap.style.height = (h * s).toFixed(1) + 'px';
   if(sxZoomN > 0) sxBuildZoom(ov, availW, availH, false);
@@ -13799,7 +13803,7 @@ function initSummary(){
     else if(e.key === 'ArrowRight') sxStep(1);
     else if(e.key === 'ArrowLeft') sxStep(-1);
   });
-  window.addEventListener('resize', sxFit);
+  let sxResizeT = 0; window.addEventListener('resize', () => { clearTimeout(sxResizeT); sxResizeT = setTimeout(sxFit, 120); });
 }
 
 function render(){
