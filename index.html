@@ -1232,6 +1232,15 @@ body.sx-lock{ overflow:hidden; }
 .sx-stack .cx-sc{ flex-direction:column; gap:4px; }
 .sx-stack .cx-c b{ font-size:15px; margin-left:6px; min-width:24px; }
 .sx-stack .cx-dec{ font-size:11.5px; padding:2px 8px; }
+/* Résumé : la section 5 s'appelle Analyse personnelle ; ses cases gardent leur taille naturelle, complétées par le détail des 10 critères de Buffett (build 282) */
+.sx-close{ margin-left:auto; }
+.sx-bfl{ display:grid; grid-template-columns:1fr 1fr; gap:3px 16px; padding:2px 2px 0 2px; }
+.sx-bfl span{ display:flex; align-items:flex-start; gap:8px; font-size:14px; line-height:1.3; color:#c9d4ea; }
+.sx-bfl i{ font-style:normal; font-weight:700; flex:0 0 auto; width:15px; text-align:center; }
+.sx-bfy i{ color:#22c55e; }
+.sx-bfn{ color:#7f8fb0 !important; }
+.sx-bfn i{ color:#f87171; }
+.sx-stack .sx-bfl{ grid-template-columns:1fr; }
 .chead-side{ flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-end; gap:10px; }
 .company-dates{
   display:flex; flex-direction:column; gap:2px; text-align:right;
@@ -9213,7 +9222,7 @@ const SECTION_COLORS = {
   valorisation: '#c9a24a',
   personnelle: '#a3227a',
 };
-const SECTION_NAV_LABELS = { identite:'Identité', financier:'Financier', croissance:'Croissance', valorisation:'Valorisation', personnelle:'Décision' };
+const SECTION_NAV_LABELS = { identite:'Identité', financier:'Financier', croissance:'Croissance', valorisation:'Valorisation', personnelle:'Analyse personnelle' };
 // Couleur de la pastille "Position" du repère du haut : verte/rouge selon la plus/moins-value si la position
 // est renseignée avec assez de données pour la calculer, gris clair sinon (pas de position ou pas calculable).
 function positionNavColor(c){
@@ -12999,7 +13008,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 281;
+const APP_BUILD = 282;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -13464,6 +13473,14 @@ function sxConsGauge(c){
   const segs = WS_RECO.map((z, i) => `<path d="${wsGaugeArc(i)}" fill="none" stroke="${z.color}" stroke-width="${i === idx ? 28 : 14}" stroke-linecap="round" opacity="${i === idx ? 1 : 0.3}"/>`).join('');
   return `<div class="sx-cons"><div class="sx-cons-c">Consensus des analystes</div><svg viewBox="6 8 288 156" aria-hidden="true">${segs}</svg><div class="sx-cons-l" style="color:${s.color}">${s.label}</div></div>`;
 }
+// État de chacun des 10 critères de la checklist de Buffett (coché à la main, sinon déduit des données quand c'est possible), comme computeBuffettScore
+function buffettStates(c){
+  const raw = c.fields.personnelle.regleBuffett, obj = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
+  return BUFFETT_RULES.map(r => {
+    const stored = obj[r.key], autoFn = BUFFETT_AUTO_RULES[r.key], auto = autoFn ? autoFn(c) : null;
+    return { label:r.label, ok:(stored !== undefined) ? !!stored : (auto === true) };
+  });
+}
 // Retourne les DEUX pages (HTML de deux cartes) : [sections 1, 2, 3] et [sections 4, 5, 6]
 function buildSummaryPages(c){
   const cur = c.currency;
@@ -13600,8 +13617,19 @@ function buildSummaryPages(c){
   const pmBlock = (cls, label, html) => { const t = sxFull(html); return t ? `<div class="sx-pt2 ${cls}"><b>${label}</b><div>${t}</div></div>` : ''; };
   // La décision est dans la case 5 (plus dans l'en-tête de la page) : demande de l'auteur
   const decTile = `<div class="sx-t sx-dect" style="--c:${dst ? dst.color : '#8fa1c2'}"><div class="sx-tl">Décision</div><div class="sx-dv">${dst ? escapeHtml(decision) : 'À définir'}</div></div>`;
-  const p5 = `<div class="sx-g sx-g2 sx-grow">${decTile}${sxTile("Prix d'achat cible", target)}</div>
-    <div class="sx-g sx-g2 sx-grow"><div class="sx-t sx-conv"><div class="sx-tl">Conviction</div><div class="sx-stars-row">${starsRowHtml(conv5, 'sx-stars')}<b>${conv5 ? String(conv5).replace('.', LANG === 'fr' ? ',' : '.') + '<small>/5</small>' : '—'}</b></div></div><div class="sx-t sx-bf"><div class="sx-tl">Checklist Buffett</div><div class="sx-tv" style="color:${buffTier ? buffColor : '#fff'}">${buff.checked}<small>/${buff.total}</small></div><div class="sx-segs">${segs}</div></div></div>
+  const tgtNum = parseMoney(pers.prixAchatCible);
+  let gapTile = sxTile('Écart à la cible', '—');
+  if(price !== null && tgtNum !== null && tgtNum > 0){
+    const gp = (price / tgtNum - 1) * 100;
+    gapTile = sxTile('Écart à la cible', (gp > 0 ? '+' : (gp < 0 ? '−' : '')) + fmtNum(Math.abs(gp), 1) + '&nbsp;%', gp <= 0 ? good : null, gp <= 0 ? 'cours sous la cible' : 'cours au-dessus de la cible');
+  }
+  let secTile = sxTile('Marge de sécurité', '—');
+  if(e !== null) secTile = e < -0.05 ? sxTile('Marge de sécurité', fmtNum(Math.abs(e), 0) + '&nbsp;%', good, 'sous la valeur intrinsèque') : (e > 0.05 ? sxTile('Marge de sécurité', 'Aucune', bad, 'cours ' + fmtNum(e, 0) + '&nbsp;% trop haut') : sxTile('Marge de sécurité', 'Nulle', null, 'au juste prix'));
+  const bfList = buffettStates(c).map(s => `<span class="${s.ok ? 'sx-bfy' : 'sx-bfn'}"><i>${s.ok ? '&#10003;' : '&#10005;'}</i>${escapeHtml(s.label)}</span>`).join('');
+  const p5 = `<div class="sx-g sx-g2">${decTile}${sxTile("Prix d'achat cible", target)}</div>
+    <div class="sx-g sx-g3 sx-compact">${sxTile('Cours actuel', price === null ? '—' : plain(price))}${gapTile}${secTile}</div>
+    <div class="sx-g sx-g2"><div class="sx-t sx-conv"><div class="sx-tl">Conviction</div><div class="sx-stars-row">${starsRowHtml(conv5, 'sx-stars')}<b>${conv5 ? String(conv5).replace('.', LANG === 'fr' ? ',' : '.') + '<small>/5</small>' : '—'}</b></div></div><div class="sx-t sx-bf"><div class="sx-tl">Checklist Buffett</div><div class="sx-tv" style="color:${buffTier ? buffColor : '#fff'}">${buff.checked}<small>/${buff.total}</small></div><div class="sx-segs">${segs}</div></div></div>
+    <div class="sx-bfl">${bfList}</div>
     ${these ? `<div class="sx-these"><div class="sx-txl">Thèse d'investissement</div><q>${these}</q></div>` : ''}
     <div class="sx-pm">${pmBlock('sx-plus', 'Points forts', pers.pointsForts)}${pmBlock('sx-minus', 'Points faibles', pers.pointsFaibles)}</div>`;
 
@@ -13618,7 +13646,7 @@ function buildSummaryPages(c){
   const page = (n, panels) => `<div class="sx-card${n === 1 ? ' sx-on' : ''}" data-sx-page="${n}">${head}<div class="sx-grid">${panels}</div>${foot(n)}</div>`;
   return [
     page(1, sxPanel(1, 'Identité', SECTION_COLORS.identite, p1, who) + sxPanel(2, 'Financier', SECTION_COLORS.financier, p2, who) + sxPanel(3, 'Croissance', SECTION_COLORS.croissance, p3, who)),
-    page(2, sxPanel(4, 'Valorisation', SECTION_COLORS.valorisation, p4, who) + sxPanel(5, 'Décision', SECTION_COLORS.personnelle, p5, who) + sxPanel(6, 'Synthèse globale', '#f3e9d7', p6, who)),
+    page(2, sxPanel(4, 'Valorisation', SECTION_COLORS.valorisation, p4, who) + sxPanel(5, 'Analyse personnelle', SECTION_COLORS.personnelle, p5, who) + sxPanel(6, 'Synthèse globale', '#f3e9d7', p6, who)),
   ];
 }
 
@@ -13739,7 +13767,7 @@ function sxOpen(){
   const ov = document.createElement('div');
   ov.className = 'sx-overlay'; ov.id = 'sxOverlay';
   ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Résumé de l\'analyse');
-  ov.innerHTML = `<div class="sx-bar"><span class="sx-bar-t">Résumé de l'analyse</span><span class="sx-pages"><button type="button" class="sx-pgb on" data-sx-go="1">Page 1 <small>Sections 1 à 3</small></button><button type="button" class="sx-pgb" data-sx-go="2">Page 2 <small>Sections 4 à 6</small></button><button type="button" class="sx-pgb sx-back" data-sx-zoom="0">&larr; Retour au résumé</button></span><span class="sx-bar-h">Deux pages : faites une capture d'écran de chacune pour les partager. Le bouton en haut à droite de chaque case l'affiche en grand.</span><button type="button" class="sx-close" data-sx-close>Fermer &#10005;</button></div><button type="button" class="sx-arrow sx-prev sx-off" data-sx-step="-1" aria-label="Page précédente">${SX_ARROW_L}</button><button type="button" class="sx-arrow sx-next" data-sx-step="1" aria-label="Page suivante">${SX_ARROW_R}</button><div class="sx-scale">${buildSummaryPages(c).join('')}</div>`;
+  ov.innerHTML = `<div class="sx-bar"><span class="sx-bar-t">Résumé de l'analyse</span><span class="sx-pages"><button type="button" class="sx-pgb on" data-sx-go="1">Page 1 <small>Sections 1 à 3</small></button><button type="button" class="sx-pgb" data-sx-go="2">Page 2 <small>Sections 4 à 6</small></button><button type="button" class="sx-pgb sx-back" data-sx-zoom="0">&larr; Retour au résumé</button></span><button type="button" class="sx-close" data-sx-close>Fermer &#10005;</button></div><button type="button" class="sx-arrow sx-prev sx-off" data-sx-step="-1" aria-label="Page précédente">${SX_ARROW_L}</button><button type="button" class="sx-arrow sx-next" data-sx-step="1" aria-label="Page suivante">${SX_ARROW_R}</button><div class="sx-scale">${buildSummaryPages(c).join('')}</div>`;
   document.body.appendChild(ov);
   document.body.classList.add('sx-lock');
   sxFit();
