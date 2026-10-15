@@ -190,7 +190,7 @@ svg{display:block;}
 .sort-opt .sort-check{ width:14px; flex:0 0 14px; color:var(--accent); font-weight:700; }
 .sort-lbl{ display:flex; flex-direction:column; align-items:flex-start; gap:2px; }
 .sort-dir-note{ font-size:12.5px; font-weight:500; color:#9aa8c4; }
-.sort-sep{ margin-top:6px; padding-top:9px; border-top:1px solid rgba(255,255,255,.1); }
+.sort-subtitle{ margin-top:6px; padding-top:9px; border-top:1px solid rgba(255,255,255,.1); white-space:nowrap; }
 .sort-hint{ padding:8px 10px 6px 10px; max-width:230px; font-size:12.5px; line-height:1.45; color:#9aa8c4; }
 .sort-sep{ height:1px; background:rgba(255,255,255,.1); margin:6px 4px; }
 /* Tri de "Toutes vos analyses" (2026-09-27) : même bouton/menu que la barre latérale, réutilise .sort-btn/.sort-menu/.sort-opt, juste une nouvelle ancre positionnée. */
@@ -8607,7 +8607,7 @@ function sortedForTable(){
 // la date de création et l'ordre alphabétique. `TABLE_SORT_KEYS` garde la liste complète (sens naturel de chaque colonne).
 const TABLE_MENU_KEYS = TABLE_SORT_KEYS.filter(k => k.key === 'created' || k.key === 'name' || k.axis);
 // Intertitre avant le premier critère du score dans le menu du tableau
-function sortSep(keys, i){ return (keys[i].axis && !(i > 0 && keys[i - 1].axis)) ? '<div class="sort-title sort-sep">Note d\'un critère du score</div>' : ''; }
+function sortSep(keys, i){ return (keys[i].axis && !(i > 0 && keys[i - 1].axis)) ? '<div class="sort-title sort-subtitle">Note par critère</div>' : ''; }
 function sortMenuHtml(keys, curKey, curDir, columnHint){
   const byColumn = columnHint && !keys.some(k => k.key === curKey);
   const cur = keys.find(k => k.key === curKey) || keys[0];
@@ -13121,7 +13121,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 288;
+const APP_BUILD = 289;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.

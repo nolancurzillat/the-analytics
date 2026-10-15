@@ -508,7 +508,7 @@ const I18N_EN = {
   "Rentab.": "Profit.",
   "Croiss.": "Growth",
   "Valoris.": "Valuat.",
-  "Note d'un critère du score": "Score of a criterion",
+  "Note par critère": "Score by criterion",
   "Note /100 du critère « {0} »": "Criterion score /100: {t0}",
   "Conviction renforcée : de {0:n} à {1:n} étoile{2:s}.": "Conviction strengthened: from {0} to {1} {p1:star|stars}.",
   "Conviction dégradée : de {0:n} à {1:n} étoile{2:s}.": "Conviction weakened: from {0} to {1} {p1:star|stars}.",
