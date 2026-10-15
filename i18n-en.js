@@ -483,6 +483,8 @@ const I18N_EN = {
   "Nulle": "Nil",
   "Cours actuel": "Current price",
   "cours {0:n} % trop haut": "price {0}% too high",
+  "Points forts chiffrés": "Key strengths (figures)",
+  "Chiffres à surveiller": "Figures to watch",
   "Connexion annulée.": "Sign-in cancelled.",
   "Ce lien de confirmation a expiré ou est invalide. Connectez-vous, ou recréez votre compte.": "This confirmation link has expired or is invalid. Sign in, or create your account again.",
   "Lien valide : choisissez votre nouveau mot de passe.": "Valid link: choose your new password.",

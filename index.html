@@ -1241,6 +1241,52 @@ body.sx-lock{ overflow:hidden; }
 .sx-bfn{ color:#7f8fb0 !important; }
 .sx-bfn i{ color:#f87171; }
 .sx-stack .sx-bfl{ grid-template-columns:1fr; }
+/* Colonnes : la page 1 donne plus de place aux deux colonnes de texte (Identité, Croissance), la page 2 en donne plus à l'Analyse personnelle (thèse et points forts / faibles) */
+.sx-card[data-sx-page="1"] .sx-grid{ grid-template-columns:minmax(0,1fr) minmax(0,1.1fr) minmax(0,1fr); }
+.sx-card[data-sx-page="2"] .sx-grid{ grid-template-columns:minmax(0,1.2fr) minmax(0,1.3fr) minmax(0,.9fr); }
+.sx-card.sx-stack .sx-grid{ grid-template-columns:1fr !important; }
+.sx-kh{ display:flex; flex-direction:column; gap:10px; }
+.sx-khg{ border-left:2px solid var(--k, #8fa1c2); padding-left:10px; }
+.sx-khg.sx-plus{ --k:#22c55e; } .sx-khg.sx-minus{ --k:#f87171; }
+.sx-khc{ display:flex; flex-wrap:wrap; gap:6px; margin-top:3px; }
+.sx-khc span{ background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1); border-radius:99px; padding:3px 11px; font-size:14px; color:#e6ecf8; }
+/* ----- Résumé : build 284, mise en page FIXE (1800 px de dessin) identique pour toutes les analyses : mêmes polices, mêmes cases à leur taille naturelle (plus d'étirement), mêmes écarts ----- */
+.sx-card{ padding:24px 28px 14px 28px; }
+.sx-head{ padding-bottom:16px; gap:20px; }
+.sx-name{ font-size:34px; }
+.sx-grid{ gap:18px; align-items:stretch; }
+.sx-p{ padding:16px 18px 18px 18px; }
+.sx-ph{ margin-bottom:14px; }
+.sx-pt{ font-size:21px; }
+.sx-pb{ justify-content:flex-start; gap:14px; }
+.sx-g{ gap:8px; }
+.sx-pb > .sx-grow{ flex:0 0 auto; grid-auto-rows:auto; }
+.sx-pb > .sx-grow .sx-t{ display:block; }
+.sx-t, .sx-g4 .sx-t{ padding:10px 13px 11px 13px; border-radius:11px; }
+.sx-tl{ font-size:13.5px; }
+.sx-tv{ font-size:23px; }
+.sx-g4 .sx-tv{ font-size:20px; }
+.sx-g4 .sx-tv small{ font-size:.55em; }
+.sx-g4 .sx-t{ padding-left:10px; padding-right:10px; }
+.sx-t-s .sx-tv{ font-size:18px; }
+.sx-ts{ font-size:13px; }
+.sx-compact .sx-t{ padding:8px 12px 9px 12px; }
+.sx-compact .sx-tl{ font-size:13px; }
+.sx-compact .sx-tv{ font-size:18.5px; }
+.sx-compact .sx-t-s .sx-tv{ font-size:16.5px; }
+.sx-cap{ font-size:13px; margin-bottom:-4px; }
+.sx-txl{ font-size:13px; }
+.sx-act, .sx-p[data-sx-sec="1"] .sx-act{ font-size:16.5px; line-height:1.55; }
+.sx-txv, .sx-p[data-sx-sec="1"] .sx-txv{ font-size:15.5px; line-height:1.5; }
+.sx-pt2 div{ font-size:15.5px; line-height:1.5; }
+.sx-pt2 b{ font-size:13px; }
+.sx-these q{ font-size:17px; line-height:1.55; }
+.sx-moat .sx-txv{ font-size:16px; }
+.sx-dns{ flex:0 0 auto; }
+.sx-pb > .sx-radar{ flex:0 0 auto; }
+.sx-dn svg{ width:170px; height:170px; margin:8px auto 14px auto; }
+.sx-dleg{ font-size:14px; gap:5px; }
+.sx-foot{ margin-top:12px; padding-top:10px; }
 .chead-side{ flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-end; gap:10px; }
 .company-dates{
   display:flex; flex-direction:column; gap:2px; text-align:right;
@@ -13008,7 +13054,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 283;
+const APP_BUILD = 284;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -13345,6 +13391,7 @@ window.addEventListener('popstate', e => {
 // ============================================================
 const SX_W = 1560;   // largeur minimale de la carte (px de dessin)
 const SX_WIDTHS = [1440, 1560, 1700, 1840, 1980, 2120];
+const SX_FIXED_W = 1800;   // largeur de dessin FIXE du résumé d'une analyse (même mise en page pour toutes)
 const SX_CMP_WIDTHS = [1080, 1200, 1320, 1440];   // largeurs de dessin essayées pour la carte de comparaison (une seule carte, 2 ou 3 colonnes)
 function sxDecode(s){ return String(s).replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&'); }
 // Texte riche -> texte brut court (coupé à un mot entier, avec « … »), déjà ÉCHAPPÉ pour le HTML : réservé aux petites cases (CEO, année de création, siège)
@@ -13641,7 +13688,13 @@ function buildSummaryPages(c){
     insight = `<div class="sx-g sx-g1">${sxTile('Point fort', '<span>' + best.label + '</span> ' + Math.round(best.score), scoreColor5(best.score, true) || good, '', 'sx-t-s')}${sxTile('À surveiller', '<span>' + worst.label + '</span> ' + Math.round(worst.score), scoreColor5(worst.score, true) || bad, '', 'sx-t-s')}</div>`;
   }
   const axBars = sinfo.axes.map(a => { const col = a.score !== null ? scoreColor5(a.score, true) : none; return `<div class="sx-ax"><span>${a.label}</span><span class="sx-ax-t"><i style="width:${a.score === null ? 0 : Math.round(a.score)}%;background:${col}"></i></span><b style="color:${a.score === null ? '#fff' : col}">${a.score === null ? '—' : Math.round(a.score)}</b></div>`; }).join('');
-  const p6 = `<div class="sx-sc">${sxScoreRing(gs, ringColor, sinfo.provisional)}${insight}</div>${sxRadarSvg(sinfo.axes, ringColor)}<div class="sx-axes">${axBars}</div><div class="sx-note">${gs === null ? 'Renseignez les sections pour obtenir une note.' : 'Score composite : moyenne de 5 axes, ' + sinfo.filled + ' sur ' + sinfo.total + ' renseignés' + (sinfo.provisional ? ' (provisoire)' : '') + '.'}</div>`;
+  // Chiffres qui ressortent (palier « très bon » ou « mauvais » du barème de chaque indicateur), pour que la synthèse dise aussi QUELS chiffres expliquent la note
+  const KH = [['peg', 'PEG', peg], ['detteActif', 'Dette nette / FCF', dette], ['conversionFcf', 'Conversion du FCF', conv], ['margeBrute', 'Marge brute', mBrute], ['margeNette', 'Marge nette', mNette], ['roe', 'ROE', roe], ['roic', 'ROIC', roic], ['roa', 'ROA', roa], ['margeFcf', 'Marge FCF', mFcf], ['tailleCapi', 'Taille', md], ['croissanceCA', 'Croissance du CA', cCA], ['croissanceBenef', 'Croissance des bénéfices', cBen], ['capexRatio', 'Capex / CA', cxr], ['peRelatifSecteur', 'PE / secteur', peRel], ['rendementFcf', 'Rendement du FCF', rFcf], ['positionShort', 'Position short', pshort]]
+    .map(x => ({ label:x[1], tier:getScaleTier(x[0], x[2]) })).filter(x => x.tier);
+  const khS = KH.filter(x => x.tier === 'tresbon').slice(0, 6), khW = KH.filter(x => x.tier === 'mauvais').slice(0, 6);
+  const khGroup = (cls, title, list) => list.length ? `<div class="sx-khg ${cls}"><div class="sx-txl">${title}</div><div class="sx-khc">${list.map(x => `<span>${x.label}</span>`).join('')}</div></div>` : '';
+  const khHtml = (khS.length || khW.length) ? `<div class="sx-kh">${khGroup('sx-plus', 'Points forts chiffrés', khS)}${khGroup('sx-minus', 'Chiffres à surveiller', khW)}</div>` : '';
+  const p6 = `<div class="sx-sc">${sxScoreRing(gs, ringColor, sinfo.provisional)}${insight}</div>${sxRadarSvg(sinfo.axes, ringColor)}<div class="sx-axes">${axBars}</div>${khHtml}<div class="sx-note">${gs === null ? 'Renseignez les sections pour obtenir une note.' : 'Score composite : moyenne de 5 axes, ' + sinfo.filled + ' sur ' + sinfo.total + ' renseignés' + (sinfo.provisional ? ' (provisoire)' : '') + '.'}</div>`;
 
   const page = (n, panels) => `<div class="sx-card${n === 1 ? ' sx-on' : ''}" data-sx-page="${n}">${head}<div class="sx-grid">${panels}</div>${foot(n)}</div>`;
   return [
@@ -13656,6 +13709,19 @@ function buildSummaryPages(c){
 // elle est simplement agrandie (jusqu'à 3 fois) pour remplir la fenêtre.
 let sxZoomN = 0, sxPage = 1;   // sxZoomN : 0 = les deux pages, 1 à 6 = une section en plein écran
 const SX_ZOOM_PAD = 18;
+// Répartit l'espace libre d'un panneau (celui qui reste sous son contenu quand un autre panneau de la page est plus haut) entre ses blocs, de façon régulière et plafonnée :
+// les écarts grandissent au plus de 30 px, le reste (rare) reste en bas du panneau. Évite à la fois les gros vides entre deux cases et un panneau tassé en haut.
+function sxBalance(cards){
+  cards.forEach(cd => cd.querySelectorAll('.sx-pb').forEach(pb => {
+    pb.style.gap = '';
+    const kids = [...pb.children].filter(k => k.offsetHeight > 0);
+    if(kids.length < 2) return;
+    const base = parseFloat(getComputedStyle(pb).rowGap) || 14;
+    const used = kids.reduce((a, k) => a + k.offsetHeight, 0) + base * (kids.length - 1);
+    const slack = pb.clientHeight - used;
+    if(slack > 4) pb.style.gap = (base + Math.min(slack / (kids.length - 1), 30)).toFixed(1) + 'px';
+  }));
+}
 function sxFit(){
   const ov = document.getElementById('sxOverlay');
   if(!ov) return;
@@ -13679,19 +13745,23 @@ function sxFit(){
   // TOUS les résumés ont le même format : la carte prend TOUJOURS toute la largeur de la fenêtre (demande de l'auteur, 2026-10-16 : « effet étiré en hauteur » sur les analyses chargées).
   // On cherche donc la plus PETITE largeur de dessin pour laquelle la carte, mise à l'échelle sur toute la largeur disponible, tient aussi en hauteur ; plus la carte est dessinée large,
   // plus ses textes passent sur peu de lignes, donc plus elle est basse. Une analyse peu remplie reste à la largeur de départ (elle a simplement plus de marge en bas).
-  const startW = ov.dataset.mode === 'cmp' ? 1100 : 1440, maxW = Math.min(3600, Math.floor(availW / 0.34));
+  // Résumé d'une analyse (2026-10-16, 2e étape) : MISE EN PAGE IDENTIQUE pour toutes les analyses : une largeur de dessin FIXE (SX_FIXED_W), donc mêmes polices, mêmes cases, mêmes dispositions ;
+  // seule la hauteur varie avec la longueur des textes. La carte est mise à l'échelle sur toute la largeur de la fenêtre ; si elle est plus haute que la fenêtre, on fait défiler (barre du haut collante).
+  const fixedMode = ov.dataset.mode !== 'cmp';
+  const startW = fixedMode ? SX_FIXED_W : 1100, maxW = fixedMode ? SX_FIXED_W : Math.min(3600, Math.floor(availW / 0.34));
   let best = null, fallback = null;
   for(let W = startW; W <= maxW; W += 80){
     let H = 0;
     cards.forEach(cd => { cd.style.width = W + 'px'; cd.style.minHeight = ''; cd.style.transform = 'none'; H = Math.max(H, cd.offsetHeight); });
     const sw = availW / W, sh = availH / H;
     if(!fallback || Math.min(sw, sh) > fallback.s) fallback = { W, H, s:Math.min(sw, sh) };
-    if(sw <= sh){ best = { W, H, s:sw }; break; }
+    if(fixedMode || sw <= sh){ best = { W, H, s:sw }; break; }
   }
   if(!best) best = fallback;   // même à la largeur maximale la carte est trop haute : on garde la meilleure échelle (rare)
   cards.forEach(cd => { cd.style.width = best.W + 'px'; cd.style.minHeight = best.H + 'px'; cd.style.transform = 'none'; });
+  sxBalance(cards);
   ov.classList.remove('sx-measuring');
-  const h = card.offsetHeight, s = Math.max(0.3, Math.min(availW / best.W, availH / h, 3));
+  const h = card.offsetHeight, s = fixedMode ? Math.max(0.3, Math.min(availW / best.W, 3)) : Math.max(0.3, Math.min(availW / best.W, availH / h, 3));
   card.style.transformOrigin = 'top left'; card.style.transform = 'scale(' + s.toFixed(4) + ')';
   wrap.style.width = (best.W * s).toFixed(1) + 'px'; wrap.style.height = (h * s).toFixed(1) + 'px';
   if(sxZoomN > 0) sxBuildZoom(ov, availW, availH, false);
