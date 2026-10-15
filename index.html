@@ -1151,6 +1151,87 @@ body.sx-lock{ overflow:hidden; }
 .sx-ax-t i{ border-radius:6px; }
 .sx-ax b{ font-size:18px; }
 .sx-stack .sx-sc{ flex-wrap:wrap; }
+/* ----- Comparateur : verdict, catégories repliables, carte à partager (build 280) ----- */
+.cmp-verdict{ margin-top:16px; padding:16px 18px 12px 18px; background:var(--card); border:1px solid var(--border); border-left:6px solid var(--accent); border-radius:14px; box-shadow:var(--shadow); }
+.cmp-vd-top{ display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+.cmp-vd-k{ font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); font-weight:700; }
+.cmp-vd-h{ font-family:var(--font-serif); font-weight:700; font-size:22px; color:var(--ink); margin-top:2px; }
+.cmp-vd-cos{ display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
+.cmp-vd-co{ display:inline-flex; align-items:center; gap:9px; padding:7px 14px; border-radius:99px; border:1.5px solid var(--co); background:color-mix(in srgb, var(--co) 9%, var(--card)); font-size:14px; }
+.cmp-vd-n{ font-weight:700; color:var(--ink); }
+.cmp-vd-w{ color:var(--ink-soft); }
+.cmp-vd-s{ font-family:var(--font-mono); font-weight:700; }
+.cmp-vd-s small{ font-size:.7em; font-weight:500; color:var(--ink-soft); }
+.cmp-vd-axes{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.cmp-vd-ax{ font-size:13px; color:var(--ink-soft); padding:4px 11px; border-radius:99px; background:var(--field); border:1px solid var(--border); }
+.cmp-vd-ax b{ color:var(--co, var(--ink-soft)); font-weight:700; margin-left:3px; }
+.cmp-vd-note{ font-size:12.5px; color:var(--ink-soft); margin-top:10px; }
+.cmp-tools{ display:flex; align-items:center; gap:8px; justify-content:flex-end; margin-top:14px; }
+.cmp-tools-l{ font-size:13px; color:var(--ink-soft); margin-right:2px; }
+.cmp-tools + .cmp-wrap{ margin-top:8px; }
+.cmp-table tr.cmp-hid{ display:none; }
+.cmp-table .cmp-sec th[data-cmp-sec]{ cursor:pointer; user-select:none; }
+.cmp-table .cmp-sec th[data-cmp-sec]:hover{ background:color-mix(in srgb, var(--sec-c, var(--accent)) 30%, var(--card)); }
+.cmp-chev{ display:inline-block; width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-top:8px solid currentColor; margin-right:11px; vertical-align:middle; transition:transform .15s ease; }
+.cmp-folded .cmp-chev{ transform:rotate(-90deg); }
+/* Carte de comparaison (fond marine fixe, mise à l'échelle par sxFit comme le résumé) */
+.cx-card{ width:1280px; }
+.cx-top{ display:flex; align-items:flex-end; justify-content:space-between; gap:28px; padding-bottom:12px; }
+.cx-title{ font-family:var(--font-serif); font-weight:700; font-size:34px; line-height:1.05; color:#fff; letter-spacing:-.01em; }
+.cx-sub{ color:#8fa1c2; font-size:16px; margin-top:6px; }
+.cx-verdict{ max-width:600px; text-align:right; }
+.cx-vk{ font-size:12px; letter-spacing:.09em; text-transform:uppercase; color:#8fa1c2; font-weight:700; }
+.cx-vh{ font-size:21px; font-weight:700; color:#fff; line-height:1.3; margin-top:3px; }
+.cx-grid{ display:flex; flex-direction:column; gap:6px; }
+.cx-r{ display:grid; grid-template-columns:210px repeat(var(--n), minmax(0, 1fr)); gap:10px; align-items:stretch; }
+.cx-l{ display:flex; align-items:center; font-size:15px; color:#c3cee5; font-weight:600; }
+.cx-c{ display:flex; align-items:center; gap:12px; min-width:0; padding:5px 14px; border-radius:11px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.07); font-size:18px; font-weight:600; color:#fff; }
+.cx-conv{ font-size:17px; }
+.cx-sc .sx-sringv b{ margin:0; min-width:0; }
+.cx-c small{ font-size:.65em; color:#8fa1c2; font-weight:500; margin-left:3px; }
+.cx-win{ box-shadow:inset 0 0 0 2px var(--co); background:color-mix(in srgb, var(--co) 15%, transparent); }
+.cx-h{ border-top:4px solid var(--co); gap:13px; padding:9px 14px; }
+.cx-av.preview-avatar{ width:54px; height:54px; flex:0 0 54px; border-radius:14px; font-size:21px; }
+.cx-hn{ min-width:0; }
+.cx-name{ font-family:var(--font-serif); font-weight:700; font-size:25px; line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cx-meta{ font-size:13.5px; color:#8fa1c2; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:3px; }
+.cx-s{ margin:8px 0 0 0; font-size:12.5px; letter-spacing:.09em; text-transform:uppercase; color:#8fa1c2; font-weight:700; }
+.cx-main .cx-c{ padding:6px 14px; }
+.cx-sc{ display:flex; align-items:center; gap:16px; }
+.cx-sc .sx-sring{ width:84px; height:84px; flex:0 0 84px; }
+.cx-sc .sx-sring svg{ width:84px; height:84px; }
+.cx-sc .sx-sringv b{ font-size:28px; }
+.cx-sc .sx-sringv small{ font-size:10.5px; margin-top:3px; }
+.cx-scw{ font-size:15px; color:#c3cee5; font-weight:600; }
+.cx-bar{ flex:1; height:13px; border-radius:7px; background:rgba(255,255,255,.1); overflow:hidden; }
+.cx-bar i{ display:block; height:100%; border-radius:7px; }
+.cx-c b{ font-family:var(--font-mono); font-size:21px; margin-left:14px; min-width:36px; text-align:right; }
+.cx-dec{ display:inline-block; padding:4px 16px; border-radius:99px; border:1.5px solid var(--c); background:color-mix(in srgb, var(--c) 14%, transparent); color:var(--c); font-weight:700; font-size:17px; }
+.cx-star{ color:#f5b301; margin-right:5px; }
+.sx-stack .cx-r{ grid-template-columns:78px repeat(var(--n), minmax(0, 1fr)); gap:6px; }
+.sx-stack .cx-c{ padding:7px 8px; font-size:14px; }
+.sx-stack .cx-l{ font-size:12px; }
+.sx-stack .cx-top{ flex-direction:column; align-items:flex-start; gap:10px; }
+.sx-stack .cx-verdict{ text-align:left; }
+.sx-stack .cx-title{ font-size:28px; }
+.sx-stack .cx-h{ flex-direction:column; align-items:flex-start; gap:6px; }
+.sx-stack .cx-name{ font-size:16px; white-space:normal; overflow-wrap:anywhere; }
+.sx-stack .cx-meta{ white-space:normal; overflow-wrap:anywhere; font-size:11.5px; }
+.sx-stack .cx-hn{ width:100%; }
+.sx-stack .cx-meta{ display:none; }
+.sx-stack .cx-c{ flex-direction:column; align-items:flex-start; gap:4px; }
+.sx-stack .cx-bar{ flex:none; width:100%; height:9px; }
+.sx-stack .cx-c b{ margin:0; text-align:left; }
+.sx-stack .cx-sc .sx-sring{ width:62px; height:62px; flex:0 0 62px; }
+.sx-stack .cx-sc .sx-sring svg{ width:62px; height:62px; }
+.sx-stack .cx-sc .sx-sringv b{ font-size:21px; }
+.sx-stack .cx-sc .sx-sringv small{ display:none; }
+.sx-stack .cx-scw{ font-size:12px; }
+.sx-stack .cx-c{ overflow:hidden; }
+.sx-stack .cx-av.preview-avatar{ width:38px; height:38px; flex:0 0 38px; font-size:15px; }
+.sx-stack .cx-sc{ flex-direction:column; gap:4px; }
+.sx-stack .cx-c b{ font-size:15px; margin-left:6px; min-width:24px; }
+.sx-stack .cx-dec{ font-size:11.5px; padding:2px 8px; }
 .chead-side{ flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-end; gap:10px; }
 .company-dates{
   display:flex; flex-direction:column; gap:2px; text-align:right;
@@ -10348,6 +10429,105 @@ function compareRadarHtml(cs, axesBy, cols){
     return `<div class="cmp-radar-box"><div class="cmp-leg"><span class="cmp-leg-dot" style="background:${cols[k]}"></span>${escapeHtml(c.name || 'Sans nom')}</div><svg viewBox="-56 0 332 215" class="cmp-radar-svg" role="img" aria-label="Radar des 5 axes du score de ${escapeHtml(c.name || 'Sans nom')}">${grid}${shape}${labels}</svg></div>`;
   }).join('')}</div>`;
 }
+// ----- Verdict, catégories repliables et carte à partager du Comparateur (2026-10-15, demande de l'auteur) -----
+let cmpFold = new Set();   // titres des catégories repliées du tableau (non sauvegardé : le tableau repart déplié)
+// Qui est devant ? On compare la note de chaque axe (arrondie, comme affichée) : la plus haute marque le point, à égalité personne ne le marque ; l'entreprise qui marque le plus
+// de points est « devant » ; à égalité de points, la note globale départage ; sinon aucune ne se détache. Rien de nouveau n'est calculé : ce sont les notes du score composite.
+function cmpVerdict(cs, infos){
+  const names = cs.map(c => c.name || 'Sans nom');
+  const perAxis = SCORE_AXES.map((ax, ai) => {
+    const sc = infos.map(x => x.axes[ai].score === null ? null : Math.round(x.axes[ai].score));
+    const v = sc.filter(s => s !== null);
+    let win = -1;
+    if(v.length >= 2){ const m = Math.max.apply(null, v); if(v.filter(s => s === m).length === 1) win = sc.indexOf(m); }
+    return { label:ax.label, scores:sc, comparable:v.length >= 2, win };
+  });
+  const total = perAxis.filter(a => a.comparable).length;
+  const wins = cs.map((c, i) => perAxis.filter(a => a.win === i).length);
+  const gs = infos.map(x => x.score === null ? null : Math.round(x.score));
+  const maxW = Math.max.apply(null, wins);
+  const leaders = wins.map((w, i) => w === maxW ? i : -1).filter(i => i >= 0);
+  let headline = '', leader = -1;
+  if(!total) headline = 'Pas assez de données communes pour désigner une entreprise devant.';
+  else if(maxW > 0 && leaders.length === 1){ leader = leaders[0]; headline = `${names[leader]} est devant sur ${maxW} axe${maxW > 1 ? 's' : ''} sur ${total}`; }
+  else {
+    const gv = gs.filter(s => s !== null), gm = gv.length ? Math.max.apply(null, gv) : null;
+    if(gm !== null && gv.filter(s => s === gm).length === 1){ leader = gs.indexOf(gm); headline = `Égalité sur les axes, mais ${names[leader]} a la meilleure note globale (${gm}/100)`; }
+    else headline = 'Égalité : aucune entreprise ne se détache nettement.';
+  }
+  return { perAxis, total, wins, gs, headline, leader, names };
+}
+function cmpVerdictHtml(cs, infos, cols){
+  const V = cmpVerdict(cs, infos);
+  const nAx = n => `${n} axe${n > 1 ? 's' : ''} sur ${V.total}`;
+  const cos = cs.map((c, i) => `<div class="cmp-vd-co" style="--co:${cols[i]}"><span class="cmp-leg-dot" style="background:${cols[i]}"></span><span class="cmp-vd-n" data-i18n="off">${escapeHtml(V.names[i])}</span><span class="cmp-vd-w">${nAx(V.wins[i])}</span>${V.gs[i] === null ? '' : `<span class="cmp-vd-s" style="color:${scoreColor5(V.gs[i])}">${V.gs[i]}<small> / 100</small></span>`}</div>`).join('');
+  const axes = V.perAxis.map(a => {
+    const who = !a.comparable ? '—' : (a.win < 0 ? 'égalité' : `<span data-i18n="off">${escapeHtml(V.names[a.win])}</span>`);
+    return `<span class="cmp-vd-ax"${a.win >= 0 ? ` style="--co:${cols[a.win]}"` : ''}>${escapeHtml(a.label)} <b>${who}</b></span>`;
+  }).join('');
+  return `<div class="cmp-verdict"><div class="cmp-vd-top"><div class="cmp-vd-tx"><div class="cmp-vd-k">Le verdict</div><div class="cmp-vd-h">${escapeHtml(V.headline)}</div></div><button type="button" class="btn btn-primary btn-sm" data-cmp-card-open>Afficher en carte à partager</button></div><div class="cmp-vd-cos">${cos}</div><div class="cmp-vd-axes">${axes}</div><div class="cmp-vd-note">Le verdict compare les notes des 5 axes du score : la plus haute marque le point, à égalité personne ne le marque. Ce n'est pas un conseil en investissement.</div></div>`;
+}
+// Mêmes règles que le surlignage du tableau (valeur brute, sens du barème, consensus par catégorie), pour la carte à partager
+function cmpRawOf(key, p){
+  if(!p || p.val === null || p.val === undefined) return null;
+  if(key === 'consensus') return wsRecoIndex(p.val);
+  const r = Math.round(p.val * 100) / 100;
+  if((key === 'peg' || key === 'peRelatifSecteur') && r <= 0) return -1e12;
+  return (SCALE_CONFIG[key] && SCALE_CONFIG[key].inverse) ? -r : r;
+}
+function cmpBestOf(arr){
+  const v = arr.filter(s => s !== null && s !== undefined);
+  if(v.length < 2) return -1;
+  const m = Math.max.apply(null, v);
+  return v.filter(s => s === m).length > 1 ? -1 : arr.indexOf(m);
+}
+// Carte de comparaison à partager en capture d'écran : fond marine fixe, une colonne par entreprise, le cadre marque la meilleure valeur de chaque ligne
+function buildCompareCard(cs){
+  const infos = cs.map(c => computeScoreInfo(c)), cols = cmpCompanyColors(cs.length), V = cmpVerdict(cs, infos), N = cs.length;
+  const partOf = (i, key) => { for(const a of infos[i].axes){ const p = a.parts.find(x => x.key === key); if(p) return p; } return null; };
+  const row = (label, cells, win, cls) => `<div class="cx-r${cls ? ' ' + cls : ''}"><div class="cx-l">${label}</div>${cells.map((h, i) => `<div class="cx-c${i === win ? ' cx-win' : ''}" style="--co:${cols[i]}">${h}</div>`).join('')}</div>`;
+  const sec = t => `<div class="cx-s">${t}</div>`;
+  const heads = cs.map((c, i) => {
+    const av = avatarInner(c), idn = c.fields.identite || {}, sect = idn.secteur && idn.secteur.secteur, pays = idn.paysSiege && idn.paysSiege.pays;
+    return `<div class="cx-c cx-h" style="--co:${cols[i]}"><div class="preview-avatar cx-av${av.cls}">${av.html}</div><div class="cx-hn" data-i18n="off"><div class="cx-name">${escapeHtml(c.name || 'Sans nom')}</div><div class="cx-meta">${idn.ticker ? `<span class="sx-mono">${escapeHtml(idn.ticker)}</span>` : ''}${sect ? ` · ${escapeHtml(sect)}` : ''}${pays ? ` · ${escapeHtml(pays)}` : ''}</div></div></div>`;
+  }).join('');
+  let rows = `<div class="cx-r cx-hr"><div class="cx-l"></div>${heads}</div>`;
+  rows += row('Note globale', infos.map((x, i) => x.score === null ? '—' : `<div class="cx-sc">${sxScoreRing(x.score, scoreColor5(x.score, true), x.provisional)}<div class="cx-scw">${V.wins[i]} axe${V.wins[i] > 1 ? 's' : ''} sur ${V.total}</div></div>`), cmpBestOf(V.gs), 'cx-main');
+  rows += sec('Les 5 axes du score');
+  V.perAxis.forEach(a => {
+    rows += row(escapeHtml(a.label), a.scores.map(s => s === null ? '—' : `<div class="cx-bar"><i style="width:${s}%;background:${scoreColor5(s, true)}"></i></div><b style="color:${scoreColor5(s, true)}">${s}</b>`), a.win);
+  });
+  rows += sec('Décision et prix');
+  rows += row('Décision et conviction', cs.map(c => { const d = c.fields.personnelle.decision || '', st = DECISION_STYLE[d], v = parseFloat(c.fields.personnelle.conviction) || 0; const dp = d && st ? `<span class="cx-dec" style="--c:${st.color}">${escapeHtml(d)}</span>` : '—'; return dp + (v ? `<span class="cx-conv"><span class="cx-star">&#9733;</span>${fmtNum(v, 1)}<small>/5</small></span>` : ''); }), -1);
+  const ecs = cs.map(c => computeEcart(c, 'valeurIntrinseque'));
+  rows += row('Prix vs valeur intrinsèque', ecs.map(e => e === null ? '—' : (e > 0.05 ? `<span style="color:${TOOLTIP_TIER_COLORS.mauvais}">Surévalué de ${fmtNum(e, 0)}&nbsp;%</span>` : (e < -0.05 ? `<span style="color:${TOOLTIP_TIER_COLORS.tresbon}">Sous-évalué de ${fmtNum(Math.abs(e), 0)}&nbsp;%</span>` : 'Au juste prix'))), cmpBestOf(ecs.map(e => e === null ? null : -e)));
+  rows += sec('Chiffres clés');
+  const mcs = cs.map(c => parseMoney(c.fields.identite.marketCap) ?? parseMoney(c.fields.financier.marketCap));
+  rows += row('Market Cap', cs.map((c, i) => mcs[i] === null ? '—' : compactMoney(mcs[i], c.currency)), -1);
+  const pes = cs.map(c => computePeActuel(c));
+  rows += row('PE actuel', pes.map(v => v === null ? '—' : (v <= 0 ? 'n.s.' : fmtNum(v, 1))), cmpBestOf(pes.map(v => (v !== null && v > 0) ? -v : null)));
+  ['peg', 'roic', 'margeNette', 'croissanceCA', 'detteActif', 'consensus'].forEach(key => {
+    const parts = cs.map((c, i) => partOf(i, key));
+    rows += row(escapeHtml(SCORE_PART_LABELS[key]), parts.map(p => !p || p.val === null ? '—' : `<span style="color:${p.tier ? TOOLTIP_TIER_COLORS[p.tier] : '#fff'}">${escapeHtml(cmpPartText(p))}</span>`), cmpBestOf(parts.map(p => cmpRawOf(key, p))));
+  });
+  const t = new Date(), iso = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+  const foot = `<div class="sx-foot"><span class="sx-brand"><img src="icon-192.png" alt="" width="20" height="20">The Analytics<span class="sx-mut"> · the-analytics.fr</span></span><span class="sx-mut">Le cadre marque la meilleure valeur de la ligne · Analyses personnelles, pas un conseil en investissement · ${formatDateFr(iso)}</span></div>`;
+  return `<div class="sx-card sx-on cx-card" data-sx-page="1"><div class="cx-top"><div><div class="cx-title">Comparaison</div><div class="cx-sub" data-i18n="off">${cs.map(c => escapeHtml(c.name || 'Sans nom')).join(' · ')}</div></div><div class="cx-verdict"><div class="cx-vk">Le verdict</div><div class="cx-vh">${escapeHtml(V.headline)}</div></div></div><div class="cx-grid" style="--n:${N}">${rows}</div>${foot}</div>`;
+}
+function cmpCardOpen(){
+  const cs = compareIds.map(id => state.companies.find(c => c.id === id)).filter(Boolean);
+  if(cs.length < 2) return;
+  sxClose();
+  sxZoomN = 0; sxPage = 1;
+  const ov = document.createElement('div');
+  ov.className = 'sx-overlay'; ov.id = 'sxOverlay'; ov.dataset.mode = 'cmp';
+  ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Comparaison à partager');
+  ov.innerHTML = `<div class="sx-bar"><span class="sx-bar-t">Comparaison à partager</span><span class="sx-bar-h">Faites une capture d'écran de la carte pour la partager.</span><button type="button" class="sx-close" data-sx-close>Fermer &#10005;</button></div><div class="sx-scale">${buildCompareCard(cs)}</div>`;
+  document.body.appendChild(ov);
+  document.body.classList.add('sx-lock');
+  sxFit();
+  const btn = ov.querySelector('.sx-close'); if(btn) btn.focus();
+}
 function compareTableHtml(list, opts){
   const received = !!(opts && opts.received);   // analyse reçue : une seule colonne, lecture seule (voir PARTAGE D'ANALYSES)
   const cs = list || compareIds.map(id => state.companies.find(c => c.id === id)).filter(Boolean);
@@ -10366,14 +10546,22 @@ function compareTableHtml(list, opts){
   // Chaque catégorie a sa couleur (celles des sections des fiches quand elles existent) : bandeau teinté + trait épais à gauche (demande de l'auteur : mieux séparer les catégories)
   const SEC_COL = { overview:'#7c8aa8', identite:SECTION_COLORS.identite, chiffres:SECTION_COLORS.financier, valo:SECTION_COLORS.valorisation, position:'#7c8aa8', score:SECTION_COLORS.croissance, analyse:SECTION_COLORS.personnelle };
   let curCol = SEC_COL.overview; // couleur de la catégorie en cours : toutes ses lignes reprennent le même trait à gauche
-  const section = (title, col) => { curCol = col; return `<tr class="cmp-sec" style="--sec-c:${col}"><th colspan="${colN}">${escapeHtml(title)}</th></tr>`; };
-  const row = (label, cells, best, cls, col) => `<tr class="${cls || ''}" style="--sec-c:${col || curCol}"><th scope="row">${label}</th>${cells.map((h, i) => `<td${i === best ? ' class="cmp-best"' : ''}>${h}</td>`).join('')}</tr>`;
+  // Catégories repliables (demande de l'auteur) : un clic sur le titre d'une catégorie masque ses lignes ; chaque ligne porte le titre de sa catégorie (data-cs)
+  let curSecT = '';
+  const hid = () => (!received && cmpFold.has(curSecT)) ? ' cmp-hid' : '';
+  const dcs = () => received ? '' : ` data-cs="${escapeHtml(curSecT)}"`;
+  const section = (title, col) => {
+    curCol = col; curSecT = title;
+    const fold = !received && cmpFold.has(title);
+    return `<tr class="cmp-sec${fold ? ' cmp-folded' : ''}" style="--sec-c:${col}"><th colspan="${colN}"${received ? '' : ` tabindex="0" role="button" data-cmp-sec="${escapeHtml(title)}" aria-expanded="${fold ? 'false' : 'true'}"`}>${received ? '' : '<span class="cmp-chev" aria-hidden="true"></span>'}${escapeHtml(title)}</th></tr>`;
+  };
+  const row = (label, cells, best, cls, col) => `<tr class="${(cls || '') + hid()}"${dcs()} style="--sec-c:${col || curCol}"><th scope="row">${label}</th>${cells.map((h, i) => `<td${i === best ? ' class="cmp-best"' : ''}>${h}</td>`).join('')}</tr>`;
   const cmpCols = cmpCompanyColors(cs.length);
   const money = (c, v) => (v === undefined || v === null || String(v).trim() === '') ? '—' : `${escapeHtml(String(v))} ${c.currency}`;
   const num1 = (v, d) => v === null || v === undefined ? '—' : fmtNum(v, d);
   const textRow = (label, getter) => {
     const cells = cs.map(c => { const h = getter(c); return richToPlain(h) ? `<div class="cmp-rich">${sanitizeRichHtml(h)}</div>` : '—'; });
-    return `<tr class="cmp-textrow" style="--sec-c:${curCol}"><th scope="row">${label}</th>${cells.map(h => `<td>${h}</td>`).join('')}</tr>`;
+    return `<tr class="cmp-textrow${hid()}"${dcs()} style="--sec-c:${curCol}"><th scope="row">${label}</th>${cells.map(h => `<td>${h}</td>`).join('')}</tr>`;
   };
   const head = `<tr><th></th>${cs.map(c => `<th class="cmp-co"><button type="button" class="jr-co"${received ? '' : ' data-cmp-open="' + escapeHtml(c.id) + '"'}>${miniAv(c)}<span>${escapeHtml(c.name || 'Sans nom')}</span><span class="jr-meta">${escapeHtml((c.fields.identite || {}).ticker || '')}</span></button></th>`.replace('<th class="cmp-co">', `<th class="cmp-co" style="--co-c:${cmpCols[cs.indexOf(c)]}">`)).join('')}</tr>`;
   const globalScores = infos.map(x => x.score);
@@ -10418,7 +10606,7 @@ function compareTableHtml(list, opts){
   }
   // Le graphique radar (une couleur par entreprise) juste avant le détail des notes
   body += section('Score détaillé', SEC_COL.score);
-  body += `<tr class="cmp-radar" style="--sec-c:${SEC_COL.score}"><td colspan="${colN}">${compareRadarHtml(cs, axesBy, cmpCols)}</td></tr>`;
+  body += `<tr class="cmp-radar${hid()}"${dcs()} style="--sec-c:${SEC_COL.score}"><td colspan="${colN}">${compareRadarHtml(cs, axesBy, cmpCols)}</td></tr>`;
   SCORE_AXES.forEach((ax, ai) => {
     const axisScores = axesBy.map(a => a[ai].score);
     // Chaque axe et chacun de ses indicateurs sont toujours listés, même vides (« — »), pour voir tout ce qui entre dans la note (demande de l'auteur)
@@ -10459,7 +10647,7 @@ function compareTableHtml(list, opts){
   body += textRow("Thèse d'investissement", c => c.fields.personnelle.these);
   if(received) return `<div class="cmp-wrap"><table class="cmp-table"><thead>${head}</thead><tbody>${body}</tbody></table></div>
     <div class="s-note">Analyse reçue, en lecture seule. Le « Score détaillé » liste tous les indicateurs qui entrent dans la note ; un indicateur non renseigné s'affiche « — » et est ignoré dans le calcul. Les montants sont dans la devise de l'analyse, sans conversion. Les chiffres sont ceux de son auteur : vérifiez-les avant de vous y fier. Aucun conseil en investissement.</div>`;
-  return `<div class="cmp-wrap"><table class="cmp-table"><thead>${head}</thead><tbody>${body}</tbody></table></div>
+  return `${cmpVerdictHtml(cs, infos, cmpCols)}<div class="cmp-tools"><span class="cmp-tools-l">Catégories :</span><button type="button" class="btn btn-outline btn-sm" data-cmp-fold="all">Tout replier</button><button type="button" class="btn btn-outline btn-sm" data-cmp-fold="none">Tout déplier</button></div><div class="cmp-wrap"><table class="cmp-table"><thead>${head}</thead><tbody>${body}</tbody></table></div>
     <div class="s-note">La case teintée en vert marque la meilleure valeur d'une ligne notée, seulement quand elle est la seule à l'être : à égalité, rien n'est surligné. Le « Score détaillé » liste tous les indicateurs qui entrent dans chaque note ; un indicateur non renseigné s'affiche « — » et est ignoré dans le calcul, comme dans le score. Les montants sont dans la devise de chaque analyse, sans conversion. Aucun conseil en investissement.</div>`;
 }
 function renderCompareView(){
@@ -10491,6 +10679,29 @@ function renderCompareView(){
     renderCompareView();
   }));
   main.querySelectorAll('[data-cmp-open]').forEach(b => b.addEventListener('click', () => selectCompany(b.dataset.cmpOpen)));
+  bindCompareFold(main);
+}
+// Replier / déplier une catégorie du tableau sans le redessiner (la position de défilement ne bouge pas)
+function bindCompareFold(root){
+  const body = root.querySelector('#cmpBody');
+  if(!body) return;
+  const apply = (title, folded) => {
+    if(folded) cmpFold.add(title); else cmpFold.delete(title);
+    body.querySelectorAll('tr.cmp-sec').forEach(tr => { const th = tr.querySelector('[data-cmp-sec]'); if(th && th.dataset.cmpSec === title){ tr.classList.toggle('cmp-folded', folded); th.setAttribute('aria-expanded', folded ? 'false' : 'true'); } });
+    body.querySelectorAll('tr[data-cs]').forEach(tr => { if(tr.dataset.cs === title) tr.classList.toggle('cmp-hid', folded); });
+  };
+  const titles = () => [...body.querySelectorAll('[data-cmp-sec]')].map(th => th.dataset.cmpSec);
+  body.addEventListener('click', e => {
+    const all = e.target.closest('[data-cmp-fold]');
+    if(all){ const fold = all.dataset.cmpFold === 'all'; titles().forEach(t => apply(t, fold)); return; }
+    const th = e.target.closest('[data-cmp-sec]');
+    if(th) apply(th.dataset.cmpSec, !cmpFold.has(th.dataset.cmpSec));
+  });
+  body.addEventListener('keydown', e => {
+    if(e.key !== 'Enter' && e.key !== ' ') return;
+    const th = e.target.closest && e.target.closest('[data-cmp-sec]');
+    if(th){ e.preventDefault(); apply(th.dataset.cmpSec, !cmpFold.has(th.dataset.cmpSec)); }
+  });
 }
 
 function bindSpace(){
@@ -12769,7 +12980,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 279;
+const APP_BUILD = 280;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -13106,6 +13317,7 @@ window.addEventListener('popstate', e => {
 // ============================================================
 const SX_W = 1560;   // largeur minimale de la carte (px de dessin)
 const SX_WIDTHS = [1440, 1560, 1700, 1840, 1980, 2120];
+const SX_CMP_WIDTHS = [1080, 1200, 1320, 1440];   // largeurs de dessin essayées pour la carte de comparaison (une seule carte, 2 ou 3 colonnes)
 function sxDecode(s){ return String(s).replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&'); }
 // Texte riche -> texte brut court (coupé à un mot entier, avec « … »), déjà ÉCHAPPÉ pour le HTML : réservé aux petites cases (CEO, année de création, siège)
 function sxShort(html, max){
@@ -13418,7 +13630,7 @@ function sxFit(){
   // TOUTE la page doit être visible, sans défilement : on retient la largeur de dessin qui donne la plus grande échelle, c'est-à-dire celle où la carte remplit le mieux la fenêtre
   // en largeur ET en hauteur (la hauteur d'une page ne change presque pas avec sa largeur, donc la meilleure largeur est celle où les deux limites se rejoignent).
   const res = [];
-  SX_WIDTHS.forEach(W => {
+  (ov.dataset.mode === 'cmp' ? SX_CMP_WIDTHS : SX_WIDTHS).forEach(W => {
     let H = 0;
     cards.forEach(cd => { cd.style.width = W + 'px'; cd.style.minHeight = ''; cd.style.transform = 'none'; H = Math.max(H, cd.offsetHeight); });
     res.push({ W, H, s:Math.min(availW / W, availH / H, 1.3) });
@@ -13469,6 +13681,7 @@ function sxArrows(){
 function sxShow(n){
   const ov = document.getElementById('sxOverlay');
   if(!ov) return;
+  if(ov.dataset.mode === 'cmp') return;   // la carte de comparaison n'a qu'une page
   n = n === 2 || n === '2' ? 2 : 1;
   const host = ov.querySelector('.sx-zoomhost'); if(host) host.remove();
   sxZoomN = 0; ov.classList.remove('sx-zoomed');
@@ -13482,6 +13695,7 @@ function sxShow(n){
 function sxZoomTo(n){
   const ov = document.getElementById('sxOverlay');
   if(!ov) return;
+  if(ov.dataset.mode === 'cmp') return;
   n = Math.max(0, Math.min(6, parseInt(n, 10) || 0));
   if(n === 0){ sxShow(sxPage); return; }
   sxZoomN = n;
@@ -13493,6 +13707,8 @@ function sxZoomTo(n){
 const SX_ARROW_L = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
 const SX_ARROW_R = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
 function sxStep(d){
+  const ovm = document.getElementById('sxOverlay');
+  if(!ovm || ovm.dataset.mode === 'cmp') return;
   if(sxZoomN > 0){ const n = sxZoomN + d; if(n >= 1 && n <= 6) sxZoomTo(n); }
   else { const n = sxPage + d; if(n >= 1 && n <= 2) sxShow(n); }
 }
@@ -13519,6 +13735,7 @@ function sxClose(){
 function initSummary(){
   document.addEventListener('click', e => {
     if(e.target.closest && e.target.closest('[data-summary-open]')){ sxOpen(); return; }
+    if(e.target.closest && e.target.closest('[data-cmp-card-open]')){ cmpCardOpen(); return; }
     const ov = document.getElementById('sxOverlay');
     if(!ov) return;
     const zm = e.target.closest && e.target.closest('[data-sx-zoom]');
