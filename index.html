@@ -1272,6 +1272,7 @@ body.sx-lock{ overflow:hidden; }
 .sx-ts{ font-size:13px; }
 .sx-compact .sx-t{ padding:8px 12px 9px 12px; }
 .sx-compact .sx-tl{ font-size:13px; }
+.sx-g4 .sx-tl{ font-size:12.5px; }
 .sx-compact .sx-tv{ font-size:18.5px; }
 .sx-compact .sx-t-s .sx-tv{ font-size:16.5px; }
 .sx-cap{ font-size:13px; margin-bottom:-4px; }
@@ -13054,7 +13055,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 284;
+const APP_BUILD = 285;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -13696,7 +13697,7 @@ function buildSummaryPages(c){
   const khHtml = (khS.length || khW.length) ? `<div class="sx-kh">${khGroup('sx-plus', 'Points forts chiffrés', khS)}${khGroup('sx-minus', 'Chiffres à surveiller', khW)}</div>` : '';
   const p6 = `<div class="sx-sc">${sxScoreRing(gs, ringColor, sinfo.provisional)}${insight}</div>${sxRadarSvg(sinfo.axes, ringColor)}<div class="sx-axes">${axBars}</div>${khHtml}<div class="sx-note">${gs === null ? 'Renseignez les sections pour obtenir une note.' : 'Score composite : moyenne de 5 axes, ' + sinfo.filled + ' sur ' + sinfo.total + ' renseignés' + (sinfo.provisional ? ' (provisoire)' : '') + '.'}</div>`;
 
-  const page = (n, panels) => `<div class="sx-card${n === 1 ? ' sx-on' : ''}" data-sx-page="${n}">${head}<div class="sx-grid">${panels}</div>${foot(n)}</div>`;
+  const page = (n, panels) => `<div class="sx-card${n === 1 ? ' sx-on' : ''}" data-sx-page="${n}"><div class="sx-grid">${panels}</div>${foot(n)}</div>`;
   return [
     page(1, sxPanel(1, 'Identité', SECTION_COLORS.identite, p1, who) + sxPanel(2, 'Financier', SECTION_COLORS.financier, p2, who) + sxPanel(3, 'Croissance', SECTION_COLORS.croissance, p3, who)),
     page(2, sxPanel(4, 'Valorisation', SECTION_COLORS.valorisation, p4, who) + sxPanel(5, 'Analyse personnelle', SECTION_COLORS.personnelle, p5, who) + sxPanel(6, 'Synthèse globale', '#f3e9d7', p6, who)),
@@ -13747,10 +13748,10 @@ function sxFit(){
   // plus ses textes passent sur peu de lignes, donc plus elle est basse. Une analyse peu remplie reste à la largeur de départ (elle a simplement plus de marge en bas).
   // Résumé d'une analyse (2026-10-16, 2e étape) : MISE EN PAGE IDENTIQUE pour toutes les analyses : une largeur de dessin FIXE (SX_FIXED_W), donc mêmes polices, mêmes cases, mêmes dispositions ;
   // seule la hauteur varie avec la longueur des textes. La carte est mise à l'échelle sur toute la largeur de la fenêtre ; si elle est plus haute que la fenêtre, on fait défiler (barre du haut collante).
-  const fixedMode = ov.dataset.mode !== 'cmp';
-  const startW = fixedMode ? SX_FIXED_W : 1100, maxW = fixedMode ? SX_FIXED_W : Math.min(3600, Math.floor(availW / 0.34));
+  const fixedMode = false;
+  const startW = ov.dataset.mode === 'cmp' ? 1100 : 1580, maxW = Math.min(3600, Math.floor(availW / 0.34));
   let best = null, fallback = null;
-  for(let W = startW; W <= maxW; W += 80){
+  for(let W = startW; W <= maxW; W += 60){
     let H = 0;
     cards.forEach(cd => { cd.style.width = W + 'px'; cd.style.minHeight = ''; cd.style.transform = 'none'; H = Math.max(H, cd.offsetHeight); });
     const sw = availW / W, sh = availH / H;
