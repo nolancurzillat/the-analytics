@@ -5396,7 +5396,7 @@ function removeClient(idx){
   render();
 }
 // Ordre des couleurs par rang de valeur (1er = bleu, 2e = vert, etc.)
-const PIE_COLORS = ['#3b82f6','#22c55e','#f97316','#8b5cf6','#eab308','#ec4899','#ef4444','#06b6d4','#92400e','#6b7280'];
+const PIE_COLORS = ['#3b82f6','#22c55e','#f97316','#8b5cf6','#eab308','#ec4899','#e3cfa4','#06b6d4','#92400e','#6b7280'];
 
 // Critères de la checklist "Règle de Buffett"
 const BUFFETT_RULES = [
@@ -6864,7 +6864,8 @@ const SCORE_FLOOR_AT_ZERO = new Set(['tailleCapi']);
 // « Queue » : distance sous le seuil « moyen » à laquelle la note atteint 0 (par défaut, l'écart seuil bon − seuil moyen). Allongée pour les indicateurs de
 // VALORISATION, où être « cher » n'est pas une catastrophe comparable à une perte ou à une dette ingérable : un PEG de 2,5, un PE deux fois celui du secteur
 // ou un cours 15 % au-dessus d'une valeur intrinsèque (qui reste une estimation) tombaient à 0 d'un coup (2026-10-06, revue du système de notes).
-const SCORE_TAIL = { peg:1, peRelatifSecteur:1, margeSecurite:35, potentielWs:25 };
+// conversionFcf : avec un seuil « moyen » à 50 % et un écart bon − moyen de 20 points, une conversion de 28 % tombait à 0/100 ; la note descend maintenant jusqu'à 0 à 0 % de conversion (28 % vaut environ 25).
+const SCORE_TAIL = { peg:1, peRelatifSecteur:1, margeSecurite:35, potentielWs:25, conversionFcf:50 };
 // Niveau EXCEPTIONNEL qui mérite 100 (2026-10-11, demande de l'auteur : Hermès et Nvidia avaient tous deux 100 en Rentabilité). Avec « une demi-marge au-delà du seuil
 // très bon », tout ROIC au-dessus de 22,5 % plafonnait à 100 : un ROIC de 30 % (Hermès) valait un ROIC de 90 % (Nvidia). Pour les indicateurs de rentabilité, de marge
 // et de croissance, la note monte donc de 90 (seuil « très bon ») à 100 sur un intervalle beaucoup plus large, jusqu'à ce niveau exceptionnel. Les autres
@@ -6973,14 +6974,17 @@ function scorePartScore(key, val){
   if(key === 'buffett') return Math.max(0, Math.min(100, val));   // val = part de critères validés en % : 7/10 vaut 70 points
   if(key === 'consensus') return Math.max(0, Math.min(100, (val - 1) / 4 * 100));   // linéaire : Strong Sell 0, Sell 25, Hold 50, Buy 75, Strong Buy 100
   const cfg = key === 'margeSecurite' ? MARGE_SECURITE_SCALE : (key === 'potentielWs' ? POTENTIEL_WS_SCALE : SCALE_CONFIG[key]);
-  return cfg ? continuousScore(val, cfg.thresholds, cfg.inverse, SCORE_TOP_AT_VERY_GOOD.has(key), SCORE_FLOOR_AT_ZERO.has(key), SCORE_TAIL[key], SCORE_FULL_AT[key]) : null;
+  const sc = cfg ? continuousScore(val, cfg.thresholds, cfg.inverse, SCORE_TOP_AT_VERY_GOOD.has(key), SCORE_FLOOR_AT_ZERO.has(key), SCORE_TAIL[key], SCORE_FULL_AT[key]) : null;
+  // Marge de sécurité positive (cours sous la valeur intrinsèque) : toujours verte, note d'au moins 60 (demande de l'auteur, 2026-10-15)
+  if(key === 'margeSecurite' && sc !== null && val > 0) return Math.max(60, sc);
+  return sc;
 }
 // Couleur d'un indicateur dans le détail d'un axe : la même que sa pastille dans la fiche (barème de l'indicateur appliqué à sa VRAIE valeur), pas un
 // seuil appliqué à la note 0-100 (2026-10-06 : avant, un MOAT de 8/10, « très bon » dans la fiche, apparaissait « bon » dans le radar).
 function scorePartTier(key, val, score){
   if(score === null || val === null) return null;
   if(SCALE_CONFIG[key]) return getScaleTier(key, val);
-  if(key === 'margeSecurite') return scaleTier(val, MARGE_SECURITE_SCALE.thresholds);
+  if(key === 'margeSecurite'){ const t = scaleTier(val, MARGE_SECURITE_SCALE.thresholds); return (val > 0 && (t === 'moyen' || t === 'mauvais')) ? 'bon' : t; }   // marge positive = au moins vert clair
   if(key === 'potentielWs') return scaleTier(val, POTENTIEL_WS_SCALE.thresholds);
   if(key === 'buffett') return scaleTier(val, [80, 60, 40]);   // mêmes seuils que la checklist ailleurs dans l'app
   if(key === 'consensus') return WS_RECO[wsRecoIndex(val)].tier;
@@ -12758,7 +12762,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 276;
+const APP_BUILD = 277;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
