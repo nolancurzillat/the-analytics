@@ -1519,6 +1519,11 @@ input.ticker-input{ text-transform:uppercase; letter-spacing:.06em; width:auto !
 .pie-row.hl, .dn-row.hl{ background:color-mix(in srgb, var(--blue) 12%, transparent); border-radius:8px; box-shadow:0 0 0 5px color-mix(in srgb, var(--blue) 12%, transparent); }
 .pie-swatch{ width:14px; height:14px; border-radius:4px; flex:0 0 auto; }
 .pie-label{ flex:1 !important; width:auto !important; min-width:0; }
+/* Nom d'un segment : zone de texte qui s'agrandit avec son contenu (comme les clients), même aspect qu'une case de saisie */
+textarea.pie-label{ resize:none; overflow:hidden; display:block; background:var(--field); border:1px solid var(--border); border-radius:9px; color:var(--ink); font-family:var(--font-ui); font-size:var(--fs-value); font-weight:400; padding:10px 13px; line-height:1.4; min-height:44px; transition:border-color .12s ease, box-shadow .12s ease; }
+textarea.pie-label:hover{ border-color:var(--border-strong); }
+textarea.pie-label:focus{ outline:none; border-color:var(--blue); box-shadow:0 0 0 3px var(--ring); }
+textarea.pie-label::placeholder{ color:var(--ink-soft); opacity:.7; }
 .pie-value{ width:120px !important; flex:0 0 120px !important; text-align:right; }
 
 /* Champs avec barème, suffixes, écarts */
@@ -6205,7 +6210,7 @@ function initAutoCapitalize(){
     const el = e.target;
     if(!el) return;
     fixMoneyUnit(el);
-    if((el.tagName === 'INPUT' && el.type === 'text') || (el.tagName === 'TEXTAREA' && el.hasAttribute('data-client-idx'))){
+    if((el.tagName === 'INPUT' && el.type === 'text') || (el.tagName === 'TEXTAREA' && (el.hasAttribute('data-client-idx') || el.dataset.pieProp === 'label'))){
       if(shouldAutoCapitalize(el)) autoCapitalizeFirst(el);
     }else if(el.isContentEditable && el.classList.contains('rich-textarea')){
       autoCapitalizeFirst(el);
@@ -8163,11 +8168,25 @@ function schedulePriceRefresh(id, delay){
 }
 // Au chargement de l'app : actualise en tâche de fond le prix des analyses avec une position ouverte,
 // pour que la page Portefeuille reste à jour même sans ouvrir chaque fiche individuellement.
+// Depuis le 2026-10-15 (l'auteur : « la notification du prix cible marche-t-elle vraiment ? ») : aussi les analyses qui ont une alerte dépendant du cours (cours sous / au-dessus,
+// prix cible, marge de sécurité). Avant, seules les positions ouvertes étaient actualisées au chargement : une analyse simplement surveillée gardait son ancien cours et
+// l'alerte n'était évaluée que sur ce cours périmé, jusqu'à l'ouverture de sa fiche. La condition « prix cible » est « cours ≤ prix cible » (pas besoin d'égalité exacte).
+function companyNeedsLivePrice(c){
+  if(c.position && c.position.active) return true;
+  return (c.alerts || []).some(a => a && a.on && (a.type === 'priceBelow' || a.type === 'priceAbove' || a.type === 'target' || a.type === 'safety'));
+}
 function ensurePrices(){
   state.companies.forEach((c, i) => {
-    if(c.position && c.position.active) setTimeout(() => refreshCurrentPrice(c.id), 600 + i * 600);
+    if(companyNeedsLivePrice(c)) setTimeout(() => refreshCurrentPrice(c.id), 600 + i * 600);
   });
 }
+// Application laissée ouverte : même actualisation toutes les 15 minutes (onglet visible) et au retour sur l'onglet après plus de 5 minutes ;
+// refreshCurrentPrice garde ses propres délais minimaux (5 min Twelve Data, 1 h Alpha Vantage), donc aucun surcoût inutile. Fermée, l'application ne surveille rien.
+let priceWatchAt = Date.now();
+setInterval(() => { if(document.visibilityState === 'visible'){ priceWatchAt = Date.now(); ensurePrices(); } }, 15 * 60 * 1000);
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && Date.now() - priceWatchAt > 5 * 60 * 1000){ priceWatchAt = Date.now(); ensurePrices(); }
+});
 
 // Guide pas à pas pour obtenir et coller une clé de prix, avec test immédiat de la clé. DEUX services (2026-10-04, demande de l'auteur : le guide doit aussi
 // guider pour les valeurs en euros) : Twelve Data pour les actions en dollars, Alpha Vantage (cours différé) pour celles en euros. Onglet ouvert d'office
@@ -10465,7 +10484,7 @@ function cmpVerdictHtml(cs, infos, cols){
     const who = !a.comparable ? '—' : (a.win < 0 ? 'égalité' : `<span data-i18n="off">${escapeHtml(V.names[a.win])}</span>`);
     return `<span class="cmp-vd-ax"${a.win >= 0 ? ` style="--co:${cols[a.win]}"` : ''}>${escapeHtml(a.label)} <b>${who}</b></span>`;
   }).join('');
-  return `<div class="cmp-verdict"><div class="cmp-vd-top"><div class="cmp-vd-tx"><div class="cmp-vd-k">Le verdict</div><div class="cmp-vd-h">${escapeHtml(V.headline)}</div></div><button type="button" class="btn btn-primary btn-sm" data-cmp-card-open>Afficher en carte à partager</button></div><div class="cmp-vd-cos">${cos}</div><div class="cmp-vd-axes">${axes}</div><div class="cmp-vd-note">Le verdict compare les notes des 5 axes du score : la plus haute marque le point, à égalité personne ne le marque. Ce n'est pas un conseil en investissement.</div></div>`;
+  return `<div class="cmp-verdict"><div class="cmp-vd-top"><div class="cmp-vd-tx"><div class="cmp-vd-k">Le verdict</div><div class="cmp-vd-h">${escapeHtml(V.headline)}</div></div><button type="button" class="btn btn-primary btn-sm" data-cmp-card-open>Afficher le résumé</button></div><div class="cmp-vd-cos">${cos}</div><div class="cmp-vd-axes">${axes}</div><div class="cmp-vd-note">Le verdict compare les notes des 5 axes du score : la plus haute marque le point, à égalité personne ne le marque. Ce n'est pas un conseil en investissement.</div></div>`;
 }
 // Mêmes règles que le surlignage du tableau (valeur brute, sens du barème, consensus par catégorie), pour la carte à partager
 function cmpRawOf(key, p){
@@ -10485,7 +10504,7 @@ function cmpBestOf(arr){
 function buildCompareCard(cs){
   const infos = cs.map(c => computeScoreInfo(c)), cols = cmpCompanyColors(cs.length), V = cmpVerdict(cs, infos), N = cs.length;
   const partOf = (i, key) => { for(const a of infos[i].axes){ const p = a.parts.find(x => x.key === key); if(p) return p; } return null; };
-  const row = (label, cells, win, cls) => `<div class="cx-r${cls ? ' ' + cls : ''}"><div class="cx-l">${label}</div>${cells.map((h, i) => `<div class="cx-c${i === win ? ' cx-win' : ''}" style="--co:${cols[i]}">${h}</div>`).join('')}</div>`;
+  const row = (label, cells, win, cls) => `<div class="cx-r${cls ? ' ' + cls : ''}"><div class="cx-l">${label}</div>${cells.map((h, i) => `<div class="cx-c" style="--co:${cols[i]}">${h}</div>`).join('')}</div>`;
   const sec = t => `<div class="cx-s">${t}</div>`;
   const heads = cs.map((c, i) => {
     const av = avatarInner(c), idn = c.fields.identite || {}, sect = idn.secteur && idn.secteur.secteur, pays = idn.paysSiege && idn.paysSiege.pays;
@@ -10511,7 +10530,7 @@ function buildCompareCard(cs){
     rows += row(escapeHtml(SCORE_PART_LABELS[key]), parts.map(p => !p || p.val === null ? '—' : `<span style="color:${p.tier ? TOOLTIP_TIER_COLORS[p.tier] : '#fff'}">${escapeHtml(cmpPartText(p))}</span>`), cmpBestOf(parts.map(p => cmpRawOf(key, p))));
   });
   const t = new Date(), iso = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
-  const foot = `<div class="sx-foot"><span class="sx-brand"><img src="icon-192.png" alt="" width="20" height="20">The Analytics<span class="sx-mut"> · the-analytics.fr</span></span><span class="sx-mut">Le cadre marque la meilleure valeur de la ligne · Analyses personnelles, pas un conseil en investissement · ${formatDateFr(iso)}</span></div>`;
+  const foot = `<div class="sx-foot"><span class="sx-brand"><img src="icon-192.png" alt="" width="20" height="20">The Analytics<span class="sx-mut"> · the-analytics.fr</span></span><span class="sx-mut">Analyses personnelles, pas un conseil en investissement · ${formatDateFr(iso)}</span></div>`;
   return `<div class="sx-card sx-on cx-card" data-sx-page="1"><div class="cx-top"><div><div class="cx-title">Comparaison</div><div class="cx-sub" data-i18n="off">${cs.map(c => escapeHtml(c.name || 'Sans nom')).join(' · ')}</div></div><div class="cx-verdict"><div class="cx-vk">Le verdict</div><div class="cx-vh">${escapeHtml(V.headline)}</div></div></div><div class="cx-grid" style="--n:${N}">${rows}</div>${foot}</div>`;
 }
 function cmpCardOpen(){
@@ -10521,8 +10540,8 @@ function cmpCardOpen(){
   sxZoomN = 0; sxPage = 1;
   const ov = document.createElement('div');
   ov.className = 'sx-overlay'; ov.id = 'sxOverlay'; ov.dataset.mode = 'cmp';
-  ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Comparaison à partager');
-  ov.innerHTML = `<div class="sx-bar"><span class="sx-bar-t">Comparaison à partager</span><span class="sx-bar-h">Faites une capture d'écran de la carte pour la partager.</span><button type="button" class="sx-close" data-sx-close>Fermer &#10005;</button></div><div class="sx-scale">${buildCompareCard(cs)}</div>`;
+  ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Résumé de la comparaison');
+  ov.innerHTML = `<div class="sx-bar"><span class="sx-bar-t">Résumé de la comparaison</span><span class="sx-bar-h">Faites une capture d'écran de la carte pour la partager.</span><button type="button" class="sx-close" data-sx-close>Fermer &#10005;</button></div><div class="sx-scale">${buildCompareCard(cs)}</div>`;
   document.body.appendChild(ov);
   document.body.classList.add('sx-lock');
   sxFit();
@@ -12980,7 +12999,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 280;
+const APP_BUILD = 281;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -14081,7 +14100,7 @@ function renderInner(){
         const rows = arr.map((s, idx) => `
           <div class="pie-row">
             <span class="pie-swatch" style="background:${colorByIdx[idx]}"></span>
-            <input type="text" class="pie-label" placeholder="Nom" data-pie-section="${section.key}" data-pie-field="${field.key}" data-pie-idx="${idx}" data-pie-prop="label" value="${escapeHtml(s.label || '')}">
+            <textarea rows="1" class="pie-label" placeholder="Nom" data-pie-section="${section.key}" data-pie-field="${field.key}" data-pie-idx="${idx}" data-pie-prop="label">${escapeHtml(s.label || '')}</textarea>
             <input type="text" class="pie-value" placeholder="Valeur" data-pie-section="${section.key}" data-pie-field="${field.key}" data-pie-idx="${idx}" data-pie-prop="value" value="${escapeHtml(s.value || '')}">
             ${arr.length > 2 ? `<button class="field-remove" data-pie-remove-section="${section.key}" data-pie-remove-field="${field.key}" data-pie-remove-idx="${idx}" title="Supprimer">✕</button>` : ''}
           </div>`).join('');
@@ -14315,7 +14334,16 @@ function renderInner(){
   });
 
   main.querySelectorAll('[data-pie-idx]').forEach(el => {
+    // Le nom d'un segment est un textarea à hauteur automatique (comme la liste Clients) : le texte entier reste visible, sans jamais insérer de saut de ligne dans la donnée
+    if(el.tagName === 'TEXTAREA'){
+      autoGrow(el);
+      el.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); el.blur(); } });
+    }
     el.addEventListener('input', e => {
+      if(el.tagName === 'TEXTAREA'){
+        if(/[\r\n]/.test(el.value)) el.value = el.value.replace(/[\r\n]+/g, ' ');
+        autoGrow(el);
+      }
       const cursorAtEnd = e.target.selectionEnd === e.target.value.length;
       const newVal = updatePieField(el.dataset.pieSection, el.dataset.pieField, parseInt(el.dataset.pieIdx), el.dataset.pieProp, e.target.value);
       if(newVal !== undefined && newVal !== e.target.value){
