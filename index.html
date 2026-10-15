@@ -2131,7 +2131,10 @@ tr:hover .ct-del-btn, .ct-del-btn:focus-visible{ opacity:1; }
 .cmp-page{ max-width:1100px; }
 /* overflow:clip (et non auto) : un conteneur qui défile bloquerait l'en-tête collant, qui doit se coller sous la barre du haut (62px) */
 .cmp-wrap{ overflow:visible; overflow:clip; margin-top:16px; background:var(--card); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); }
-.cmp-table{ width:100%; border-collapse:collapse; font-size:14px; }
+.cmp-table{ width:100%; border-collapse:collapse; font-size:14px; table-layout:fixed; }
+/* Colonnes des entreprises de LARGEUR ÉGALE (une colonne de libellés fixe, le reste réparti à parts égales) : en mise en page automatique, la colonne de gauche prenait plus de place car son texte (thèse, points forts) était plus long */
+.cmp-table thead th:first-child{ width:22%; }
+.cmp-table td{ overflow-wrap:anywhere; }
 .cmp-table th, .cmp-table td{ padding:10px 14px; text-align:left; border-bottom:1px solid var(--border); vertical-align:middle; }
 .cmp-table tbody th{ font-weight:600; color:var(--ink); width:26%; }
 .cmp-table thead th{ position:sticky; top:63px; z-index:3; background:var(--card); padding:6px 14px; box-shadow:0 1px 0 var(--border-strong), 0 6px 10px -8px rgba(0,0,0,.35); }
@@ -10449,6 +10452,7 @@ function compareTableHtml(list, opts){
     body += textRow('Risque', c => c.fields.croissance.risque);
     body += textRow('Conclusion sur la valorisation', c => c.fields.valorisation.conclusionValorisation);
   }
+  if(!received) body += textRow('Avantage concurrentiel (MOAT)', c => c.fields.identite.moatDescription);   // déjà listé plus haut pour une analyse reçue
   body += textRow('Paysage concurrentiel', c => c.fields.croissance.concurrents);
   body += textRow('Points forts', c => c.fields.personnelle.pointsForts);
   body += textRow('Points faibles', c => c.fields.personnelle.pointsFaibles);
@@ -12765,7 +12769,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 278;
+const APP_BUILD = 279;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
