@@ -9936,7 +9936,7 @@ function buildCompaniesTableRows(){
     return `<th class="th-sort${active ? ' th-sort-active' : ''}" data-sort-th="${key}"${tooltip ? ` data-tooltip="${tooltip}"` : ''}>${label}${arrow}</th>`;
   };
   const axisInfo = axisCol ? SCORE_AXES.find(a => a.id === axisCol) : null;
-  const head = `<th>Entreprise</th>${axisInfo ? th(axisKey, ({ rentabilite:'Rentab.', croissance:'Croiss.', valorisation:'Valoris.' })[axisInfo.id] || axisInfo.label, "<div class='tt-desc'>Note /100 du critère « ${axisInfo.label} »</div>") : ''}${th('score', 'Score')}${th('peg', 'PEG')}${th('moat', 'MOAT')}${th('buffett', 'Buffett')}${th('decision', 'Décision')}${th('stars', 'Conv.', "<div class='tt-desc'>Conviction</div>")}${th('progress', 'Progrès', "<div class='tt-desc'>Fiche complétée</div>")}${th('marketCap', 'Cap.', "<div class='tt-desc'>Capitalisation boursière</div>")}${th('updated', 'Date', "<div class='tt-desc'>Dernière mise à jour</div>")}`;
+  const head = `<th>Entreprise</th>${axisInfo ? th(axisKey, ({ rentabilite:'Rentab.', croissance:'Croiss.', valorisation:'Valoris.' })[axisInfo.id] || axisInfo.label, `<div class='tt-desc'>Note /100 du critère « ${axisInfo.label} »</div>`) : ''}${th('score', 'Score')}${th('peg', 'PEG')}${th('moat', 'MOAT')}${th('buffett', 'Buffett')}${th('decision', 'Décision')}${th('stars', 'Conv.', "<div class='tt-desc'>Conviction</div>")}${th('progress', 'Progrès', "<div class='tt-desc'>Fiche complétée</div>")}${th('marketCap', 'Cap.', "<div class='tt-desc'>Capitalisation boursière</div>")}${th('updated', 'Date', "<div class='tt-desc'>Dernière mise à jour</div>")}`;
   return `<div class="home-table-wrap home-table-wrap--tight" id="companiesTableWrap"><table class="home-table home-table--tight"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 function buildCompaniesTable(){
@@ -13121,7 +13121,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 289;
+const APP_BUILD = 290;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
