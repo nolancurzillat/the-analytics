@@ -3434,9 +3434,7 @@ const FIELD_DESCRIPTIONS = {
   beneficeNet: "Le profit final après charges et impôts. Saisir en TTM (12 derniers mois).",
   operatingIncome: "Le profit de l'activité elle-même (Operating Income) : marge brute moins les charges d'exploitation, avant intérêts et impôts. Facultatif, sert au schéma « Du chiffre d'affaires au bénéfice ». Saisir en TTM, sur la même période que le chiffre d'affaires.",
   impotsResultat: "Les impôts sur les bénéfices (Provision for Income Taxes). Facultatif, sert au schéma « Du chiffre d'affaires au bénéfice ». Saisir en TTM, sur la même période que le chiffre d'affaires.",
-  chargesRD: "Les dépenses de recherche et développement (Research and Development). Facultatif, sert au schéma. Saisir en TTM.",
-  chargesVentes: "Les dépenses de ventes et de marketing (Selling and Marketing). Si votre source les regroupe avec les frais généraux (SG&A), saisissez le total ici et laissez les frais généraux vides. Facultatif, sert au schéma. Saisir en TTM.",
-  chargesGeneral: "Les frais généraux et administratifs (General and Administrative). Facultatif, sert au schéma. Saisir en TTM.",
+  chargesVentes: "Les frais de vente, généraux et administratifs réunis (SG&A, Selling, General and Administrative). Facultatif, sert au schéma : le reste des charges d'exploitation (R&D, autres) est calculé tout seul. Saisir en TTM.",
   croissanceCA: "Le taux de croissance annuel moyen (CAGR) du CA, que vous saisissez, et la croissance totale sur 5 ans, calculée automatiquement à partir du CAGR.",
   croissanceBenef: "Le CAGR des bénéfices, que vous saisissez, et la croissance totale sur 5 ans, calculée automatiquement à partir du CAGR.",
   margeBrute: "La part du chiffre d'affaires restante après le coût direct de production. Valeur TTM.",
@@ -3691,11 +3689,9 @@ const SECTIONS = [
       {key:'detenuInstitutions', label:'Détenu par les institutions', type:'owner-inline', percent:true, compact:true},
       {key:'revenuSource', label:'Revenu par source', type:'pieChart'},
       {key:'revenuPays', label:'Revenu par pays', type:'pieChart'},
-      {key:'operatingIncome', label:"Résultat d'exploitation", type:'text', money:true, optionalFill:true, span:6, group:"Compte de résultat (facultatif, pour le schéma ci-dessous)"},
-      {key:'impotsResultat', label:'Impôts sur les bénéfices', type:'text', money:true, optionalFill:true, span:6},
-      {key:'chargesRD', label:'R&D', type:'text', money:true, optionalFill:true, span:4},
-      {key:'chargesVentes', label:'Ventes et marketing', type:'text', money:true, optionalFill:true, span:4},
-      {key:'chargesGeneral', label:'Frais généraux', type:'text', money:true, optionalFill:true, span:4},
+      {key:'operatingIncome', label:"Résultat d'exploitation", type:'text', money:true, optionalFill:true, span:4, group:"Compte de résultat (facultatif, pour le schéma ci-dessous)"},
+      {key:'impotsResultat', label:'Impôts sur les bénéfices', type:'text', money:true, optionalFill:true, span:4},
+      {key:'chargesVentes', label:'Frais de vente et généraux (SG&A)', type:'text', money:true, optionalFill:true, span:4},
       {key:'sankeyVisuel', label:"Du chiffre d'affaires au bénéfice", type:'computed-sankey', span:12},
     ]
   },
@@ -6811,7 +6807,7 @@ function sankeyHtml(c){
   const fnum = key => { const v = parseMoney(fin[key]); return (v !== null && isFinite(v)) ? v : null; };
   const op = fnum('operatingIncome');
   const taxRaw = fnum('impotsResultat'), taxes = taxRaw === null ? null : Math.max(0, taxRaw);
-  const det = [['chargesRD', 'R&D'], ['chargesVentes', 'Ventes et marketing'], ['chargesGeneral', 'Frais généraux']].map(a => { const v = fnum(a[0]); return { name:a[1], v: v === null ? null : Math.abs(v) }; }).filter(d => d.v !== null && d.v > 0);
+  const det = [['chargesVentes', 'Frais de vente et généraux']].map(a => { const v = fnum(a[0]); return { name:a[1], v: v === null ? null : Math.abs(v) }; }).filter(d => d.v !== null && d.v > 0);
   const base = gross !== null ? gross : ca;   // ce que le résultat d'exploitation peut au plus atteindre
   let gp = null, co = null;
   if(gross !== null){
@@ -6855,7 +6851,7 @@ function sankeyHtml(c){
     }else if(opN){
       opN.label = 'right'; note = "Ajoutez le bénéfice net pour voir la suite : impôts, intérêts et autres, puis bénéfice.";
     }
-    // Détail des charges d'exploitation (R&D, ventes et marketing, frais généraux), seulement avec une marge brute
+    // Détail des charges d'exploitation (frais de vente et généraux ; le reste, R&D comprise, est calculé), seulement avec une marge brute
     if(opex && gross !== null && det.length){
       const sum = det.reduce((t, d) => t + d.v, 0);
       if(sum > opexV * 1.02){
@@ -11760,9 +11756,7 @@ const LEARN_INDICATORS = {
   beneficeNet: { how:`Ce qui reste une fois toutes les charges, intérêts et impôts payés : le vrai profit des actionnaires.`, warn:`Saisissez de préférence le chiffre TTM (12 derniers mois), sur la même période que le chiffre d'affaires et le FCF.` },
   operatingIncome: { how:`Le profit tiré de l'activité elle-même : la marge brute moins les charges d'exploitation (R&D, ventes et marketing, frais généraux), avant intérêts et impôts. Divisé par le chiffre d'affaires, il donne la marge opérationnelle.`, ex:`Marge brute de 200, charges d'exploitation de 120 : le résultat d'exploitation vaut 80.`, warn:`Facultatif : il alimente le schéma « Du chiffre d'affaires au bénéfice » et n'entre pas dans le score. Sur stockanalysis.com : Financials, Income Statement, ligne « Operating Income », colonne TTM. Ce n'est pas le résultat avant impôts (« Pretax Income »), qui tient compte en plus des intérêts et autres éléments.` },
   impotsResultat: { how:`Les impôts payés ou provisionnés sur les bénéfices de la période.`, ex:`Résultat avant impôts de 100 et impôts de 20 : bénéfice net de 80.`, warn:`Facultatif : il alimente le schéma. Sur stockanalysis.com : Income Statement, ligne « Provision for Income Taxes », colonne TTM. Un crédit d'impôt (valeur négative) est traité comme un gain.` },
-  chargesRD: { how:`Ce que l'entreprise dépense pour inventer ou améliorer ses produits. Une grosse part est typique des entreprises technologiques et pharmaceutiques.`, warn:`Facultatif, pour le schéma. Sur stockanalysis.com : Income Statement, ligne « Research and Development ».` },
-  chargesVentes: { how:`Ce que l'entreprise dépense pour vendre : équipes commerciales, publicité, promotion.`, warn:`Facultatif, pour le schéma. Ligne « Selling and Marketing » ; si votre source n'affiche que « SG&A » (ventes et frais généraux ensemble), saisissez-le ici et laissez les frais généraux vides.` },
-  chargesGeneral: { how:`Les frais de fonctionnement de l'entreprise : direction, administration, services support.`, warn:`Facultatif, pour le schéma. Ligne « General and Administrative ».` },
+  chargesVentes: { how:`Ce que l'entreprise dépense pour vendre et pour fonctionner : équipes commerciales, publicité, direction, administration. Souvent affiché en une seule ligne « SG&A ».`, warn:`Facultatif, pour le schéma : le reste des charges d'exploitation (recherche et développement, autres) est calculé par différence. Ligne « Selling, General and Administrative » (stockanalysis.com) ou « Frais de vente/généraux/administratifs (total) » (TradingView).` },
   croissanceCA: { how:`Le rythme moyen de progression annuelle du chiffre d'affaires (CAGR) et la croissance totale sur la période.`, ex:`Un chiffre d'affaires passé de 100 à 161 en 5 ans correspond à un CAGR de 10 % par an (1,10 puissance 5 = 1,61).`, warn:`Vérifiez que la croissance vient de l'activité elle-même et pas seulement d'acquisitions.` },
   croissanceBenef: { how:`Le rythme de progression annuel du bénéfice. Idéalement, il croît au moins aussi vite que le chiffre d'affaires : les marges s'améliorent.`, ex:`Un bénéfice passé de 100 à 147 en 5 ans correspond à un CAGR d'environ 8 % par an.` },
   margeBrute: { how:`La part du chiffre d'affaires qui reste après le coût direct des produits vendus. Une marge brute élevée indique un fort pouvoir de fixer les prix.`, ex:`Ventes de 100, coût des produits vendus de 40 : marge brute de 60 %.`, warn:`Prenez la valeur TTM (12 derniers mois) affichée par le site.` },
@@ -13544,7 +13538,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 304;
+const APP_BUILD = 305;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
