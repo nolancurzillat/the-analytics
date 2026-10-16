@@ -2417,6 +2417,11 @@ tr:hover .ct-del-btn, .ct-del-btn:focus-visible{ opacity:1; }
 .dn-two{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:32px; }
 .dn-title{ font-size:13px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:12px; }
 .dn-wrap{ display:flex; align-items:center; gap:26px; flex-wrap:wrap; }
+.shares-viz{ margin-top:16px; }
+.shares-viz .sh-donut{ gap:30px; }
+.shares-viz .donut-svg{ width:128px; height:128px; flex:0 0 128px; }
+.sh-center{ font-family:var(--font-ui); font-size:22px; font-weight:700; fill:var(--ink); }
+.sh-empty{ color:var(--ink-soft); font-size:13.5px; }
 .donut-svg{ width:150px; height:150px; flex:0 0 150px; }
 .dn-legend{ flex:1; min-width:170px; display:flex; flex-direction:column; gap:9px; }
 .dn-row{ display:flex; align-items:center; gap:10px; font-size:14px; }
@@ -3367,6 +3372,7 @@ const FIELD_DESCRIPTIONS = {
   concurrents: "Les noms des entreprises qui comptent autour de celle-ci, concurrents directs ou non, séparés par des virgules.",
   businessModel: "Comment l'entreprise gagne concrètement de l'argent : qui paie, pour quoi, et sous quelle forme (vente, abonnement, commission, publicité, licences...). Différent de l'activité principale, qui dit ce que fait l'entreprise.",
   detenuInities: "La part du capital détenue par les dirigeants et les initiés, en %. Plus elle est élevée, plus les dirigeants ont leur propre argent en jeu. Sur Yahoo Finance : onglet Statistiques, ligne « % Held by Insiders ».",
+  detenuInstitutions: "La part du capital détenue par des investisseurs institutionnels (fonds, assurances, banques...), en %. Beaucoup d'institutions : un titre suivi et liquide, mais aussi plus nerveux si elles vendent en même temps. Sur Yahoo Finance : onglet Statistiques, ligne « % Held by Institutions ».",
   peHistorique: "Le PE moyen de l'entreprise sur ses 5 dernières années. Vous pouvez saisir un seul chiffre, ou les 5 PE annuels séparés par des espaces : l'application calcule la moyenne. À relever sur stockanalysis.com : page de l'action, Financials, Ratios, ligne « PE Ratio ».",
   peRelatifHisto: "Le PE actuel comparé à son propre PE moyen sur 5 ans : en dessous de 1, l'entreprise est moins chère qu'à son habitude ; au-dessus, plus chère. Calculé automatiquement.",
   priceSales: "La capitalisation boursière divisée par le chiffre d'affaires : combien vous payez pour 1 € (ou 1 $) de ventes. Utile quand l'entreprise n'a pas (encore) de bénéfice. Calculé automatiquement, sans couleur : la norme dépend beaucoup du secteur.",
@@ -3549,8 +3555,9 @@ const SECTIONS = [
       {key:'nbEmployes', label:"Nb d'employés", type:'computed-revenu-employe', span:6},
       {key:'tailleCapi', label:"Taille de l'entreprise", type:'computed-taille-capi', span:6},
       {key:'dateIPO', label:'Date IPO', type:'duo', span:6, subs:[{key:'date',label:''},{key:'prixInitial',label:'Prix initial', money:true}]},
-      {key:'ceo', label:'CEO', type:'ceoFondateur', span:6},
-      {key:'detenuInities', label:'Détenu par les dirigeants et initiés', type:'text', percent:true, compact:true, span:6},
+      {key:'ceo', label:'CEO', type:'ceoFondateur', span:4},
+      {key:'detenuInities', label:'Détenu par les dirigeants et initiés', type:'text', percent:true, compact:true, span:4},
+      {key:'detenuInstitutions', label:'Détenu par les institutions', type:'text', percent:true, compact:true, span:4},
       {key:'activitePrincipale', label:'Activité principale', type:'textarea', span:6, group:'Activité et avantage concurrentiel'},
       {key:'autresActivites', label:'Autres activités', type:'textarea', span:6},
       {key:'businessModel', label:'Business model', type:'textarea', span:12},
@@ -5836,6 +5843,42 @@ function computeDisponible(c){
   if(ff === null || ch === null || ff + ch <= 0) return null;
   return ff / (ff + ch) * 100;
 }
+// Nombre d'actions lisible (1,70 Md, 3,74 M, 850 K) : même unité de milliard que le reste de l'application (MD_UNIT)
+function compactShares(v){
+  const a = Math.abs(v);
+  if(a >= 1e12) return fmtNum(v / 1e12, 2) + ' T';
+  if(a >= 1e9) return fmtNum(v / 1e9, 2) + ' ' + MD_UNIT;
+  if(a >= 1e6) return fmtNum(v / 1e6, 2) + ' M';
+  if(a >= 1e3) return fmtNum(v / 1e3, 1) + ' K';
+  return fmtNum(v, 0);
+}
+// Repère visuel façon TradingView (2026-10-17, demande de l'auteur) : anneau « actions en free-float » / « actions détenues étroitement », total au centre,
+// nombre d'actions et pourcentage dans la légende. Mêmes classes que les autres anneaux (`dn-wrap`, `pie-slice`, `dn-row`) : survol et infobulles viennent tout seuls.
+// Une part minuscule (0,22 %) garde un arc minimal visible ; les pourcentages affichés restent les vrais.
+function sharesDonutHtml(c){
+  const o = c.fields.financier.nbActions || {};
+  const ff = parseMoney(o.freeFloat), ch = parseMoney(o.closelyHeld);
+  if(ff === null || ch === null || ff + ch <= 0) return `<div class="sh-empty">Renseignez le Free Float et le Closely Held pour voir la répartition des actions.</div>`;
+  const total = ff + ch, pf = ff / total * 100, pc = ch / total * 100;
+  const COL_FF = '#f59e0b', COL_CH = '#3b82f6';
+  const items = [
+    { label:'Actions en free-float', v:ff, p:pf, color:COL_FF },
+    { label:'Actions détenues étroitement', v:ch, p:pc, color:COL_CH },
+  ];
+  const minAng = 4;
+  let angCh = pc / 100 * 360; if(ch > 0 && angCh < minAng) angCh = minAng;
+  const angs = [360 - angCh, angCh];
+  let cum = 0, paths = '';
+  items.forEach((it, idx) => {
+    const ang = angs[idx];
+    if(ang <= 0) return;
+    const tip = escapeHtml(`<div class='tt-header' style='color:${it.color}'>${it.label}</div>${tipRes(compactShares(it.v) + ' · ' + fmtNum(it.p, 2) + ' %')}`);
+    paths += ang >= 359.99 ? `<circle class="pie-slice" data-i="${idx}" data-tooltip="${tip}" cx="90" cy="90" r="80" fill="${it.color}"/>` : `<path class="pie-slice" data-i="${idx}" data-tooltip="${tip}" d="${describeArc(90, 90, 80, cum, cum + ang)}" fill="${it.color}"/>`;
+    cum += ang;
+  });
+  const legend = items.map(it => `<div class="dn-row"><span class="pie-swatch" style="background:${it.color}"></span><span class="dn-lbl">${it.label}</span><span class="dn-val">${compactShares(it.v)} (${fmtNum(it.p, 2)}&nbsp;%)</span></div>`).join('');
+  return `<div class="dn-wrap sh-donut"><svg viewBox="0 0 180 180" class="donut-svg" role="img" aria-label="Répartition des actions">${paths}<circle cx="90" cy="90" r="64" fill="var(--card)"/><text x="90" y="90" text-anchor="middle" dominant-baseline="central" class="sh-center">${compactShares(total)}</text></svg><div class="dn-legend">${legend}</div></div>`;
+}
 function disponibleLabel(p){
   if(p < 50) return 'Capital très concentré';
   if(p <= 80) return 'Flottant modéré';
@@ -6156,6 +6199,8 @@ function refreshAllComputed(){
   const peRel = computePeRelatif(c);
   setText('computed-valorisation-peRelatifSecteur', fmtRatioPos(peRel), tipPeRelatif(c));
   setText('computed-valorisation-peRelatifHisto', fmtRatioPos(computePeRelatifHisto(c)), tipPeRelatifHisto(c));
+  const shViz = document.getElementById('sharesViz');
+  if(shViz) shViz.innerHTML = sharesDonutHtml(c);
   const psv = computePriceSales(c);
   setText('computed-valorisation-priceSales', psv === null ? '—' : fmtNum(psv, 2), tipPriceSales(c));
   const rdtFcf = computeRendementFcf(c);
@@ -10770,6 +10815,7 @@ function compareTableHtml(list, opts){
   body += row('Cotation', cs.map(c => { const t = c.fields.identite.ticker, x = c.fields.identite.cotation; return (t || x) ? `${escapeHtml(t || '')} <span class="jr-meta">${escapeHtml(x || '')}</span>` : '—'; }), -1);
   body += row('Market Cap', cs.map(c => money(c, c.fields.identite.marketCap || c.fields.financier.marketCap)), -1);
   body += row('Détenu par les dirigeants et initiés', cs.map(c => { const v = String(c.fields.identite.detenuInities || '').trim(); return v ? escapeHtml(v) + ' %' : '—'; }), -1);
+  body += row('Détenu par les institutions', cs.map(c => { const v = String(c.fields.identite.detenuInstitutions || '').trim(); return v ? escapeHtml(v) + ' %' : '—'; }), -1);
   body += section('Chiffres clés', SEC_COL.chiffres);
   body += row("Chiffre d'affaires", cs.map(c => money(c, c.fields.financier.chiffreAffaires)), -1);
   body += row('Bénéfice net', cs.map(c => money(c, c.fields.financier.beneficeNet)), -1);
@@ -11397,7 +11443,8 @@ const LEARN_INDICATORS = {
   moatDescription: { how:`Ce qui protège l'entreprise de la concurrence. La note sur 10 mesure la solidité de cet avantage.`, ex:`Marque de luxe mondiale, prix élevés acceptés par les clients : note de 8/10.` },
   clients: { how:`Qui achète : particuliers, entreprises, États. Une clientèle très concentrée sur un seul gros client est un risque.` },
   businessModel: { how:`Comment l'entreprise gagne concrètement de l'argent. Quatre questions aident : qui paie ? pour quoi ? sous quelle forme (vente unique, abonnement, commission, publicité, licence) ? et quelle part des revenus revient chaque année sans avoir à tout revendre ? L'activité principale dit ce que fait l'entreprise, le business model dit comment elle en tire son argent.`, ex:`Un éditeur de logiciels : « Les entreprises paient un abonnement mensuel par utilisateur, le contrat est renouvelé chaque année, environ 90 % des revenus sont récurrents. »`, warn:`Des revenus récurrents (abonnements, contrats pluriannuels) sont plus prévisibles que des ventes à refaire chaque année. Si vous ne savez pas qui paie réellement, c'est un signe que l'entreprise est hors de votre cercle de compétence.` },
-  detenuInities: { how:`La part du capital que possèdent les dirigeants et les initiés (administrateurs, fondateurs, grands actionnaires proches de la direction). Un dirigeant qui possède une part importante de l'entreprise a son propre argent en jeu : ses intérêts sont proches des vôtres.`, ex:`Un fondateur qui détient 15 % du capital gagne ou perd beaucoup avec l'action, comme vous.`, warn:`À relever sur Yahoo Finance : onglet « Statistiques » (Statistics), rubrique « Informations sur les actions » (Share Statistics), ligne « % Held by Insiders ». Un chiffre très élevé (plus de 50 %) peut au contraire donner à quelques personnes le contrôle total de l'entreprise. Ce chiffre est proche de « Closely Held » (section Financier) mais s'exprime en pourcentage et non en nombre d'actions.` },
+  detenuInities: { how:`La part du capital que possèdent les dirigeants et les initiés (administrateurs, fondateurs, grands actionnaires proches de la direction). Un dirigeant qui possède une part importante de l'entreprise a son propre argent en jeu : ses intérêts sont proches des vôtres.`, ex:`Un fondateur qui détient 15 % du capital gagne ou perd beaucoup avec l'action, comme vous.`, warn:`À relever sur Yahoo Finance : onglet « Statistiques » (Statistics), rubrique « Informations sur les actions » (Share Statistics), ligne « % Held by Insiders ». Un chiffre très élevé (plus de 50 %) peut au contraire donner à quelques personnes le contrôle total de l'entreprise. « Closely Held » (section Financier) est plus large : il compte aussi les autres actionnaires stables (grands actionnaires, États, autres entreprises, plans d'actionnariat salarié) et pas seulement les dirigeants ; il est donc en général supérieur ou égal à ce chiffre.` },
+  detenuInstitutions: { how:`La part du capital détenue par des investisseurs institutionnels : fonds d'investissement, fonds de pension, assureurs, banques. Une forte présence d'institutions signifie que des professionnels ont étudié l'entreprise et que l'action est facile à acheter ou à vendre.`, ex:`40 % détenus par des institutions : les gérants professionnels possèdent près de la moitié du capital.`, warn:`À relever sur Yahoo Finance : onglet « Statistiques » (Statistics), rubrique « Informations sur les actions » (Share Statistics), ligne « % Held by Institutions ». Information neutre, sans bon ni mauvais : une forte part institutionnelle rassure sur la qualité de l'entreprise mais peut accentuer les mouvements du cours quand ces investisseurs vendent ensemble. Le chiffre peut dépasser 100 % chez certains sites (comptages qui se recoupent).` },
   politiqueDividende: { how:`Deux cas : l'entreprise ne verse pas de dividende (elle réinvestit ses bénéfices ou rachète ses actions), ou elle en verse. Dans ce cas, renseignez le dividende annuel par action (le rendement et le taux de distribution se calculent tout seuls, à partir du prix actuel et de l'EPS actuel), la fréquence, la croissance du dividende sur 5 ans et votre note de sécurité du dividende sur 100 (0 à 25 très dangereux, 25 à 50 dangereux, 50 à 75 sûr, 75 à 100 très sûr).`, ex:`Dividende de 2 $ pour un cours de 100 $ : rendement de 2 %. Bénéfice par action de 5 $ et dividende de 2 $ : taux de distribution de 40 %.`, warn:`Un rendement très élevé peut être un piège (cours en chute) et un taux de distribution proche de 100 % ou plus est difficile à tenir. Ne pas verser de dividende n'est pas un défaut : de nombreuses excellentes entreprises réinvestissent leurs bénéfices.` },
   chiffreAffaires: { how:`Le total des ventes sur 12 mois, avant toute charge. Regardez surtout son évolution sur plusieurs années.`, ex:`391Md signifie 391 milliards.`, warn:`Saisissez de préférence le chiffre TTM (12 derniers mois), avec la même période que le bénéfice net, le FCF et le Capex : plusieurs indicateurs croisent ces chiffres entre eux. Voir « TTM ou annuel ? » dans le chapitre Remplir chaque section.` },
   beneficeNet: { how:`Ce qui reste une fois toutes les charges, intérêts et impôts payés : le vrai profit des actionnaires.`, warn:`Saisissez de préférence le chiffre TTM (12 derniers mois), sur la même période que le chiffre d'affaires et le FCF.` },
@@ -13182,7 +13229,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 292;
+const APP_BUILD = 293;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -14358,7 +14405,7 @@ function renderInner(){
             <div class="duo-item"><span class="duo-label">Free Float</span><input type="text" data-duo-section="${section.key}" data-duo-field="${field.key}" data-duo-sub="freeFloat" value="${escapeHtml(obj.freeFloat || '')}"></div>
             <div class="duo-item"><span class="duo-label">Closely Held</span><input type="text" data-duo-section="${section.key}" data-duo-field="${field.key}" data-duo-sub="closelyHeld" value="${escapeHtml(obj.closelyHeld || '')}"></div>
             <div class="duo-item"><span class="duo-label">Disponible</span><span class="computed" id="computed-financier-nbActions-dispo" data-tooltip="${tipDisponible(c)}">${dispo === null ? '—' : fmtNum(dispo, 1) + ' %'}</span><span class="pill pill-watch" id="dispo-pill" data-tooltip="${tipDisponible(c)}"${dispo === null ? ' style="display:none"' : ''}>${dispo === null ? '' : disponibleLabel(dispo)}</span></div>
-          </div></div></div>`;
+          </div><div id="sharesViz" class="shares-viz">${sharesDonutHtml(c)}</div></div></div>`;
         return;
       }
       if(field.type === 'pieChart'){
