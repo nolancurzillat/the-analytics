@@ -2448,6 +2448,22 @@ tr:hover .ct-del-btn, .ct-del-btn:focus-visible{ opacity:1; }
 .dn-two{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:32px; }
 .dn-title{ font-size:13px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:12px; }
 .dn-wrap{ display:flex; align-items:center; gap:26px; flex-wrap:wrap; }
+/* « Du chiffre d'affaires au bénéfice » : schéma de flux simplifié (2026-10-17) */
+.skv-scroll{ overflow-x:auto; margin-top:14px; }
+.skv{ position:relative; min-width:640px; }
+.skv svg{ position:absolute; left:0; top:0; width:100%; height:100%; display:block; }
+.skv-r{ fill-opacity:.3; transition:fill-opacity .15s; }
+.skv-r:hover{ fill-opacity:.5; }
+.skv-l{ position:absolute; font-size:13px; line-height:1.25; color:var(--ink); pointer-events:none; }
+.skv-l b{ display:block; font-size:13.5px; font-weight:700; color:var(--ink); }
+.skv-left b{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.skv-l .skv-v{ font-size:13px; font-weight:600; color:var(--ink); font-variant-numeric:tabular-nums; margin-right:6px; }
+.skv-l i{ font-style:normal; font-size:12.5px; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+.skv-left{ text-align:right; transform:translateY(-50%); }
+.skv-right{ transform:translateY(-50%); }
+.skv-top{ transform:translateY(-100%); }
+.skv-note{ margin-top:10px; font-size:12.5px; color:var(--ink-soft); line-height:1.45; }
+.skv-warn{ color:var(--ink); font-weight:600; }
 /* « Où se situe le PE ? » : quatre barres de même échelle (2026-10-17) */
 .field-row .pev{ grid-column:1 / -1; width:100%; padding:20px 24px 16px; border:1px solid var(--border); border-radius:14px; background:color-mix(in srgb, var(--sec-c) 4%, var(--card)); }
 .pev-h{ font-family:var(--font-serif); font-size:19px; font-weight:700; color:var(--ink); }
@@ -3665,6 +3681,7 @@ const SECTIONS = [
       {key:'detenuInstitutions', label:'Détenu par les institutions', type:'owner-inline', percent:true, compact:true},
       {key:'revenuSource', label:'Revenu par source', type:'pieChart'},
       {key:'revenuPays', label:'Revenu par pays', type:'pieChart'},
+      {key:'sankeyVisuel', label:"Du chiffre d'affaires au bénéfice", type:'computed-sankey', span:12},
     ]
   },
   {
@@ -6186,6 +6203,7 @@ function refreshPieVisual(sectionKey, fieldKey){
   const colorByIdx = computePieColors(arr);
   const svg = document.getElementById(`pie-svg-${sectionKey}-${fieldKey}`);
   if(svg) svg.innerHTML = buildPieSvgInner(arr, colorByIdx);
+  if(fieldKey === 'revenuSource'){ const skVis = document.getElementById('sankeyVisual'); if(skVis) skVis.innerHTML = sankeyHtml(c); }
   const legend = document.getElementById(`pie-legend-${sectionKey}-${fieldKey}`);
   if(legend){
     legend.querySelectorAll('.pie-row').forEach((row, idx) => {
@@ -6287,6 +6305,8 @@ function refreshAllComputed(){
   setText('computed-valorisation-peRelatifHisto', fmtRatioPos(computePeRelatifHisto(c)), tipPeRelatifHisto(c));
   const peVis = document.getElementById('peVisual');
   if(peVis) peVis.innerHTML = peVisualHtml(c);
+  const skVis = document.getElementById('sankeyVisual');
+  if(skVis) skVis.innerHTML = sankeyHtml(c);
   const shViz = document.getElementById('sharesViz');
   if(shViz) shViz.innerHTML = sharesDonutHtml(c);
   const psv = computePriceSales(c);
@@ -6744,6 +6764,87 @@ function tipPriceSales(c){
   const v = computePriceSales(c);
   const mc = (c.fields.identite || {}).marketCap || (c.fields.financier || {}).marketCap;
   return `<div class='tt-formula'>Market Cap ${n(raw(mc))} ÷ Chiffre d'affaires ${n(raw(c.fields.financier.chiffreAffaires))}</div>${tipRes('= '+(v === null ? '—' : fmtNum(v, 2)))}<div class='tt-desc'>Ce que vous payez pour chaque unité de ventes. Très variable selon le secteur : un logiciel à 10 n'a rien d'anormal, un distributeur à 10 serait très cher. À comparer à des entreprises du même secteur.</div>`;
+}
+// « Du chiffre d'affaires au bénéfice » (2026-10-17) : schéma de flux (type Sankey) SIMPLIFIÉ, 100 % calculé avec les chiffres déjà saisis, rien de nouveau à remplir.
+// Gauche : les segments de « Revenu par source » (remis à l'échelle du chiffre d'affaires) ; puis chiffre d'affaires, coût des ventes (CA - marge brute) et marge brute ; puis bénéfice net
+// et « charges, intérêts et impôts » (marge brute - bénéfice net : l'application ne détaille pas ces charges). Sans marge brute : chiffre d'affaires vers bénéfice net et coûts. Une perte nette
+// agrandit le bloc des charges au-delà de la marge brute (la partie sans flux entrant montre ce que la marge brute ne couvre pas). Dessin en SVG étiré, étiquettes en HTML (jamais du texte SVG).
+function sankeyHtml(c){
+  const cur = c.currency, fin = (c.fields && c.fields.financier) || {};
+  const head = `<div class="pev-h">Du chiffre d'affaires au bénéfice</div><div class="pev-sub">Où va le chiffre d'affaires : coût des ventes, charges, puis bénéfice. Schéma simplifié, calculé avec vos chiffres.</div>`;
+  const ca = parseMoney(fin.chiffreAffaires);
+  if(ca === null || !isFinite(ca) || ca <= 0) return head + `<div class="pev-empty">Renseignez le chiffre d'affaires, la marge brute et le bénéfice net pour voir où va chaque part des ventes.</div>`;
+  const mb = num(fin.margeBrute);
+  const gross = (mb !== null && mb > 0 && mb < 100) ? ca * mb / 100 : null;
+  let net = parseMoney(fin.beneficeNet), fromMargin = false;
+  if(net === null || !isFinite(net)){ net = null; const mn = num(fin.margeNette); if(mn !== null){ net = ca * mn / 100; fromMargin = true; } }
+  if(gross === null && net === null) return head + `<div class="pev-empty">Ajoutez la marge brute ou le bénéfice net pour voir où va le chiffre d'affaires.</div>`;
+  const BLUE = 'var(--accent)', GREEN = 'var(--green)', RED = 'var(--red)';
+  const nodes = [], links = [];
+  const N = (id, col, v, name, color, label, o) => { const n = Object.assign({ id, col, v, hv:v, name, color, label, y:0, h:0, inC:0, outC:0 }, o || {}); nodes.push(n); return n; };
+  const L = (a, b, v, color) => links.push({ a, b, v, color });
+  // 1. Segments du chiffre d'affaires
+  let segs = (Array.isArray(fin.revenuSource) ? fin.revenuSource : []).map(s => ({ name: String((s && s.label) || '').trim() || '—', v: parseMoney(s && s.value), user:true })).filter(s => s.v !== null && s.v > 0).sort((a, b) => b.v - a.v);
+  if(segs.length > 6){ const rest = segs.slice(5).reduce((t, s) => t + s.v, 0); segs = segs.slice(0, 5).concat([{ name:'Autres', v:rest, user:false }]); }
+  const S = segs.reduce((t, s) => t + s.v, 0);
+  const segNodes = segs.map((s, i) => N('s' + i, 0, s.v * ca / S, s.name, BLUE, 'left', { user:s.user }));
+  const rev = N('rev', 1, ca, "Chiffre d'affaires", BLUE, 'top');
+  segNodes.forEach(n => L(n, rev, n.v, BLUE));
+  let note = '', warn = '';
+  const consistent = gross !== null && net !== null && net <= gross + 1e-9;
+  if(gross !== null){
+    const cost = ca - gross;
+    const gp = N('gp', 2, gross, 'Marge brute', GREEN, consistent ? 'top' : 'right', { wRight:28 });
+    const co = N('cost', 2, cost, 'Coût des ventes', RED, 'right', { wRight:16 });
+    L(rev, gp, gross, GREEN); L(rev, co, cost, RED);
+    if(net !== null && !consistent) warn = "Le bénéfice net est supérieur à la marge brute : vérifiez que tous les chiffres sont sur la même période (le TTM de préférence).";
+    else if(net === null) note = "Ajoutez le bénéfice net pour voir la suite : charges, puis bénéfice.";
+    if(consistent){
+      const charges = gross - net;
+      if(net > 0){ const nn = N('net', 3, net, 'Bénéfice net', GREEN, 'right', { wRight:22 }); L(gp, nn, net, GREEN); }
+      if(net < 0){
+        const ch = N('chg', 3, gross - net, 'Charges, intérêts et impôts', RED, 'right', { wRight:22 });
+        L(gp, ch, gross, RED);
+        warn = "Perte nette : les charges dépassent la marge brute. La partie du bloc rouge sans flux entrant n'est pas couverte par la marge brute.";
+      }else if(charges > 1e-9){ const ch = N('chg', 3, charges, 'Charges, intérêts et impôts', RED, 'right', { wRight:22 }); L(gp, ch, charges, RED); }
+    }
+  }else{
+    // sans marge brute : le chiffre d'affaires se répartit directement entre bénéfice net et coûts
+    const costs = ca - net;
+    if(net > 0){ const nn = N('net', 3, net, 'Bénéfice net', GREEN, 'right', { wRight:22 }); L(rev, nn, net, GREEN); }
+    if(net < 0){ const ch = N('chg', 3, ca - net, 'Coûts et charges', RED, 'right', { wRight:22 }); L(rev, ch, ca, RED); warn = "Perte nette : les coûts dépassent le chiffre d'affaires."; }
+    else if(costs > 1e-9){ const ch = N('chg', 3, costs, 'Coûts et charges', RED, 'right', { wRight:22 }); L(rev, ch, costs, RED); }
+    note = "Ajoutez la marge brute pour séparer le coût des ventes des autres charges.";
+  }
+  // 2. Géométrie : même échelle partout, chaque colonne centrée, un emplacement minimal pour les étiquettes latérales
+  const W = 1000, XS = [220, 380, 560, 740], NW = 14, TOP = 40, BOT = 14, GAP = 10, MINSLOT = 44, H0 = 300;
+  const cols = [0, 1, 2, 3].map(i => nodes.filter(n => n.col === i));
+  const k = H0 / Math.max.apply(null, cols.map(col => col.reduce((t, n) => t + n.hv, 0)).concat([ca]));
+  nodes.forEach(n => { n.h = Math.max(2, k * n.hv); n.slot = (n.label === 'top') ? n.h : Math.max(n.h, MINSLOT); });
+  const colH = cols.map(col => col.length ? col.reduce((t, n) => t + n.slot, 0) + GAP * (col.length - 1) : 0);
+  const contentH = Math.max.apply(null, colH);
+  cols.forEach((col, i) => { let y = TOP + (contentH - colH[i]) / 2; col.forEach(n => { n.y = y + (n.slot - n.h) / 2; y += n.slot + GAP; }); });
+  const H = Math.round(TOP + contentH + BOT);
+  const pctOf = v => { const p = v / ca * 100; return fmtNum(p, p < 10 ? 1 : 0); };
+  const tip = n => `data-tooltip="${escapeHtml('<b>' + escapeHtml(n.name) + '</b> ' + compactMoney(n.v, cur) + ' (' + pctOf(n.v) + ' % du CA)')}"`;
+  let rib = '', rects = '', labels = '';
+  links.forEach(l => {
+    const lh = Math.max(0.8, k * l.v), x1 = XS[l.a.col] + NW, x2 = XS[l.b.col], xm = (x1 + x2) / 2;
+    const ya = l.a.y + l.a.outC, yb = l.b.y + l.b.inC; l.a.outC += lh; l.b.inC += lh;
+    const tn = (l.a.id === 'rev' || l.b.id !== 'rev') ? l.b : l.a;
+    rib += `<path class="skv-r" d="M${x1},${ya.toFixed(1)} C${xm},${ya.toFixed(1)} ${xm},${yb.toFixed(1)} ${x2},${yb.toFixed(1)} L${x2},${(yb + lh).toFixed(1)} C${xm},${(yb + lh).toFixed(1)} ${xm},${(ya + lh).toFixed(1)} ${x1},${(ya + lh).toFixed(1)} Z" fill="${l.color}" ${tip(tn)}></path>`;
+  });
+  nodes.forEach(n => {
+    rects += `<rect x="${XS[n.col]}" y="${n.y.toFixed(1)}" width="${NW}" height="${n.h.toFixed(1)}" rx="2" fill="${n.color}" ${tip(n)}></rect>`;
+    const name = n.user ? `<b data-i18n="off">${escapeHtml(n.name)}</b>` : `<b>${n.name}</b>`;
+    const txt = `${name}<span class="skv-v">${compactMoney(n.v, cur)}</span><i>${pctOf(n.v)} % du CA</i>`;
+    const cy = (n.y + n.h / 2).toFixed(1), x = XS[n.col];
+    if(n.label === 'left') labels += `<div class="skv-l skv-left" style="right:calc(${(W - x) / 10}% + 8px); width:${x / 10 - 2}%; top:${cy}px">${txt}</div>`;
+    else if(n.label === 'top') labels += `<div class="skv-l skv-top" style="left:${x / 10}%; width:26%; top:${(n.y - 5).toFixed(1)}px">${txt}</div>`;
+    else labels += `<div class="skv-l skv-right" style="left:calc(${(x + NW) / 10}% + 8px); width:${n.wRight || 20}%; top:${cy}px">${txt}</div>`;
+  });
+  const notes = `<div class="skv-note">Les charges regroupent l'exploitation (R&D, ventes, frais généraux), les intérêts et les impôts : l'application ne les détaille pas. Pour que le schéma soit juste, saisissez tous les chiffres sur la même période (le TTM de préférence).${fromMargin ? ' Le bénéfice net est calculé avec la marge nette.' : ''}</div>${note ? `<div class="skv-note">${note}</div>` : ''}${warn ? `<div class="skv-note skv-warn">${warn}</div>` : ''}`;
+  return head + `<div class="skv-scroll"><div class="skv" style="height:${H}px"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${rib}${rects}</svg>${labels}</div></div>${notes}`;
 }
 // « Où se situe le PE ? » (2026-10-17, refait le même jour : la règle à billes n'a pas plu). Forme choisie : QUATRE BARRES HORIZONTALES de même échelle (PE actuel, PE forward, moyenne
 // sur 5 ans, secteur) : comparer des longueurs alignées est la lecture la plus facile et la plus exacte ; un trait pointillé reporte la position du PE actuel sur chaque barre de repère,
@@ -13354,7 +13455,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 301;
+const APP_BUILD = 302;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -14429,6 +14530,10 @@ function renderInner(){
         const ph = computePeRelatifHisto(c);
         html += `<div class="field-row"><div class="field-label" data-tooltip="${fieldDescTooltip(field.key)}">${field.label}</div>
           <div class="field-value"><div class="value-with-badge"><span class="computed" id="computed-${section.key}-${field.key}" data-tooltip="${tipPeRelatifHisto(c)}">${fmtRatioPos(ph)}</span>${renderBadge(field.key, ph, `badge-${section.key}-${field.key}`)}</div></div></div>`;
+        return;
+      }
+      if(field.type === 'computed-sankey'){
+        html += `<div class="field-row"><div class="pev skv-card" id="sankeyVisual">${sankeyHtml(c)}</div></div>`;
         return;
       }
       if(field.type === 'computed-pe-visual'){
