@@ -1019,6 +1019,9 @@ body.sx-lock{ overflow:hidden; }
 .sx-zb:hover{ background:rgba(255,255,255,.18); color:#fff; }
 .sx-back{ display:none; }
 .sx-zoomed .sx-back{ display:inline-flex; }
+.sx-dl{ display:none; }
+.sx-zoomed .sx-dl{ display:inline-flex; align-items:center; background:var(--accent); border-color:transparent; color:#fff; }
+.sx-dl:disabled{ opacity:.6; cursor:progress; }
 .sx-zoomed .sx-scale{ display:none; }
 .sx-zoomhost{ flex:0 0 auto; }
 .sx-zoomcard{ padding:20px 20px 12px 20px; }
@@ -2411,42 +2414,37 @@ tr:hover .ct-del-btn, .ct-del-btn:focus-visible{ opacity:1; }
 .dn-two{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:32px; }
 .dn-title{ font-size:13px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:12px; }
 .dn-wrap{ display:flex; align-items:center; gap:26px; flex-wrap:wrap; }
-/* « Où se situe le PE ? » : règle graduée avec une bille par repère (2026-10-17) */
-.field-row .pev{ grid-column:1 / -1; width:100%; padding:18px 22px 16px; border:1px solid var(--border); border-radius:14px; background:color-mix(in srgb, var(--sec-c) 4%, var(--card)); }
+/* « Où se situe le PE ? » : quatre barres de même échelle (2026-10-17) */
+.field-row .pev{ grid-column:1 / -1; width:100%; padding:20px 24px 16px; border:1px solid var(--border); border-radius:14px; background:color-mix(in srgb, var(--sec-c) 4%, var(--card)); }
 .pev-h{ font-family:var(--font-serif); font-size:19px; font-weight:700; color:var(--ink); }
 .pev-sub{ font-size:13px; color:var(--ink-soft); line-height:1.45; margin-top:2px; }
 .pev-empty{ margin-top:12px; font-size:14px; color:var(--ink-soft); }
-.pev-chart{ position:relative; margin:14px 8px 4px; }
-.pev-track{ position:absolute; left:0; right:0; height:6px; border-radius:99px; background:linear-gradient(90deg, color-mix(in srgb, var(--ink) 9%, transparent), color-mix(in srgb, var(--ink) 20%, transparent)); }
-.pev-dot{ position:absolute; width:14px; height:14px; margin:-7px 0 0 -7px; border-radius:50%; border:2px solid var(--card); box-shadow:0 0 0 1px color-mix(in srgb, var(--ink) 22%, transparent); }
-.pev-d-actuel{ width:22px; height:22px; margin:-11px 0 0 -11px; background:var(--accent); border-width:3px; box-shadow:0 0 0 2px var(--accent); }
-.pev-d-forward{ background:#7fa8ff; }
-.pev-d-histo{ background:#c9a24a; }
-.pev-d-secteur{ background:#94a3b8; }
-.pev-stem{ position:absolute; width:1px; margin-left:-.5px; background:color-mix(in srgb, var(--ink) 28%, transparent); }
-.pev-lab{ position:absolute; transform:translateX(-50%); text-align:center; line-height:1.2; white-space:nowrap; }
-.pev-lab.pev-l{ transform:none; text-align:left; }
-.pev-lab.pev-r{ transform:none; text-align:right; }
-.pev-n{ display:block; font-size:12.5px; color:var(--ink-soft); }
-.pev-v{ display:block; font-size:17px; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; }
-.pev-main .pev-n{ color:var(--ink); font-weight:600; }
-.pev-main .pev-v{ font-size:22px; }
-.pev-chips{ display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:10px; margin-top:12px; }
-.pev-chip{ display:flex; flex-direction:column; gap:1px; padding:9px 13px; border-radius:11px; border:1px solid var(--border); background:var(--card); }
-.pev-ct{ font-size:12px; color:var(--ink-soft); font-weight:600; }
-.pev-chip b{ font-size:19px; font-variant-numeric:tabular-nums; }
-.pev-cx{ font-size:12.5px; color:var(--ink-soft); }
+.pev-bars{ display:flex; flex-direction:column; gap:12px; margin-top:16px; }
+.pev-r{ display:grid; grid-template-columns:128px minmax(0,1fr) 54px minmax(0,250px); align-items:center; gap:0 14px; }
+.pev-rl{ font-size:14px; color:var(--ink-soft); }
+.pev-main .pev-rl{ color:var(--ink); font-weight:700; }
+.pev-bt{ position:relative; height:24px; border-radius:7px; background:color-mix(in srgb, var(--ink) 7%, transparent); }
+.pev-b{ position:absolute; left:0; top:0; bottom:0; border-radius:7px; background:#94a3b8; }
+.pev-main .pev-b{ background:var(--accent); }
+.pev-forward .pev-b{ background:#7fa8ff; }
+.pev-histo .pev-b{ background:#c9a24a; }
+.pev-secteur .pev-b{ background:#94a3b8; }
+.pev-at{ position:absolute; top:-5px; bottom:-5px; width:0; border-left:2px dashed var(--ink); opacity:.75; }
+.pev-at-leg{ position:static; display:inline-block; width:0; height:14px; vertical-align:-3px; margin-right:6px; }
+.pev-rv{ font-size:18px; font-variant-numeric:tabular-nums; color:var(--ink); }
+.pev-main .pev-rv{ font-size:22px; }
+.pev-rd{ font-size:13px; color:var(--ink-soft); line-height:1.3; }
+.pev-g b{ font-size:14.5px; font-variant-numeric:tabular-nums; }
 .pev-up b{ color:var(--red); }
 .pev-down b{ color:var(--green); }
 .pev-flat b{ color:var(--ink); }
-@media (max-width:640px){ .field-row .pev{ padding:14px 12px; } .pev-chart{ margin-left:2px; margin-right:2px; } }
-.shares-row{ display:flex; align-items:center; gap:24px 44px; flex-wrap:wrap; margin-top:16px; }
+.pev-leg{ margin-top:12px; font-size:12.5px; color:var(--ink-soft); }
+@media (max-width:760px){ .field-row .pev{ padding:16px 14px; } .pev-r{ grid-template-columns:minmax(0,1fr) auto; gap:4px 10px; } .pev-bt{ grid-column:1 / -1; order:3; } .pev-rd{ grid-column:1 / -1; order:4; } }.shares-row{ display:flex; align-items:center; gap:24px 44px; flex-wrap:wrap; margin-top:16px; }
 .shares-viz{ flex:0 1 auto; min-width:0; }
-.sh-owners{ flex:0 0 auto; display:flex; flex-direction:column; gap:12px; }
-.sh-own-title{ font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); }
-.sh-own{ display:flex; align-items:center; justify-content:space-between; gap:14px; }
+.sh-owners{ flex:0 0 auto; display:flex; flex-direction:column; gap:16px; margin-left:auto; padding-left:36px; border-left:1px solid var(--border); }
+.field-row.sh-own{ display:flex; flex-direction:column; gap:7px; }
 .sh-own-in{ display:inline-flex; align-items:center; }
-.field-value .sh-own input[type=text]{ width:auto !important; field-sizing:content; min-width:56px; padding-left:11px; padding-right:11px; }
+.field-value .sh-own input[type=text]{ width:auto !important; field-sizing:content; min-width:64px; padding-left:11px; padding-right:11px; }
 .shares-viz .sh-donut{ gap:30px; flex-wrap:nowrap; }
 .shares-viz .dn-legend{ flex:0 0 auto; min-width:0; gap:12px; }
 .shares-viz .dn-row{ display:grid; grid-template-columns:14px 196px auto; align-items:center; gap:0 10px; }
@@ -5921,16 +5919,16 @@ function sharesDonutHtml(c){
   const legend = items.map(it => `<div class="dn-row"><span class="pie-swatch" style="background:${it.color}"></span><span class="dn-lbl">${it.label}</span><span class="dn-val">${compactShares(it.v)} (${fmtNum(it.p, 2)}&nbsp;%)</span></div>`).join('');
   return `<div class="dn-wrap sh-donut"><svg viewBox="0 0 180 180" class="donut-svg" role="img" aria-label="Répartition des actions">${paths}<circle cx="90" cy="90" r="64" fill="var(--card)"/><text x="90" y="90" text-anchor="middle" dominant-baseline="central" class="sh-center">${compactShares(total)}</text></svg><div class="dn-legend">${legend}</div></div>`;
 }
-// Les deux pourcentages d'actionnariat, à droite de l'anneau (hors de #sharesViz, qui est redessiné à chaque frappe : les cases perdraient le focus)
+// Les deux pourcentages d'actionnariat, à droite de l'anneau, présentés comme des champs NORMAUX de la fiche (libellé en gras avec son « i », case dessous) et séparés de l'anneau par un filet
+// (hors de #sharesViz, qui est redessiné à chaque frappe : les cases perdraient le focus)
 function sharesOwnersHtml(c, sectionKey){
   const mk = (key, label) => {
     const field = SECTIONS.find(s => s.key === sectionKey).fields.find(f => f.key === key);
     const v = (c.fields[sectionKey] || {})[key] || '';
-    return `<div class="sh-own"><span class="duo-label" data-tooltip="${fieldDescTooltip(key)}">${label}</span><span class="sh-own-in">${fieldInput(sectionKey, field, v)}<span class="value-suffix">%</span></span></div>`;
+    return `<div class="field-row sh-own"><div class="field-label" data-tooltip="${fieldDescTooltip(key)}">${label}</div><div class="field-value"><span class="sh-own-in">${fieldInput(sectionKey, field, v)}<span class="value-suffix">%</span></span></div></div>`;
   };
-  return `<div class="sh-owners"><div class="sh-own-title">Part de détention</div>${mk('detenuInities', 'Dirigeants et initiés')}${mk('detenuInstitutions', 'Institutions')}</div>`;
-}
-function disponibleLabel(p){
+  return `<div class="sh-owners">${mk('detenuInities', 'Part détenue par les dirigeants et initiés')}${mk('detenuInstitutions', 'Part détenue par les institutions')}</div>`;
+}function disponibleLabel(p){
   if(p < 50) return 'Capital très concentré';
   if(p <= 80) return 'Flottant modéré';
   return 'Flottant large, titre liquide';
@@ -6710,10 +6708,9 @@ function tipPriceSales(c){
   const mc = (c.fields.identite || {}).marketCap || (c.fields.financier || {}).marketCap;
   return `<div class='tt-formula'>Market Cap ${n(raw(mc))} ÷ Chiffre d'affaires ${n(raw(c.fields.financier.chiffreAffaires))}</div>${tipRes('= '+(v === null ? '—' : fmtNum(v, 2)))}<div class='tt-desc'>Ce que vous payez pour chaque unité de ventes. Très variable selon le secteur : un logiciel à 10 n'a rien d'anormal, un distributeur à 10 serait très cher. À comparer à des entreprises du même secteur.</div>`;
 }
-// « Où se situe le PE ? » (2026-10-17, demande de l'auteur : un visuel qui résume les multiples à partir des données déjà saisies). Forme choisie : une règle horizontale
-// graduée de 0 au PE maximum, UNE bille par repère (PE actuel en grand au-dessus, PE forward, moyenne sur 5 ans et PE du secteur en dessous), toutes sur la même échelle :
-// on voit d'un coup d'œil si le PE actuel est à droite (plus cher) ou à gauche (moins cher) de chaque repère. Dessous, trois pastilles chiffrent les écarts. 100 % dérivé.
-// Étiquettes en HTML positionnées en % (jamais du texte SVG déformé), celles qui se frôlent passent sur un second niveau.
+// « Où se situe le PE ? » (2026-10-17, refait le même jour : la règle à billes n'a pas plu). Forme choisie : QUATRE BARRES HORIZONTALES de même échelle (PE actuel, PE forward, moyenne
+// sur 5 ans, secteur) : comparer des longueurs alignées est la lecture la plus facile et la plus exacte ; un trait pointillé reporte la position du PE actuel sur chaque barre de repère,
+// et à droite de chaque barre un écart chiffré dit en clair « plus cher / moins cher que... ». 100 % dérivé des données saisies, redessiné en direct, rien dans le score ici.
 function peVisualHtml(c){
   const ok = v => v !== null && v !== undefined && isFinite(v) && v > 0;
   const val = (c.fields && c.fields.valorisation) || {};
@@ -6722,54 +6719,28 @@ function peVisualHtml(c){
   const head = `<div class="pev-h">Où se situe le PE ?</div><div class="pev-sub">Le PE actuel face à ses repères : le PE forward (bénéfices attendus), sa moyenne des 5 dernières années et le PE du secteur.</div>`;
   if(d.pa === null) return head + `<div class="pev-empty">Renseignez le prix actuel et l'EPS pour calculer le PE actuel, puis ses repères (PE sectoriel, PE moyen sur 5 ans).</div>`;
   if(d.pf === null && d.ph === null && d.ps === null) return head + `<div class="pev-empty">Ajoutez le PE sectoriel ou le PE moyen sur 5 ans pour situer le PE actuel.</div>`;
-  const marks = [
-    { k:'actuel', label:'PE actuel', v:d.pa },
-    { k:'forward', label:'PE forward', v:d.pf },
-    { k:'histo', label:'Moyenne 5 ans', v:d.ph },
-    { k:'secteur', label:'Secteur', v:d.ps },
-  ].filter(m => m.v !== null);
-  const axisMax = Math.max.apply(null, marks.map(m => m.v)) * 1.12;
-  marks.forEach(m => { m.pct = Math.max(2, Math.min(98, m.v / axisMax * 100)); });
-  // PE actuel au-dessus de la règle ; les autres repères en dessous, sur 1 à 3 niveaux selon leur proximité (moins de 20 % de largeur d'écart)
-  const below = marks.filter(m => m.k !== 'actuel').sort((a, b) => a.pct - b.pct);
-  let maxLvl = 0;
-  below.forEach((m, i) => {
-    let lvl = 0;
-    for(let j = 0; j < i; j++){ if(Math.abs(below[j].pct - m.pct) < 20 && below[j].lvl === lvl) lvl++; }
-    m.lvl = Math.min(lvl, 2); maxLvl = Math.max(maxLvl, m.lvl);
-  });
-  const TOP = 74, ROW = 50, trackY = TOP + 12;
-  const H = TOP + 24 + (below.length ? (maxLvl + 1) * ROW + 6 : 0);
-  const lab = (m, style, extra) => {
-    const edge = m.pct < 11 ? ' pev-l' : (m.pct > 89 ? ' pev-r' : '');
-    const left = edge === ' pev-l' ? 'left:0' : (edge === ' pev-r' ? 'right:0' : `left:${m.pct.toFixed(2)}%`);
-    return `<div class="pev-lab${edge}${extra}" style="${left};${style}"><span class="pev-n">${m.label}</span><b class="pev-v">${fmtNum(m.v, 1)}</b></div>`;
-  };
-  let html = `<div class="pev-chart" style="height:${H}px" role="img" aria-label="Position du PE actuel par rapport à ses repères"><div class="pev-track" style="top:${trackY - 3}px"></div>`;
-  marks.forEach(m => {
-    const big = m.k === 'actuel';
-    html += `<i class="pev-dot pev-d-${m.k}" style="left:${m.pct.toFixed(2)}%;top:${trackY}px"></i>`;
-    if(big){
-      html += `<i class="pev-stem" style="left:${m.pct.toFixed(2)}%;top:${trackY - 28}px;height:28px"></i>` + lab(m, `bottom:${H - trackY + 30}px`, ' pev-main');
-    }else{
-      const y = trackY + 18 + m.lvl * ROW;
-      html += `<i class="pev-stem" style="left:${m.pct.toFixed(2)}%;top:${trackY + 8}px;height:${y - trackY - 8}px"></i>` + lab(m, `top:${y}px`, '');
-    }
-  });
-  html += `</div>`;
-  const chips = [];
-  const delta = (title, a, b, up, down, flat) => {
-    if(a === null || b === null) return;
+  const max = Math.max.apply(null, [d.pa, d.pf, d.ph, d.ps].filter(v => v !== null));
+  const pct = v => Math.max(3, v / max * 100);
+  const atPct = pct(d.pa).toFixed(2);
+  const sign = x => (x > 0 ? '+' : '−');
+  // écart du PE actuel (a) face à un repère (b) : plus cher / moins cher / au niveau
+  const gap = (a, b, up, down, flat) => {
     const x = a / b - 1, ax = Math.abs(x) * 100;
     const tone = ax < 3 ? 'flat' : (x > 0 ? 'up' : 'down');
-    chips.push(`<div class="pev-chip pev-${tone}"><span class="pev-ct">${title}</span><b>${tone === 'flat' ? '≈ 0 %' : (x > 0 ? '+' : '−') + fmtNum(ax, 1) + ' %'}</b><span class="pev-cx">${tone === 'flat' ? flat : (x > 0 ? up : down)}</span></div>`);
+    return `<span class="pev-g pev-${tone}"><b>${tone === 'flat' ? '≈ 0 %' : sign(x) + fmtNum(ax, 1) + ' %'}</b> ${tone === 'flat' ? flat : (x > 0 ? up : down)}</span>`;
   };
-  delta('Face au secteur', d.pa, d.ps, 'plus cher que le secteur', 'moins cher que le secteur', 'au niveau du secteur');
-  delta('Face à son historique', d.pa, d.ph, "plus cher que d'habitude", "moins cher que d'habitude", "comme d'habitude");
-  if(d.pf !== null) delta('Bénéfices attendus', d.pf, d.pa, 'PE forward plus haut : bénéfices attendus en baisse', 'PE forward plus bas : bénéfices attendus en hausse', 'bénéfices attendus stables');
-  return head + html + (chips.length ? `<div class="pev-chips">${chips.join('')}</div>` : '');
-}
-function computeRevenuEmploye(c){
+  const row = (cls, label, v, note, withAt) => `<div class="pev-r ${cls}"><span class="pev-rl">${label}</span><div class="pev-bt"><i class="pev-b" style="width:${pct(v).toFixed(2)}%"></i>${withAt ? `<i class="pev-at" style="left:${atPct}%"></i>` : ''}</div><b class="pev-rv">${fmtNum(v, 1)}</b><span class="pev-rd">${note}</span></div>`;
+  let html = `<div class="pev-bars">` + row('pev-main', 'PE actuel', d.pa, '', false);
+  if(d.pf !== null){
+    const x = d.pf / d.pa - 1, ax = Math.abs(x) * 100, tone = ax < 3 ? 'flat' : (x < 0 ? 'down' : 'up');
+    const txt = tone === 'flat' ? 'bénéfices attendus stables' : (x < 0 ? 'bénéfices attendus en hausse' : 'bénéfices attendus en baisse');
+    html += row('pev-forward', 'PE forward', d.pf, `<span class="pev-g pev-${tone}"><b>${tone === 'flat' ? '≈ 0 %' : sign(x) + fmtNum(ax, 1) + ' %'}</b> ${txt}</span>`, true);
+  }
+  if(d.ph !== null) html += row('pev-histo', 'Moyenne 5 ans', d.ph, gap(d.pa, d.ph, "actuel plus cher que d'habitude", "actuel moins cher que d'habitude", "actuel comme d'habitude"), true);
+  if(d.ps !== null) html += row('pev-secteur', 'Secteur', d.ps, gap(d.pa, d.ps, 'actuel plus cher que le secteur', 'actuel moins cher que le secteur', 'actuel au niveau du secteur'), true);
+  html += `</div><div class="pev-leg"><i class="pev-at pev-at-leg"></i> Le trait pointillé marque le PE actuel</div>`;
+  return head + html;
+}function computeRevenuEmploye(c){
   const ca = parseMoney(c.fields.financier.chiffreAffaires);
   const emp = parseMoney(c.fields.identite.nbEmployes);
   if(ca === null || emp === null || emp === 0) return null;
@@ -7253,7 +7224,7 @@ const SCORE_FLOOR_AT_ZERO = new Set(['tailleCapi']);
 // VALORISATION, où être « cher » n'est pas une catastrophe comparable à une perte ou à une dette ingérable : un PEG de 2,5, un PE deux fois celui du secteur
 // ou un cours 15 % au-dessus d'une valeur intrinsèque (qui reste une estimation) tombaient à 0 d'un coup (2026-10-06, revue du système de notes).
 // conversionFcf : avec un seuil « moyen » à 50 % et un écart bon − moyen de 20 points, une conversion de 28 % tombait à 0/100 ; la note descend maintenant jusqu'à 0 à 0 % de conversion (28 % vaut environ 25).
-const SCORE_TAIL = { peg:1, peRelatifSecteur:1, margeSecurite:35, potentielWs:25, conversionFcf:50 };
+const SCORE_TAIL = { peg:1, peRelatifSecteur:1, peRelatifHisto:1, margeSecurite:35, potentielWs:25, conversionFcf:50 };
 // Niveau EXCEPTIONNEL qui mérite 100 (2026-10-11, demande de l'auteur : Hermès et Nvidia avaient tous deux 100 en Rentabilité). Avec « une demi-marge au-delà du seuil
 // très bon », tout ROIC au-dessus de 22,5 % plafonnait à 100 : un ROIC de 30 % (Hermès) valait un ROIC de 90 % (Nvidia). Pour les indicateurs de rentabilité, de marge
 // et de croissance, la note monte donc de 90 (seuil « très bon ») à 100 sur un intervalle beaucoup plus large, jusqu'à ce niveau exceptionnel. Les autres
@@ -7286,14 +7257,14 @@ function continuousScore(val, thresholds, inverse, topAtVeryGood, floorAtZero, t
 //   Croissance (20 %)   CAGR du CA + croissance attendue du CA sur 3 ans + croissance attendue du bénéfice net sur 3 ans + croissance estimée du BPA (EPS) sur 3 ans + croissance du dividende (annualisée, si l'entreprise en verse)
 // (Depuis le 2026-09-26, chaque axe compte au moins 3 indicateurs, demande de l'auteur.)
 //   Solidité (20 %)     dette nette / FCF + conversion du FCF + dette totale / total actif + trésorerie / dette totale + score de solvabilité + probabilité de faillite
-//   Valorisation (20 %) PEG + marge de sécurité (écart avec la valeur intrinsèque) + PE relatif au secteur + rendement du FCF + potentiel jusqu'à l'objectif Wall Street moyen + consensus des analystes (jauge, de 1 à 5, note linéaire : Hold = 50)
+//   Valorisation (20 %) PEG + marge de sécurité (écart avec la valeur intrinsèque) + PE relatif au secteur + PE relatif à son historique sur 5 ans + rendement du FCF + potentiel jusqu'à l'objectif Wall Street moyen + consensus des analystes (jauge, de 1 à 5, note linéaire : Hold = 50)
 // La note globale est la moyenne pondérée des axes renseignés (poids réajustés). Elle est "provisoire" tant que moins de 3 axes sur 5 sont renseignés.
 const SCORE_AXES = [
   { id:'qualite', label:'Qualité', weight:0.20, parts:['moatNote', 'margeBrute', 'margeNette', 'capexRatio', 'buffett'] },
   { id:'rentabilite', label:'Rentabilité', weight:0.20, parts:['roic', 'roe', 'roa', 'margeFcf', 'croissanceBenef'] },
   { id:'croissance', label:'Croissance', weight:0.20, parts:['croissanceCA', 'croissanceAttendueCA', 'croissanceAttendueBenef', 'croissanceEstimeeEps', 'croissanceDividende'] },
   { id:'solidite', label:'Solidité', weight:0.20, parts:['detteActif', 'conversionFcf', 'detteTotalActif', 'tresorerieDette', 'scoreSolvabilite', 'probaFaillite', 'tailleCapi'] },
-  { id:'valorisation', label:'Valorisation', weight:0.20, parts:['peg', 'margeSecurite', 'peRelatifSecteur', 'rendementFcf', 'potentielWs', 'consensus'] },
+  { id:'valorisation', label:'Valorisation', weight:0.20, parts:['peg', 'margeSecurite', 'peRelatifSecteur', 'peRelatifHisto', 'rendementFcf', 'potentielWs', 'consensus'] },
 ];
 const SCORE_MIN_AXES = 3;
 // Un axe n'est noté que si au moins 2 de ses indicateurs sont renseignés : avec un seul, il pèserait autant qu'un axe complet (demande de l'auteur, 2026-10-04).
@@ -7304,8 +7275,8 @@ const MARGE_SECURITE_SCALE = { thresholds:[30, 15, 0], inverse:false };
 const POTENTIEL_WS_SCALE = { thresholds:[30, 10, 0], inverse:false };
 // Checklist Buffett : notation LINÉAIRE (demande de l'auteur le 2026-09-26) : chaque critère validé vaut 10 points sur 10 critères, donc 7/10 = 70 points.
 // (Les couleurs de la checklist ailleurs dans l'app gardent leurs propres seuils 80 / 60 / 40.)
-const SCORE_PART_LABELS = { moatNote:'MOAT', consensus:'Consensus des analystes', buffett:'Checklist Buffett', margeBrute:'Marge brute', croissanceDividende:'Croissance du dividende (annualisée)', croissanceEstimeeEps:'Croissance estimée du BPA (3 ans)', margeNette:'Marge nette', roic:'ROIC', roe:'ROE', roa:'ROA', margeFcf:'Marge FCF (FCF / CA)', croissanceBenef:'CAGR du bénéfice net', croissanceCA:'CAGR du CA', croissanceAttendueCA:'Croissance attendue du CA (3 ans)', croissanceAttendueBenef:'Croissance attendue du bénéfice net (3 ans)', detteActif:'Dette nette / FCF', detteTotalActif:'Dette totale / Total actif', tresorerieDette:'Trésorerie / Dette totale', scoreSolvabilite:'Score de solvabilité', probaFaillite:'Probabilité de faillite', tailleCapi:'Taille (capitalisation boursière)', conversionFcf:'Conversion du FCF', peg:'PEG', margeSecurite:'Marge de sécurité', peRelatifSecteur:'PE / Secteur', capexRatio:'Capex / CA (légèreté en capital)', rendementFcf:'Rendement du FCF', potentielWs:'Potentiel Wall Street (objectif moyen)' };
-const SCORE_PART_UNITS = { moatNote:'/10', consensus:'/5', buffett:' %', margeBrute:' %', croissanceDividende:' %/an', croissanceEstimeeEps:' %', margeNette:' %', roic:' %', roe:' %', roa:' %', margeFcf:' %', croissanceBenef:' %', croissanceCA:' %', croissanceAttendueCA:' %', croissanceAttendueBenef:' %', detteActif:'', detteTotalActif:' %', tresorerieDette:' %', scoreSolvabilite:'/100', probaFaillite:' %', tailleCapi:' ' + MD_UNIT, conversionFcf:' %', peg:'', margeSecurite:' %', peRelatifSecteur:'', capexRatio:' %', rendementFcf:' %', potentielWs:' %' };
+const SCORE_PART_LABELS = { moatNote:'MOAT', consensus:'Consensus des analystes', buffett:'Checklist Buffett', margeBrute:'Marge brute', croissanceDividende:'Croissance du dividende (annualisée)', croissanceEstimeeEps:'Croissance estimée du BPA (3 ans)', margeNette:'Marge nette', roic:'ROIC', roe:'ROE', roa:'ROA', margeFcf:'Marge FCF (FCF / CA)', croissanceBenef:'CAGR du bénéfice net', croissanceCA:'CAGR du CA', croissanceAttendueCA:'Croissance attendue du CA (3 ans)', croissanceAttendueBenef:'Croissance attendue du bénéfice net (3 ans)', detteActif:'Dette nette / FCF', detteTotalActif:'Dette totale / Total actif', tresorerieDette:'Trésorerie / Dette totale', scoreSolvabilite:'Score de solvabilité', probaFaillite:'Probabilité de faillite', tailleCapi:'Taille (capitalisation boursière)', conversionFcf:'Conversion du FCF', peg:'PEG', margeSecurite:'Marge de sécurité', peRelatifSecteur:'PE / Secteur', peRelatifHisto:'PE / historique 5 ans', capexRatio:'Capex / CA (légèreté en capital)', rendementFcf:'Rendement du FCF', potentielWs:'Potentiel Wall Street (objectif moyen)' };
+const SCORE_PART_UNITS = { moatNote:'/10', consensus:'/5', buffett:' %', margeBrute:' %', croissanceDividende:' %/an', croissanceEstimeeEps:' %', margeNette:' %', roic:' %', roe:' %', roa:' %', margeFcf:' %', croissanceBenef:' %', croissanceCA:' %', croissanceAttendueCA:' %', croissanceAttendueBenef:' %', detteActif:'', detteTotalActif:' %', tresorerieDette:' %', scoreSolvabilite:'/100', probaFaillite:' %', tailleCapi:' ' + MD_UNIT, conversionFcf:' %', peg:'', margeSecurite:' %', peRelatifSecteur:'', peRelatifHisto:'', capexRatio:' %', rendementFcf:' %', potentielWs:' %' };
 // Barème de couleurs de la NOTE GLOBALE (demande de l'auteur le 2026-09-26) : 5 paliers de 20 points, rouge (0 à 20), orange (20 à 40), jaune (40 à 60),
 // vert clair (60 à 80), vert foncé (80 à 100). Distinct du barème à 4 paliers des indicateurs (TIER_COLORS), qui reste inchangé.
 // scoreColor5(note, true) donne les teintes vives pour les cartes à fond marine.
@@ -7348,6 +7319,7 @@ function scorePartValue(c, key){
   if(key === 'conversionFcf') return computeConversionFcf(c);
   if(key === 'peg') return computePeg(c);
   if(key === 'peRelatifSecteur') return computePeRelatif(c);
+  if(key === 'peRelatifHisto') return computePeRelatifHisto(c);
   if(key === 'rendementFcf') return computeRendementFcf(c);
   if(key === 'capexRatio'){ const r = computeCapexRatio(c); return r === null ? null : Math.abs(r); }   // le Capex est parfois saisi en négatif (tableau des flux de trésorerie) : on compare son poids, pas son signe
   if(key === 'potentielWs'){ const w = computeWallStreetTargets(c), pm = w && w.pct.moy; return (pm === null || pm === undefined) ? null : pm; }   // hausse ou baisse implicite jusqu'à l'objectif moyen des analystes
@@ -7595,6 +7567,7 @@ function buildKeyHighlights(c){
     { key:'croissanceBenef', label:'Croissance des bénéfices', val: num(c.fields.financier.croissanceBenef && c.fields.financier.croissanceBenef.cagr) },
     { key:'capexRatio', label:'Capex / CA', val: computeCapexRatio(c) },
     { key:'peRelatifSecteur', label:'PE relatif au secteur', val: computePeRelatif(c) },
+    { key:'peRelatifHisto', label:'PE vs son historique', val: computePeRelatifHisto(c) },
     { key:'rendementFcf', label:'Rendement du FCF', val: computeRendementFcf(c) },
     { key:'positionShort', label:'Position short', val: num(c.fields.valorisation.positionShort) },
   ];
@@ -10935,7 +10908,6 @@ function compareTableHtml(list, opts){
   const pes = cs.map(c => computePeActuel(c)), pesF = cs.map(c => computePeForward(c));
   body += row('PE actuel', pes.map(v => (v !== null && v <= 0) ? 'n.s.' : num1(v, 1)), bestIdx(lowPe(pes)));
   body += row('PE forward', pesF.map(v => (v !== null && v <= 0) ? 'n.s.' : num1(v, 1)), bestIdx(lowPe(pesF)));
-  body += row('PE vs son historique', cs.map(c => { const v = computePeRelatifHisto(c); return v === null ? '—' : fmtRatioPos(v); }), -1);
   body += row('Price / Sales', cs.map(c => { const v = computePriceSales(c); return v === null ? '—' : fmtNum(v, 2); }), -1);
   // Le PEG n'est plus ici : il figure dans le « Score détaillé » (axe Valorisation), avec tous les autres indicateurs qui entrent dans la note
   body += row('Valeur intrinsèque', cs.map(c => money(c, c.fields.valorisation.valeurIntrinseque)), -1);
@@ -13334,7 +13306,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 296;
+const APP_BUILD = 297;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -14132,6 +14104,109 @@ function sxZoomTo(n){
 }
 const SX_ARROW_L = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
 const SX_ARROW_R = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
+// ---- Téléchargement d'une section du résumé en image PNG (2026-10-17, demande de l'auteur : partager et publier plus facilement) ----
+// Sans bibliothèque : la carte affichée en plein écran est copiée avec TOUS ses styles calculés en ligne, placée dans un <svg><foreignObject>, dessinée sur un canvas puis
+// exportée en PNG (échelle ×2, net sur un écran dense). Deux choses doivent être intégrées à l'image sinon elles disparaissent : les polices (fichiers du site, en base64, sous-ensemble « latin »
+// seulement) et les logos (convertis en données ; si le serveur du logo refuse, les initiales les remplacent). Nom du fichier : « Entreprise - Section - AAAA-MM-JJ.png ».
+const SX_SECTION_NAMES = ['Identité', 'Financier', 'Croissance', 'Valorisation', 'Analyse personnelle', 'Synthèse globale'];
+let sxFontCssCache = null;
+function sxBlobToDataUrl(blob){
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); r.readAsDataURL(blob); });
+}
+async function sxFontFaceCss(){
+  if(sxFontCssCache !== null) return sxFontCssCache;
+  let out = '';
+  try{
+    const css = await (await fetch('fonts/fonts.css')).text();
+    const re = /\/\*\s*([\w-]+)\s*\*\/\s*(@font-face\s*\{[^}]*\})/g;
+    let m; const jobs = [];
+    while((m = re.exec(css))){
+      if(m[1] !== 'latin') continue;
+      const block = m[2], u = /url\(([^)]+)\)/.exec(block);
+      if(!u) continue;
+      const file = u[1].replace(/['"]/g, '');
+      jobs.push(fetch('fonts/' + file).then(r => r.blob()).then(sxBlobToDataUrl).then(data => block.replace(u[0], `url(${data})`)).catch(() => ''));
+    }
+    out = (await Promise.all(jobs)).join('\n');
+  }catch(e){ out = ''; }
+  sxFontCssCache = out;
+  return out;
+}
+// Copie les styles calculés de l'original sur son clone, élément par élément (même structure, même ordre)
+function sxInlineStyles(src, dst){
+  const cs = getComputedStyle(src);
+  let s = '';
+  for(let i = 0; i < cs.length; i++){
+    const prop = cs[i];
+    if(/^(-webkit-|transition|animation|scroll|cursor|container|contain|overscroll|view-|will-change|pointer-events)/.test(prop)) continue;
+    s += prop + ':' + cs.getPropertyValue(prop) + ';';
+  }
+  dst.setAttribute('style', s);
+  const a = src.children, b = dst.children;
+  for(let i = 0; i < a.length && i < b.length; i++) sxInlineStyles(a[i], b[i]);
+}
+async function sxInlineImages(root, initials){
+  const imgs = Array.from(root.querySelectorAll('img'));
+  await Promise.all(imgs.map(async im => {
+    const src = im.getAttribute('src') || '';
+    if(!src || src.indexOf('data:') === 0) return;
+    try{
+      const r = await fetch(src, { mode:'cors' });
+      if(!r.ok) throw new Error('http');
+      im.setAttribute('src', await sxBlobToDataUrl(await r.blob()));
+    }catch(e){
+      const sp = document.createElement('span');
+      sp.textContent = initials;
+      sp.setAttribute('style', (im.getAttribute('style') || '') + ';display:flex;align-items:center;justify-content:center;font-weight:800;color:#17294e;background:#fff;');
+      im.replaceWith(sp);
+    }
+  }));
+}
+function sxFileName(c, n){
+  const clean = s => String(s || '').replace(/[\\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const d = new Date(), p = x => String(x).padStart(2, '0');
+  return `${clean(c.name) || 'Analyse'} - ${SX_SECTION_NAMES[n - 1] || 'Section'} - ${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}.png`;
+}
+async function sxDownload(){
+  const ov = document.getElementById('sxOverlay');
+  const c = getActive();
+  if(!ov || !c || sxZoomN <= 0) return;
+  const zc = ov.querySelector('.sx-zoomcard');
+  if(!zc) return;
+  const btn = ov.querySelector('[data-sx-download]');
+  const label = btn ? btn.innerHTML : '';
+  if(btn){ btn.disabled = true; btn.textContent = "Création de l'image…"; }
+  try{
+    const W = zc.offsetWidth, H = zc.offsetHeight;
+    const clone = zc.cloneNode(true);
+    sxInlineStyles(zc, clone);
+    clone.style.transform = 'none'; clone.style.boxShadow = 'none'; clone.style.margin = '0'; clone.style.position = 'static';
+    await sxInlineImages(clone, String(c.name || '?').trim().slice(0, 1).toUpperCase());
+    const fonts = await sxFontFaceCss();
+    const xhtml = new XMLSerializer().serializeToString(clone);
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><defs><style>${fonts}</style></defs><foreignObject x="0" y="0" width="${W}" height="${H}">${xhtml}</foreignObject></svg>`;
+    // adresse « data: » et non « blob: » : avec une adresse blob, le navigateur marque le canvas comme « contaminé » et refuse l'export en PNG
+    const img = new Image();
+    await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error('image')); img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); });
+    const SCALE = 2;
+    const cv = document.createElement('canvas'); cv.width = W * SCALE; cv.height = H * SCALE;
+    const ctx = cv.getContext('2d');
+    ctx.scale(SCALE, SCALE);
+    ctx.drawImage(img, 0, 0);
+    await new Promise(r => setTimeout(r, 120));   // laisse aux polices intégrées le temps de s'appliquer, puis on redessine par-dessus
+    ctx.clearRect(0, 0, W, H); ctx.drawImage(img, 0, 0);
+    const blob = await new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error('blob')), 'image/png'));
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = sxFileName(c, sxZoomN);
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    showToast('Image téléchargée : ' + a.download);
+  }catch(e){
+    showToast("Impossible de créer l'image. Essayez avec Chrome ou Edge.");
+  }finally{
+    if(btn){ btn.disabled = false; btn.innerHTML = label; }
+  }
+}
 function sxStep(d){
   const ovm = document.getElementById('sxOverlay');
   if(!ovm || ovm.dataset.mode === 'cmp') return;
@@ -14146,7 +14221,7 @@ function sxOpen(){
   const ov = document.createElement('div');
   ov.className = 'sx-overlay'; ov.id = 'sxOverlay';
   ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Résumé de l\'analyse');
-  ov.innerHTML = `<div class="sx-bar"><span class="sx-bar-t">Résumé de l'analyse</span><span class="sx-pages"><button type="button" class="sx-pgb on" data-sx-go="1">Page 1 <small>Sections 1 à 3</small></button><button type="button" class="sx-pgb" data-sx-go="2">Page 2 <small>Sections 4 à 6</small></button><button type="button" class="sx-pgb sx-back" data-sx-zoom="0">&larr; Retour au résumé</button></span><button type="button" class="sx-close" data-sx-close>Fermer &#10005;</button></div><button type="button" class="sx-arrow sx-prev sx-off" data-sx-step="-1" aria-label="Page précédente">${SX_ARROW_L}</button><button type="button" class="sx-arrow sx-next" data-sx-step="1" aria-label="Page suivante">${SX_ARROW_R}</button><div class="sx-scale">${buildSummaryPages(c).join('')}</div>`;
+  ov.innerHTML = `<div class="sx-bar"><span class="sx-bar-t">Résumé de l'analyse</span><span class="sx-pages"><button type="button" class="sx-pgb on" data-sx-go="1">Page 1 <small>Sections 1 à 3</small></button><button type="button" class="sx-pgb" data-sx-go="2">Page 2 <small>Sections 4 à 6</small></button><button type="button" class="sx-pgb sx-back" data-sx-zoom="0">&larr; Retour au résumé</button><button type="button" class="sx-pgb sx-dl" data-sx-download>Télécharger l'image</button></span><button type="button" class="sx-close" data-sx-close>Fermer &#10005;</button></div><button type="button" class="sx-arrow sx-prev sx-off" data-sx-step="-1" aria-label="Page précédente">${SX_ARROW_L}</button><button type="button" class="sx-arrow sx-next" data-sx-step="1" aria-label="Page suivante">${SX_ARROW_R}</button><div class="sx-scale">${buildSummaryPages(c).join('')}</div>`;
   document.body.appendChild(ov);
   document.body.classList.add('sx-lock');
   sxFit();
@@ -14164,6 +14239,7 @@ function initSummary(){
     if(e.target.closest && e.target.closest('[data-cmp-card-open]')){ cmpCardOpen(); return; }
     const ov = document.getElementById('sxOverlay');
     if(!ov) return;
+    if(e.target.closest && e.target.closest('[data-sx-download]')){ sxDownload(); return; }
     const zm = e.target.closest && e.target.closest('[data-sx-zoom]');
     if(zm){ sxZoomTo(zm.dataset.sxZoom); return; }
     const st = e.target.closest && e.target.closest('[data-sx-step]');
