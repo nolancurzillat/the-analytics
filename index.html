@@ -1131,7 +1131,10 @@ body.sx-lock{ overflow:hidden; }
 .sx-compact .sx-tl{ font-size:12.5px; }
 .sx-dleg{ font-size:13.5px; }
 .sx-note{ font-size:12.5px; }
-.sx-who{ font-size:14px; }
+.sx-who{ font-size:19px; font-weight:700; color:#fff; gap:11px; flex:0 1 auto; text-align:left; }
+.sx-who > span:last-child{ min-width:0; white-space:normal; line-height:1.15; overflow-wrap:anywhere; }
+.sx-who em{ font-size:14px; margin-left:4px; }
+.sx-av-mini.preview-avatar{ width:46px; height:46px; flex:0 0 46px; border-radius:11px; font-size:18px; }
 /* MOAT et thèse : la case suit la taille de son texte, mais reste généreuse (texte plus grand, marges larges) */
 .sx-pb > .sx-moat{ flex:0 0 auto; padding:14px 18px; gap:20px; }
 .sx-gauge{ flex:0 0 168px; width:168px; }
@@ -2438,10 +2441,6 @@ tr:hover .ct-del-btn, .ct-del-btn:focus-visible{ opacity:1; }
 .pev-up b{ color:var(--red); }
 .pev-down b{ color:var(--green); }
 .pev-flat b{ color:var(--ink); }
-.pev-cap .pev-r{ grid-template-columns:150px minmax(0,1fr) 92px minmax(0,230px); }
-.pev-ca .pev-b{ background:#94a3b8; }
-.pev-bn .pev-b{ background:var(--accent); }
-.pev-fc .pev-b{ background:#c9a24a; }
 .pev-leg{ margin-top:12px; font-size:12.5px; color:var(--ink-soft); }
 @media (max-width:760px){ .field-row .pev{ padding:16px 14px; } .pev-r{ grid-template-columns:minmax(0,1fr) auto; gap:4px 10px; } .pev-bt{ grid-column:1 / -1; order:3; } .pev-rd{ grid-column:1 / -1; order:4; } }.shares-row{ display:flex; align-items:center; gap:24px 44px; flex-wrap:wrap; margin-top:16px; }
 .shares-viz{ flex:0 1 auto; min-width:0; }
@@ -3670,7 +3669,6 @@ const SECTIONS = [
       {key:'croissanceEstimeeEps', label:'Croissance estimée EPS (3 ans)', type:'growthDuo', years:3, span:6},
       {key:'priceSales', label:'Price / Sales', type:'computed-price-sales', span:6},
       {key:'peVisuel', label:'Où se situe le PE ?', type:'computed-pe-visual', span:12, group:"En un coup d'œil"},
-      {key:'capVisuel', label:'Pour 100 de capitalisation', type:'computed-cap-visual', span:12},
       {key:'valeurIntrinseque', label:'Valeur intrinsèque', type:'number-ecart', money:true, span:6, group:'Valeur estimée'},
       {key:'bearCase', label:'Bear case (pessimiste)', type:'number-ecart', money:true, span:3},
       {key:'bullCase', label:'Bull case (optimiste)', type:'number-ecart', money:true, span:3},
@@ -6253,8 +6251,6 @@ function refreshAllComputed(){
   const peRel = computePeRelatif(c);
   setText('computed-valorisation-peRelatifSecteur', fmtRatioPos(peRel), tipPeRelatif(c));
   setText('computed-valorisation-peRelatifHisto', fmtRatioPos(computePeRelatifHisto(c)), tipPeRelatifHisto(c));
-  const capVis = document.getElementById('capVisual');
-  if(capVis) capVis.innerHTML = capVisualHtml(c);
   const peVis = document.getElementById('peVisual');
   if(peVis) peVis.innerHTML = peVisualHtml(c);
   const shViz = document.getElementById('sharesViz');
@@ -6747,25 +6743,7 @@ function peVisualHtml(c){
   if(d.ps !== null) html += row('pev-secteur', 'Secteur', d.ps, gap(d.pa, d.ps, 'actuel plus cher que le secteur', 'actuel moins cher que le secteur', 'actuel au niveau du secteur'), true);
   html += `</div><div class="pev-leg"><i class="pev-at pev-at-leg"></i> Le trait pointillé marque le PE actuel</div>`;
   return head + html;
-}// « Pour 100 $ de capitalisation » (2026-10-17, demande de l'auteur, version en barres du graphique circulaire « Évaluation » de TradingView) : ce que l'entreprise génère chaque année
-// (chiffre d'affaires, bénéfice net, cash libre) rapporté à sa valeur en Bourse. Trois barres de même échelle : plus elles sont longues, moins le prix payé est élevé pour ce que
-// l'entreprise produit. À droite, le ratio habituel correspondant (Price / Sales, PE, rendement du FCF). Dérivé des chiffres déjà saisis, rien dans le score, jamais de conversion de devise.
-function capVisualHtml(c){
-  const idn = c.fields.identite || {}, fin = c.fields.financier || {}, cur = c.currency;
-  const mc = parseMoney(idn.marketCap) ?? parseMoney(fin.marketCap);
-  const head = `<div class="pev-h">Pour 100 ${cur} de capitalisation</div><div class="pev-sub">Ce que l'entreprise génère chaque année rapporté à sa valeur en Bourse : plus les barres sont longues, moins vous payez cher ce qu'elle produit.</div>`;
-  if(mc === null || mc <= 0) return head + `<div class="pev-empty">Renseignez le Market Cap pour comparer la valeur en Bourse à ce que l'entreprise produit.</div>`;
-  const ca = parseMoney(fin.chiffreAffaires), bn = parseMoney(fin.beneficeNet), fcf = parseMoney(fin.fcf);
-  const rows = [];
-  if(ca !== null && ca > 0) rows.push({ cls:'pev-ca', label:"Chiffre d'affaires", v:ca / mc * 100, note:`<span class="pev-g"><b>Price / Sales ${fmtNum(mc / ca, 2)}</b></span>` });
-  if(bn !== null) rows.push({ cls:'pev-bn', label:'Bénéfice net', v:bn / mc * 100, note: bn > 0 ? `<span class="pev-g"><b>PE ${fmtNum(mc / bn, 1)}</b></span>` : `<span class="pev-g pev-up"><b>Perte</b> bénéfice négatif</span>` });
-  if(fcf !== null) rows.push({ cls:'pev-fc', label:'Cash libre (FCF)', v:fcf / mc * 100, note:`<span class="pev-g ${fcf < 0 ? 'pev-up' : ''}"><b>${fmtNum(fcf / mc * 100, 1)} %</b> rendement du FCF</span>` });
-  if(!rows.length) return head + `<div class="pev-empty">Renseignez le chiffre d'affaires, le bénéfice net ou le FCF.</div>`;
-  const max = Math.max.apply(null, rows.map(r => r.v).filter(v => v > 0).concat([0.0001]));
-  const html = rows.map(r => `<div class="pev-r ${r.cls}"><span class="pev-rl">${r.label}</span><div class="pev-bt"><i class="pev-b" style="width:${r.v > 0 ? Math.max(1.5, r.v / max * 100).toFixed(2) : 0}%"></i></div><b class="pev-rv">${fmtNum(r.v, 1)} ${cur}</b><span class="pev-rd">${r.note}</span></div>`).join('');
-  return head + `<div class="pev-bars pev-cap">${html}</div>`;
-}
-function computeRevenuEmploye(c){
+}function computeRevenuEmploye(c){
   const ca = parseMoney(c.fields.financier.chiffreAffaires);
   const emp = parseMoney(c.fields.identite.nbEmployes);
   if(ca === null || emp === null || emp === 0) return null;
@@ -13331,7 +13309,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 298;
+const APP_BUILD = 299;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -14396,10 +14374,6 @@ function renderInner(){
         const ph = computePeRelatifHisto(c);
         html += `<div class="field-row"><div class="field-label" data-tooltip="${fieldDescTooltip(field.key)}">${field.label}</div>
           <div class="field-value"><div class="value-with-badge"><span class="computed" id="computed-${section.key}-${field.key}" data-tooltip="${tipPeRelatifHisto(c)}">${fmtRatioPos(ph)}</span>${renderBadge(field.key, ph, `badge-${section.key}-${field.key}`)}</div></div></div>`;
-        return;
-      }
-      if(field.type === 'computed-cap-visual'){
-        html += `<div class="field-row"><div class="pev" id="capVisual">${capVisualHtml(c)}</div></div>`;
         return;
       }
       if(field.type === 'computed-pe-visual'){
