@@ -3365,6 +3365,11 @@ const FIELD_DESCRIPTIONS = {
   marcheEnCroissance: "La dynamique et le potentiel de croissance du marché de l'entreprise.",
   partMarche: "La proportion du marché total captée par l'entreprise face à ses concurrents.",
   concurrents: "Les noms des entreprises qui comptent autour de celle-ci, concurrents directs ou non, séparés par des virgules.",
+  businessModel: "Comment l'entreprise gagne concrètement de l'argent : qui paie, pour quoi, et sous quelle forme (vente, abonnement, commission, publicité, licences...). Différent de l'activité principale, qui dit ce que fait l'entreprise.",
+  detenuInities: "La part du capital détenue par les dirigeants et les initiés, en %. Plus elle est élevée, plus les dirigeants ont leur propre argent en jeu. Sur Yahoo Finance : onglet Statistiques, ligne « % Held by Insiders ».",
+  peHistorique: "Le PE moyen de l'entreprise sur ses 5 dernières années. Vous pouvez saisir un seul chiffre, ou les 5 PE annuels séparés par des espaces : l'application calcule la moyenne. À relever sur stockanalysis.com : page de l'action, Financials, Ratios, ligne « PE Ratio ».",
+  peRelatifHisto: "Le PE actuel comparé à son propre PE moyen sur 5 ans : en dessous de 1, l'entreprise est moins chère qu'à son habitude ; au-dessus, plus chère. Calculé automatiquement.",
+  priceSales: "La capitalisation boursière divisée par le chiffre d'affaires : combien vous payez pour 1 € (ou 1 $) de ventes. Utile quand l'entreprise n'a pas (encore) de bénéfice. Calculé automatiquement, sans couleur : la norme dépend beaucoup du secteur.",
   innovationTech: "Les innovations technologiques qui soutiennent la croissance future.",
   croissanceAttendueCA: "La croissance du chiffre d'affaires anticipée par les analystes sur 3 ans.",
   croissanceAttendueBenef: "La croissance du bénéfice net anticipée par les analystes sur 3 ans.",
@@ -3534,9 +3539,10 @@ const SECTIONS = [
     title: "Identité de l'entreprise",
     num: 1,
     fields: [
-      {key:'ticker', label:'Ticker', type:'ticker', span:4, group:'Identité et repères'},
-      {key:'cotation', label:'Cotation', type:'exchange', span:4},
-      {key:'dateCreation', label:'Date de création', type:'text', compact:true, span:4},
+      {key:'ticker', label:'Ticker', type:'ticker', span:3, group:'Identité et repères'},
+      {key:'cotation', label:'Cotation', type:'exchange', span:3},
+      {key:'dateCreation', label:'Date de création', type:'text', compact:true, span:3},
+      {key:'prochainRapport', label:'Prochain rapport', type:'nextReport', span:3},
       {key:'paysSiege', label:'Pays', type:'duo', span:6, subs:[{key:'pays',label:'', picker:'country'},{key:'siegeSocial',label:'Siège social', grow:true}]},
       {key:'secteur', label:'Secteur', type:'duo', span:6, autoWidth:true, subs:[{key:'secteur',label:''},{key:'industrie',label:'Industrie'}]},
       {key:'marketCap', label:'Market Cap', type:'text', money:true, span:6},
@@ -3544,9 +3550,10 @@ const SECTIONS = [
       {key:'tailleCapi', label:"Taille de l'entreprise", type:'computed-taille-capi', span:6},
       {key:'dateIPO', label:'Date IPO', type:'duo', span:6, subs:[{key:'date',label:''},{key:'prixInitial',label:'Prix initial', money:true}]},
       {key:'ceo', label:'CEO', type:'ceoFondateur', span:6},
-      {key:'prochainRapport', label:'Prochain rapport', type:'nextReport', span:6},
+      {key:'detenuInities', label:'Détenu par les dirigeants et initiés', type:'text', percent:true, compact:true, span:6},
       {key:'activitePrincipale', label:'Activité principale', type:'textarea', span:6, group:'Activité et avantage concurrentiel'},
       {key:'autresActivites', label:'Autres activités', type:'textarea', span:6},
+      {key:'businessModel', label:'Business model', type:'textarea', span:12},
       {key:'moatDescription', label:'MOAT', type:'moat'},
       {key:'clients', label:'Clients', type:'list', span:6, group:'Clientèle et dividende'},
       {key:'politiqueDividende', label:'Politique de dividende', type:'dividend', span:6},
@@ -3614,6 +3621,9 @@ const SECTIONS = [
       {key:'peForward', label:'PE forward', type:'computed-pe-forward', span:3},
       {key:'peSectoriel', label:'PE sectoriel', type:'number', span:3},
       {key:'peRelatifSecteur', label:'PE relatif au secteur', type:'computed-pe-relatif', span:3},
+      {key:'peHistorique', label:'PE moyen sur 5 ans', type:'text', compact:true, span:4},
+      {key:'peRelatifHisto', label:'PE vs son historique', type:'computed-pe-histo', span:4},
+      {key:'priceSales', label:'Price / Sales', type:'computed-price-sales', span:4},
       {key:'croissanceEstimeeEps', label:'Croissance estimée EPS (3 ans)', type:'growthDuo', years:3, span:6},
       {key:'peg', label:'PEG', type:'computed-peg', span:3},
       {key:'rendementFcf', label:'Rendement du FCF', type:'computed-rendement-fcf', span:3},
@@ -3681,7 +3691,7 @@ function escapeToHtml(text){
 // Champs de texte riche (zones contenteditable) : seuls le gras, le souligné et les sauts de ligne sont conservés,
 // pour que tous les textes aient exactement le même formatage, quelle que soit leur origine.
 const RICH_FIELDS = {
-  identite: ['activitePrincipale','autresActivites','moatDescription'],
+  identite: ['activitePrincipale','autresActivites','businessModel','moatDescription'],
   croissance: ['marcheEnCroissance','partMarche','concurrents','innovationTech','diversificationSecteur','catalyseurs','risque'],
   valorisation: ['conclusionValorisation'],
   personnelle: ['pointsForts','pointsFaibles','these'],
@@ -5737,12 +5747,13 @@ const SCALE_CONFIG = {
   croissanceAttendueCA: { thresholds:[20,10,3], inverse:false },
   croissanceAttendueBenef: { thresholds:[20,10,0], inverse:false },   // mêmes seuils que croissanceBenef (5 ans) : le bénéfice net est plus variable que le CA
   peRelatifSecteur: { thresholds:[0.7,1,1.3], inverse:true },
+  peRelatifHisto: { thresholds:[0.8,1,1.2], inverse:true },   // PE actuel ÷ PE moyen sur 5 ans (affichage seulement, pas dans le score) : moins de 0,8 très bon, jusqu'à 1 bon, jusqu'à 1,2 moyen, au-delà mauvais
   moatNote: { thresholds:[8,6,4], inverse:false },
 };
 const BADGE_UNITS = {
   croissanceCA:'%', croissanceBenef:'%', margeBrute:'%', margeNette:'%', roe:'%', roic:'%', roa:'%', margeFcf:'%',
   detteActif:'', detteTotalActif:'%', tresorerieDette:'%', scoreSolvabilite:'/100', probaFaillite:'%', croissanceEstimeeEps:'%', conversionFcf:'%', positionShort:'%', ratioVenteADecouvert:' j', capexRatio:'%', tailleCapi:' ' + MD_UNIT,
-  peg:'', rendementFcf:'%', croissanceAttendueCA:'%', croissanceAttendueBenef:'%', peRelatifSecteur:'', moatNote:'/10', croissanceDividende:'&nbsp;%/an',
+  peg:'', rendementFcf:'%', croissanceAttendueCA:'%', croissanceAttendueBenef:'%', peRelatifSecteur:'', peRelatifHisto:'', moatNote:'/10', croissanceDividende:'&nbsp;%/an',
 };
 const TOOLTIP_TIER_COLORS = { tresbon:'#22c55e', bon:'#c2f5d0', moyen:'#fde047', mauvais:'#f87171' };
 function scaleTooltip(fieldKey, currentTier){
@@ -6113,6 +6124,7 @@ function refreshAllBadges(){
     { section:'valorisation', key:'ratioVenteADecouvert', val: num(c.fields.valorisation.ratioVenteADecouvert) },
     { section:'valorisation', key:'peg', val: computePeg(c) },
     { section:'valorisation', key:'peRelatifSecteur', val: computePeRelatif(c) },
+    { section:'valorisation', key:'peRelatifHisto', val: computePeRelatifHisto(c) },
     { section:'valorisation', key:'rendementFcf', val: computeRendementFcf(c) },
     { section:'croissance', key:'croissanceAttendueCA', val: num(c.fields.croissance.croissanceAttendueCA && c.fields.croissance.croissanceAttendueCA.cagr) },
     { section:'croissance', key:'croissanceAttendueBenef', val: num(c.fields.croissance.croissanceAttendueBenef && c.fields.croissance.croissanceAttendueBenef.cagr) },
@@ -6143,6 +6155,9 @@ function refreshAllComputed(){
   setText('computed-valorisation-peForward', fmtPe(peFwd), tipPeForward(c));
   const peRel = computePeRelatif(c);
   setText('computed-valorisation-peRelatifSecteur', fmtRatioPos(peRel), tipPeRelatif(c));
+  setText('computed-valorisation-peRelatifHisto', fmtRatioPos(computePeRelatifHisto(c)), tipPeRelatifHisto(c));
+  const psv = computePriceSales(c);
+  setText('computed-valorisation-priceSales', psv === null ? '—' : fmtNum(psv, 2), tipPriceSales(c));
   const rdtFcf = computeRendementFcf(c);
   setText('computed-valorisation-rendementFcf', fmtRendementFcf(rdtFcf), tipRendementFcf(c));
   // Valeur intrinsèque + fourchette Bear/Bull (2026-09-27, remplace la Valorisation DCF, retirée car trop sensible aux hypothèses) :
@@ -6553,7 +6568,7 @@ function computePeg(c){
 }
 // Affichage d'un ratio de valorisation qui doit être positif (PEG, PE / secteur) : « n.s. » = non significatif (≤ 0)
 function fmtRatioPos(v){ return v === null || v === undefined ? '—' : (v <= 0 ? 'n.s.' : v.toFixed(2)); }
-const RATIO_POSITIF_SEUL = new Set(['peg', 'peRelatifSecteur']);   // barème inversé (plus bas = mieux) : un chiffre ≤ 0 ne veut PAS dire « excellent »
+const RATIO_POSITIF_SEUL = new Set(['peg', 'peRelatifSecteur', 'peRelatifHisto']);   // barème inversé (plus bas = mieux) : un chiffre ≤ 0 ne veut PAS dire « excellent »
 function computePeForward(c){
   const prix = num(c.fields.valorisation.prixActuel);
   const epsEst = num(c.fields.valorisation.epsEstime1an);
@@ -6566,6 +6581,40 @@ function computePeRelatif(c){
   if(pa === null || secteur === null || secteur === 0) return null;
   if(pa <= 0 || secteur < 0) return -Math.abs(pa / secteur);   // bénéfice négatif : non significatif (voir computePeg)
   return pa / secteur;
+}
+// PE moyen sur 5 ans (2026-10-16) : saisi à la main. Un seul chiffre, ou plusieurs PE annuels séparés par des espaces, « ; », « / » ou des retours à la ligne
+// (« 20,7 36,3 37,7 35 26,4 ») : l'application en fait la moyenne. Les valeurs négatives ou nulles sont ignorées (un PE de perte ne dit rien de l'historique).
+function peHistoriqueValues(c){
+  const raw0 = String((c.fields.valorisation || {}).peHistorique || '').replace(/&nbsp;/g, ' ');
+  return raw0.split(/[\s;\/]+/).map(x => num(x)).filter(x => x !== null && x > 0);
+}
+function computePeHistorique(c){
+  const v = peHistoriqueValues(c);
+  return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
+}
+// PE actuel ÷ PE moyen sur 5 ans, comme computePeRelatif : PE actuel négatif = non significatif (nombre ≤ 0)
+function computePeRelatifHisto(c){
+  const pa = computePeActuel(c), h = computePeHistorique(c);
+  if(pa === null || h === null || h <= 0) return null;
+  if(pa <= 0) return -Math.abs(pa / h);
+  return pa / h;
+}
+function tipPeRelatifHisto(c){
+  const pa = computePeActuel(c), vals = peHistoriqueValues(c), h = computePeHistorique(c), v = computePeRelatifHisto(c);
+  const hTxt = h === null ? '?' : fmtNum(h, 1) + (vals.length > 1 ? ' (moyenne de ' + vals.length + ' valeurs)' : '');
+  return `<div class='tt-formula'>PE actuel ${n(pa === null ? '?' : pa.toFixed(2))} ÷ PE moyen sur 5 ans ${n(hTxt)}</div>${tipRes('= '+(v === null ? '—' : (v <= 0 ? 'non significatif' : v.toFixed(2))))}<div class='tt-desc'>Sous 1, l'entreprise est moins chère que d'habitude ; au-dessus de 1, plus chère. Un PE historique élevé peut venir d'une période de forte croissance qui ne se reproduira pas.</div>${v !== null && v <= 0 ? `<div class='tt-desc'>Bénéfice par action négatif : le PE n'a pas de sens et est compté comme mauvais.</div>` : ''}`;
+}
+// Price / Sales = capitalisation boursière ÷ chiffre d'affaires (même repli du Market Cap que partout : Identité, sinon Financier). Affichage seulement : pas de couleur ni de score.
+function computePriceSales(c){
+  const ca = parseMoney((c.fields.financier || {}).chiffreAffaires);
+  const mc = parseMoney((c.fields.identite || {}).marketCap) ?? parseMoney((c.fields.financier || {}).marketCap);
+  if(ca === null || mc === null || ca <= 0 || mc <= 0) return null;
+  return mc / ca;
+}
+function tipPriceSales(c){
+  const v = computePriceSales(c);
+  const mc = (c.fields.identite || {}).marketCap || (c.fields.financier || {}).marketCap;
+  return `<div class='tt-formula'>Market Cap ${n(raw(mc))} ÷ Chiffre d'affaires ${n(raw(c.fields.financier.chiffreAffaires))}</div>${tipRes('= '+(v === null ? '—' : fmtNum(v, 2)))}<div class='tt-desc'>Ce que vous payez pour chaque unité de ventes. Très variable selon le secteur : un logiciel à 10 n'a rien d'anormal, un distributeur à 10 serait très cher. À comparer à des entreprises du même secteur.</div>`;
 }
 function computeRevenuEmploye(c){
   const ca = parseMoney(c.fields.financier.chiffreAffaires);
@@ -10720,6 +10769,7 @@ function compareTableHtml(list, opts){
   body += row('Pays', cs.map(c => { const p = (c.fields.identite.paysSiege || {}).pays; return p ? `${flagIcon(p)} ${escapeHtml(p)}` : '—'; }), -1);
   body += row('Cotation', cs.map(c => { const t = c.fields.identite.ticker, x = c.fields.identite.cotation; return (t || x) ? `${escapeHtml(t || '')} <span class="jr-meta">${escapeHtml(x || '')}</span>` : '—'; }), -1);
   body += row('Market Cap', cs.map(c => money(c, c.fields.identite.marketCap || c.fields.financier.marketCap)), -1);
+  body += row('Détenu par les dirigeants et initiés', cs.map(c => { const v = String(c.fields.identite.detenuInities || '').trim(); return v ? escapeHtml(v) + ' %' : '—'; }), -1);
   body += section('Chiffres clés', SEC_COL.chiffres);
   body += row("Chiffre d'affaires", cs.map(c => money(c, c.fields.financier.chiffreAffaires)), -1);
   body += row('Bénéfice net', cs.map(c => money(c, c.fields.financier.beneficeNet)), -1);
@@ -10731,6 +10781,8 @@ function compareTableHtml(list, opts){
   const pes = cs.map(c => computePeActuel(c)), pesF = cs.map(c => computePeForward(c));
   body += row('PE actuel', pes.map(v => (v !== null && v <= 0) ? 'n.s.' : num1(v, 1)), bestIdx(lowPe(pes)));
   body += row('PE forward', pesF.map(v => (v !== null && v <= 0) ? 'n.s.' : num1(v, 1)), bestIdx(lowPe(pesF)));
+  body += row('PE vs son historique', cs.map(c => { const v = computePeRelatifHisto(c); return v === null ? '—' : fmtRatioPos(v); }), -1);
+  body += row('Price / Sales', cs.map(c => { const v = computePriceSales(c); return v === null ? '—' : fmtNum(v, 2); }), -1);
   // Le PEG n'est plus ici : il figure dans le « Score détaillé » (axe Valorisation), avec tous les autres indicateurs qui entrent dans la note
   body += row('Valeur intrinsèque', cs.map(c => money(c, c.fields.valorisation.valeurIntrinseque)), -1);
   // Bear / Bull : valeur saisie suivie de l'écart estimé par rapport au prix actuel (vert si au-dessus du cours, rouge si en dessous)
@@ -10775,6 +10827,7 @@ function compareTableHtml(list, opts){
   if(received){
     // Texte de la fiche, pour une analyse reçue : on lit ce que l'auteur a écrit (les cases vides s'affichent « — »)
     body += textRow('Activité principale', c => c.fields.identite.activitePrincipale);
+    body += textRow('Business model', c => c.fields.identite.businessModel);
     body += textRow('Avantage concurrentiel (MOAT)', c => c.fields.identite.moatDescription);
     body += textRow('Croissance du marché', c => c.fields.croissance.marcheEnCroissance);
     body += textRow('Part de marché', c => c.fields.croissance.partMarche);
@@ -10783,6 +10836,7 @@ function compareTableHtml(list, opts){
     body += textRow('Risque', c => c.fields.croissance.risque);
     body += textRow('Conclusion sur la valorisation', c => c.fields.valorisation.conclusionValorisation);
   }
+  if(!received) body += textRow('Business model', c => c.fields.identite.businessModel);   // déjà listé plus haut pour une analyse reçue
   if(!received) body += textRow('Avantage concurrentiel (MOAT)', c => c.fields.identite.moatDescription);   // déjà listé plus haut pour une analyse reçue
   body += textRow('Paysage concurrentiel', c => c.fields.croissance.concurrents);
   body += textRow('Points forts', c => c.fields.personnelle.pointsForts);
@@ -11342,6 +11396,8 @@ const LEARN_INDICATORS = {
   activitePrincipale: { how:`Comment l'entreprise gagne de l'argent : quels produits ou services, pour quels clients.`, ex:`« Vend des smartphones et des services en ligne à des particuliers dans le monde entier. »`, warn:`Si vous ne parvenez pas à l'expliquer simplement, l'entreprise est peut-être hors de votre cercle de compétence.` },
   moatDescription: { how:`Ce qui protège l'entreprise de la concurrence. La note sur 10 mesure la solidité de cet avantage.`, ex:`Marque de luxe mondiale, prix élevés acceptés par les clients : note de 8/10.` },
   clients: { how:`Qui achète : particuliers, entreprises, États. Une clientèle très concentrée sur un seul gros client est un risque.` },
+  businessModel: { how:`Comment l'entreprise gagne concrètement de l'argent. Quatre questions aident : qui paie ? pour quoi ? sous quelle forme (vente unique, abonnement, commission, publicité, licence) ? et quelle part des revenus revient chaque année sans avoir à tout revendre ? L'activité principale dit ce que fait l'entreprise, le business model dit comment elle en tire son argent.`, ex:`Un éditeur de logiciels : « Les entreprises paient un abonnement mensuel par utilisateur, le contrat est renouvelé chaque année, environ 90 % des revenus sont récurrents. »`, warn:`Des revenus récurrents (abonnements, contrats pluriannuels) sont plus prévisibles que des ventes à refaire chaque année. Si vous ne savez pas qui paie réellement, c'est un signe que l'entreprise est hors de votre cercle de compétence.` },
+  detenuInities: { how:`La part du capital que possèdent les dirigeants et les initiés (administrateurs, fondateurs, grands actionnaires proches de la direction). Un dirigeant qui possède une part importante de l'entreprise a son propre argent en jeu : ses intérêts sont proches des vôtres.`, ex:`Un fondateur qui détient 15 % du capital gagne ou perd beaucoup avec l'action, comme vous.`, warn:`À relever sur Yahoo Finance : onglet « Statistiques » (Statistics), rubrique « Informations sur les actions » (Share Statistics), ligne « % Held by Insiders ». Un chiffre très élevé (plus de 50 %) peut au contraire donner à quelques personnes le contrôle total de l'entreprise. Ce chiffre est proche de « Closely Held » (section Financier) mais s'exprime en pourcentage et non en nombre d'actions.` },
   politiqueDividende: { how:`Deux cas : l'entreprise ne verse pas de dividende (elle réinvestit ses bénéfices ou rachète ses actions), ou elle en verse. Dans ce cas, renseignez le dividende annuel par action (le rendement et le taux de distribution se calculent tout seuls, à partir du prix actuel et de l'EPS actuel), la fréquence, la croissance du dividende sur 5 ans et votre note de sécurité du dividende sur 100 (0 à 25 très dangereux, 25 à 50 dangereux, 50 à 75 sûr, 75 à 100 très sûr).`, ex:`Dividende de 2 $ pour un cours de 100 $ : rendement de 2 %. Bénéfice par action de 5 $ et dividende de 2 $ : taux de distribution de 40 %.`, warn:`Un rendement très élevé peut être un piège (cours en chute) et un taux de distribution proche de 100 % ou plus est difficile à tenir. Ne pas verser de dividende n'est pas un défaut : de nombreuses excellentes entreprises réinvestissent leurs bénéfices.` },
   chiffreAffaires: { how:`Le total des ventes sur 12 mois, avant toute charge. Regardez surtout son évolution sur plusieurs années.`, ex:`391Md signifie 391 milliards.`, warn:`Saisissez de préférence le chiffre TTM (12 derniers mois), avec la même période que le bénéfice net, le FCF et le Capex : plusieurs indicateurs croisent ces chiffres entre eux. Voir « TTM ou annuel ? » dans le chapitre Remplir chaque section.` },
   beneficeNet: { how:`Ce qui reste une fois toutes les charges, intérêts et impôts payés : le vrai profit des actionnaires.`, warn:`Saisissez de préférence le chiffre TTM (12 derniers mois), sur la même période que le chiffre d'affaires et le FCF.` },
@@ -11385,6 +11441,9 @@ const LEARN_INDICATORS = {
   peForward: { how:`Le PE calculé avec le bénéfice attendu dans 12 mois. S'il est inférieur au PE actuel, les bénéfices sont attendus en hausse.` },
   peSectoriel: { how:`Le PE moyen du secteur, à saisir pour comparer l'entreprise à ses concurrentes.`, warn:`Pas toujours facile à trouver directement. Deux pistes : <a href="https://stockanalysis.com" target="_blank" rel="noopener noreferrer">stockanalysis.com</a>, qui propose des pages par industrie avec une moyenne déjà calculée, ou le tableau sectoriel de <a href="https://pages.stern.nyu.edu/~adamodar/" target="_blank" rel="noopener noreferrer">Damodaran (NYU Stern)</a>, la référence académique, mise à jour régulièrement mais en anglais.` },
   peRelatifSecteur: { how:`PE de l'entreprise ÷ PE du secteur. Inférieur à 1, elle est moins chère que son secteur ; supérieur à 1, plus chère.`, ex:`PE de 25 et PE sectoriel de 20 : 1,25, soit 25 % plus cher que le secteur.` },
+  peHistorique: { how:`Le PE moyen de l'entreprise sur ses 5 dernières années. Il sert de repère : une entreprise se négocie souvent autour du même PE au fil du temps. Saisissez un seul chiffre, ou collez directement les 5 PE annuels séparés par des espaces : l'application calcule la moyenne.`, ex:`PE annuels de 20,7 / 36,3 / 37,7 / 35 / 26,4 : saisissez « 20,7 36,3 37,7 35 26,4 », la moyenne est de 31,2.`, warn:`Où le trouver (gratuit) : sur stockanalysis.com, ouvrez la page de l'action, puis « Financials », « Ratios » (en annuel, « Annual »). La ligne « PE Ratio » donne un PE par année, relevez les 5 dernières colonnes sans prendre « Current ». Une moyenne n'a de sens que si l'entreprise a un bénéfice positif depuis 5 ans.` },
+  peRelatifHisto: { how:`Le PE actuel divisé par le PE moyen des 5 dernières années. Inférieur à 1, l'entreprise est moins chère qu'à son habitude ; supérieur à 1, plus chère.`, ex:`PE actuel de 25 et PE moyen sur 5 ans de 31 : 0,81, soit 19 % moins cher que d'habitude.`, warn:`Affichage seulement, il n'entre pas dans le score. Un PE historique élevé peut venir d'années de très forte croissance qui ne se reproduiront pas : « moins cher que d'habitude » ne veut pas dire « bon marché ».` },
+  priceSales: { how:`La capitalisation boursière divisée par le chiffre d'affaires : combien vous payez pour 1 € (ou 1 $) de ventes. Calculé automatiquement à partir du Market Cap et du chiffre d'affaires déjà saisis.`, ex:`Market Cap de 300 Md$ et chiffre d'affaires de 60 Md$ : 5, vous payez 5 $ pour 1 $ de ventes.`, warn:`Pas de couleur ni de score : la norme dépend du secteur (un logiciel à 10 est courant, un distributeur à 10 serait très cher). Utile surtout pour les entreprises sans bénéfice, où le PE ne sert à rien. Ne le comparez qu'à des entreprises du même secteur.` },
   croissanceEstimeeEps: { how:`Le rythme de croissance annuel (CAGR) attendu du bénéfice par action sur 3 ans. Vous saisissez ce taux annuel, la croissance totale sur 3 ans se calcule toute seule. Le PEG est le PE divisé par ce CAGR.`, ex:`Un bénéfice par action attendu en hausse de 50 % au total sur 3 ans correspond à un CAGR d'environ 14,5 % par an : c'est 14,5 que vous saisissez, pas 50.` },
   rendementFcf: { how:`Le cash réel (FCF) que l'entreprise dégage en un an, divisé par sa capitalisation boursière : combien de cash vous rapporterait chaque année l'entreprise entière si vous l'achetiez au prix du marché. Calculé automatiquement à partir du FCF et du Market Cap déjà saisis.`, ex:`FCF de 5 Md pour une capitalisation de 100 Md : rendement du FCF de 5 %.`, warn:`Une entreprise en forte croissance qui réinvestit beaucoup affiche un rendement faible sans que ce soit mauvais : il avantage surtout les entreprises matures. Un FCF exceptionnel (ou très bas) sur une seule année fausse aussi le chiffre. Gardez la même période (TTM) pour le FCF et les autres chiffres.` },
   peg: { how:`Le PE divisé par la croissance des bénéfices (en %). Il permet de savoir si l'on paie cher ou non la croissance.`, ex:`PE de 20 et croissance de 15 % : PEG de 1,33.`, warn:`Le PEG dépend d'une prévision de croissance : plus elle est incertaine, moins le PEG est fiable.` },
@@ -13123,7 +13182,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 291;
+const APP_BUILD = 292;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -13644,6 +13703,7 @@ function buildSummaryPages(c){
   const p1 = `<div class="sx-meta sx-meta-in">${chips}</div>
     <div class="sx-act">${sxFull(idn.activitePrincipale) || '<span class="sx-mut">Activité à renseigner</span>'}</div>
     ${sxText('Autres activités', idn.autresActivites)}
+    ${sxText('Business model', idn.businessModel)}
     <div class="sx-g sx-g4 sx-compact">${sxTile('Market Cap', money(mc))}${sxTile('Taille', tt ? ({ tresbon:'Méga-cap.', bon:'Grande cap.', moyen:'Cap. moyenne', mauvais:'Petite cap.' })[tt] : '—', tt ? TOOLTIP_TIER_COLORS[tt] : null, '', 'sx-t-s')}${sxTile('Fondée', sxShort(idn.dateCreation, 14) || '—')}${sxTile('IPO', sxShort(ipo, 14) || '—')}${sxTile('Employés', emp === null ? '—' : fmtNum(emp, 0))}${sxTile('CEO', sxShort(idn.ceo, 30) || '—', null, '', 'sx-t-s')}${sxTile('Siège', sxShort(idn.paysSiege && idn.paysSiege.siegeSocial, 30) || '—', null, '', 'sx-t-s')}${sxTile('Dividende', divV, divC, divS, divS ? 'sx-t-s' : '')}</div>
     <div class="sx-moat">${sxGauge(moat === null ? 0 : moat / 10, moatCol || none, moat === null ? '—' : fmtNum(moat, 1) + '<i>/10</i>', 'MOAT')}<div class="sx-tx sx-moat-t"><div class="sx-txl">Avantage concurrentiel</div><div class="sx-txv">${moatTxt || '<span class="sx-mut">À renseigner</span>'}</div></div></div>
     ${clients.length ? `<div class="sx-tx"><div class="sx-txl">Clients</div><div class="sx-txv">${clients.map(x => escapeHtml(x)).join(' · ')}</div></div>` : ''}`;
@@ -14078,6 +14138,18 @@ function renderInner(){
         const pr = computePeRelatif(c);
         html += `<div class="field-row"><div class="field-label" data-tooltip="${fieldDescTooltip(field.key)}">${field.label}</div>
           <div class="field-value"><div class="value-with-badge"><span class="computed" id="computed-${section.key}-${field.key}" data-tooltip="${tipPeRelatif(c)}">${fmtRatioPos(pr)}</span>${renderBadge(field.key, pr, `badge-${section.key}-${field.key}`)}</div></div></div>`;
+        return;
+      }
+      if(field.type === 'computed-pe-histo'){
+        const ph = computePeRelatifHisto(c);
+        html += `<div class="field-row"><div class="field-label" data-tooltip="${fieldDescTooltip(field.key)}">${field.label}</div>
+          <div class="field-value"><div class="value-with-badge"><span class="computed" id="computed-${section.key}-${field.key}" data-tooltip="${tipPeRelatifHisto(c)}">${fmtRatioPos(ph)}</span>${renderBadge(field.key, ph, `badge-${section.key}-${field.key}`)}</div></div></div>`;
+        return;
+      }
+      if(field.type === 'computed-price-sales'){
+        const ps = computePriceSales(c);
+        html += `<div class="field-row"><div class="field-label" data-tooltip="${fieldDescTooltip(field.key)}">${field.label}</div>
+          <div class="field-value"><span class="computed" id="computed-${section.key}-${field.key}" data-tooltip="${tipPriceSales(c)}">${ps === null ? '—' : fmtNum(ps, 2)}</span></div></div>`;
         return;
       }
       if(field.type === 'computed-pe-actuel'){
