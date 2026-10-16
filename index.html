@@ -2452,8 +2452,8 @@ tr:hover .ct-del-btn, .ct-del-btn:focus-visible{ opacity:1; }
 .skv-scroll{ overflow-x:auto; margin-top:14px; }
 .skv{ position:relative; min-width:640px; }
 .skv svg{ position:absolute; left:0; top:0; width:100%; height:100%; display:block; }
-.skv-r{ fill-opacity:.3; transition:fill-opacity .15s; }
-.skv-r:hover{ fill-opacity:.5; }
+.skv-r{ fill-opacity:.4; transition:fill-opacity .15s; }
+.skv-r:hover{ fill-opacity:.6; }
 .skv-l{ position:absolute; font-size:13px; line-height:1.25; color:var(--ink); pointer-events:none; }
 .skv-l b{ display:block; font-size:13.5px; font-weight:700; color:var(--ink); }
 .skv-left b{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -2462,6 +2462,11 @@ tr:hover .ct-del-btn, .ct-del-btn:focus-visible{ opacity:1; }
 .skv-left{ text-align:right; transform:translateY(-50%); }
 .skv-right{ transform:translateY(-50%); }
 .skv-top{ transform:translateY(-100%); }
+.skv-bottom{ transform:translateX(-50%); text-align:center; }
+.skv-tg b, .skv-tg .skv-v{ color:#2e7d32; }
+.skv-tr b, .skv-tr .skv-v{ color:#c62828; }
+:root[data-theme="dark"] .skv-g b, :root[data-theme="dark"] .skv-g .skv-v{ color:#6bd68a; }
+:root[data-theme="dark"] .skv-r b, :root[data-theme="dark"] .skv-r .skv-v{ color:#ff8a84; }
 .skv-note{ margin-top:10px; font-size:12.5px; color:var(--ink-soft); line-height:1.45; }
 .skv-warn{ color:var(--ink); font-weight:600; }
 /* « Où se situe le PE ? » : quatre barres de même échelle (2026-10-17) */
@@ -6789,27 +6794,29 @@ function sankeyHtml(c){
   let net = parseMoney(fin.beneficeNet), fromMargin = false;
   if(net === null || !isFinite(net)){ net = null; const mn = num(fin.margeNette); if(mn !== null){ net = ca * mn / 100; fromMargin = true; } }
   if(gross === null && net === null) return head + `<div class="pev-empty">Ajoutez la marge brute ou le bénéfice net pour voir où va le chiffre d'affaires.</div>`;
-  const BLUE = 'var(--accent)', GREEN = 'var(--green)', RED = 'var(--red)';
+  const GRAY = '#6b7280', GREEN = '#3a9d4d', RED = '#c9382f';
   const nodes = [], links = [];
-  const N = (id, col, v, name, color, label, o) => { const n = Object.assign({ id, col, v, hv:v, name, color, label, y:0, h:0, inC:0, outC:0 }, o || {}); nodes.push(n); return n; };
+  const N = (id, col, v, name, color, label, o) => { const n = Object.assign({ id, col, v, hv:v, name, color, label, y:0, h:0, inC:0, outC:0, tone:(color === GREEN ? 'g' : (color === RED ? 'r' : 'n')), m:(id === 'gp' || id === 'op' || id === 'net') }, o || {}); nodes.push(n); return n; };
   const L = (a, b, v, color) => links.push({ a, b, v, color });
   // 1. Segments du chiffre d'affaires
-  let segs = (Array.isArray(fin.revenuSource) ? fin.revenuSource : []).map(s => ({ name: String((s && s.label) || '').trim() || '—', v: parseMoney(s && s.value), user:true })).filter(s => s.v !== null && s.v > 0).sort((a, b) => b.v - a.v);
-  if(segs.length > 6){ const rest = segs.slice(5).reduce((t, s) => t + s.v, 0); segs = segs.slice(0, 5).concat([{ name:'Autres', v:rest, user:false }]); }
+  const rawSeg = (Array.isArray(fin.revenuSource) ? fin.revenuSource : []).map(s => s || { label:'', value:'' });
+  const pieCol = computePieColors(rawSeg);   // mêmes couleurs que le camembert « Revenu par source »
+  let segs = rawSeg.map((s, i) => ({ name: String(s.label || '').trim() || '—', v: parseMoney(s.value), user:true, color: pieCol[i] || '#94a3b8' })).filter(s => s.v !== null && s.v > 0).sort((a, b) => b.v - a.v);
+  if(segs.length > 6){ const rest = segs.slice(5).reduce((t, s) => t + s.v, 0); segs = segs.slice(0, 5).concat([{ name:'Autres', v:rest, user:false, color:'#94a3b8' }]); }
   const S = segs.reduce((t, s) => t + s.v, 0);
-  const segNodes = segs.map((s, i) => N('s' + i, 0, s.v * ca / S, s.name, BLUE, 'left', { user:s.user }));
-  const rev = N('rev', 1, ca, "Chiffre d'affaires", BLUE, 'top');
-  segNodes.forEach(n => L(n, rev, n.v, BLUE));
+  const segNodes = segs.map((s, i) => N('s' + i, 0, s.v * ca / S, s.name, s.color, 'left', { user:s.user }));
+  const rev = N('rev', 1, ca, "Chiffre d'affaires", GRAY, 'top');
+  segNodes.forEach(n => L(n, rev, n.v, n.color));
   let note = '', warn = '';
   const fnum = key => { const v = parseMoney(fin[key]); return (v !== null && isFinite(v)) ? v : null; };
   const op = fnum('operatingIncome');
   const taxRaw = fnum('impotsResultat'), taxes = taxRaw === null ? null : Math.max(0, taxRaw);
   const det = [['chargesRD', 'R&D'], ['chargesVentes', 'Ventes et marketing'], ['chargesGeneral', 'Frais généraux']].map(a => { const v = fnum(a[0]); return { name:a[1], v: v === null ? null : Math.abs(v) }; }).filter(d => d.v !== null && d.v > 0);
   const base = gross !== null ? gross : ca;   // ce que le résultat d'exploitation peut au plus atteindre
-  let gp = null;
+  let gp = null, co = null;
   if(gross !== null){
     gp = N('gp', 2, gross, 'Marge brute', GREEN, 'right', { wRight:28 });
-    const co = N('cost', 2, ca - gross, 'Coût des ventes', RED, 'right', { wRight:16 });
+    co = N('cost', 2, ca - gross, 'Coût des ventes', RED, 'right', { wRight:16 });
     L(rev, gp, gross, GREEN); L(rev, co, ca - gross, RED);
   }
   const parent = gp || rev;
@@ -6834,10 +6841,10 @@ function sankeyHtml(c){
         warn = "Les chiffres ne s'additionnent pas (résultat d'exploitation, impôts, bénéfice net) : vérifiez qu'ils sont sur la même période.";
       }else{
         opN.label = 'top';
-        if(other < -1e-9){ g = -other; gain = N('gain', 3, g, 'Autres gains', GREEN, 'top'); }
+        if(other < -1e-9){ g = -other; gain = N('gain', 3, g, 'Autres gains', GREEN, 'right', { wRight:20 }); }
         const gn = gain ? Math.min(g, net) : 0, gt = gain ? g - gn : 0;
-        if(net > 1e-9){ const nn = N('net', 4, net, 'Bénéfice net', GREEN, 'right', { wRight:22 }); if(net - gn > 1e-9) L(opN, nn, net - gn, GREEN); if(gain && gn > 0) L(gain, nn, gn, GREEN); }
-        if(tx > 1e-9){ const tn = N('tax', 4, tx, 'Impôts sur les bénéfices', RED, 'right', { wRight:22 }); if(tx - gt > 1e-9) L(opN, tn, tx - gt, RED); if(gain && gt > 0) L(gain, tn, gt, RED); }
+        if(net > 1e-9){ const nn = N('net', 4, net, 'Bénéfice net', GREEN, 'top', { wRight:22 }); if(net - gn > 1e-9) L(opN, nn, net - gn, GREEN); if(gain && gn > 0) L(gain, nn, gn, GREEN); }
+        if(tx > 1e-9){ const tn = N('tax', 4, tx, 'Impôts', RED, 'right', { wRight:22 }); if(tx - gt > 1e-9) L(opN, tn, tx - gt, RED); if(gain && gt > 0) L(gain, tn, gt, RED); }
         if(other > 1e-9){
           const outV = Math.max(0, op - Math.max(net, 0) - tx);
           const on = N('oth', 4, other, taxes === null ? 'Impôts, intérêts et autres' : 'Intérêts et autres éléments', RED, 'right', { wRight:22 });
@@ -6854,12 +6861,13 @@ function sankeyHtml(c){
       if(sum > opexV * 1.02){
         warn = (warn ? warn + ' ' : '') + "Le détail des charges dépasse les charges d'exploitation : vérifiez qu'il est sur la même période.";
       }else{
-        opex.label = 'top';
         det.forEach((d, i) => { const dn = N('d' + i, 4, d.v, d.name, RED, 'right', { wRight:22 }); L(opex, dn, d.v, RED); });
         const rest = opexV - sum;
         if(rest > opexV * 0.01){ const rn = N('drest', 4, rest, "Autres charges d'exploitation", RED, 'right', { wRight:22 }); L(opex, rn, rest, RED); }
       }
     }
+    if(gain && opN){ nodes.splice(nodes.indexOf(gain), 1); nodes.splice(nodes.indexOf(opN) + 1, 0, gain); }   // l'étiquette des gains reste lisible : juste sous le résultat d'exploitation
+    if(opex && nodes.some(n => n.col === 4)) opex.label = 'bottom';
     if(gp) gp.label = 'top';
   }else if(gross !== null){
     // Sans résultat d'exploitation : marge brute vers bénéfice net et « charges, intérêts et impôts » regroupés
@@ -6869,7 +6877,7 @@ function sankeyHtml(c){
     else if(net === null) note = "Ajoutez le bénéfice net pour voir la suite : charges, puis bénéfice.";
     if(consistent){
       const charges = gross - net;
-      if(net > 0){ const nn = N('net', 3, net, 'Bénéfice net', GREEN, 'right', { wRight:22 }); L(gp, nn, net, GREEN); }
+      if(net > 0){ const nn = N('net', 3, net, 'Bénéfice net', GREEN, 'top', { wRight:22 }); L(gp, nn, net, GREEN); }
       if(net < 0){
         const ch = N('chg', 3, gross - net, 'Charges, intérêts et impôts', RED, 'right', { wRight:22 });
         L(gp, ch, gross, RED);
@@ -6880,22 +6888,23 @@ function sankeyHtml(c){
   }else{
     // sans marge brute : le chiffre d'affaires se répartit directement entre bénéfice net et coûts
     const costs = ca - net;
-    if(net > 0){ const nn = N('net', 3, net, 'Bénéfice net', GREEN, 'right', { wRight:22 }); L(rev, nn, net, GREEN); }
+    if(net > 0){ const nn = N('net', 3, net, 'Bénéfice net', GREEN, 'top', { wRight:22 }); L(rev, nn, net, GREEN); }
     if(net < 0){ const ch = N('chg', 3, ca - net, 'Coûts et charges', RED, 'right', { wRight:22 }); L(rev, ch, ca, RED); warn = "Perte nette : les coûts dépassent le chiffre d'affaires."; }
     else if(costs > 1e-9){ const ch = N('chg', 3, costs, 'Coûts et charges', RED, 'right', { wRight:22 }); L(rev, ch, costs, RED); }
     note = "Ajoutez la marge brute pour séparer le coût des ventes des autres charges.";
   }
+  if(co && nodes.some(n => n.col >= 3)) co.label = 'bottom';
   // 2. Géométrie : même échelle partout, chaque colonne centrée, un emplacement minimal pour les étiquettes latérales
   const maxCol = Math.max.apply(null, nodes.map(n => n.col));
-  const W = 1000, XS = maxCol >= 4 ? [190, 310, 450, 590, 750] : [220, 380, 560, 740], NW = 14, TOP = 78, BOT = 14, GAP = 10, MINSLOT = 52, H0 = 300;
+  const W = 1000, XS = maxCol >= 4 ? [190, 310, 450, 590, 750] : [220, 380, 560, 740], NW = 16, TOP = 78, BOT = 14, GAP = 10, MINSLOT = 52, H0 = 300;
   const cols = [0, 1, 2, 3, 4].map(i => nodes.filter(n => n.col === i));
   const k = H0 / Math.max.apply(null, cols.map(col => col.reduce((t, n) => t + n.hv, 0)).concat([ca]));
   nodes.forEach(n => { n.h = Math.max(2, k * n.hv); });
   // une étiquette « au-dessus » d'un bloc qui n'est pas le premier de sa colonne a besoin de place dans l'écart
-  cols.forEach(col => col.forEach((n, i) => { n.pad = (n.label === 'top' && i > 0) ? 38 : 0; n.slot = n.pad + (n.label === 'top' ? n.h : Math.max(n.h, MINSLOT)); }));
+  cols.forEach(col => col.forEach((n, i) => { n.pad = (n.label === 'top' && i > 0) ? 38 : 0; n.padB = n.label === 'bottom' ? 66 : 0; n.slot = n.pad + ((n.label === 'top' || n.label === 'bottom') ? n.h + n.padB : Math.max(n.h, MINSLOT)); }));
   const colH = cols.map(col => col.length ? col.reduce((t, n) => t + n.slot, 0) + GAP * (col.length - 1) : 0);
   const contentH = Math.max.apply(null, colH);
-  cols.forEach((col, i) => { let y = TOP + (contentH - colH[i]) / 2; col.forEach(n => { n.y = y + n.pad + (n.slot - n.pad - n.h) / 2; y += n.slot + GAP; }); });
+  cols.forEach((col, i) => { let y = TOP + (contentH - colH[i]) / 2; col.forEach(n => { n.y = y + n.pad + (n.slot - n.pad - n.padB - n.h) / 2; y += n.slot + GAP; }); });
   const H = Math.round(TOP + contentH + BOT);
   const pctOf = v => { const p = v / ca * 100; return fmtNum(p, p < 10 ? 1 : 0); };
   const tip = n => `data-tooltip="${escapeHtml('<b>' + escapeHtml(n.name) + '</b> ' + compactMoney(n.v, cur) + ' (' + pctOf(n.v) + ' % du CA)')}"`;
@@ -6909,11 +6918,13 @@ function sankeyHtml(c){
   nodes.forEach(n => {
     rects += `<rect x="${XS[n.col]}" y="${n.y.toFixed(1)}" width="${NW}" height="${n.h.toFixed(1)}" rx="2" fill="${n.color}" ${tip(n)}></rect>`;
     const name = n.user ? `<b data-i18n="off">${escapeHtml(n.name)}</b>` : `<b>${n.name}</b>`;
-    const txt = `${name}<span class="skv-v">${compactMoney(n.v, cur)}</span><i>${pctOf(n.v)} % du CA</i>`;
+    const txt = `${name}<span class="skv-v">${compactMoney(n.v, cur)}</span><i>${pctOf(n.v)} % ${n.m ? 'de marge' : 'du CA'}</i>`;
+    const tc = ' skv-t' + n.tone;
     const cy = (n.y + n.h / 2).toFixed(1), x = XS[n.col];
-    if(n.label === 'left') labels += `<div class="skv-l skv-left" style="right:calc(${(W - x) / 10}% + 8px); width:${x / 10 - 2}%; top:${cy}px">${txt}</div>`;
-    else if(n.label === 'top') labels += `<div class="skv-l skv-top" style="left:${x / 10}%; width:${XS[n.col + 1] !== undefined ? (XS[n.col + 1] - x - 24) / 10 : 26}%; top:${(n.y - 5).toFixed(1)}px">${txt}</div>`;
-    else labels += `<div class="skv-l skv-right" style="left:calc(${(x + NW) / 10}% + 8px); width:${n.col < maxCol ? Math.min(n.wRight || 20, (XS[n.col + 1] - x - NW - 18) / 10) : (n.wRight || 20)}%; top:${cy}px">${txt}</div>`;
+    if(n.label === 'left') labels += `<div class="skv-l skv-left${tc}" style="right:calc(${(W - x) / 10}% + 8px); width:${x / 10 - 2}%; top:${cy}px">${txt}</div>`;
+    else if(n.label === 'bottom') labels += `<div class="skv-l skv-bottom${tc}" style="left:${(x + NW / 2) / 10}%; width:${XS[n.col + 1] !== undefined ? (XS[n.col + 1] - x - 30) / 10 : 14}%; top:${(n.y + n.h + 8).toFixed(1)}px">${txt}</div>`;
+    else if(n.label === 'top') labels += `<div class="skv-l skv-top${tc}" style="left:${x / 10}%; width:${XS[n.col + 1] !== undefined ? (XS[n.col + 1] - x - 24) / 10 : Math.min(26, (W - x - 6) / 10)}%; top:${(n.y - 5).toFixed(1)}px">${txt}</div>`;
+    else labels += `<div class="skv-l skv-right${tc}" style="left:calc(${(x + NW) / 10}% + 8px); width:${n.col < maxCol ? Math.min(n.wRight || 20, (XS[n.col + 1] - x - NW - 18) / 10) : (n.wRight || 20)}%; top:${cy}px">${txt}</div>`;
   });
   const notes = `<div class="skv-note">${hasOp ? "Les intérêts et autres éléments se calculent par différence (résultat d'exploitation moins impôts moins bénéfice net)." : "Les charges regroupent l'exploitation (R&D, ventes, frais généraux), les intérêts et les impôts : l'application ne les détaille pas."} Pour que le schéma soit juste, saisissez tous les chiffres sur la même période (le TTM de préférence).${fromMargin ? ' Le bénéfice net est calculé avec la marge nette.' : ''}</div>${note ? `<div class="skv-note">${note}</div>` : ''}${warn ? `<div class="skv-note skv-warn">${warn}</div>` : ''}`;
   return head + `<div class="skv-scroll"><div class="skv" style="height:${H}px${maxCol >= 4 ? ';min-width:760px' : ''}"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${rib}${rects}</svg>${labels}</div></div>${notes}`;
@@ -13533,7 +13544,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 303;
+const APP_BUILD = 304;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.

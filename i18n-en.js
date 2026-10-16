@@ -505,6 +505,8 @@ const I18N_EN = {
   "Connecté avec {0}.": "Signed in as {0}.",
   "Décision : {0}": "Decision: {t0}",
   "Décision retirée": "Decision removed",
+  "Impôts": "Taxes",
+  "{0:n} % de marge": "{0}% margin",
   "Résultat d'exploitation": "Operating income",
   "Impôts sur les bénéfices": "Income taxes",
   "R&D": "R&D",
