@@ -2467,6 +2467,9 @@ tr:hover .ct-del-btn, .ct-del-btn:focus-visible{ opacity:1; }
 
 .ms-bar{ margin-bottom:16px; }
 .ms-list{ display:flex; flex-direction:column; gap:10px; }
+.scard.s12 .ms-list{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px 36px; }
+@media (max-width:900px){ .scard.s12 .ms-list{ grid-template-columns:1fr; } }
+.sp-more{ margin-top:12px; }
 .ms-row{ display:flex; align-items:flex-start; gap:12px; }
 .ms-ico{ flex:0 0 22px; width:22px; height:22px; border-radius:50%; border:1.5px solid var(--border-strong); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#fff; margin-top:1px; }
 .ms-done .ms-ico{ background:var(--green); border-color:var(--green); }
@@ -8955,9 +8958,9 @@ function reportList(){
 function buildReportsCard(){
   const list = reportList();
   if(!list.length) return '';
-  const rows = list.map(({ c, r }) => `<div class="rv-row"><button type="button" class="tg-row rv-open" data-rec-open="${escapeHtml(c.id)}" data-rec-jump="sec-identite">${miniAv(c)}<span class="tg-id"><span class="tg-name">${escapeHtml(c.name || 'Sans nom')}${r.due ? ` <span class="rpt-flag rpt-flag-in">${REPORT_BELL}</span>` : ''}</span><span class="tg-vals">${r.due ? `Rapport du ${escapeHtml(formatDateFr(r.iso))} (${reportWhen(r)}) : données à mettre à jour` : `Prochain rapport le ${escapeHtml(formatDateFr(r.iso))} (${reportWhen(r)})`}${c.position && c.position.active ? ' · position ouverte' : ''}</span></span></button>${r.due ? `<button type="button" class="btn btn-outline btn-sm" data-rpt-done="${escapeHtml(c.id)}">Données mises à jour</button>` : ''}</div>`).join('');
+  const rows = (spaceMore.reports ? list : list.slice(0, SPACE_LIST_MAX)).map(({ c, r }) => `<div class="rv-row"><button type="button" class="tg-row rv-open" data-rec-open="${escapeHtml(c.id)}" data-rec-jump="sec-identite">${miniAv(c)}<span class="tg-id"><span class="tg-name">${escapeHtml(c.name || 'Sans nom')}${r.due ? ` <span class="rpt-flag rpt-flag-in">${REPORT_BELL}</span>` : ''}</span><span class="tg-vals">${r.due ? `Rapport du ${escapeHtml(formatDateFr(r.iso))} (${reportWhen(r)}) : données à mettre à jour` : `Prochain rapport le ${escapeHtml(formatDateFr(r.iso))} (${reportWhen(r)})`}${c.position && c.position.active ? ' · position ouverte' : ''}</span></span></button>${r.due ? `<button type="button" class="btn btn-outline btn-sm" data-rpt-done="${escapeHtml(c.id)}">Données mises à jour</button>` : ''}</div>`).join('');
   const nDue = list.filter(x => x.r.due).length;
-  return spaceCard('s12', 'Rapports', nDue ? `${nDue} analyse${nDue > 1 ? 's' : ''} à mettre à jour, puis les rapports des ${REPORT_SOON_DAYS} prochains jours` : `Rapports attendus dans les ${REPORT_SOON_DAYS} prochains jours`, `<div class="tg-list">${rows}</div>`);
+  return spaceCard('s12', 'Rapports', nDue ? `${nDue} analyse${nDue > 1 ? 's' : ''} à mettre à jour, puis les rapports des ${REPORT_SOON_DAYS} prochains jours` : `Rapports attendus dans les ${REPORT_SOON_DAYS} prochains jours`, `<div class="tg-list">${rows}</div>${spaceMoreBtn('reports', list.length)}`);
 }
 // Rappel à l'ouverture de l'app, une seule fois par jour
 function notifyDueReports(){
@@ -9697,9 +9700,6 @@ function buildGlobalRecap(c){
 // ============================================================
 const FIELD_LABELS = {};
 SECTIONS.forEach(s => s.fields.forEach(f => { FIELD_LABELS[f.key] = f.label; }));
-const TIP_KEYS = ['peg','roic','roe','roa','margeFcf','tailleCapi','fcf','conversionFcf','detteActif','margeBrute','margeNette','peRelatifSecteur','valeurIntrinseque','bearCase','bullCase','beta','positionShort','capexRatio','croissanceBenef','peActuel','peForward','rendementFcf']
-  .filter(k => FIELD_DESCRIPTIONS[k] && FIELD_LABELS[k]);
-let spaceTipIdx = Math.floor(Date.now() / 86400000) % TIP_KEYS.length;
 
 function todayFr(){ return new Date().toLocaleDateString(LOCALE, { weekday:'long', day:'numeric', month:'long', year:'numeric' }); }
 function greetingWord(){ const h = new Date().getHours(); return (h >= 5 && h < 18) ? 'Bonjour' : 'Bonsoir'; }
@@ -9845,6 +9845,14 @@ function miniAv(c){
   const a = avatarInner(c);
   return `<span class="mini-av${a.cls}">${a.html}</span>`;
 }
+// « Voir plus » des cartes de Mon espace qui peuvent devenir très longues (2026-10-17, demande de l'auteur) : 5 lignes par défaut, un bouton pour tout voir, un autre pour replier.
+// L'état est gardé en mémoire le temps de la session (non sauvegardé) ; un clic repeint Mon espace en gardant la position de défilement (voir bindSpace).
+const SPACE_LIST_MAX = 5;
+const spaceMore = { reports:false, targets:false };
+function spaceMoreBtn(key, total){
+  if(total <= SPACE_LIST_MAX) return '';
+  return `<div class="sp-more"><button type="button" class="btn btn-outline btn-sm" data-sp-more="${key}">${spaceMore[key] ? 'Voir moins' : `Voir plus (${total - SPACE_LIST_MAX} de plus)`}</button></div>`;
+}
 function spaceCard(cls, title, sub, body){
   return `<section class="scard ${cls}"><div class="scard-h"><div class="scard-t">${title}</div>${sub ? `<div class="scard-s">${sub}</div>` : ''}</div>${body}</section>`;
 }
@@ -9974,7 +9982,7 @@ function buildDividendsCard(){
   }else{
     body = `<div class="s-empty">Indiquez qu'une entreprise verse des dividendes (section Identité, Politique de dividende) et son montant annuel par action : le classement par rendement apparaîtra ici.</div>`;
   }
-  return spaceCard('s5', 'Rendement du dividende', 'Classement de vos analyses', body);
+  return spaceCard('s12', 'Rendement du dividende', 'Classement de vos analyses', body);
 }
 
 function buildPipeline(){
@@ -10037,31 +10045,41 @@ function buildRevisitCard(){
 }
 
 function buildTargets(){
+  // Seulement les analyses que l'on pense ACHETER ou SURVEILLER : un prix d'achat cible n'a de sens que pour elles (demande de l'auteur, 2026-10-17)
   const rows = state.companies.map(c => {
+    const dec = c.fields.personnelle.decision;
+    if(dec !== 'Acheter' && dec !== 'Surveiller') return null;
     const price = num(c.fields.valorisation.prixActuel), target = num(c.fields.personnelle.prixAchatCible);
     return (price === null || target === null || target === 0) ? null : { c, price, target, gap: (price - target) / target * 100 };
   }).filter(Boolean).sort((a, b) => a.gap - b.gap);
-  const body = rows.length ? `<div class="tg-list">` + rows.map(r => {
+  const shown = spaceMore.targets ? rows : rows.slice(0, SPACE_LIST_MAX);
+  const body = rows.length ? `<div class="tg-list">` + shown.map(r => {
     const reached = r.gap <= 0;
     return `<button class="tg-row" data-open-company="${r.c.id}">${miniAv(r.c)}<span class="tg-id"><span class="tg-name">${escapeHtml(r.c.name || 'Sans nom')}</span><span class="tg-vals">Cours ${fmtNum(r.price, 2)} ${r.c.currency} · Cible ${fmtNum(r.target, 2)} ${r.c.currency}</span></span><span class="pill ${reached ? 'pill-buy' : 'pill-watch'}">${reached ? 'Objectif atteint' : '+' + fmtNum(r.gap, 1) + ' %'}</span></button>`;
-  }).join('') + `</div>` : `<div class="s-empty">Définissez un prix d'achat cible dans la section Décision : vous verrez ici la distance qui vous en sépare.</div>`;
-  return spaceCard('s5', 'Objectifs d\'achat', 'Distance entre le cours et votre prix cible', body);
+  }).join('') + `</div>` + spaceMoreBtn('targets', rows.length) : `<div class="s-empty">Fixez un prix d'achat cible dans la section Analyse personnelle pour une analyse en décision Acheter ou Surveiller : vous verrez ici la distance qui vous en sépare.</div>`;
+  return spaceCard('s5', 'Objectifs d\'achat', 'Analyses à acheter ou à surveiller : distance entre le cours et votre prix cible', body);
 }
-
 function buildSectorsCard(){
-  const cs = state.companies;
-  const sectors = {}, countries = {};
-  cs.forEach(c => {
+  const sectors = {};
+  state.companies.forEach(c => {
     const idn = c.fields.identite || {};
-    const s = normSector(idn.secteur && idn.secteur.secteur), p = idn.paysSiege && idn.paysSiege.pays;
+    const s = normSector(idn.secteur && idn.secteur.secteur);
     if(s) sectors[s] = (sectors[s] || 0) + 1;
-    if(p) countries[p] = (countries[p] || 0) + 1;
   });
   const sec = Object.keys(sectors).length ? buildDonut(countItems(sectors)) : `<div class="s-empty">Renseignez le secteur dans la section Identité.</div>`;
-  const cty = Object.keys(countries).length ? buildDonut(countItems(countries, k => `${flagIcon(k)} ${escapeHtml(k)}`)) : `<div class="s-empty">Renseignez le pays dans la section Identité.</div>`;
-  return spaceCard('s7', 'Répartition de vos analyses', 'Par secteur et par pays du siège', `<div class="dn-two"><div><div class="dn-title">Secteurs</div>${sec}</div><div><div class="dn-title">Pays</div>${cty}</div></div>`);
+  return spaceCard('s7', 'Répartition par secteur', 'Secteur de vos analyses', sec);
 }
-
+// Deux cartes séparées (secteur, pays) depuis le 2026-10-17 : le secteur a beaucoup plus de lignes de légende que le pays et manquait de place
+function buildCountriesCard(){
+  const countries = {};
+  state.companies.forEach(c => {
+    const idn = c.fields.identite || {};
+    const p = idn.paysSiege && idn.paysSiege.pays;
+    if(p) countries[p] = (countries[p] || 0) + 1;
+  });
+  const cty = Object.keys(countries).length ? buildDonut(countItems(countries, k => `${flagIcon(k)} ${escapeHtml(k)}`)) : `<div class="s-empty">Renseignez le pays dans la section Identité.</div>`;
+  return spaceCard('s5', 'Répartition par pays', 'Pays du siège de vos analyses', cty);
+}
 // Le tableau lui-même (#companiesTableWrap) : reconstruit seul à chaque changement de tri, sans toucher à l'en-tête de la carte (bouton + menu de tri).
 function buildCompaniesTableRows(){
   // Valeurs chiffrées mises en valeur (demande de l'auteur le 2026-09-26) : une pastille teintée à la couleur du palier, chiffre en gras ; la note globale en plus grand,
@@ -10143,17 +10161,9 @@ function buildMilestones(){
     ['Suivre une position', has(c => c.position && c.position.active), 'Bloc Position en bas d\'une analyse.'],
   ];
   const done = items.filter(i => i[1]).length;
+  if(done === items.length) return '';   // tout est fait : la carte disparaît (demande de l'auteur, 2026-10-17)
   const rows = items.map(i => `<div class="ms-row ${i[1] ? 'ms-done' : ''}"><span class="ms-ico">${i[1] ? '&#10003;' : ''}</span><div><div class="ms-t">${i[0]}</div>${i[1] ? '' : `<div class="ms-h">${i[2]}</div>`}</div></div>`).join('');
-  return spaceCard('s6', 'Votre progression', `${done} / ${items.length}`, `<div class="hbar-track ms-bar"><i style="width:${done / items.length * 100}%;background:var(--green)"></i></div><div class="ms-list">${rows}</div>`);
-}
-
-function buildTipBody(){
-  const key = TIP_KEYS[spaceTipIdx % TIP_KEYS.length];
-  const cfg = SCALE_CONFIG[key];
-  return `<div class="tip-term">${escapeHtml(FIELD_LABELS[key])}</div><p class="tip-desc">${FIELD_DESCRIPTIONS[key]}</p>${cfg ? `<div class="tip-scale"><div class="custom-tooltip"><div class="tt-header">Barème utilisé dans l'application</div>${scaleTooltip(key, null)}</div></div>` : ''}`;
-}
-function buildTipCard(){
-  return spaceCard('s6', 'Le mot du jour', 'Apprenez un indicateur à la fois', `<div id="tipBody">${buildTipBody()}</div><div class="tip-nav"><button class="btn btn-outline btn-sm" id="tipPrev">&larr; Précédent</button><button class="btn btn-outline btn-sm" id="tipNext">Suivant &rarr;</button></div><div style="margin-top:14px"><button class="link-btn" data-go-learn="indicateurs">Ouvrir le dictionnaire complet des indicateurs</button></div>`);
+  return spaceCard('s12', 'Votre progression', `${done} / ${items.length}`, `<div class="hbar-track ms-bar"><i style="width:${done / items.length * 100}%;background:var(--green)"></i></div><div class="ms-list">${rows}</div>`);
 }
 
 function buildPrefsCard(){
@@ -10334,7 +10344,7 @@ function renderSpaceView(){
         <div><strong>Un récapitulatif</strong><span>Score moyen, conviction, capital investi et résultat latent.</span></div>
         <div><strong>Des recommandations</strong><span>Fiches à compléter, objectifs atteints, décisions à revisiter.</span></div>
         <div><strong>Vos idées classées</strong><span>Score, valeur intrinsèque, objectifs d'achat et répartition par secteur et par pays.</span></div>
-        <div><strong>Votre progression</strong><span>Des étapes pour maîtriser la méthode, et un indicateur expliqué chaque jour.</span></div>
+        <div><strong>Votre progression</strong><span>Des étapes pour maîtriser la méthode, du premier ticker à votre première position.</span></div>
       </div>
       <button class="btn btn-primary" data-new-analysis>Créer ma première analyse</button>
     </section>`;
@@ -10343,10 +10353,10 @@ function renderSpaceView(){
     // « Toutes vos analyses », puis les rappels (à revisiter, recommandations + objectifs d'achat), les idées par décision, les classements
     // (score + cours vs valeur) et enfin dividendes + répartition. Les cartes sont associées par paires 7+5 / 5+7 pour remplir les 12 colonnes.
     html += buildSpaceKpis();
-    html += `<div class="sgrid">${buildReportsCard()}${buildAlertsCard()}${buildCompaniesTable()}${buildRevisitCard()}${buildRecsCard()}${buildTargets()}${buildPipeline()}${buildScoreBars()}${buildValueGap()}${buildDividendsCard()}${buildSectorsCard()}</div>`;
+    html += `<div class="sgrid">${buildReportsCard()}${buildAlertsCard()}${buildCompaniesTable()}${buildRevisitCard()}${buildRecsCard()}${buildTargets()}${buildPipeline()}${buildScoreBars()}${buildValueGap()}${buildSectorsCard()}${buildCountriesCard()}${buildDividendsCard()}</div>`;
     html += buildCapitalCard();
   }
-  html += `<div class="sgrid">${buildMilestones()}${buildTipCard()}${buildPrefsCard()}</div></div>`;
+  html += `<div class="sgrid">${buildMilestones()}${buildPrefsCard()}</div></div>`;
   main.innerHTML = html;
   bindSpace();
 }
@@ -11066,15 +11076,17 @@ function bindSpace(){
   main.querySelectorAll('[data-new-analysis]').forEach(el => el.addEventListener('click', openNewCompanyModal));
   main.querySelectorAll('[data-open-company]').forEach(el => el.addEventListener('click', () => selectCompany(el.dataset.openCompany)));
   main.querySelectorAll('[data-rename-id]').forEach(el => el.addEventListener('click', e => openRenameModal(el.dataset.renameId, e)));
+  main.querySelectorAll('[data-sp-more]').forEach(el => el.addEventListener('click', () => {
+    const k = el.dataset.spMore, y = window.scrollY;
+    spaceMore[k] = !spaceMore[k];
+    renderSpaceView();
+    window.scrollTo(0, y);
+  }));
   main.querySelectorAll('[data-rec-open]').forEach(el => el.addEventListener('click', () => {
     selectCompany(el.dataset.recOpen);
     const jump = el.dataset.recJump;
     if(jump) setTimeout(() => { const t = document.getElementById(jump); if(t) t.scrollIntoView({ behavior:'smooth', block:'start' }); }, 80);
   }));
-  const prev = document.getElementById('tipPrev'), next = document.getElementById('tipNext');
-  const repaintTip = () => { document.getElementById('tipBody').innerHTML = buildTipBody(); };
-  if(prev) prev.addEventListener('click', () => { spaceTipIdx = (spaceTipIdx - 1 + TIP_KEYS.length) % TIP_KEYS.length; repaintTip(); });
-  if(next) next.addEventListener('click', () => { spaceTipIdx = (spaceTipIdx + 1) % TIP_KEYS.length; repaintTip(); });
   document.querySelectorAll('[data-conflict-clean]').forEach(b => b.addEventListener('click', deleteConflictCopies));
   document.querySelectorAll('[data-keys-tip]').forEach(b => b.addEventListener('click', () => {
     if(b.dataset.keysTip === 'snooze'){
@@ -13309,7 +13321,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 299;
+const APP_BUILD = 300;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
