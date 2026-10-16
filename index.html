@@ -1295,6 +1295,37 @@ body.sx-lock{ overflow:hidden; }
 .sx-dn svg{ width:170px; height:170px; margin:8px auto 14px auto; }
 .sx-dleg{ font-size:14px; gap:5px; }
 .sx-foot{ margin-top:12px; padding-top:10px; }
+/* 2026-10-17 : données centrées dans les cases, chiffres plus grands sans agrandir les cases, 3 cases d'objectifs, secteur et clients plus lisibles */
+.sector-select-wrap{ display:inline-flex; }
+.sector-select{ font:inherit; font-size:14px; font-weight:600; color:var(--ink); background:var(--field); border:1px solid var(--border-strong); border-radius:9px; padding:7px 30px 7px 12px; min-width:220px; max-width:100%; cursor:pointer; }
+.sector-select:focus{ outline:2px solid var(--blue, #2a5bea); outline-offset:1px; }
+.sx-t,.sx-g4 .sx-t, .sx-compact .sx-t, .sx-pb > .sx-grow .sx-t{ display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:8px 8px 9px 8px; }
+.sx-tl{ line-height:1.15; max-width:100%; }
+.sx-tv{ font-size:27px; line-height:1.05; margin-top:2px; max-width:100%; }
+.sx-g4 .sx-tv{ font-size:23px; }
+.sx-compact .sx-tv{ font-size:21px; }
+.sx-t-s .sx-tv, .sx-g4 .sx-t-s .sx-tv{ font-size:19px; line-height:1.2; }
+.sx-compact .sx-t-s .sx-tv{ font-size:18px; }
+.sx-ts{ line-height:1.2; max-width:100%; }
+.sx-t-ipo .sx-ts{ font-size:11px; }
+.sx-obj3{ grid-template-columns:minmax(0,1.05fr) minmax(0,.9fr) minmax(0,.9fr); gap:10px; }
+.sx-obj3 .sx-cons svg{ max-width:150px; }
+.sx-obj3 .sx-cons-l{ font-size:19px; }
+.sx-th5 .sx-tl{ white-space:normal; }
+.sx-obj3 .sx-th5 .sx-tv{ font-size:23px; }
+.sx-stack .sx-obj3{ grid-template-columns:1fr; }
+.sx-stack .sx-t, .sx-stack .sx-g4 .sx-t, .sx-stack .sx-compact .sx-t{ padding:7px 4px 8px 4px; }
+.sx-stack .sx-tl, .sx-stack .sx-g4 .sx-tl, .sx-stack .sx-compact .sx-tl{ font-size:11.5px; }
+.sx-stack .sx-tv{ font-size:17px; }
+.sx-stack .sx-g4 .sx-tv, .sx-stack .sx-compact .sx-tv{ font-size:15px; }
+.sx-stack .sx-ts{ font-size:10.5px; white-space:normal; }
+.sx-stack .sx-tl{ white-space:normal; }
+.sx-sector{ display:flex; flex-wrap:wrap; gap:8px 34px; margin-top:-2px; }
+.sx-sector > div{ display:flex; flex-direction:column; gap:1px; min-width:0; }
+.sx-sector span{ font-size:12.5px; color:#8fa1c2; text-transform:uppercase; letter-spacing:.06em; }
+.sx-sector b{ font-size:17.5px; font-weight:600; color:#fff; line-height:1.25; }
+.sx-clients{ display:flex; flex-wrap:wrap; gap:8px; margin-top:7px; }
+.sx-client{ font-size:15px; font-weight:500; color:#e6ecf8; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:5px 12px; line-height:1.3; }
 .chead-side{ flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-end; gap:10px; }
 .company-dates{
   display:flex; flex-direction:column; gap:2px; text-align:right;
@@ -9297,7 +9328,9 @@ function sectorFilterChipsHtml(withCompare){
   const inSec = sectorFilter ? sc.find(x => x.sector === sectorFilter).n : 0;
   const cmp = withCompare && inSec >= 2
     ? `<button type="button" class="btn btn-outline btn-sm" data-sector-compare>${inSec > COMPARE_MAX ? `Comparer les ${COMPARE_MAX} mieux notées` : `Comparer ces ${inSec} entreprises`}</button>` : '';
-  return `<div class="pf-chips" style="margin-bottom:12px"><span class="pf-chips-l">Secteur :</span><button type="button" class="lr-chip${sectorFilter ? '' : ' on'}" data-sector-filter="">Tous</button>${sc.map(x => `<button type="button" class="lr-chip${x.sector === sectorFilter ? ' on' : ''}" data-sector-filter="${escapeHtml(x.sector)}">${escapeHtml(x.sector)} <small>${x.n}</small></button>`).join('')}${cmp}</div>`;
+  // Menu déroulant (demande de l'auteur, 2026-10-17) : plus de pastilles quand il y a beaucoup de secteurs
+  const total = state.companies.length;
+  return `<div class="pf-chips sector-pick" style="margin-bottom:12px"><label class="pf-chips-l" for="sectorSelect">Secteur :</label><span class="sector-select-wrap"><select id="sectorSelect" class="sector-select" data-sector-select data-i18n="off"><option value="">${LANG === 'fr' ? 'Tous les secteurs' : 'All sectors'} (${total})</option>${sc.map(x => `<option value="${escapeHtml(x.sector)}"${x.sector === sectorFilter ? ' selected' : ''}>${escapeHtml(x.sector)} (${x.n})</option>`).join('')}</select></span>${cmp}</div>`;
 }
 
 // Liste « Analyses reçues » de la barre latérale : seulement s'il y en a, à part de « Mes analyses » (pastille « nouveau » tant qu'elle n'a pas été ouverte)
@@ -10999,8 +11032,8 @@ function renderCompareView(){
     <div id="cmpBody">${compareTableHtml()}</div>
   </div>`;
   main.querySelectorAll('[data-go-space]').forEach(el => el.addEventListener('click', goSpace));
-  main.querySelectorAll('[data-sector-filter]').forEach(b => b.addEventListener('click', () => {
-    sectorFilter = b.dataset.sectorFilter;
+  main.querySelectorAll('[data-sector-select]').forEach(b => b.addEventListener('change', () => {
+    sectorFilter = b.value;
     // Choisir un secteur sélectionne d'office ses analyses les mieux notées (jamais une sélection qui mélange les secteurs)
     if(sectorFilter){ const ids = topBySector(sectorFilter).map(c => c.id); if(ids.length >= 2) compareIds = ids; else compareIds = ids.concat(compareIds.filter(id => !ids.includes(id))).slice(0, 1); }
     renderCompareView();
@@ -11051,7 +11084,7 @@ function bindSpace(){
     renderTabs();
     renderSpaceView();
   }));
-  main.querySelectorAll('[data-sector-filter]').forEach(b => b.addEventListener('click', () => { sectorFilter = b.dataset.sectorFilter; renderSpaceView(); }));
+  main.querySelectorAll('[data-sector-select]').forEach(b => b.addEventListener('change', () => { sectorFilter = b.value; renderSpaceView(); }));
   main.querySelectorAll('[data-badge-filter]').forEach(b => b.addEventListener('click', () => {
     const v = b.dataset.badgeFilter;
     if(v === ''){ receivedOnly = false; decisionFilter = ''; }
@@ -13321,7 +13354,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 300;
+const APP_BUILD = 301;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -13768,7 +13801,7 @@ function sxWsChart(c){
   items.forEach(r => { lines += `<line x1="${x0}" y1="${y0.toFixed(1)}" x2="${x1}" y2="${y(r.price).toFixed(1)}" stroke="${r.color}" stroke-width="${r.key === 'px' ? 2.6 : 2.2}"${r.key === 'px' ? '' : ' stroke-dasharray="7 5"'} stroke-linecap="round"/><circle cx="${x1}" cy="${y(r.price).toFixed(1)}" r="3.6" fill="${r.color}"/>`; });
   lines += `<circle cx="${x0}" cy="${y0.toFixed(1)}" r="5" fill="${accent}" stroke="#fff" stroke-width="1.6"/>`;
   // étiquettes décalées si deux niveaux sont trop proches (triées de haut en bas à l'écran)
-  const byY = items.slice().sort((a, b) => y(a.price) - y(b.price)), ly = byY.map(r => y(r.price)), gap = 32;
+  const byY = items.filter(r => r.key !== 'px').sort((a, b) => y(a.price) - y(b.price)), ly = byY.map(r => y(r.price)), gap = 32;
   for(let i = 1; i < ly.length; i++) if(ly[i] < ly[i - 1] + gap) ly[i] = ly[i - 1] + gap;
   const over = ly[ly.length - 1] - (H - bot - 2); if(over > 0) for(let i = 0; i < ly.length; i++) ly[i] -= over;
   const under = (top + 6) - ly[0]; if(under > 0) for(let i = 0; i < ly.length; i++) ly[i] += under;
@@ -13807,7 +13840,7 @@ function buildSummaryPages(c){
   const money = v => v === null ? '—' : compactMoney(v, cur);
   const plain = v => v === null ? '—' : fmtMoney(v, cur);
   const av = avatarInner(c);
-  const chips = `${idn.ticker ? `<span class="sx-chip sx-mono">${escapeHtml(idn.ticker)}</span>` : ''}${sect ? `<span class="sx-chip">${escapeHtml(sect)}${indus ? ' · ' + escapeHtml(indus) : ''}</span>` : ''}${pays ? `<span class="sx-chip">${flagIcon(pays)} ${escapeHtml(pays)}</span>` : ''}${idn.cotation ? `<span class="sx-chip">${escapeHtml(idn.cotation)}</span>` : ''}`;
+  const chips = `${idn.ticker ? `<span class="sx-chip sx-mono">${escapeHtml(idn.ticker)}</span>` : ''}${pays ? `<span class="sx-chip">${flagIcon(pays)} ${escapeHtml(pays)}</span>` : ''}${idn.cotation ? `<span class="sx-chip">${escapeHtml(idn.cotation)}</span>` : ''}`;
   const who = `<span class="sx-who"><span class="preview-avatar sx-av-mini${av.cls}">${av.html}</span><span>${escapeHtml(c.name || 'Sans nom')}${idn.ticker ? ` <em class="sx-mono">${escapeHtml(idn.ticker)}</em>` : ''}</span></span>`;
 
   // ----- En-tête (le même sur les deux pages : chaque page se partage seule) -----
@@ -13839,12 +13872,14 @@ function buildSummaryPages(c){
   const emp = parseMoney(idn.nbEmployes);
   const ipo = idn.dateIPO && idn.dateIPO.date;
   const moatTxt = sxFull(idn.moatDescription);
-  const p1 = `<div class="sx-meta sx-meta-in">${chips}</div>
+  const ipoPx = parseMoney(idn.dateIPO && idn.dateIPO.prixInitial);
+  const sectBlock = (sect || indus) ? `<div class="sx-sector">${sect ? `<div><span>Secteur</span><b>${escapeHtml(sect)}</b></div>` : ''}${indus ? `<div><span>Industrie</span><b>${escapeHtml(indus)}</b></div>` : ''}</div>` : '';
+  const p1 = `<div class="sx-meta sx-meta-in">${chips}</div>${sectBlock}
     <div class="sx-act">${sxFull(idn.activitePrincipale) || '<span class="sx-mut">Activité à renseigner</span>'}</div>
     ${sxText('Autres activités', idn.autresActivites)}
-    <div class="sx-g sx-g4 sx-compact">${sxTile('Market Cap', money(mc))}${sxTile('Taille', tt ? ({ tresbon:'Méga-cap.', bon:'Grande cap.', moyen:'Cap. moyenne', mauvais:'Petite cap.' })[tt] : '—', tt ? TOOLTIP_TIER_COLORS[tt] : null, '', 'sx-t-s')}${sxTile('Fondée', sxShort(idn.dateCreation, 14) || '—')}${sxTile('IPO', sxShort(ipo, 14) || '—')}${sxTile('Employés', emp === null ? '—' : fmtNum(emp, 0))}${sxTile('CEO', sxShort(idn.ceo, 30) || '—', null, '', 'sx-t-s')}${sxTile('Siège', sxShort(idn.paysSiege && idn.paysSiege.siegeSocial, 30) || '—', null, '', 'sx-t-s')}${sxTile('Dividende', divV, divC, divS, divS ? 'sx-t-s' : '')}</div>
+    <div class="sx-g sx-g4 sx-compact">${sxTile('Market Cap', money(mc))}${sxTile('Taille', tt ? ({ tresbon:'Méga-cap.', bon:'Grande cap.', moyen:'Cap. moyenne', mauvais:'Petite cap.' })[tt] : '—', tt ? TOOLTIP_TIER_COLORS[tt] : null, '', 'sx-t-s')}${sxTile('Fondée', sxShort(idn.dateCreation, 14) || '—')}${sxTile('IPO', sxShort(ipo, 14) || '—', null, ipoPx === null ? '' : 'prix initial : ' + plain(ipoPx), ipoPx === null ? '' : 'sx-t-ipo')}${sxTile('Employés', emp === null ? '—' : fmtNum(emp, 0))}${sxTile('CEO', sxShort(idn.ceo, 30) || '—', null, '', 'sx-t-s')}${sxTile('Siège', sxShort(idn.paysSiege && idn.paysSiege.siegeSocial, 30) || '—', null, '', 'sx-t-s')}${sxTile('Dividende', divV, divC, divS, divS ? 'sx-t-s' : '')}</div>
     <div class="sx-moat">${sxGauge(moat === null ? 0 : moat / 10, moatCol || none, moat === null ? '—' : fmtNum(moat, 1) + '<i>/10</i>', 'MOAT')}<div class="sx-tx sx-moat-t"><div class="sx-txl">Avantage concurrentiel</div><div class="sx-txv">${moatTxt || '<span class="sx-mut">À renseigner</span>'}</div></div></div>
-    ${clients.length ? `<div class="sx-tx"><div class="sx-txl">Clients</div><div class="sx-txv">${clients.map(x => escapeHtml(x)).join(' · ')}</div></div>` : ''}`;
+    ${clients.length ? `<div class="sx-tx"><div class="sx-txl">Clients</div><div class="sx-clients">${clients.map(x => `<span class="sx-client">${escapeHtml(x)}</span>`).join('')}</div></div>` : ''}`;
 
   // ----- 2. Financier : chiffres rangés par thème, puis anneaux de répartition -----
   const cagr = k => num(fin[k] && fin[k].cagr);
@@ -13911,10 +13946,18 @@ function buildSummaryPages(c){
     const gain = (lt.cours5 / lt.price - 1) * 100, gc = gain >= 0 ? good : bad;
     thTile = `<div class="sx-t sx-th5"><div class="sx-tl">Cours théorique dans 5 ans</div><div class="sx-tv" style="color:${gc}">${plain(lt.cours5)}</div><div class="sx-ts" style="color:${gc}">${(gain >= 0 ? '+' : '−') + fmtNum(Math.abs(gain), 0)}&nbsp;%${lt.cagrB !== null ? ' · ' + (lt.cagrB >= 0 ? '+' : '−') + fmtNum(Math.abs(lt.cagrB), 1) + '&nbsp;%/an' : ''}</div><div class="sx-ts">à PE constant</div></div>`;
   }
-  const objBlock = (wsC || consG || hasLt) ? `<div class="sx-tx sx-wsb"><div class="sx-txl">Objectifs et consensus des analystes</div>${wsC}<div class="sx-obj-row">${consG}${thTile}</div></div>` : '';
+  // Troisième case à côté du consensus et du cours théorique : le PE comparé à son propre historique (2026-10-17)
+  const peH = computePeHistorique(c), peHr = computePeRelatifHisto(c);
+  let hiTile = '';
+  if(peHr !== null || peH !== null || wsC || consG || hasLt){
+    const hc = peHr === null ? null : sxTier('peRelatifHisto', peHr);
+    const hd = (peHr !== null && peHr > 0) ? (peHr < 1 ? 'moins cher que d\'habitude' : (peHr > 1 ? 'plus cher que d\'habitude' : 'dans sa moyenne')) : '';
+    hiTile = `<div class="sx-t sx-th5 sx-hi"><div class="sx-tl">PE vs son historique</div><div class="sx-tv"${hc ? ` style="color:${hc}"` : ''}>${peHr === null ? '—' : sxFr(fmtRatioPos(peHr))}</div>${hd ? `<div class="sx-ts"${hc ? ` style="color:${hc}"` : ''}>${hd}</div>` : ''}<div class="sx-ts">${peH === null ? 'PE moyen 5 ans à renseigner' : 'PE moyen 5 ans : ' + fmtNum(peH, 1)}</div></div>`;
+  }
+  const objBlock = (wsC || consG || hasLt || hiTile) ? `<div class="sx-tx sx-wsb"><div class="sx-txl">Objectifs et consensus des analystes</div>${wsC}<div class="sx-obj-row${hiTile ? ' sx-obj3' : ''}">${consG}${thTile}${hiTile}</div></div>` : '';
   const hasWs = ws && (ws.target.max !== null || ws.target.moy !== null || ws.target.min !== null);
   const p4 = `<div class="sx-g sx-g4 sx-grow">${sxTile('PE', pe === null ? '—' : (pe <= 0 ? 'n.s.' : fmtNum(pe, 1)))}${sxTile('PE forward', peF === null ? '—' : (peF <= 0 ? 'n.s.' : fmtNum(peF, 1)))}${sxTile('PEG', sxFr(fmtRatioPos(peg)), sxTier('peg', peg))}
-    ${sxTile('PE / secteur', sxFr(fmtRatioPos(peRel)), sxTier('peRelatifSecteur', peRel), peSect === null ? '' : 'PE secteur : ' + fmtNum(peSect, 1))}${sxTile('Rendement FCF', rFcf === null ? '—' : (rFcf < 0 ? neg : sxPct(rFcf, 1)), sxTier('rendementFcf', rFcf))}${sxTile('EPS', eps === null ? '—' : plain(eps), null, epsF === null ? '' : 'estimé : ' + plain(epsF))}${sxTile('Bêta', beta === null ? '—' : fmtNum(beta, 2))}${sxTile('Position short', pshort === null ? '—' : sxPct(pshort, 1), sxTier('positionShort', pshort))}</div>
+    ${sxTile('PE / secteur', sxFr(fmtRatioPos(peRel)), sxTier('peRelatifSecteur', peRel), peSect === null ? '' : 'PE secteur : ' + fmtNum(peSect, 1))}${sxTile('Rendement FCF', rFcf === null ? '—' : (rFcf < 0 ? neg : sxPct(rFcf, 1)), sxTier('rendementFcf', rFcf))}${sxTile('EPS', eps === null ? '—' : plain(eps), null, epsF === null ? '' : 'estimé : ' + plain(epsF))}${sxTile('Prix actuel', price === null ? '—' : plain(price), '#5b8cf7')}${sxTile('Position short', pshort === null ? '—' : sxPct(pshort, 1), sxTier('positionShort', pshort))}</div>
     ${objBlock}
     ${sxText('Conclusion', val.conclusionValorisation)}
     ${bar ? `<div class="sx-tx sx-frb"><div class="sx-txl">Fourchette de valorisation</div>${bar}</div>` : ''}`;
