@@ -2417,7 +2417,12 @@ tr:hover .ct-del-btn, .ct-del-btn:focus-visible{ opacity:1; }
 .dn-two{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:32px; }
 .dn-title{ font-size:13px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:12px; }
 .dn-wrap{ display:flex; align-items:center; gap:26px; flex-wrap:wrap; }
-.shares-viz{ margin-top:16px; }
+.shares-row{ display:flex; align-items:center; gap:24px 40px; flex-wrap:wrap; margin-top:16px; }
+.shares-viz{ flex:1 1 420px; min-width:0; }
+.sh-owners{ flex:0 0 auto; display:flex; flex-direction:column; gap:14px; }
+.sh-own{ display:flex; align-items:center; justify-content:space-between; gap:14px; }
+.sh-own-in{ display:inline-flex; align-items:center; }
+.field-value .sh-own input[type=text]{ width:auto !important; field-sizing:content; min-width:56px; padding-left:11px; padding-right:11px; }
 .shares-viz .sh-donut{ gap:30px; }
 .shares-viz .donut-svg{ width:128px; height:128px; flex:0 0 128px; }
 .sh-center{ font-family:var(--font-ui); font-size:22px; font-weight:700; fill:var(--ink); }
@@ -3373,7 +3378,7 @@ const FIELD_DESCRIPTIONS = {
   businessModel: "Comment l'entreprise gagne concrètement de l'argent : qui paie, pour quoi, et sous quelle forme (vente, abonnement, commission, publicité, licences...). Différent de l'activité principale, qui dit ce que fait l'entreprise.",
   detenuInities: "La part du capital détenue par les dirigeants et les initiés, en %. Plus elle est élevée, plus les dirigeants ont leur propre argent en jeu. Sur Yahoo Finance : onglet Statistiques, ligne « % Held by Insiders ».",
   detenuInstitutions: "La part du capital détenue par des investisseurs institutionnels (fonds, assurances, banques...), en %. Beaucoup d'institutions : un titre suivi et liquide, mais aussi plus nerveux si elles vendent en même temps. Sur Yahoo Finance : onglet Statistiques, ligne « % Held by Institutions ».",
-  peHistorique: "Le PE moyen de l'entreprise sur ses 5 dernières années. Vous pouvez saisir un seul chiffre, ou les 5 PE annuels séparés par des espaces : l'application calcule la moyenne. À relever sur stockanalysis.com : page de l'action, Financials, Ratios, ligne « PE Ratio ».",
+  peHistorique: "Le PE moyen de l'entreprise sur ses 5 dernières années (un seul chiffre). À calculer à partir des 5 PE annuels de stockanalysis.com : page de l'action, Financials, Ratios, ligne « PE Ratio ».",
   peRelatifHisto: "Le PE actuel comparé à son propre PE moyen sur 5 ans : en dessous de 1, l'entreprise est moins chère qu'à son habitude ; au-dessus, plus chère. Calculé automatiquement.",
   priceSales: "La capitalisation boursière divisée par le chiffre d'affaires : combien vous payez pour 1 € (ou 1 $) de ventes. Utile quand l'entreprise n'a pas (encore) de bénéfice. Calculé automatiquement, sans couleur : la norme dépend beaucoup du secteur.",
   innovationTech: "Les innovations technologiques qui soutiennent la croissance future.",
@@ -3545,19 +3550,17 @@ const SECTIONS = [
     title: "Identité de l'entreprise",
     num: 1,
     fields: [
-      {key:'ticker', label:'Ticker', type:'ticker', span:3, group:'Identité et repères'},
-      {key:'cotation', label:'Cotation', type:'exchange', span:3},
-      {key:'dateCreation', label:'Date de création', type:'text', compact:true, span:3},
-      {key:'prochainRapport', label:'Prochain rapport', type:'nextReport', span:3},
+      {key:'ticker', label:'Ticker', type:'ticker', span:4, group:'Identité et repères'},
+      {key:'cotation', label:'Cotation', type:'exchange', span:4},
+      {key:'dateCreation', label:'Date de création', type:'text', compact:true, span:4},
       {key:'paysSiege', label:'Pays', type:'duo', span:6, subs:[{key:'pays',label:'', picker:'country'},{key:'siegeSocial',label:'Siège social', grow:true}]},
       {key:'secteur', label:'Secteur', type:'duo', span:6, autoWidth:true, subs:[{key:'secteur',label:''},{key:'industrie',label:'Industrie'}]},
       {key:'marketCap', label:'Market Cap', type:'text', money:true, span:6},
       {key:'nbEmployes', label:"Nb d'employés", type:'computed-revenu-employe', span:6},
       {key:'tailleCapi', label:"Taille de l'entreprise", type:'computed-taille-capi', span:6},
       {key:'dateIPO', label:'Date IPO', type:'duo', span:6, subs:[{key:'date',label:''},{key:'prixInitial',label:'Prix initial', money:true}]},
-      {key:'ceo', label:'CEO', type:'ceoFondateur', span:4},
-      {key:'detenuInities', label:'Détenu par les dirigeants et initiés', type:'text', percent:true, compact:true, span:4},
-      {key:'detenuInstitutions', label:'Détenu par les institutions', type:'text', percent:true, compact:true, span:4},
+      {key:'ceo', label:'CEO', type:'ceoFondateur', span:6},
+      {key:'prochainRapport', label:'Prochain rapport', type:'nextReport', span:6},
       {key:'activitePrincipale', label:'Activité principale', type:'textarea', span:6, group:'Activité et avantage concurrentiel'},
       {key:'autresActivites', label:'Autres activités', type:'textarea', span:6},
       {key:'businessModel', label:'Business model', type:'textarea', span:12},
@@ -3595,6 +3598,10 @@ const SECTIONS = [
       {key:'scoreSolvabilite', label:'Score de solvabilité', type:'text', suffix:'/100', span:6, group:'Solvabilité et risque de faillite'},
       {key:'probaFaillite', label:'Probabilité de faillite', type:'text', percent:true, span:6},
       {key:'nbActions', label:"Nb d'actions", type:'sharesTrio', group:'Actionnariat et répartition du chiffre d\'affaires'},
+      // Deux pourcentages d'actionnariat saisis dans le bloc « Nb d'actions » (à droite de l'anneau) : type 'owner-inline' = rien à dessiner à cet endroit de la grille,
+      // le rendu est fait par le bloc sharesTrio ; ils restent de vrais champs pour le remplissage, le dictionnaire et la sauvegarde.
+      {key:'detenuInities', label:'Détenu par les dirigeants et initiés', type:'owner-inline', percent:true, compact:true},
+      {key:'detenuInstitutions', label:'Détenu par les institutions', type:'owner-inline', percent:true, compact:true},
       {key:'revenuSource', label:'Revenu par source', type:'pieChart'},
       {key:'revenuPays', label:'Revenu par pays', type:'pieChart'},
     ]
@@ -4676,6 +4683,14 @@ function migrateCompany(c){
     delete idn.moat;
   }
   if(idn.moatNote === undefined) idn.moatNote = '';
+  // « Détenu par les dirigeants et initiés » / « par les institutions » : saisis d'abord dans Identité (build 292-293), déplacés dans la section Financier,
+  // bloc « Nb d'actions » (2026-10-17). La valeur déjà saisie suit, sans écraser une valeur déjà présente dans la nouvelle place.
+  ['detenuInities', 'detenuInstitutions'].forEach(k => {
+    if(idn[k] === undefined) return;
+    const fin = c.fields.financier || (c.fields.financier = {});
+    if(!String(fin[k] || '').trim() && String(idn[k] || '').trim()) fin[k] = String(idn[k]);
+    delete idn[k];
+  });
   if(typeof idn.pays === 'string'){
     idn.paysSiege = { pays: idn.pays, siegeSocial: (idn.paysSiege && idn.paysSiege.siegeSocial) || '' };
     delete idn.pays;
@@ -5879,6 +5894,15 @@ function sharesDonutHtml(c){
   const legend = items.map(it => `<div class="dn-row"><span class="pie-swatch" style="background:${it.color}"></span><span class="dn-lbl">${it.label}</span><span class="dn-val">${compactShares(it.v)} (${fmtNum(it.p, 2)}&nbsp;%)</span></div>`).join('');
   return `<div class="dn-wrap sh-donut"><svg viewBox="0 0 180 180" class="donut-svg" role="img" aria-label="Répartition des actions">${paths}<circle cx="90" cy="90" r="64" fill="var(--card)"/><text x="90" y="90" text-anchor="middle" dominant-baseline="central" class="sh-center">${compactShares(total)}</text></svg><div class="dn-legend">${legend}</div></div>`;
 }
+// Les deux pourcentages d'actionnariat, à droite de l'anneau (hors de #sharesViz, qui est redessiné à chaque frappe : les cases perdraient le focus)
+function sharesOwnersHtml(c, sectionKey){
+  const mk = (key, label) => {
+    const field = SECTIONS.find(s => s.key === sectionKey).fields.find(f => f.key === key);
+    const v = (c.fields[sectionKey] || {})[key] || '';
+    return `<div class="sh-own"><span class="duo-label" data-tooltip="${fieldDescTooltip(key)}">${label}</span><span class="sh-own-in">${fieldInput(sectionKey, field, v)}<span class="value-suffix">%</span></span></div>`;
+  };
+  return `<div class="sh-owners">${mk('detenuInities', 'Dirigeants et initiés')}${mk('detenuInstitutions', 'Institutions')}</div>`;
+}
 function disponibleLabel(p){
   if(p < 50) return 'Capital très concentré';
   if(p <= 80) return 'Flottant modéré';
@@ -6627,15 +6651,11 @@ function computePeRelatif(c){
   if(pa <= 0 || secteur < 0) return -Math.abs(pa / secteur);   // bénéfice négatif : non significatif (voir computePeg)
   return pa / secteur;
 }
-// PE moyen sur 5 ans (2026-10-16) : saisi à la main. Un seul chiffre, ou plusieurs PE annuels séparés par des espaces, « ; », « / » ou des retours à la ligne
-// (« 20,7 36,3 37,7 35 26,4 ») : l'application en fait la moyenne. Les valeurs négatives ou nulles sont ignorées (un PE de perte ne dit rien de l'historique).
-function peHistoriqueValues(c){
-  const raw0 = String((c.fields.valorisation || {}).peHistorique || '').replace(/&nbsp;/g, ' ');
-  return raw0.split(/[\s;\/]+/).map(x => num(x)).filter(x => x !== null && x > 0);
-}
+// PE moyen sur 5 ans : un seul chiffre saisi à la main (la moyenne des 5 PE annuels est calculée par l'utilisateur, 2026-10-17 : l'option « plusieurs valeurs » a été retirée).
+// Un PE ≤ 0 ou illisible n'est pas utilisable.
 function computePeHistorique(c){
-  const v = peHistoriqueValues(c);
-  return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
+  const v = num((c.fields.valorisation || {}).peHistorique);
+  return v !== null && v > 0 ? v : null;
 }
 // PE actuel ÷ PE moyen sur 5 ans, comme computePeRelatif : PE actuel négatif = non significatif (nombre ≤ 0)
 function computePeRelatifHisto(c){
@@ -6645,8 +6665,8 @@ function computePeRelatifHisto(c){
   return pa / h;
 }
 function tipPeRelatifHisto(c){
-  const pa = computePeActuel(c), vals = peHistoriqueValues(c), h = computePeHistorique(c), v = computePeRelatifHisto(c);
-  const hTxt = h === null ? '?' : fmtNum(h, 1) + (vals.length > 1 ? ' (moyenne de ' + vals.length + ' valeurs)' : '');
+  const pa = computePeActuel(c), h = computePeHistorique(c), v = computePeRelatifHisto(c);
+  const hTxt = h === null ? '?' : fmtNum(h, 1);
   return `<div class='tt-formula'>PE actuel ${n(pa === null ? '?' : pa.toFixed(2))} ÷ PE moyen sur 5 ans ${n(hTxt)}</div>${tipRes('= '+(v === null ? '—' : (v <= 0 ? 'non significatif' : v.toFixed(2))))}<div class='tt-desc'>Sous 1, l'entreprise est moins chère que d'habitude ; au-dessus de 1, plus chère. Un PE historique élevé peut venir d'une période de forte croissance qui ne se reproduira pas.</div>${v !== null && v <= 0 ? `<div class='tt-desc'>Bénéfice par action négatif : le PE n'a pas de sens et est compté comme mauvais.</div>` : ''}`;
 }
 // Price / Sales = capitalisation boursière ÷ chiffre d'affaires (même repli du Market Cap que partout : Identité, sinon Financier). Affichage seulement : pas de couleur ni de score.
@@ -10814,8 +10834,8 @@ function compareTableHtml(list, opts){
   body += row('Pays', cs.map(c => { const p = (c.fields.identite.paysSiege || {}).pays; return p ? `${flagIcon(p)} ${escapeHtml(p)}` : '—'; }), -1);
   body += row('Cotation', cs.map(c => { const t = c.fields.identite.ticker, x = c.fields.identite.cotation; return (t || x) ? `${escapeHtml(t || '')} <span class="jr-meta">${escapeHtml(x || '')}</span>` : '—'; }), -1);
   body += row('Market Cap', cs.map(c => money(c, c.fields.identite.marketCap || c.fields.financier.marketCap)), -1);
-  body += row('Détenu par les dirigeants et initiés', cs.map(c => { const v = String(c.fields.identite.detenuInities || '').trim(); return v ? escapeHtml(v) + ' %' : '—'; }), -1);
-  body += row('Détenu par les institutions', cs.map(c => { const v = String(c.fields.identite.detenuInstitutions || '').trim(); return v ? escapeHtml(v) + ' %' : '—'; }), -1);
+  body += row('Détenu par les dirigeants et initiés', cs.map(c => { const v = String((c.fields.financier || {}).detenuInities || '').trim(); return v ? escapeHtml(v) + ' %' : '—'; }), -1);
+  body += row('Détenu par les institutions', cs.map(c => { const v = String((c.fields.financier || {}).detenuInstitutions || '').trim(); return v ? escapeHtml(v) + ' %' : '—'; }), -1);
   body += section('Chiffres clés', SEC_COL.chiffres);
   body += row("Chiffre d'affaires", cs.map(c => money(c, c.fields.financier.chiffreAffaires)), -1);
   body += row('Bénéfice net', cs.map(c => money(c, c.fields.financier.beneficeNet)), -1);
@@ -11488,7 +11508,7 @@ const LEARN_INDICATORS = {
   peForward: { how:`Le PE calculé avec le bénéfice attendu dans 12 mois. S'il est inférieur au PE actuel, les bénéfices sont attendus en hausse.` },
   peSectoriel: { how:`Le PE moyen du secteur, à saisir pour comparer l'entreprise à ses concurrentes.`, warn:`Pas toujours facile à trouver directement. Deux pistes : <a href="https://stockanalysis.com" target="_blank" rel="noopener noreferrer">stockanalysis.com</a>, qui propose des pages par industrie avec une moyenne déjà calculée, ou le tableau sectoriel de <a href="https://pages.stern.nyu.edu/~adamodar/" target="_blank" rel="noopener noreferrer">Damodaran (NYU Stern)</a>, la référence académique, mise à jour régulièrement mais en anglais.` },
   peRelatifSecteur: { how:`PE de l'entreprise ÷ PE du secteur. Inférieur à 1, elle est moins chère que son secteur ; supérieur à 1, plus chère.`, ex:`PE de 25 et PE sectoriel de 20 : 1,25, soit 25 % plus cher que le secteur.` },
-  peHistorique: { how:`Le PE moyen de l'entreprise sur ses 5 dernières années. Il sert de repère : une entreprise se négocie souvent autour du même PE au fil du temps. Saisissez un seul chiffre, ou collez directement les 5 PE annuels séparés par des espaces : l'application calcule la moyenne.`, ex:`PE annuels de 20,7 / 36,3 / 37,7 / 35 / 26,4 : saisissez « 20,7 36,3 37,7 35 26,4 », la moyenne est de 31,2.`, warn:`Où le trouver (gratuit) : sur stockanalysis.com, ouvrez la page de l'action, puis « Financials », « Ratios » (en annuel, « Annual »). La ligne « PE Ratio » donne un PE par année, relevez les 5 dernières colonnes sans prendre « Current ». Une moyenne n'a de sens que si l'entreprise a un bénéfice positif depuis 5 ans.` },
+  peHistorique: { how:`Le PE moyen de l'entreprise sur ses 5 dernières années. Il sert de repère : une entreprise se négocie souvent autour du même PE au fil du temps. Saisissez un seul chiffre : la moyenne des 5 PE annuels.`, ex:`PE annuels de 20,7 / 36,3 / 37,7 / 35 / 26,4 : leur moyenne est de 31,2, saisissez 31,2.`, warn:`Où le trouver (gratuit) : sur stockanalysis.com, ouvrez la page de l'action, puis « Financials », « Ratios » (en annuel, « Annual »). La ligne « PE Ratio » donne un PE par année : additionnez les 5 dernières colonnes (sans « Current ») et divisez par 5. Une moyenne n'a de sens que si l'entreprise a un bénéfice positif depuis 5 ans.` },
   peRelatifHisto: { how:`Le PE actuel divisé par le PE moyen des 5 dernières années. Inférieur à 1, l'entreprise est moins chère qu'à son habitude ; supérieur à 1, plus chère.`, ex:`PE actuel de 25 et PE moyen sur 5 ans de 31 : 0,81, soit 19 % moins cher que d'habitude.`, warn:`Affichage seulement, il n'entre pas dans le score. Un PE historique élevé peut venir d'années de très forte croissance qui ne se reproduiront pas : « moins cher que d'habitude » ne veut pas dire « bon marché ».` },
   priceSales: { how:`La capitalisation boursière divisée par le chiffre d'affaires : combien vous payez pour 1 € (ou 1 $) de ventes. Calculé automatiquement à partir du Market Cap et du chiffre d'affaires déjà saisis.`, ex:`Market Cap de 300 Md$ et chiffre d'affaires de 60 Md$ : 5, vous payez 5 $ pour 1 $ de ventes.`, warn:`Pas de couleur ni de score : la norme dépend du secteur (un logiciel à 10 est courant, un distributeur à 10 serait très cher). Utile surtout pour les entreprises sans bénéfice, où le PE ne sert à rien. Ne le comparez qu'à des entreprises du même secteur.` },
   croissanceEstimeeEps: { how:`Le rythme de croissance annuel (CAGR) attendu du bénéfice par action sur 3 ans. Vous saisissez ce taux annuel, la croissance totale sur 3 ans se calcule toute seule. Le PEG est le PE divisé par ce CAGR.`, ex:`Un bénéfice par action attendu en hausse de 50 % au total sur 3 ans correspond à un CAGR d'environ 14,5 % par an : c'est 14,5 que vous saisissez, pas 50.` },
@@ -13229,7 +13249,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 293;
+const APP_BUILD = 294;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -14405,9 +14425,10 @@ function renderInner(){
             <div class="duo-item"><span class="duo-label">Free Float</span><input type="text" data-duo-section="${section.key}" data-duo-field="${field.key}" data-duo-sub="freeFloat" value="${escapeHtml(obj.freeFloat || '')}"></div>
             <div class="duo-item"><span class="duo-label">Closely Held</span><input type="text" data-duo-section="${section.key}" data-duo-field="${field.key}" data-duo-sub="closelyHeld" value="${escapeHtml(obj.closelyHeld || '')}"></div>
             <div class="duo-item"><span class="duo-label">Disponible</span><span class="computed" id="computed-financier-nbActions-dispo" data-tooltip="${tipDisponible(c)}">${dispo === null ? '—' : fmtNum(dispo, 1) + ' %'}</span><span class="pill pill-watch" id="dispo-pill" data-tooltip="${tipDisponible(c)}"${dispo === null ? ' style="display:none"' : ''}>${dispo === null ? '' : disponibleLabel(dispo)}</span></div>
-          </div><div id="sharesViz" class="shares-viz">${sharesDonutHtml(c)}</div></div></div>`;
+          </div><div class="shares-row"><div id="sharesViz" class="shares-viz">${sharesDonutHtml(c)}</div>${sharesOwnersHtml(c, section.key)}</div></div></div>`;
         return;
       }
+      if(field.type === 'owner-inline') return;   // dessiné par le bloc « Nb d'actions » ci-dessus (sharesOwnersHtml)
       if(field.type === 'pieChart'){
         const arr = (Array.isArray(value) && value.length) ? value : [{label:'',value:''},{label:'',value:''}];
         const colorByIdx = computePieColors(arr);
