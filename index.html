@@ -6849,7 +6849,7 @@ function sankeyHtml(c){
         warn = "Les chiffres ne s'additionnent pas (bénéfice d'exploitation, impôts, bénéfice net) : vérifiez qu'ils sont sur la même période.";
       }else{
         let gn = 0, gt = 0;
-        if(other < -1e-9){ const g = -other; gain = N('gain', 3, g, 'Autres', GREEN, 'top'); gn = Math.min(g, net); gt = g - gn; }
+        if(other < -1e-9){ const g = -other; gain = N('gain', 3, g, 'Investissements', GREEN, 'top', { tip:"Écart entre le bénéfice avant impôts et le bénéfice d'exploitation : gains sur investissements, intérêts, devises." }); gn = Math.min(g, net); gt = g - gn; }
         if(net > 1e-9){ netN = N('net', 4, net, 'Bénéfice net', GREEN, 'top'); if(gain && gn > 0) L(gain, netN, gn, GREEN); if(net - gn > 1e-9) L(opN, netN, net - gn, GREEN); }
         if(T > 1e-9){ taxN = N('tax', 4, T, 'Impôts', RED, 'right'); if(gain && gt > 0) L(gain, taxN, gt, RED); if(T - gt > 1e-9) L(opN, taxN, Math.min(T - gt, op), RED); }
         if(other > 1e-9){
@@ -6862,7 +6862,7 @@ function sankeyHtml(c){
     }else if(opN && net !== null){
       if(net > op + 1e-9){
         // le bénéfice net dépasse le bénéfice d'exploitation (intérêts, devises...) : un petit bloc vert « Autres » l'alimente
-        gain = N('gain', 3, net - op, 'Autres', GREEN, 'top');
+        gain = N('gain', 3, net - op, 'Investissements', GREEN, 'top', { tip:"Écart entre le bénéfice net et le bénéfice d'exploitation : gains sur investissements, intérêts, devises." });
         netN = N('net', 4, net, 'Bénéfice net', GREEN, 'top');
         L(gain, netN, net - op, GREEN); L(opN, netN, op, GREEN);
       }else{
@@ -6939,7 +6939,7 @@ function sankeyHtml(c){
   }
   if(netN || taxN || chgN || othN){
     const Pn = opN || parent;
-    if(netN) netN.y = gain ? gain.y : Pn.y - LIFT;   // avec « Autres » (gains) : le bénéfice net démarre à sa hauteur, jamais au-dessus
+    if(netN) netN.y = gain ? gain.y + 26 : Pn.y - LIFT;   // avec « Investissements » (gains) : le bénéfice net est EN DESSOUS de ce bloc, le ruban descend vers lui   // avec « Autres » (gains) : le bénéfice net démarre à sa hauteur, jamais au-dessus
     const R = taxN || chgN || othN;
     if(R) R.y = Math.max(netN ? netN.y + netN.h + GAP : -1e9, Pn.y + (netN ? k * linkV(Pn, netN) : 0) + DROP);
     if(othN && taxN) othN.y = Math.max(taxN.y + taxN.h + GAP, taxN.y + taxN.h / 2 + PITCH - othN.h / 2);
@@ -13602,7 +13602,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 312;
+const APP_BUILD = 313;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
