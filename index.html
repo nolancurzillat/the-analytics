@@ -1251,6 +1251,18 @@ body.sx-lock{ overflow:hidden; }
 /* Colonnes : la page 1 donne plus de place aux deux colonnes de texte (Identité, Croissance), la page 2 en donne plus à l'Analyse personnelle (thèse et points forts / faibles) */
 .sx-card[data-sx-page="1"] .sx-grid{ grid-template-columns:minmax(0,1fr) minmax(0,1.1fr) minmax(0,1fr); }
 .sx-card[data-sx-page="2"] .sx-grid{ grid-template-columns:minmax(0,1.2fr) minmax(0,1.3fr) minmax(0,.9fr); }
+/* Page 3 : le schéma « Du chiffre d'affaires au bénéfice », une seule case pleine largeur (dessinée à 1000 px puis agrandie par sxSizeSk) */
+.sx-card[data-sx-page="3"] .sx-grid{ grid-template-columns:minmax(0,1fr); }
+.sx-p-sk .sx-pb{ justify-content:center; }
+.sx-skwrap{ width:100%; position:relative; overflow:hidden; }
+.sx-skin{ width:1000px; transform-origin:top left; }
+.sx-sk{ --ink:#f4f7ff; --ink-soft:#a9b8d4; }
+.sx-sk .skv-scroll{ overflow:visible; margin-top:6px; }
+.sx-sk .skv-tg b, .sx-sk .skv-tg .skv-v{ color:#6bd68a; }
+.sx-sk .skv-tr b, .sx-sk .skv-tr .skv-v{ color:#ff8a84; }
+.sx-sk .skv-to b, .sx-sk .skv-to .skv-v{ color:#ffa45c; }
+.sx-sk .skv-note{ margin-top:8px; font-size:12.5px; color:#a9b8d4; }
+.sx-sk .skv-warn{ color:#f4f7ff; }
 .sx-card.sx-stack .sx-grid{ grid-template-columns:1fr !important; }
 .sx-kh{ display:flex; flex-direction:column; gap:10px; }
 .sx-khg{ border-left:2px solid var(--k, #8fa1c2); padding-left:10px; }
@@ -6788,9 +6800,9 @@ function tipPriceSales(c){
 // Gauche : les segments de « Revenu par source » (remis à l'échelle du chiffre d'affaires) ; puis chiffre d'affaires, coût des ventes (CA - marge brute) et marge brute ; puis bénéfice net
 // et « charges, intérêts et impôts » (marge brute - bénéfice net : l'application ne détaille pas ces charges). Sans marge brute : chiffre d'affaires vers bénéfice net et coûts. Une perte nette
 // agrandit le bloc des charges au-delà de la marge brute (la partie sans flux entrant montre ce que la marge brute ne couvre pas). Dessin en SVG étiré, étiquettes en HTML (jamais du texte SVG).
-function sankeyHtml(c){
+function sankeyHtml(c, opts){
   const cur = c.currency, fin = (c.fields && c.fields.financier) || {};
-  const head = `<div class="pev-h">Du chiffre d'affaires au bénéfice</div>`;
+  const head = (opts && opts.bare) ? '' : `<div class="pev-h">Du chiffre d'affaires au bénéfice</div>`;
   const ca = parseMoney(fin.chiffreAffaires);
   if(ca === null || !isFinite(ca) || ca <= 0) return head + `<div class="pev-empty">Renseignez le chiffre d'affaires, la marge brute et le bénéfice net pour voir où va chaque part des ventes.</div>`;
   const mb = num(fin.margeBrute);
@@ -13605,7 +13617,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 315;
+const APP_BUILD = 316;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -14106,7 +14118,8 @@ function buildSummaryPages(c){
     <div class="sx-price"><div class="sx-pl">Prix actuel</div><div class="sx-pv">${price === null ? '—' : fmtNum(price, price >= 1000 ? 0 : 2) + '<small>&nbsp;' + escapeHtml(cur) + '</small>'}</div><div class="sx-pe">${ecart}</div></div>
     <div class="sx-ring"><svg viewBox="0 0 92 92" width="92" height="92"><circle cx="46" cy="46" r="38" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="8"/><circle cx="46" cy="46" r="38" fill="none" stroke="${ringColor}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${gs === null ? 0 : (gs / 100 * circ).toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 46 46)"/></svg><div class="sx-ringv" style="color:${ringColor}">${gs === null ? '—' : Math.round(gs)}${sinfo.provisional ? '<small>provisoire</small>' : ''}</div></div>
   </div>`;
-  const foot = n => `<div class="sx-foot"><span class="sx-brand"><img src="icon-192.png" alt="" width="20" height="20">The Analytics<span class="sx-mut"> · the-analytics.fr</span></span><span class="sx-mut">Analyse personnelle, pas un conseil en investissement · mise à jour le ${formatDateFr(c.updatedAt || c.createdAt)}</span><span class="sx-pg">Page ${n} sur 2</span></div>`;
+  const foot = n => `<div class="sx-foot"><span class="sx-brand"><img src="icon-192.png" alt="" width="20" height="20">The Analytics<span class="sx-mut"> · the-analytics.fr</span></span><span class="sx-mut">Analyse personnelle, pas un conseil en investissement · mise à jour le ${formatDateFr(c.updatedAt || c.createdAt)}</span><span class="sx-pg">Page ${n} sur ${pagesN}</span></div>`;
+  let pagesN = 2;   // 3 quand le schéma « Du chiffre d'affaires au bénéfice » peut être dessiné (page 3)
 
   // ----- 1. Identité -----
   const mc = parseMoney(idn.marketCap) ?? parseMoney(fin.marketCap);
@@ -14257,11 +14270,31 @@ function buildSummaryPages(c){
   const khHtml = (khS.length || khW.length) ? `<div class="sx-kh">${khGroup('sx-plus', 'Points forts chiffrés', khS)}${khGroup('sx-minus', 'Chiffres à surveiller', khW)}</div>` : '';
   const p6 = `<div class="sx-sc">${sxScoreRing(gs, ringColor, sinfo.provisional)}${insight}</div>${sxRadarSvg(sinfo.axes, ringColor)}<div class="sx-axes">${axBars}</div>${khHtml}<div class="sx-note">${gs === null ? 'Renseignez les sections pour obtenir une note.' : 'Score composite : moyenne de 5 axes, ' + sinfo.filled + ' sur ' + sinfo.total + ' renseignés' + (sinfo.provisional ? ' (provisoire)' : '') + '.'}</div>`;
 
+  // Page 3 (2026-10-17, demande de l'auteur : « intégrer le schéma aux fiches résumé ») : le schéma « Du chiffre d'affaires au bénéfice » en pleine largeur. Il est dessiné à une largeur fixe de
+  // 1000 px (comme dans la fiche) puis agrandi par sxSizeSk() pour remplir la carte : mêmes proportions et mêmes textes que dans la fiche. Sans données (pas de chiffre d'affaires...), pas de page 3.
+  const skHtml = sankeyHtml(c, { bare:true });
+  const hasSk = skHtml.indexOf('skv-scroll') >= 0;
+  pagesN = hasSk ? 3 : 2;
+  const skPanel = `<section class="sx-p sx-p-sk" style="--sc:${SECTION_COLORS.financier}"><header class="sx-ph"><span class="sx-pn">2</span><span class="sx-pt">Financier : du chiffre d'affaires au bénéfice</span>${who}</header><div class="sx-pb"><div class="sx-skwrap"><div class="sx-skin sx-sk">${skHtml}</div></div></div></section>`;
   const page = (n, panels) => `<div class="sx-card${n === 1 ? ' sx-on' : ''}" data-sx-page="${n}"><div class="sx-grid">${panels}</div>${foot(n)}</div>`;
-  return [
+  const pagesOut = [
     page(1, sxPanel(1, 'Identité', SECTION_COLORS.identite, p1, who) + sxPanel(2, 'Financier', SECTION_COLORS.financier, p2, who) + sxPanel(3, 'Croissance', SECTION_COLORS.croissance, p3, who)),
     page(2, sxPanel(4, 'Valorisation', SECTION_COLORS.valorisation, p4, who) + sxPanel(5, 'Analyse personnelle', SECTION_COLORS.personnelle, p5, who) + sxPanel(6, 'Synthèse globale', '#f3e9d7', p6, who)),
   ];
+  if(hasSk) pagesOut.push(page(3, skPanel));
+  return pagesOut;
+}
+function sxPages(){ const ov = document.getElementById('sxOverlay'); return ov ? (parseInt(ov.dataset.pages, 10) || 2) : 2; }
+// Agrandit le schéma de la page 3 à la largeur de sa carte (le dessin fait toujours 1000 px) et règle la hauteur de son cadre
+function sxSizeSk(cd){
+  const wrap = cd.querySelector('.sx-skwrap'), inner = cd.querySelector('.sx-skin');
+  if(!wrap || !inner) return;
+  inner.style.transform = 'none'; wrap.style.height = '';
+  const stack = cd.classList.contains('sx-stack');   // téléphone : le schéma garde une taille lisible et défile dans son cadre
+  const z = Math.max(stack ? 0.62 : 0.3, wrap.clientWidth / 1000);
+  inner.style.transform = 'scale(' + z.toFixed(4) + ')';
+  wrap.style.overflowX = stack ? 'auto' : 'hidden';
+  wrap.style.height = (inner.offsetHeight * z + (stack ? 14 : 0)).toFixed(1) + 'px';
 }
 
 // Mise à l'échelle : on essaie plusieurs largeurs de carte et on garde celle qui donne la PLUS GRANDE échelle d'affichage ; les DEUX pages ont toujours exactement la même taille
@@ -14297,7 +14330,7 @@ function sxFit(){
   cards.forEach(cd => cd.classList.toggle('sx-stack', stack));
   const availW = vw - 104, availH = vh - (bar ? bar.offsetHeight : 52) - 24;   // 104 : place pour les deux flèches de chaque côté
   if(stack){
-    cards.forEach(cd => { cd.style.transform = ''; cd.style.minHeight = ''; cd.style.width = Math.min(vw - 20, 620) + 'px'; });
+    cards.forEach(cd => { cd.style.transform = ''; cd.style.minHeight = ''; cd.style.width = Math.min(vw - 20, 620) + 'px'; sxSizeSk(cd); });
     wrap.style.width = ''; wrap.style.height = '';
     if(sxZoomN > 0) sxBuildZoom(ov, availW, availH, true);
     return;
@@ -14311,7 +14344,7 @@ function sxFit(){
   const isCmp = ov.dataset.mode === 'cmp';
   const minW = isCmp ? 1100 : 1580, STEP = 40, maxW = Math.min(3600, Math.floor(availW / 0.34));
   cards.forEach(cd => cd.querySelectorAll('.sx-pb').forEach(pb => { pb.style.gap = ''; }));   // écarts de la mise en page précédente (sxBalance) : sinon la mesure est gonflée
-  const heightAt = W => { let H = 0; cards.forEach(cd => { cd.style.width = W + 'px'; cd.style.minHeight = ''; cd.style.transform = 'none'; H = Math.max(H, cd.offsetHeight); }); return H; };
+  const heightAt = W => { let H = 0; cards.forEach(cd => { cd.style.width = W + 'px'; cd.style.minHeight = ''; cd.style.transform = 'none'; sxSizeSk(cd); H = Math.max(H, cd.offsetHeight); }); return H; };
   const fits = (W, H) => H * (availW / W) <= availH + 0.5;
   const steps = Math.max(0, Math.floor((maxW - minW) / STEP));
   let bi = -1;
@@ -14323,7 +14356,7 @@ function sxFit(){
     for(let m = 0; m <= steps; m += 4){ const W = minW + m * STEP, H = heightAt(W), sc = Math.min(availW / W, availH / H); if(sc > bs){ bs = sc; bestW = W; bestH = H; } }
     s = bs;
   }
-  cards.forEach(cd => { cd.style.width = bestW + 'px'; cd.style.minHeight = (isCmp ? bestH : Math.max(bestH, availH / s)) + 'px'; cd.style.transform = 'none'; });
+  cards.forEach(cd => { cd.style.width = bestW + 'px'; cd.style.minHeight = (isCmp ? bestH : Math.max(bestH, availH / s)) + 'px'; cd.style.transform = 'none'; sxSizeSk(cd); });
   sxBalance(cards, isCmp ? 30 : 70);
   cards.forEach(cd => { if(cd.offsetHeight > (parseFloat(cd.style.minHeight) || 0) + 1) cd.querySelectorAll('.sx-pb').forEach(pb => { pb.style.gap = ''; }); });   // garde-fou : l'étirement ne doit jamais agrandir une carte
   ov.classList.remove('sx-measuring');
@@ -14337,7 +14370,7 @@ function sxFit(){
 // on cherche la largeur de carte qui donne la plus grande échelle d'affichage pour la plus haute des 6 sections, puis la carte est étirée aux dimensions exactes de la fenêtre.
 function sxBuildZoom(ov, availW, availH, stack){
   const n = sxZoomN;
-  const srcs = [...ov.querySelectorAll('.sx-scale .sx-p')];
+  const srcs = [...ov.querySelectorAll('.sx-scale .sx-p')].filter(x => x.dataset.sxSec);   // sans le panneau du schéma (page 3), qui n'a pas de plein écran
   const src = srcs.find(x => x.dataset.sxSec === String(n));
   const old = ov.querySelector('.sx-zoomhost'); if(old) old.remove();
   if(!src) return;
@@ -14383,13 +14416,13 @@ function sxArrows(){
   const prev = ov.querySelector('.sx-prev'), next = ov.querySelector('.sx-next');
   const zoom = sxZoomN > 0;
   if(prev){ prev.classList.toggle('sx-off', zoom ? sxZoomN <= 1 : sxPage === 1); prev.setAttribute('aria-label', zoom ? 'Section précédente' : 'Page précédente'); }
-  if(next){ next.classList.toggle('sx-off', zoom ? sxZoomN >= 6 : sxPage === 2); next.setAttribute('aria-label', zoom ? 'Section suivante' : 'Page suivante'); }
+  if(next){ next.classList.toggle('sx-off', zoom ? sxZoomN >= 6 : sxPage >= sxPages()); next.setAttribute('aria-label', zoom ? 'Section suivante' : 'Page suivante'); }
 }
 function sxShow(n){
   const ov = document.getElementById('sxOverlay');
   if(!ov) return;
   if(ov.dataset.mode === 'cmp') return;   // la carte de comparaison n'a qu'une page
-  n = n === 2 || n === '2' ? 2 : 1;
+  n = Math.max(1, Math.min(sxPages(), parseInt(n, 10) || 1));
   const host = ov.querySelector('.sx-zoomhost'); if(host) host.remove();
   sxZoomN = 0; ov.classList.remove('sx-zoomed');
   sxPage = n;
@@ -14520,17 +14553,18 @@ function sxStep(d){
   const ovm = document.getElementById('sxOverlay');
   if(!ovm || ovm.dataset.mode === 'cmp') return;
   if(sxZoomN > 0){ const n = sxZoomN + d; if(n >= 1 && n <= 6) sxZoomTo(n); }
-  else { const n = sxPage + d; if(n >= 1 && n <= 2) sxShow(n); }
+  else { const n = sxPage + d; if(n >= 1 && n <= sxPages()) sxShow(n); }
 }
 function sxOpen(){
   const c = getActive();
   if(!c) return;
   sxClose();
   sxZoomN = 0; sxPage = 1;
+  const pages = buildSummaryPages(c);
   const ov = document.createElement('div');
-  ov.className = 'sx-overlay'; ov.id = 'sxOverlay';
+  ov.className = 'sx-overlay'; ov.id = 'sxOverlay'; ov.dataset.pages = String(pages.length);
   ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Résumé de l\'analyse');
-  ov.innerHTML = `<div class="sx-bar"><span class="sx-bar-t">Résumé de l'analyse</span><span class="sx-pages"><button type="button" class="sx-pgb on" data-sx-go="1">Page 1 <small>Sections 1 à 3</small></button><button type="button" class="sx-pgb" data-sx-go="2">Page 2 <small>Sections 4 à 6</small></button><button type="button" class="sx-pgb sx-back" data-sx-zoom="0">&larr; Retour au résumé</button><button type="button" class="sx-pgb sx-dl" data-sx-download>Télécharger l'image</button></span><button type="button" class="sx-close" data-sx-close>Fermer &#10005;</button></div><button type="button" class="sx-arrow sx-prev sx-off" data-sx-step="-1" aria-label="Page précédente">${SX_ARROW_L}</button><button type="button" class="sx-arrow sx-next" data-sx-step="1" aria-label="Page suivante">${SX_ARROW_R}</button><div class="sx-scale">${buildSummaryPages(c).join('')}</div>`;
+  ov.innerHTML = `<div class="sx-bar"><span class="sx-bar-t">Résumé de l'analyse</span><span class="sx-pages"><button type="button" class="sx-pgb on" data-sx-go="1">Page 1 <small>Sections 1 à 3</small></button><button type="button" class="sx-pgb" data-sx-go="2">Page 2 <small>Sections 4 à 6</small></button>${pages.length > 2 ? '<button type="button" class="sx-pgb" data-sx-go="3">Page 3 <small>Du CA au bénéfice</small></button>' : ''}<button type="button" class="sx-pgb sx-back" data-sx-zoom="0">&larr; Retour au résumé</button><button type="button" class="sx-pgb sx-dl" data-sx-download>Télécharger l'image</button></span><button type="button" class="sx-close" data-sx-close>Fermer &#10005;</button></div><button type="button" class="sx-arrow sx-prev sx-off" data-sx-step="-1" aria-label="Page précédente">${SX_ARROW_L}</button><button type="button" class="sx-arrow sx-next" data-sx-step="1" aria-label="Page suivante">${SX_ARROW_R}</button><div class="sx-scale">${pages.join('')}</div>`;
   document.body.appendChild(ov);
   document.body.classList.add('sx-lock');
   sxFit();

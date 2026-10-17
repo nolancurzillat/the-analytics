@@ -505,6 +505,8 @@ const I18N_EN = {
   "Connecté avec {0}.": "Signed in as {0}.",
   "Décision : {0}": "Decision: {t0}",
   "Décision retirée": "Decision removed",
+  "Financier : du chiffre d'affaires au bénéfice": "Financials: from revenue to profit",
+  "Du CA au bénéfice": "Revenue to profit",
   "Investissements": "Investments",
   "Écart entre le bénéfice avant impôts et le bénéfice d'exploitation : gains sur investissements, intérêts, devises.": "Difference between pre-tax profit and operating profit: gains on investments, interest, currency.",
   "Écart entre le bénéfice net et le bénéfice d'exploitation : gains sur investissements, intérêts, devises.": "Difference between net income and operating profit: gains on investments, interest, currency.",
