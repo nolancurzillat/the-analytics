@@ -2464,7 +2464,10 @@ tr:hover .ct-del-btn, .ct-del-btn:focus-visible{ opacity:1; }
 .skv-l i{ display:block; font-style:normal; font-size:12.5px; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
 .skv-left{ text-align:right; transform:translateY(-50%); }
 .skv-right{ transform:translateY(-50%); }
-.skv-top{ transform:translateY(-100%); }
+.skv-top{ transform:translate(-50%,-100%); text-align:center; }
+.skv-to b, .skv-to .skv-v{ color:#d9691a; }
+:root[data-theme="dark"] .skv-to b, :root[data-theme="dark"] .skv-to .skv-v{ color:#ffa45c; }
+@media (min-width:900px){ .field-row .pev.skv-card{ margin:0 -16px; width:calc(100% + 32px); } }
 .skv-bottom{ transform:translateX(-50%); text-align:center; }
 .skv-tg b, .skv-tg .skv-v{ color:#2e7d32; }
 .skv-tr b, .skv-tr .skv-v{ color:#c62828; }
@@ -6800,9 +6803,9 @@ function sankeyHtml(c){
   let net = parseMoney(fin.beneficeNet);
   if(net === null || !isFinite(net)){ net = null; const mn = num(fin.margeNette); if(mn !== null) net = ca * mn / 100; }
   if(gross === null && net === null) return head + `<div class="pev-empty">Ajoutez la marge brute ou le bénéfice net pour voir où va le chiffre d'affaires.</div>`;
-  const GRAY = '#6b7280', GREEN = '#3a9d4d', RED = '#c9382f';
+  const GRAY = '#6b7280', GREEN = '#3a9d4d', RED = '#c9382f', ORANGE = '#e8832a';
   const nodes = [], links = [], byId = {};
-  const N = (id, col, v, name, color, label, o) => { const n = Object.assign({ id, col, v, hv:v, name, color, label, y:0, h:0, inC:0, outC:0, tone:(color === GREEN ? 'g' : (color === RED ? 'r' : 'n')), m:(id === 'gp' || id === 'op' || id === 'net') }, o || {}); nodes.push(n); byId[id] = n; return n; };
+  const N = (id, col, v, name, color, label, o) => { const n = Object.assign({ id, col, v, hv:v, name, color, label, y:0, h:0, inC:0, outC:0, tone:(color === GREEN ? 'g' : (color === RED ? 'r' : (color === ORANGE ? 'o' : 'n'))), m:(id === 'gp' || id === 'op' || id === 'net') }, o || {}); nodes.push(n); byId[id] = n; return n; };
   const L = (a, b, v, color) => links.push({ a, b, v, color });
   const linkV = (a, b) => { const l = links.find(x => x.a === a && x.b === b); return l ? l.v : 0; };
   // 1. Segments du chiffre d'affaires (couleurs du camembert « Revenu par source »)
@@ -6885,9 +6888,9 @@ function sankeyHtml(c){
         warn = (warn ? warn + ' ' : '') + "Le détail des charges dépasse les charges d'exploitation : vérifiez qu'il est sur la même période.";
       }else{
         if(extra > opexV * 0.02) oinc = N('oinc', 3, extra, 'Autres produits', GREEN, 'top');
-        det.forEach((d, i) => { const dn = N('d' + i, 4, d.v, d.name, RED, 'right'); if(oinc && i === 0){ L(oinc, dn, extra, GREEN); L(opex, dn, d.v - extra, RED); }else L(opex, dn, d.v, RED); dets.push(dn); });
+        det.forEach((d, i) => { const dn = N('d' + i, 4, d.v, d.name, ORANGE, 'right'); if(oinc && i === 0){ L(oinc, dn, extra, GREEN); L(opex, dn, d.v - extra, ORANGE); }else L(opex, dn, d.v, ORANGE); dets.push(dn); });
         const rest = opexV - sum;
-        if(rest > opexV * 0.01){ const rn = N('drest', 4, rest, 'R&D et autres', RED, 'right'); L(opex, rn, rest, RED); dets.push(rn); }
+        if(rest > opexV * 0.01){ const rn = N('drest', 4, rest, 'R&D et autres', ORANGE, 'right'); L(opex, rn, rest, ORANGE); dets.push(rn); }
       }
     }
   }else if(gross !== null){
@@ -6917,10 +6920,10 @@ function sankeyHtml(c){
   // 2. Géométrie : les bénéfices MONTENT d'une étape à l'autre, les dépenses DESCENDENT (comme l'image de référence)
   const maxCol = Math.max.apply(null, nodes.map(n => n.col));
   const nameLen = Math.max.apply(null, segNodes.map(n => String(n.name).length).concat([8]));
-  const x0 = Math.max(140, Math.min(235, Math.round(nameLen * 8.2 + 24)));   // marge de gauche ajustée à la longueur des noms de sources de revenus : le reste va au schéma
-  const xe = maxCol >= 4 ? 870 : 800, nc = maxCol >= 4 ? 4 : 3;
+  const x0 = Math.max(120, Math.min(235, Math.round(nameLen * 8.2 + 16)));   // marge de gauche ajustée à la longueur des noms de sources de revenus : le reste va au schéma
+  const xe = maxCol >= 4 ? 892 : 820, nc = maxCol >= 4 ? 4 : 3;
   const XS = [0, 1, 2, 3, 4].slice(0, nc + 1).map(i => Math.round(x0 + (xe - x0) * i / nc));
-  const W = 1000, NW = 16, H0 = 240, LIFT = 30, DROP = 18, GAP = 10, PITCH = 40;
+  const W = 1000, NW = 16, H0 = 215, LIFT = 28, DROP = 18, GAP = 10, PITCH = 40;
   const k = H0 / Math.max.apply(null, nodes.map(n => n.hv).concat([ca]));
   nodes.forEach(n => { n.h = Math.max(2, k * n.hv); });
   rev.y = 0;
@@ -6982,7 +6985,7 @@ function sankeyHtml(c){
     const spacing = XS[n.col + 1] !== undefined ? XS[n.col + 1] - x : null;
     if(n.label === 'left') labels += `<div class="skv-l skv-left${tc}" style="right:calc(${(W - x) / 10}% + 8px); width:${x / 10 - 2}%; top:${cy}px">${txt}</div>`;
     else if(n.label === 'bottom') labels += `<div class="skv-l skv-bottom${tc}" style="left:${(x + NW / 2) / 10}%; width:${spacing !== null ? (spacing - 24) / 10 : 14}%; top:${(n.y + n.h + 8).toFixed(1)}px">${txt}</div>`;
-    else if(n.label === 'top') labels += `<div class="skv-l skv-top${tc}" style="left:${(spacing !== null ? x : x - 10) / 10}%; width:${spacing !== null ? (spacing - 20) / 10 : (W - x + 10) / 10}%; top:${(n.y - 6).toFixed(1)}px">${txt}</div>`;
+    else if(n.label === 'top') labels += `<div class="skv-l skv-top${tc}" style="left:${(x + NW / 2) / 10}%; width:${Math.min((spacing !== null ? spacing : (n.col > 0 ? x - XS[n.col - 1] : 240)) - 24, 2 * (W - x - NW / 2 - 6)) / 10}%; top:${(n.y - 6).toFixed(1)}px">${txt}</div>`;
     else labels += `<div class="skv-l skv-right${tc}" style="left:calc(${(x + NW) / 10}% + 8px); width:${spacing !== null ? Math.min(20, (spacing - NW - 18) / 10) : (W - x - NW - 14) / 10}%; top:${cy}px">${txt}</div>`;
   });
   const notes = `<div class="skv-note">Schéma simplifié, calculé avec vos chiffres. Saisissez-les sur la même période (le TTM de préférence).</div>${note ? `<div class="skv-note">${note}</div>` : ''}${warn ? `<div class="skv-note skv-warn">${warn}</div>` : ''}${gnote ? `<div class="skv-note skv-warn">${gnote}</div>` : ''}`;
@@ -13602,7 +13605,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 313;
+const APP_BUILD = 314;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
