@@ -505,6 +505,8 @@ const I18N_EN = {
   "Connecté avec {0}.": "Signed in as {0}.",
   "Décision : {0}": "Decision: {t0}",
   "Décision retirée": "Decision removed",
+  "Les impôts sur les bénéfices (ligne « Taxes » de TradingView, « Provision for Income Taxes » de stockanalysis.com). Facultatif, sert au schéma : sans cette ligne, « Impôts » est la différence entre le bénéfice d'exploitation et le bénéfice net, donc inclut aussi les intérêts et autres éléments. Le signe n'a pas d'importance. Saisir en TTM.": "Taxes on profits (the 'Taxes' line on TradingView, 'Provision for Income Taxes' on stockanalysis.com). Optional, used by the diagram: without it, 'Taxes' is the difference between operating profit and net income, so it also includes interest and other items. The sign does not matter. Enter as TTM.",
+  "Les chiffres ne s'additionnent pas (bénéfice d'exploitation, impôts, bénéfice net) : vérifiez qu'ils sont sur la même période.": "The figures do not add up (operating profit, taxes, net income): check that they are for the same period.",
   "Autres produits": "Other income",
   "R&D et autres": "R&D and other",
   "Bénéfice brut": "Gross profit",
