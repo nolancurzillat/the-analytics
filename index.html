@@ -6950,7 +6950,7 @@ function sankeyHtml(c){
   if(dets.length){
     const lastN = othN || taxN;
     let prevC = lastN ? lastN.y + lastN.h / 2 : -1e9, prevB = lastN ? lastN.y + lastN.h + GAP : -1e9;
-    dets.forEach(d => { d.y = Math.max(opex.y - 10, prevC + PITCH - d.h / 2, prevB); prevC = d.y + d.h / 2; prevB = d.y + d.h + GAP; });
+    dets.forEach(d => { d.y = Math.max(opex.y + 34, prevC + PITCH - d.h / 2, prevB); prevC = d.y + d.h / 2; prevB = d.y + d.h + GAP; });
   }
   // segments à gauche : centrés sur le chiffre d'affaires, avec la place d'une étiquette de deux lignes
   if(segNodes.length){
@@ -13605,7 +13605,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 314;
+const APP_BUILD = 315;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
