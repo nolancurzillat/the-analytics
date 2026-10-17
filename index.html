@@ -3435,6 +3435,7 @@ const FIELD_DESCRIPTIONS = {
   politiqueDividende: "Indique si l'entreprise verse un dividende et, si oui, son montant par action, son rendement et le taux de distribution (calculés), sa fréquence et son historique d'augmentation.",
   chiffreAffaires: "Le total des ventes de l'entreprise. Saisir en TTM (12 derniers mois).",
   beneficeNet: "Le profit final après charges et impôts. Saisir en TTM (12 derniers mois).",
+  profitBrut: "Le profit brut en MONTANT (Gross Profit) : chiffre d'affaires moins coût des ventes. Facultatif, sert au schéma : s'il est renseigné, il remplace la marge brute en % (les sites ne calculent pas toujours la marge brute de la même façon, le montant du compte de résultat évite les écarts). TradingView : compte de résultat, ligne « Profit brut ». Saisir en TTM, sur la même période que le chiffre d'affaires.",
   operatingIncome: "Le profit de l'activité elle-même (Operating Income) : marge brute moins les charges d'exploitation, avant intérêts et impôts. Facultatif, sert au schéma « Du chiffre d'affaires au bénéfice ». Saisir en TTM, sur la même période que le chiffre d'affaires.",
   chargesVentes: "Les frais de vente, généraux et administratifs réunis (SG&A). Facultatif, sert au schéma : le reste des charges d'exploitation est calculé tout seul. Saisir en TTM.",
   impotsResultat: "Les impôts sur les bénéfices (ligne « Taxes » de TradingView, « Provision for Income Taxes » de stockanalysis.com). Facultatif, sert au schéma : sans cette ligne, « Impôts » est la différence entre le bénéfice d'exploitation et le bénéfice net, donc inclut aussi les intérêts et autres éléments. Le signe n'a pas d'importance. Saisir en TTM.",
@@ -3692,9 +3693,10 @@ const SECTIONS = [
       {key:'detenuInstitutions', label:'Détenu par les institutions', type:'owner-inline', percent:true, compact:true},
       {key:'revenuSource', label:'Revenu par source', type:'pieChart'},
       {key:'revenuPays', label:'Revenu par pays', type:'pieChart'},
-      {key:'operatingIncome', label:"Résultat d'exploitation", type:'text', money:true, optionalFill:true, span:4, group:"Compte de résultat (facultatif, pour le schéma ci-dessous)"},
-      {key:'chargesVentes', label:'SG&A (frais de vente et généraux)', type:'text', money:true, optionalFill:true, span:4},
-      {key:'impotsResultat', label:'Impôts sur les bénéfices', type:'text', money:true, optionalFill:true, span:4},
+      {key:'profitBrut', label:'Profit brut (bénéfice brut)', type:'text', money:true, optionalFill:true, span:3, group:"Compte de résultat (facultatif, pour le schéma ci-dessous)"},
+      {key:'operatingIncome', label:"Résultat d'exploitation", type:'text', money:true, optionalFill:true, span:3},
+      {key:'chargesVentes', label:'SG&A (frais de vente et généraux)', type:'text', money:true, optionalFill:true, span:3},
+      {key:'impotsResultat', label:'Impôts sur les bénéfices', type:'text', money:true, optionalFill:true, span:3},
       {key:'sankeyVisuel', label:"Du chiffre d'affaires au bénéfice", type:'computed-sankey', span:12},
     ]
   },
@@ -6789,7 +6791,12 @@ function sankeyHtml(c){
   const ca = parseMoney(fin.chiffreAffaires);
   if(ca === null || !isFinite(ca) || ca <= 0) return head + `<div class="pev-empty">Renseignez le chiffre d'affaires, la marge brute et le bénéfice net pour voir où va chaque part des ventes.</div>`;
   const mb = num(fin.margeBrute);
-  const gross = (mb !== null && mb > 0 && mb < 100) ? ca * mb / 100 : null;
+  const pbRaw = parseMoney(fin.profitBrut);
+  const pbOk = pbRaw !== null && isFinite(pbRaw) && pbRaw > 0 && pbRaw < ca;   // le montant du compte de résultat prime sur la marge brute en %
+  let gnote = '';
+  if(pbRaw !== null && isFinite(pbRaw) && !pbOk) gnote = "Le profit brut saisi n'est pas compris entre 0 et le chiffre d'affaires : il est ignoré, vérifiez-le.";
+  else if(pbOk && mb !== null && Math.abs(pbRaw / ca * 100 - mb) > 1.5) gnote = "Le schéma utilise le profit brut saisi (" + fmtNum(pbRaw / ca * 100, 1) + " % du chiffre d'affaires) et non la marge brute de " + fmtNum(mb, 1) + " % : ils diffèrent.";
+  const gross = pbOk ? pbRaw : ((mb !== null && mb > 0 && mb < 100) ? ca * mb / 100 : null);
   let net = parseMoney(fin.beneficeNet);
   if(net === null || !isFinite(net)){ net = null; const mn = num(fin.margeNette); if(mn !== null) net = ca * mn / 100; }
   if(gross === null && net === null) return head + `<div class="pev-empty">Ajoutez la marge brute ou le bénéfice net pour voir où va le chiffre d'affaires.</div>`;
@@ -6978,7 +6985,7 @@ function sankeyHtml(c){
     else if(n.label === 'top') labels += `<div class="skv-l skv-top${tc}" style="left:${(spacing !== null ? x : x - 10) / 10}%; width:${spacing !== null ? (spacing - 20) / 10 : (W - x + 10) / 10}%; top:${(n.y - 6).toFixed(1)}px">${txt}</div>`;
     else labels += `<div class="skv-l skv-right${tc}" style="left:calc(${(x + NW) / 10}% + 8px); width:${spacing !== null ? Math.min(20, (spacing - NW - 18) / 10) : (W - x - NW - 14) / 10}%; top:${cy}px">${txt}</div>`;
   });
-  const notes = `<div class="skv-note">Schéma simplifié, calculé avec vos chiffres. Saisissez-les sur la même période (le TTM de préférence).</div>${note ? `<div class="skv-note">${note}</div>` : ''}${warn ? `<div class="skv-note skv-warn">${warn}</div>` : ''}`;
+  const notes = `<div class="skv-note">Schéma simplifié, calculé avec vos chiffres. Saisissez-les sur la même période (le TTM de préférence).</div>${note ? `<div class="skv-note">${note}</div>` : ''}${warn ? `<div class="skv-note skv-warn">${warn}</div>` : ''}${gnote ? `<div class="skv-note skv-warn">${gnote}</div>` : ''}`;
   return head + `<div class="skv-scroll"><div class="skv" style="height:${H}px${maxCol >= 4 ? ';min-width:900px' : ';min-width:760px'}"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${rib}${rects}</svg>${labels}</div></div>${notes}`;
 }
 // « Où se situe le PE ? » (2026-10-17, refait le même jour : la règle à billes n'a pas plu). Forme choisie : QUATRE BARRES HORIZONTALES de même échelle (PE actuel, PE forward, moyenne
@@ -11810,6 +11817,7 @@ const LEARN_INDICATORS = {
   politiqueDividende: { how:`Deux cas : l'entreprise ne verse pas de dividende (elle réinvestit ses bénéfices ou rachète ses actions), ou elle en verse. Dans ce cas, renseignez le dividende annuel par action (le rendement et le taux de distribution se calculent tout seuls, à partir du prix actuel et de l'EPS actuel), la fréquence, la croissance du dividende sur 5 ans et votre note de sécurité du dividende sur 100 (0 à 25 très dangereux, 25 à 50 dangereux, 50 à 75 sûr, 75 à 100 très sûr).`, ex:`Dividende de 2 $ pour un cours de 100 $ : rendement de 2 %. Bénéfice par action de 5 $ et dividende de 2 $ : taux de distribution de 40 %.`, warn:`Un rendement très élevé peut être un piège (cours en chute) et un taux de distribution proche de 100 % ou plus est difficile à tenir. Ne pas verser de dividende n'est pas un défaut : de nombreuses excellentes entreprises réinvestissent leurs bénéfices.` },
   chiffreAffaires: { how:`Le total des ventes sur 12 mois, avant toute charge. Regardez surtout son évolution sur plusieurs années.`, ex:`391Md signifie 391 milliards.`, warn:`Saisissez de préférence le chiffre TTM (12 derniers mois), avec la même période que le bénéfice net, le FCF et le Capex : plusieurs indicateurs croisent ces chiffres entre eux. Voir « TTM ou annuel ? » dans le chapitre Remplir chaque section.` },
   beneficeNet: { how:`Ce qui reste une fois toutes les charges, intérêts et impôts payés : le vrai profit des actionnaires.`, warn:`Saisissez de préférence le chiffre TTM (12 derniers mois), sur la même période que le chiffre d'affaires et le FCF.` },
+  profitBrut: { how:`Ce qui reste du chiffre d'affaires une fois payé le coût des ventes, en montant. Le schéma en part pour séparer le coût des ventes du bénéfice brut.`, ex:`Chiffre d'affaires de 14,73 Md et profit brut de 11,02 Md : coût des ventes de 3,72 Md.`, warn:`Facultatif, pour le schéma. Prenez la ligne « Profit brut » du COMPTE DE RÉSULTAT (TradingView, colonne TTM), pas la « Marge brute » de la page Statistiques : les deux ne sont pas calculées de la même façon (amortissements, rémunération en actions...) et mélanger les pages fait apparaître des blocs en trop. Cette case ne remplace pas la marge brute en % du score, elle sert seulement au schéma.` },
   operatingIncome: { how:`Le profit tiré de l'activité elle-même : la marge brute moins les charges d'exploitation (R&D, ventes et marketing, frais généraux), avant intérêts et impôts. Divisé par le chiffre d'affaires, il donne la marge opérationnelle.`, ex:`Marge brute de 200, charges d'exploitation de 120 : le résultat d'exploitation vaut 80.`, warn:`Facultatif : il alimente le schéma « Du chiffre d'affaires au bénéfice » et n'entre pas dans le score. Sur stockanalysis.com : Financials, Income Statement, ligne « Operating Income », colonne TTM. Ce n'est pas le résultat avant impôts (« Pretax Income »), qui tient compte en plus des intérêts et autres éléments.` },
   chargesVentes: { how:`Ce que l'entreprise dépense pour vendre et pour fonctionner : équipes commerciales, publicité, direction, administration. Souvent affiché en une seule ligne « SG&A ».`, warn:`Facultatif, pour le schéma : le reste des charges d'exploitation est calculé par différence. Ligne « Selling, General and Administrative » (stockanalysis.com) ou « Frais de vente/généraux/administratifs (total) » (TradingView).` },
   impotsResultat: { how:`Les impôts payés ou provisionnés sur les bénéfices de la période. Avec cette ligne, le schéma sépare les impôts réels des autres éléments (intérêts, gains financiers).`, ex:`Bénéfice d'exploitation de 100, impôts de 20, autres gains de 5 : bénéfice net de 85.`, warn:`Facultatif, pour le schéma. TradingView : ligne « Taxes » (affichée en négatif, le signe n'a pas d'importance ici). stockanalysis.com : « Provision for Income Taxes ». Sans cette ligne, « Impôts » est la différence entre le bénéfice d'exploitation et le bénéfice net.` },
@@ -13594,7 +13602,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 311;
+const APP_BUILD = 312;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
