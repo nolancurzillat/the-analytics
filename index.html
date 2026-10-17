@@ -2455,10 +2455,10 @@ tr:hover .ct-del-btn, .ct-del-btn:focus-visible{ opacity:1; }
 .skv-r{ fill-opacity:.4; transition:fill-opacity .15s; }
 .skv-r:hover{ fill-opacity:.6; }
 .skv-l{ position:absolute; font-size:13px; line-height:1.25; color:var(--ink); pointer-events:none; }
-.skv-l b{ display:block; font-size:13.5px; font-weight:700; color:var(--ink); }
+.skv-l b{ display:block; font-size:14.5px; font-weight:700; color:var(--ink); line-height:1.2; }
 .skv-left b{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.skv-l .skv-v{ font-size:13px; font-weight:600; color:var(--ink); font-variant-numeric:tabular-nums; margin-right:6px; }
-.skv-l i{ font-style:normal; font-size:12.5px; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+.skv-l .skv-v{ display:block; font-size:14px; font-weight:600; color:var(--ink); font-variant-numeric:tabular-nums; }
+.skv-l i{ display:block; font-style:normal; font-size:12.5px; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
 .skv-left{ text-align:right; transform:translateY(-50%); }
 .skv-right{ transform:translateY(-50%); }
 .skv-top{ transform:translateY(-100%); }
@@ -3433,8 +3433,8 @@ const FIELD_DESCRIPTIONS = {
   chiffreAffaires: "Le total des ventes de l'entreprise. Saisir en TTM (12 derniers mois).",
   beneficeNet: "Le profit final après charges et impôts. Saisir en TTM (12 derniers mois).",
   operatingIncome: "Le profit de l'activité elle-même (Operating Income) : marge brute moins les charges d'exploitation, avant intérêts et impôts. Facultatif, sert au schéma « Du chiffre d'affaires au bénéfice ». Saisir en TTM, sur la même période que le chiffre d'affaires.",
-  impotsResultat: "Les impôts sur les bénéfices (Provision for Income Taxes). Facultatif, sert au schéma « Du chiffre d'affaires au bénéfice ». Saisir en TTM, sur la même période que le chiffre d'affaires.",
-  chargesVentes: "Les frais de vente, généraux et administratifs réunis (SG&A, Selling, General and Administrative). Facultatif, sert au schéma : le reste des charges d'exploitation (R&D, autres) est calculé tout seul. Saisir en TTM.",
+  chargesVentes: "Les frais de vente, généraux et administratifs réunis (SG&A). Facultatif, sert au schéma : le reste des charges d'exploitation est calculé tout seul. Saisir en TTM.",
+  chargesRD: "Les dépenses de recherche et développement (R&D). Facultatif, sert au schéma : sans cette ligne, elles sont comptées dans « Autres ». Saisir en TTM.",
   croissanceCA: "Le taux de croissance annuel moyen (CAGR) du CA, que vous saisissez, et la croissance totale sur 5 ans, calculée automatiquement à partir du CAGR.",
   croissanceBenef: "Le CAGR des bénéfices, que vous saisissez, et la croissance totale sur 5 ans, calculée automatiquement à partir du CAGR.",
   margeBrute: "La part du chiffre d'affaires restante après le coût direct de production. Valeur TTM.",
@@ -3690,8 +3690,8 @@ const SECTIONS = [
       {key:'revenuSource', label:'Revenu par source', type:'pieChart'},
       {key:'revenuPays', label:'Revenu par pays', type:'pieChart'},
       {key:'operatingIncome', label:"Résultat d'exploitation", type:'text', money:true, optionalFill:true, span:4, group:"Compte de résultat (facultatif, pour le schéma ci-dessous)"},
-      {key:'impotsResultat', label:'Impôts sur les bénéfices', type:'text', money:true, optionalFill:true, span:4},
-      {key:'chargesVentes', label:'Frais de vente et généraux (SG&A)', type:'text', money:true, optionalFill:true, span:4},
+      {key:'chargesVentes', label:'SG&A (frais de vente et généraux)', type:'text', money:true, optionalFill:true, span:4},
+      {key:'chargesRD', label:'R&D (recherche et développement)', type:'text', money:true, optionalFill:true, span:4},
       {key:'sankeyVisuel', label:"Du chiffre d'affaires au bénéfice", type:'computed-sankey', span:12},
     ]
   },
@@ -6782,21 +6782,22 @@ function tipPriceSales(c){
 // agrandit le bloc des charges au-delà de la marge brute (la partie sans flux entrant montre ce que la marge brute ne couvre pas). Dessin en SVG étiré, étiquettes en HTML (jamais du texte SVG).
 function sankeyHtml(c){
   const cur = c.currency, fin = (c.fields && c.fields.financier) || {};
-  const head = `<div class="pev-h">Du chiffre d'affaires au bénéfice</div><div class="pev-sub">Où va le chiffre d'affaires : coût des ventes, charges, puis bénéfice. Schéma simplifié, calculé avec vos chiffres.</div>`;
+  const head = `<div class="pev-h">Du chiffre d'affaires au bénéfice</div>`;
   const ca = parseMoney(fin.chiffreAffaires);
   if(ca === null || !isFinite(ca) || ca <= 0) return head + `<div class="pev-empty">Renseignez le chiffre d'affaires, la marge brute et le bénéfice net pour voir où va chaque part des ventes.</div>`;
   const mb = num(fin.margeBrute);
   const gross = (mb !== null && mb > 0 && mb < 100) ? ca * mb / 100 : null;
-  let net = parseMoney(fin.beneficeNet), fromMargin = false;
-  if(net === null || !isFinite(net)){ net = null; const mn = num(fin.margeNette); if(mn !== null){ net = ca * mn / 100; fromMargin = true; } }
+  let net = parseMoney(fin.beneficeNet);
+  if(net === null || !isFinite(net)){ net = null; const mn = num(fin.margeNette); if(mn !== null) net = ca * mn / 100; }
   if(gross === null && net === null) return head + `<div class="pev-empty">Ajoutez la marge brute ou le bénéfice net pour voir où va le chiffre d'affaires.</div>`;
   const GRAY = '#6b7280', GREEN = '#3a9d4d', RED = '#c9382f';
-  const nodes = [], links = [];
-  const N = (id, col, v, name, color, label, o) => { const n = Object.assign({ id, col, v, hv:v, name, color, label, y:0, h:0, inC:0, outC:0, tone:(color === GREEN ? 'g' : (color === RED ? 'r' : 'n')), m:(id === 'gp' || id === 'op' || id === 'net') }, o || {}); nodes.push(n); return n; };
+  const nodes = [], links = [], byId = {};
+  const N = (id, col, v, name, color, label, o) => { const n = Object.assign({ id, col, v, hv:v, name, color, label, y:0, h:0, inC:0, outC:0, tone:(color === GREEN ? 'g' : (color === RED ? 'r' : 'n')), m:(id === 'gp' || id === 'op' || id === 'net') }, o || {}); nodes.push(n); byId[id] = n; return n; };
   const L = (a, b, v, color) => links.push({ a, b, v, color });
-  // 1. Segments du chiffre d'affaires
+  const linkV = (a, b) => { const l = links.find(x => x.a === a && x.b === b); return l ? l.v : 0; };
+  // 1. Segments du chiffre d'affaires (couleurs du camembert « Revenu par source »)
   const rawSeg = (Array.isArray(fin.revenuSource) ? fin.revenuSource : []).map(s => s || { label:'', value:'' });
-  const pieCol = computePieColors(rawSeg);   // mêmes couleurs que le camembert « Revenu par source »
+  const pieCol = computePieColors(rawSeg);
   let segs = rawSeg.map((s, i) => ({ name: String(s.label || '').trim() || '—', v: parseMoney(s.value), user:true, color: pieCol[i] || '#94a3b8' })).filter(s => s.v !== null && s.v > 0).sort((a, b) => b.v - a.v);
   if(segs.length > 6){ const rest = segs.slice(5).reduce((t, s) => t + s.v, 0); segs = segs.slice(0, 5).concat([{ name:'Autres', v:rest, user:false, color:'#94a3b8' }]); }
   const S = segs.reduce((t, s) => t + s.v, 0);
@@ -6806,104 +6807,127 @@ function sankeyHtml(c){
   let note = '', warn = '';
   const fnum = key => { const v = parseMoney(fin[key]); return (v !== null && isFinite(v)) ? v : null; };
   const op = fnum('operatingIncome');
-  const taxRaw = fnum('impotsResultat'), taxes = taxRaw === null ? null : Math.max(0, taxRaw);
-  const det = [['chargesVentes', 'Frais de vente et généraux']].map(a => { const v = fnum(a[0]); return { name:a[1], v: v === null ? null : Math.abs(v) }; }).filter(d => d.v !== null && d.v > 0);
-  const base = gross !== null ? gross : ca;   // ce que le résultat d'exploitation peut au plus atteindre
+  const det = [['chargesVentes', 'SG&A'], ['chargesRD', 'R&D']].map(a => { const v = fnum(a[0]); return { name:a[1], v: v === null ? null : Math.abs(v) }; }).filter(d => d.v !== null && d.v > 0);
+  const base = gross !== null ? gross : ca;   // ce que le bénéfice d'exploitation peut au plus atteindre
   let gp = null, co = null;
   if(gross !== null){
-    gp = N('gp', 2, gross, 'Marge brute', GREEN, 'right', { wRight:28 });
-    co = N('cost', 2, ca - gross, 'Coût des ventes', RED, 'right', { wRight:16 });
+    gp = N('gp', 2, gross, 'Bénéfice brut', GREEN, 'right');
+    co = N('cost', 2, ca - gross, 'Coût des ventes', RED, 'bottom');
     L(rev, gp, gross, GREEN); L(rev, co, ca - gross, RED);
   }
   const parent = gp || rev;
-  let hasOp = false;
+  let opN = null, opex = null, gain = null, netN = null, taxN = null, chgN = null;
+  const dets = [];
   if(op !== null && op > base + 1e-9){
     warn = gross !== null ? "Le résultat d'exploitation est supérieur à la marge brute : vérifiez que tous les chiffres sont sur la même période (le TTM de préférence)." : "Le résultat d'exploitation est supérieur au chiffre d'affaires : vérifiez que tous les chiffres sont sur la même période (le TTM de préférence).";
+    if(gp) gp.label = 'right';
   }else if(op !== null){
-    // Chaîne complète : marge brute, résultat d'exploitation (et charges d'exploitation), puis impôts, intérêts et autres, bénéfice net
-    hasOp = true;
+    // Chaîne complète : bénéfice brut, bénéfice d'exploitation (et charges d'exploitation), puis impôts et bénéfice net
     const opexV = base - op;
-    let opN = null, opex = null;
-    if(op > 1e-9){ opN = N('op', 3, op, "Résultat d'exploitation", GREEN, 'right', { wRight:28 }); L(parent, opN, op, GREEN); }
+    if(gp) gp.label = 'top';
+    if(op > 1e-9){ opN = N('op', 3, op, "Bénéfice d'exploitation", GREEN, 'top'); L(parent, opN, op, GREEN); }
     if(opexV > 1e-9){
-      opex = N('opex', 3, opexV, gross !== null ? "Charges d'exploitation" : 'Coûts et charges', RED, 'right', { wRight:28 });
+      opex = N('opex', 3, opexV, gross !== null ? "Charges d'exploitation" : 'Coûts et charges', RED, 'bottom');
       L(parent, opex, op < 0 ? base : opexV, RED);
     }
     if(op < 0) warn = "Perte d'exploitation : les charges d'exploitation dépassent la marge brute.";
-    let gain = null, g = 0;
     if(opN && net !== null){
-      const tx = taxes === null ? 0 : taxes, other = op - net - tx;
-      if(other < -1e-9 && net <= 0){
-        warn = "Les chiffres ne s'additionnent pas (résultat d'exploitation, impôts, bénéfice net) : vérifiez qu'ils sont sur la même période.";
+      if(net > op + 1e-9){
+        // le bénéfice net dépasse le bénéfice d'exploitation (intérêts, devises...) : un petit bloc vert « Autres » l'alimente
+        gain = N('gain', 3, net - op, 'Autres', GREEN, 'right');
+        netN = N('net', 4, net, 'Bénéfice net', GREEN, 'top');
+        L(opN, netN, op, GREEN); L(gain, netN, net - op, GREEN);
       }else{
-        opN.label = 'top';
-        if(other < -1e-9){ g = -other; gain = N('gain', 3, g, 'Autres gains', GREEN, 'right', { wRight:20 }); }
-        const gn = gain ? Math.min(g, net) : 0, gt = gain ? g - gn : 0;
-        if(net > 1e-9){ const nn = N('net', 4, net, 'Bénéfice net', GREEN, 'top', { wRight:22 }); if(net - gn > 1e-9) L(opN, nn, net - gn, GREEN); if(gain && gn > 0) L(gain, nn, gn, GREEN); }
-        if(tx > 1e-9){ const tn = N('tax', 4, tx, 'Impôts', RED, 'right', { wRight:22 }); if(tx - gt > 1e-9) L(opN, tn, tx - gt, RED); if(gain && gt > 0) L(gain, tn, gt, RED); }
-        if(other > 1e-9){
-          const outV = Math.max(0, op - Math.max(net, 0) - tx);
-          const on = N('oth', 4, other, taxes === null ? 'Impôts, intérêts et autres' : 'Intérêts et autres éléments', RED, 'right', { wRight:22 });
-          if(outV > 1e-9) L(opN, on, outV, RED);
-          if(net < 0) warn = 'Perte nette : les charges, intérêts et impôts dépassent le résultat d\'exploitation.';
+        if(net > 1e-9){ netN = N('net', 4, net, 'Bénéfice net', GREEN, 'top'); L(opN, netN, net, GREEN); }
+        const taxV = op - net;
+        if(taxV > 1e-9){
+          taxN = N('tax', 4, taxV, 'Impôts', RED, 'right', { tip:"Différence entre le bénéfice d'exploitation et le bénéfice net : les impôts, mais aussi les intérêts et autres éléments." });
+          L(opN, taxN, net < 0 ? op : taxV, RED);
         }
+        if(net < 0) warn = "Perte nette : les charges et impôts dépassent le bénéfice d'exploitation.";
       }
     }else if(opN){
-      opN.label = 'right'; note = "Ajoutez le bénéfice net pour voir la suite : impôts, intérêts et autres, puis bénéfice.";
+      opN.label = 'right'; note = "Ajoutez le bénéfice net pour voir la fin du schéma.";
     }
-    // Détail des charges d'exploitation (frais de vente et généraux ; le reste, R&D comprise, est calculé), seulement avec une marge brute
+    // Détail des charges d'exploitation (SG&A, R&D, autres), seulement avec un bénéfice brut
     if(opex && gross !== null && det.length){
       const sum = det.reduce((t, d) => t + d.v, 0);
       if(sum > opexV * 1.02){
         warn = (warn ? warn + ' ' : '') + "Le détail des charges dépasse les charges d'exploitation : vérifiez qu'il est sur la même période.";
       }else{
-        det.forEach((d, i) => { const dn = N('d' + i, 4, d.v, d.name, RED, 'right', { wRight:22 }); L(opex, dn, d.v, RED); });
+        det.forEach((d, i) => { const dn = N('d' + i, 4, d.v, d.name, RED, 'right'); L(opex, dn, d.v, RED); dets.push(dn); });
         const rest = opexV - sum;
-        if(rest > opexV * 0.01){ const rn = N('drest', 4, rest, "Autres charges d'exploitation", RED, 'right', { wRight:22 }); L(opex, rn, rest, RED); }
+        if(rest > opexV * 0.01){ const rn = N('drest', 4, rest, 'Autres', RED, 'right'); L(opex, rn, rest, RED); dets.push(rn); }
       }
     }
-    if(gain && opN){ nodes.splice(nodes.indexOf(gain), 1); nodes.splice(nodes.indexOf(opN) + 1, 0, gain); }   // l'étiquette des gains reste lisible : juste sous le résultat d'exploitation
-    if(opex && nodes.some(n => n.col === 4)) opex.label = 'bottom';
-    if(gp) gp.label = 'top';
   }else if(gross !== null){
-    // Sans résultat d'exploitation : marge brute vers bénéfice net et « charges, intérêts et impôts » regroupés
+    // Sans bénéfice d'exploitation : bénéfice brut vers bénéfice net et « charges et impôts » regroupés
     const consistent = net !== null && net <= gross + 1e-9;
-    gp.label = consistent ? 'top' : 'right';
     if(net !== null && !consistent) warn = "Le bénéfice net est supérieur à la marge brute : vérifiez que tous les chiffres sont sur la même période (le TTM de préférence).";
     else if(net === null) note = "Ajoutez le bénéfice net pour voir la suite : charges, puis bénéfice.";
     if(consistent){
+      gp.label = 'top';
+      if(net > 1e-9){ netN = N('net', 3, net, 'Bénéfice net', GREEN, 'top'); L(gp, netN, net, GREEN); }
       const charges = gross - net;
-      if(net > 0){ const nn = N('net', 3, net, 'Bénéfice net', GREEN, 'top', { wRight:22 }); L(gp, nn, net, GREEN); }
       if(net < 0){
-        const ch = N('chg', 3, gross - net, 'Charges, intérêts et impôts', RED, 'right', { wRight:22 });
-        L(gp, ch, gross, RED);
+        chgN = N('chg', 3, gross - net, 'Charges et impôts', RED, 'right');
+        L(gp, chgN, gross, RED);
         warn = "Perte nette : les charges dépassent la marge brute. La partie du bloc rouge sans flux entrant n'est pas couverte par la marge brute.";
-      }else if(charges > 1e-9){ const ch = N('chg', 3, charges, 'Charges, intérêts et impôts', RED, 'right', { wRight:22 }); L(gp, ch, charges, RED); }
+      }else if(charges > 1e-9){ chgN = N('chg', 3, charges, 'Charges et impôts', RED, 'right'); L(gp, chgN, charges, RED); }
+      note = "Pour détailler les charges, ajoutez le résultat d'exploitation (section Financier).";
     }
-    if(consistent) note = "Pour détailler les charges, ajoutez le résultat d'exploitation et les impôts (section Financier).";
   }else{
     // sans marge brute : le chiffre d'affaires se répartit directement entre bénéfice net et coûts
     const costs = ca - net;
-    if(net > 0){ const nn = N('net', 3, net, 'Bénéfice net', GREEN, 'top', { wRight:22 }); L(rev, nn, net, GREEN); }
-    if(net < 0){ const ch = N('chg', 3, ca - net, 'Coûts et charges', RED, 'right', { wRight:22 }); L(rev, ch, ca, RED); warn = "Perte nette : les coûts dépassent le chiffre d'affaires."; }
-    else if(costs > 1e-9){ const ch = N('chg', 3, costs, 'Coûts et charges', RED, 'right', { wRight:22 }); L(rev, ch, costs, RED); }
+    if(net > 0){ netN = N('net', 3, net, 'Bénéfice net', GREEN, 'top'); L(rev, netN, net, GREEN); }
+    if(net < 0){ chgN = N('chg', 3, ca - net, 'Coûts et charges', RED, 'right'); L(rev, chgN, ca, RED); warn = "Perte nette : les coûts dépassent le chiffre d'affaires."; }
+    else if(costs > 1e-9){ chgN = N('chg', 3, costs, 'Coûts et charges', RED, 'right'); L(rev, chgN, costs, RED); }
     note = "Ajoutez la marge brute pour séparer le coût des ventes des autres charges.";
   }
-  if(co && nodes.some(n => n.col >= 3)) co.label = 'bottom';
-  // 2. Géométrie : même échelle partout, chaque colonne centrée, un emplacement minimal pour les étiquettes latérales
+  // 2. Géométrie : les bénéfices MONTENT d'une étape à l'autre, les dépenses DESCENDENT (comme l'image de référence)
   const maxCol = Math.max.apply(null, nodes.map(n => n.col));
-  const W = 1000, XS = maxCol >= 4 ? [190, 310, 450, 590, 750] : [220, 380, 560, 740], NW = 16, TOP = 78, BOT = 14, GAP = 10, MINSLOT = 52, H0 = 300;
-  const cols = [0, 1, 2, 3, 4].map(i => nodes.filter(n => n.col === i));
-  const k = H0 / Math.max.apply(null, cols.map(col => col.reduce((t, n) => t + n.hv, 0)).concat([ca]));
+  const W = 1000, XS = maxCol >= 4 ? [200, 330, 475, 640, 815] : [230, 400, 590, 800], NW = 16, H0 = 380, LIFT = 46, DROP = 24, GAP = 12, PITCH = 42;
+  const k = H0 / Math.max.apply(null, nodes.map(n => n.hv).concat([ca]));
   nodes.forEach(n => { n.h = Math.max(2, k * n.hv); });
-  // une étiquette « au-dessus » d'un bloc qui n'est pas le premier de sa colonne a besoin de place dans l'écart
-  cols.forEach(col => col.forEach((n, i) => { n.pad = (n.label === 'top' && i > 0) ? 38 : 0; n.padB = n.label === 'bottom' ? 66 : 0; n.slot = n.pad + ((n.label === 'top' || n.label === 'bottom') ? n.h + n.padB : Math.max(n.h, MINSLOT)); }));
-  const colH = cols.map(col => col.length ? col.reduce((t, n) => t + n.slot, 0) + GAP * (col.length - 1) : 0);
-  const contentH = Math.max.apply(null, colH);
-  cols.forEach((col, i) => { let y = TOP + (contentH - colH[i]) / 2; col.forEach(n => { n.y = y + n.pad + (n.slot - n.pad - n.padB - n.h) / 2; y += n.slot + GAP; }); });
-  const H = Math.round(TOP + contentH + BOT);
+  rev.y = 0;
+  // un « vert » (bénéfice) et un « rouge » (dépense) qui sortent d'un même bloc : le vert monte, le rouge descend
+  const place = (P, G, R) => {
+    if(G) G.y = P.y - LIFT;
+    if(R) R.y = Math.max(G ? G.y + G.h + GAP : -1e9, P.y + (G ? k * linkV(P, G) : 0) + DROP);
+  };
+  if(gp) place(rev, gp, co);
+  if(opN || opex){
+    place(parent, opN, null);
+    let floor = opN ? opN.y + opN.h + GAP : -1e9;
+    if(gain){ gain.y = opN.y + opN.h + 14; floor = gain.y + gain.h + GAP; }
+    if(opex) opex.y = Math.max(floor, parent.y + (opN ? k * linkV(parent, opN) : 0) + DROP);
+  }
+  if(netN || taxN || chgN){
+    const Pn = opN || parent;
+    if(netN) netN.y = Pn.y - LIFT;
+    const R = taxN || chgN;
+    if(R) R.y = Math.max(netN ? netN.y + netN.h + GAP : -1e9, Pn.y + (netN ? k * linkV(Pn, netN) : 0) + DROP);
+  }
+  if(dets.length){
+    let prevC = taxN ? taxN.y + taxN.h / 2 : -1e9;
+    dets.forEach(d => { d.y = Math.max(opex.y - 10, prevC + PITCH - d.h / 2); prevC = d.y + d.h / 2; });
+  }
+  // segments à gauche : centrés sur le chiffre d'affaires, avec la place d'une étiquette de deux lignes
+  if(segNodes.length){
+    let prevC = -1e9, prevB = -1e9;
+    segNodes.forEach(n => { const cc = Math.max(prevC + PITCH, prevB + GAP + n.h / 2); n.y = cc - n.h / 2; prevC = cc; prevB = n.y + n.h; });
+    const top = segNodes[0].y, bot = segNodes[segNodes.length - 1].y + segNodes[segNodes.length - 1].h;
+    const shift = (rev.y + rev.h / 2) - (top + bot) / 2;
+    segNodes.forEach(n => { n.y += shift; });
+  }
+  // cadre : tout est décalé pour que l'étiquette la plus haute reste dans le cadre
+  const ext = n => { const above = n.label === 'top' ? 78 : (n.label === 'left' || n.label === 'right' ? 22 - n.h / 2 : 0); const below = n.label === 'bottom' ? 54 : (n.label === 'left' || n.label === 'right' ? 22 - n.h / 2 : 0); return [n.y - Math.max(0, above), n.y + n.h + Math.max(0, below)]; };
+  const top0 = Math.min.apply(null, nodes.map(n => ext(n)[0])), bot0 = Math.max.apply(null, nodes.map(n => ext(n)[1]));
+  const shiftAll = 8 - top0;
+  nodes.forEach(n => { n.y += shiftAll; });
+  const H = Math.round(bot0 + shiftAll + 10);
   const pctOf = v => { const p = v / ca * 100; return fmtNum(p, p < 10 ? 1 : 0); };
-  const tip = n => `data-tooltip="${escapeHtml('<b>' + escapeHtml(n.name) + '</b> ' + compactMoney(n.v, cur) + ' (' + pctOf(n.v) + ' % du CA)')}"`;
+  const tip = n => `data-tooltip="${escapeHtml('<b>' + escapeHtml(n.name) + '</b> ' + compactMoney(n.v, cur) + ' (' + pctOf(n.v) + ' % du CA)' + (n.tip ? '<br>' + n.tip : ''))}"`;
   let rib = '', rects = '', labels = '';
   links.forEach(l => {
     const lh = Math.max(0.8, k * l.v), x1 = XS[l.a.col] + NW, x2 = XS[l.b.col], xm = (x1 + x2) / 2;
@@ -6914,16 +6938,17 @@ function sankeyHtml(c){
   nodes.forEach(n => {
     rects += `<rect x="${XS[n.col]}" y="${n.y.toFixed(1)}" width="${NW}" height="${n.h.toFixed(1)}" rx="2" fill="${n.color}" ${tip(n)}></rect>`;
     const name = n.user ? `<b data-i18n="off">${escapeHtml(n.name)}</b>` : `<b>${n.name}</b>`;
-    const txt = `${name}<span class="skv-v">${compactMoney(n.v, cur)}</span><i>${pctOf(n.v)} % ${n.m ? 'de marge' : 'du CA'}</i>`;
+    const txt = `${name}<span class="skv-v">${compactMoney(n.v, cur)}</span>${n.m ? `<i>${pctOf(n.v)} % de marge</i>` : ''}`;
     const tc = ' skv-t' + n.tone;
     const cy = (n.y + n.h / 2).toFixed(1), x = XS[n.col];
+    const spacing = XS[n.col + 1] !== undefined ? XS[n.col + 1] - x : null;
     if(n.label === 'left') labels += `<div class="skv-l skv-left${tc}" style="right:calc(${(W - x) / 10}% + 8px); width:${x / 10 - 2}%; top:${cy}px">${txt}</div>`;
-    else if(n.label === 'bottom') labels += `<div class="skv-l skv-bottom${tc}" style="left:${(x + NW / 2) / 10}%; width:${XS[n.col + 1] !== undefined ? (XS[n.col + 1] - x - 30) / 10 : 14}%; top:${(n.y + n.h + 8).toFixed(1)}px">${txt}</div>`;
-    else if(n.label === 'top') labels += `<div class="skv-l skv-top${tc}" style="left:${x / 10}%; width:${XS[n.col + 1] !== undefined ? (XS[n.col + 1] - x - 24) / 10 : Math.min(26, (W - x - 6) / 10)}%; top:${(n.y - 5).toFixed(1)}px">${txt}</div>`;
-    else labels += `<div class="skv-l skv-right${tc}" style="left:calc(${(x + NW) / 10}% + 8px); width:${n.col < maxCol ? Math.min(n.wRight || 20, (XS[n.col + 1] - x - NW - 18) / 10) : (n.wRight || 20)}%; top:${cy}px">${txt}</div>`;
+    else if(n.label === 'bottom') labels += `<div class="skv-l skv-bottom${tc}" style="left:${(x + NW / 2) / 10}%; width:${spacing !== null ? (spacing - 24) / 10 : 14}%; top:${(n.y + n.h + 8).toFixed(1)}px">${txt}</div>`;
+    else if(n.label === 'top') labels += `<div class="skv-l skv-top${tc}" style="left:${x / 10}%; width:${spacing !== null ? (spacing - 20) / 10 : Math.min(24, (W - x - 6) / 10)}%; top:${(n.y - 6).toFixed(1)}px">${txt}</div>`;
+    else labels += `<div class="skv-l skv-right${tc}" style="left:calc(${(x + NW) / 10}% + 8px); width:${spacing !== null ? Math.min(20, (spacing - NW - 18) / 10) : (W - x - NW - 14) / 10}%; top:${cy}px">${txt}</div>`;
   });
-  const notes = `<div class="skv-note">${hasOp ? "Les intérêts et autres éléments se calculent par différence (résultat d'exploitation moins impôts moins bénéfice net)." : "Les charges regroupent l'exploitation (R&D, ventes, frais généraux), les intérêts et les impôts : l'application ne les détaille pas."} Pour que le schéma soit juste, saisissez tous les chiffres sur la même période (le TTM de préférence).${fromMargin ? ' Le bénéfice net est calculé avec la marge nette.' : ''}</div>${note ? `<div class="skv-note">${note}</div>` : ''}${warn ? `<div class="skv-note skv-warn">${warn}</div>` : ''}`;
-  return head + `<div class="skv-scroll"><div class="skv" style="height:${H}px${maxCol >= 4 ? ';min-width:760px' : ''}"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${rib}${rects}</svg>${labels}</div></div>${notes}`;
+  const notes = `<div class="skv-note">Schéma simplifié, calculé avec vos chiffres. Saisissez-les sur la même période (le TTM de préférence).</div>${note ? `<div class="skv-note">${note}</div>` : ''}${warn ? `<div class="skv-note skv-warn">${warn}</div>` : ''}`;
+  return head + `<div class="skv-scroll"><div class="skv" style="height:${H}px${maxCol >= 4 ? ';min-width:800px' : ';min-width:680px'}"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${rib}${rects}</svg>${labels}</div></div>${notes}`;
 }
 // « Où se situe le PE ? » (2026-10-17, refait le même jour : la règle à billes n'a pas plu). Forme choisie : QUATRE BARRES HORIZONTALES de même échelle (PE actuel, PE forward, moyenne
 // sur 5 ans, secteur) : comparer des longueurs alignées est la lecture la plus facile et la plus exacte ; un trait pointillé reporte la position du PE actuel sur chaque barre de repère,
@@ -11755,8 +11780,8 @@ const LEARN_INDICATORS = {
   chiffreAffaires: { how:`Le total des ventes sur 12 mois, avant toute charge. Regardez surtout son évolution sur plusieurs années.`, ex:`391Md signifie 391 milliards.`, warn:`Saisissez de préférence le chiffre TTM (12 derniers mois), avec la même période que le bénéfice net, le FCF et le Capex : plusieurs indicateurs croisent ces chiffres entre eux. Voir « TTM ou annuel ? » dans le chapitre Remplir chaque section.` },
   beneficeNet: { how:`Ce qui reste une fois toutes les charges, intérêts et impôts payés : le vrai profit des actionnaires.`, warn:`Saisissez de préférence le chiffre TTM (12 derniers mois), sur la même période que le chiffre d'affaires et le FCF.` },
   operatingIncome: { how:`Le profit tiré de l'activité elle-même : la marge brute moins les charges d'exploitation (R&D, ventes et marketing, frais généraux), avant intérêts et impôts. Divisé par le chiffre d'affaires, il donne la marge opérationnelle.`, ex:`Marge brute de 200, charges d'exploitation de 120 : le résultat d'exploitation vaut 80.`, warn:`Facultatif : il alimente le schéma « Du chiffre d'affaires au bénéfice » et n'entre pas dans le score. Sur stockanalysis.com : Financials, Income Statement, ligne « Operating Income », colonne TTM. Ce n'est pas le résultat avant impôts (« Pretax Income »), qui tient compte en plus des intérêts et autres éléments.` },
-  impotsResultat: { how:`Les impôts payés ou provisionnés sur les bénéfices de la période.`, ex:`Résultat avant impôts de 100 et impôts de 20 : bénéfice net de 80.`, warn:`Facultatif : il alimente le schéma. Sur stockanalysis.com : Income Statement, ligne « Provision for Income Taxes », colonne TTM. Un crédit d'impôt (valeur négative) est traité comme un gain.` },
-  chargesVentes: { how:`Ce que l'entreprise dépense pour vendre et pour fonctionner : équipes commerciales, publicité, direction, administration. Souvent affiché en une seule ligne « SG&A ».`, warn:`Facultatif, pour le schéma : le reste des charges d'exploitation (recherche et développement, autres) est calculé par différence. Ligne « Selling, General and Administrative » (stockanalysis.com) ou « Frais de vente/généraux/administratifs (total) » (TradingView).` },
+  chargesVentes: { how:`Ce que l'entreprise dépense pour vendre et pour fonctionner : équipes commerciales, publicité, direction, administration. Souvent affiché en une seule ligne « SG&A ».`, warn:`Facultatif, pour le schéma : le reste des charges d'exploitation est calculé par différence. Ligne « Selling, General and Administrative » (stockanalysis.com) ou « Frais de vente/généraux/administratifs (total) » (TradingView).` },
+  chargesRD: { how:`Ce que l'entreprise dépense pour inventer ou améliorer ses produits. Une grosse part est typique des entreprises technologiques et pharmaceutiques.`, warn:`Facultatif, pour le schéma : sans cette ligne, la R&D est comptée dans « Autres ». Ligne « Research and Development ». Beaucoup d'entreprises ne la publient pas séparément.` },
   croissanceCA: { how:`Le rythme moyen de progression annuelle du chiffre d'affaires (CAGR) et la croissance totale sur la période.`, ex:`Un chiffre d'affaires passé de 100 à 161 en 5 ans correspond à un CAGR de 10 % par an (1,10 puissance 5 = 1,61).`, warn:`Vérifiez que la croissance vient de l'activité elle-même et pas seulement d'acquisitions.` },
   croissanceBenef: { how:`Le rythme de progression annuel du bénéfice. Idéalement, il croît au moins aussi vite que le chiffre d'affaires : les marges s'améliorent.`, ex:`Un bénéfice passé de 100 à 147 en 5 ans correspond à un CAGR d'environ 8 % par an.` },
   margeBrute: { how:`La part du chiffre d'affaires qui reste après le coût direct des produits vendus. Une marge brute élevée indique un fort pouvoir de fixer les prix.`, ex:`Ventes de 100, coût des produits vendus de 40 : marge brute de 60 %.`, warn:`Prenez la valeur TTM (12 derniers mois) affichée par le site.` },
@@ -13538,7 +13563,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 305;
+const APP_BUILD = 306;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
