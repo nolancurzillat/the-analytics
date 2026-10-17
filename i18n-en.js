@@ -505,6 +505,7 @@ const I18N_EN = {
   "Connecté avec {0}.": "Signed in as {0}.",
   "Décision : {0}": "Decision: {t0}",
   "Décision retirée": "Decision removed",
+  "Les frais de vente, généraux et administratifs réunis (SG&A). Facultatif, sert au schéma : le reste des charges d'exploitation est calculé tout seul et affiché comme « R&D ». Saisir en TTM.": "Selling, general and administrative costs combined (SG&A). Optional, used by the diagram: the rest of operating expenses is calculated automatically and shown as 'R&D'. Enter as TTM.",
   "Les dépenses de recherche et développement (R&D). Facultatif, sert au schéma : sans cette ligne, elles sont comptées dans « Autres » (ou « R&D et autres »). TradingView : dépliez « Dépenses d'exploitation » avec la flèche ›, ligne « Recherche et développement » ; beaucoup d'entreprises ne la publient pas séparément, laissez alors la case vide. Saisir en TTM.": "Research and development spending (R&D). Optional, used by the diagram: without this line it is counted in 'Other' (or 'R&D and other'). TradingView: expand 'Operating expenses' with the › arrow, 'Research and development' line; many companies do not report it separately, leave the field empty then. Enter as TTM.",
   "Financier : du chiffre d'affaires au bénéfice": "Financials: from revenue to profit",
   "Du CA au bénéfice": "Revenue to profit",

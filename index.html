@@ -3452,8 +3452,7 @@ const FIELD_DESCRIPTIONS = {
   beneficeNet: "Le profit final après charges et impôts. Saisir en TTM (12 derniers mois).",
   profitBrut: "Le profit brut en MONTANT (Gross Profit) : chiffre d'affaires moins coût des ventes. Facultatif, sert au schéma : s'il est renseigné, il remplace la marge brute en % (les sites ne calculent pas toujours la marge brute de la même façon, le montant du compte de résultat évite les écarts). TradingView : compte de résultat, ligne « Profit brut ». Saisir en TTM, sur la même période que le chiffre d'affaires.",
   operatingIncome: "Le profit de l'activité elle-même (Operating Income) : marge brute moins les charges d'exploitation, avant intérêts et impôts. Facultatif, sert au schéma « Du chiffre d'affaires au bénéfice ». Saisir en TTM, sur la même période que le chiffre d'affaires.",
-  chargesVentes: "Les frais de vente, généraux et administratifs réunis (SG&A). Facultatif, sert au schéma : le reste des charges d'exploitation est calculé tout seul. Saisir en TTM.",
-  chargesRD: "Les dépenses de recherche et développement (R&D). Facultatif, sert au schéma : sans cette ligne, elles sont comptées dans « Autres » (ou « R&D et autres »). TradingView : dépliez « Dépenses d'exploitation » avec la flèche ›, ligne « Recherche et développement » ; beaucoup d'entreprises ne la publient pas séparément, laissez alors la case vide. Saisir en TTM.",
+  chargesVentes: "Les frais de vente, généraux et administratifs réunis (SG&A). Facultatif, sert au schéma : le reste des charges d'exploitation est calculé tout seul et affiché comme « R&D ». Saisir en TTM.",
   impotsResultat: "Les impôts sur les bénéfices (ligne « Taxes » de TradingView, « Provision for Income Taxes » de stockanalysis.com). Facultatif, sert au schéma : sans cette ligne, « Impôts » est la différence entre le bénéfice d'exploitation et le bénéfice net, donc inclut aussi les intérêts et autres éléments. Le signe n'a pas d'importance. Saisir en TTM.",
   croissanceCA: "Le taux de croissance annuel moyen (CAGR) du CA, que vous saisissez, et la croissance totale sur 5 ans, calculée automatiquement à partir du CAGR.",
   croissanceBenef: "Le CAGR des bénéfices, que vous saisissez, et la croissance totale sur 5 ans, calculée automatiquement à partir du CAGR.",
@@ -3709,11 +3708,10 @@ const SECTIONS = [
       {key:'detenuInstitutions', label:'Détenu par les institutions', type:'owner-inline', percent:true, compact:true},
       {key:'revenuSource', label:'Revenu par source', type:'pieChart'},
       {key:'revenuPays', label:'Revenu par pays', type:'pieChart'},
-      {key:'profitBrut', label:'Profit brut (bénéfice brut)', type:'text', money:true, optionalFill:true, span:4, group:"Compte de résultat (facultatif, pour le schéma ci-dessous)"},
-      {key:'operatingIncome', label:"Résultat d'exploitation", type:'text', money:true, optionalFill:true, span:4},
-      {key:'impotsResultat', label:'Impôts sur les bénéfices', type:'text', money:true, optionalFill:true, span:4},
-      {key:'chargesVentes', label:'SG&A (frais de vente et généraux)', type:'text', money:true, optionalFill:true, span:6},
-      {key:'chargesRD', label:'R&D (recherche et développement)', type:'text', money:true, optionalFill:true, span:6},
+      {key:'profitBrut', label:'Profit brut (bénéfice brut)', type:'text', money:true, optionalFill:true, span:3, group:"Compte de résultat (facultatif, pour le schéma ci-dessous)"},
+      {key:'operatingIncome', label:"Résultat d'exploitation", type:'text', money:true, optionalFill:true, span:3},
+      {key:'impotsResultat', label:'Impôts sur les bénéfices', type:'text', money:true, optionalFill:true, span:3},
+      {key:'chargesVentes', label:'SG&A (frais de vente et généraux)', type:'text', money:true, optionalFill:true, span:3},
       {key:'sankeyVisuel', label:"Du chiffre d'affaires au bénéfice", type:'computed-sankey', span:12},
     ]
   },
@@ -6835,7 +6833,7 @@ function sankeyHtml(c, opts){
   const fnum = key => { const v = parseMoney(fin[key]); return (v !== null && isFinite(v)) ? v : null; };
   const op = fnum('operatingIncome');
   const taxRaw = fnum('impotsResultat'), taxes = taxRaw === null ? null : Math.abs(taxRaw);   // le signe n'a pas d'importance (TradingView affiche les impôts en négatif)
-  const det = [['chargesVentes', 'SG&A'], ['chargesRD', 'R&D']].map(a => { const v = fnum(a[0]); return { name:a[1], v: v === null ? null : Math.abs(v) }; }).filter(d => d.v !== null && d.v > 0);
+  const det = [['chargesVentes', 'SG&A']].map(a => { const v = fnum(a[0]); return { name:a[1], v: v === null ? null : Math.abs(v) }; }).filter(d => d.v !== null && d.v > 0);
   const base = gross !== null ? gross : ca;   // ce que le bénéfice d'exploitation peut au plus atteindre
   let gp = null, co = null;
   if(gross !== null){
@@ -6904,7 +6902,7 @@ function sankeyHtml(c, opts){
         if(extra > opexV * 0.02) oinc = N('oinc', 3, extra, 'Autres produits', GREEN, 'top');
         det.forEach((d, i) => { const dn = N('d' + i, 4, d.v, d.name, ORANGE, 'right'); if(oinc && i === 0){ L(oinc, dn, extra, GREEN); L(opex, dn, d.v - extra, ORANGE); }else L(opex, dn, d.v, ORANGE); dets.push(dn); });
         const rest = opexV - sum;
-        if(rest > opexV * 0.01){ const rn = N('drest', 4, rest, (det.some(d => d.name === 'R&D') ? 'Autres' : 'R&D et autres'), ORANGE, 'right'); L(opex, rn, rest, ORANGE); dets.push(rn); }
+        if(rest > opexV * 0.01){ const rn = N('drest', 4, rest, 'R&D', ORANGE, 'right'); L(opex, rn, rest, ORANGE); dets.push(rn); }
       }
     }
   }else if(gross !== null){
@@ -11836,8 +11834,7 @@ const LEARN_INDICATORS = {
   beneficeNet: { how:`Ce qui reste une fois toutes les charges, intérêts et impôts payés : le vrai profit des actionnaires.`, warn:`Saisissez de préférence le chiffre TTM (12 derniers mois), sur la même période que le chiffre d'affaires et le FCF.` },
   profitBrut: { how:`Ce qui reste du chiffre d'affaires une fois payé le coût des ventes, en montant. Le schéma en part pour séparer le coût des ventes du bénéfice brut.`, ex:`Chiffre d'affaires de 14,73 Md et profit brut de 11,02 Md : coût des ventes de 3,72 Md.`, warn:`Facultatif, pour le schéma. Prenez la ligne « Profit brut » du COMPTE DE RÉSULTAT (TradingView, colonne TTM), pas la « Marge brute » de la page Statistiques : les deux ne sont pas calculées de la même façon (amortissements, rémunération en actions...) et mélanger les pages fait apparaître des blocs en trop. Cette case ne remplace pas la marge brute en % du score, elle sert seulement au schéma.` },
   operatingIncome: { how:`Le profit tiré de l'activité elle-même : la marge brute moins les charges d'exploitation (R&D, ventes et marketing, frais généraux), avant intérêts et impôts. Divisé par le chiffre d'affaires, il donne la marge opérationnelle.`, ex:`Marge brute de 200, charges d'exploitation de 120 : le résultat d'exploitation vaut 80.`, warn:`Facultatif : il alimente le schéma « Du chiffre d'affaires au bénéfice » et n'entre pas dans le score. Sur stockanalysis.com : Financials, Income Statement, ligne « Operating Income », colonne TTM. Ce n'est pas le résultat avant impôts (« Pretax Income »), qui tient compte en plus des intérêts et autres éléments.` },
-  chargesVentes: { how:`Ce que l'entreprise dépense pour vendre et pour fonctionner : équipes commerciales, publicité, direction, administration. Souvent affiché en une seule ligne « SG&A ».`, warn:`Facultatif, pour le schéma : le reste des charges d'exploitation est calculé par différence. Ligne « Selling, General and Administrative » (stockanalysis.com) ou « Frais de vente/généraux/administratifs (total) » (TradingView).` },
-  chargesRD: { how:`Ce que l'entreprise dépense pour inventer ou améliorer ses produits. Une grosse part est typique des entreprises technologiques et pharmaceutiques.`, warn:`Facultatif, pour le schéma : sans cette ligne, la R&D est comptée dans le bloc « Autres » (ou « R&D et autres » si le SG&A est renseigné). TradingView : dépliez « Dépenses d'exploitation » avec la flèche ›, ligne « Recherche et développement ». stockanalysis.com : « Research and Development ». Beaucoup d'entreprises ne la publient pas séparément.` },
+  chargesVentes: { how:`Ce que l'entreprise dépense pour vendre et pour fonctionner : équipes commerciales, publicité, direction, administration. Souvent affiché en une seule ligne « SG&A ».`, warn:`Facultatif, pour le schéma : le reste des charges d'exploitation est calculé par différence et affiché comme « R&D ». Ligne « Selling, General and Administrative » (stockanalysis.com) ou « Frais de vente/généraux/administratifs (total) » (TradingView).` },
   impotsResultat: { how:`Les impôts payés ou provisionnés sur les bénéfices de la période. Avec cette ligne, le schéma sépare les impôts réels des autres éléments (intérêts, gains financiers).`, ex:`Bénéfice d'exploitation de 100, impôts de 20, autres gains de 5 : bénéfice net de 85.`, warn:`Facultatif, pour le schéma. TradingView : ligne « Taxes » (affichée en négatif, le signe n'a pas d'importance ici). stockanalysis.com : « Provision for Income Taxes ». Sans cette ligne, « Impôts » est la différence entre le bénéfice d'exploitation et le bénéfice net.` },
   croissanceCA: { how:`Le rythme moyen de progression annuelle du chiffre d'affaires (CAGR) et la croissance totale sur la période.`, ex:`Un chiffre d'affaires passé de 100 à 161 en 5 ans correspond à un CAGR de 10 % par an (1,10 puissance 5 = 1,61).`, warn:`Vérifiez que la croissance vient de l'activité elle-même et pas seulement d'acquisitions.` },
   croissanceBenef: { how:`Le rythme de progression annuel du bénéfice. Idéalement, il croît au moins aussi vite que le chiffre d'affaires : les marges s'améliorent.`, ex:`Un bénéfice passé de 100 à 147 en 5 ans correspond à un CAGR d'environ 8 % par an.` },
@@ -13620,7 +13617,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 317;
+const APP_BUILD = 318;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -14289,12 +14286,24 @@ function buildSummaryPages(c){
 }
 function sxPages(){ const ov = document.getElementById('sxOverlay'); return ov ? (parseInt(ov.dataset.pages, 10) || 2) : 2; }
 // Agrandit le schéma de la page 3 à la largeur de sa carte (le dessin fait toujours 1000 px) et règle la hauteur de son cadre
-function sxSizeSk(cd){
+function sxFitSk(cd, minH){
+  const wrap = cd.querySelector('.sx-skwrap');
+  if(!wrap) return;
+  const keep = cd.style.minHeight; cd.style.minHeight = ''; wrap.style.height = '0px';
+  const chrome = cd.offsetHeight;   // en-tête, marges et pied de la carte
+  cd.style.minHeight = keep;
+  sxSizeSk(cd, minH - chrome - 8);
+}
+function sxSizeSk(cd, maxH){
   const wrap = cd.querySelector('.sx-skwrap'), inner = cd.querySelector('.sx-skin');
   if(!wrap || !inner) return;
-  inner.style.transform = 'none'; wrap.style.height = '';
+  inner.style.transform = 'none'; inner.style.marginLeft = ''; wrap.style.height = '';
   const stack = cd.classList.contains('sx-stack');   // téléphone : le schéma garde une taille lisible et défile dans son cadre
-  const z = Math.max(stack ? 0.62 : 0.3, wrap.clientWidth / 1000);
+  const minZ = stack ? 0.62 : 0.3;
+  let z = Math.max(minZ, wrap.clientWidth / 1000);
+  if(maxH && inner.offsetHeight * z > maxH) z = Math.max(minZ, maxH / inner.offsetHeight);   // trop haut pour la carte : on réduit, le schéma est centré
+  const gapL = Math.max(0, (wrap.clientWidth - 1000 * z) / 2);
+  inner.style.marginLeft = gapL ? gapL.toFixed(1) + 'px' : '';
   inner.style.transform = 'scale(' + z.toFixed(4) + ')';
   wrap.style.overflowX = stack ? 'auto' : 'hidden';
   wrap.style.height = (inner.offsetHeight * z + (stack ? 14 : 0)).toFixed(1) + 'px';
@@ -14347,7 +14356,10 @@ function sxFit(){
   const isCmp = ov.dataset.mode === 'cmp';
   const minW = isCmp ? 1100 : 1580, STEP = 40, maxW = Math.min(3600, Math.floor(availW / 0.34));
   cards.forEach(cd => cd.querySelectorAll('.sx-pb').forEach(pb => { pb.style.gap = ''; }));   // écarts de la mise en page précédente (sxBalance) : sinon la mesure est gonflée
-  const heightAt = W => { let H = 0; cards.forEach(cd => { cd.style.width = W + 'px'; cd.style.minHeight = ''; cd.style.transform = 'none'; sxSizeSk(cd); H = Math.max(H, cd.offsetHeight); }); return H; };
+  // La page 3 (schéma) ne compte PAS dans le choix de la largeur de dessin : sa hauteur grandit avec la largeur et, sur une fenêtre large, elle faisait grossir la mise en page des pages 1 et 2
+  // (textes plus petits). Les pages 1 et 2 gardent donc exactement la mise en page d'avant ; le schéma s'adapte ensuite à la place restante (sxFitSk).
+  const mainCards = cards.filter(cd => !cd.querySelector('.sx-skwrap'));
+  const heightAt = W => { let H = 0; mainCards.forEach(cd => { cd.style.width = W + 'px'; cd.style.minHeight = ''; cd.style.transform = 'none'; H = Math.max(H, cd.offsetHeight); }); return H; };
   const fits = (W, H) => H * (availW / W) <= availH + 0.5;
   const steps = Math.max(0, Math.floor((maxW - minW) / STEP));
   let bi = -1;
@@ -14359,7 +14371,9 @@ function sxFit(){
     for(let m = 0; m <= steps; m += 4){ const W = minW + m * STEP, H = heightAt(W), sc = Math.min(availW / W, availH / H); if(sc > bs){ bs = sc; bestW = W; bestH = H; } }
     s = bs;
   }
-  cards.forEach(cd => { cd.style.width = bestW + 'px'; cd.style.minHeight = (isCmp ? bestH : Math.max(bestH, availH / s)) + 'px'; cd.style.transform = 'none'; sxSizeSk(cd); });
+  const minHpx = isCmp ? bestH : Math.max(bestH, availH / s);
+  cards.forEach(cd => { cd.style.width = bestW + 'px'; cd.style.minHeight = minHpx + 'px'; cd.style.transform = 'none'; });
+  cards.forEach(cd => sxFitSk(cd, minHpx));
   sxBalance(cards, isCmp ? 30 : 70);
   cards.forEach(cd => { if(cd.offsetHeight > (parseFloat(cd.style.minHeight) || 0) + 1) cd.querySelectorAll('.sx-pb').forEach(pb => { pb.style.gap = ''; }); });   // garde-fou : l'étirement ne doit jamais agrandir une carte
   ov.classList.remove('sx-measuring');
