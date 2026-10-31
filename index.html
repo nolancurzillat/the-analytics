@@ -748,46 +748,9 @@ input.company-name:focus{ outline:none; border-bottom-color:var(--blue); }
 .rpt-note-due{ color:var(--ink); }
 .rpt-note-due svg{ color:#f2994a; vertical-align:-2px; }
 /* Panneau « Mettre à jour » et relevés après chaque rapport (2026-10-31) */
-#updatePanel{ scroll-margin-top:78px; }
-#updatePanel:empty{ display:none; }
-.upd-panel{ margin:0 0 20px; padding:16px 20px 14px; border:1px solid color-mix(in srgb, #f2994a 50%, var(--border)); border-left:5px solid #f2994a; border-radius:14px; background:color-mix(in srgb, #f2994a 7%, var(--card)); }
-.upd-panel.upd-all{ border-color:color-mix(in srgb, var(--green) 50%, var(--border)); border-left-color:var(--green); background:color-mix(in srgb, var(--green) 7%, var(--card)); }
-.upd-head{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-.upd-ico{ display:inline-flex; width:34px; height:34px; border-radius:50%; align-items:center; justify-content:center; background:color-mix(in srgb, #f2994a 22%, transparent); color:#f2994a; flex:0 0 auto; }
-.upd-ico svg{ width:18px; height:18px; }
-.upd-title{ display:flex; flex-direction:column; gap:1px; flex:1 1 240px; min-width:0; }
-.upd-title b{ font-size:16px; color:var(--ink); }
-.upd-title span{ font-size:13px; color:var(--ink-soft); }
-.upd-prog{ display:flex; align-items:center; gap:7px; font-size:13px; color:var(--ink-soft); }
-.upd-prog b{ font-size:16px; color:var(--ink); }
-.upd-bar{ display:block; width:110px; height:7px; border-radius:99px; background:var(--border); overflow:hidden; }
-.upd-bar u{ display:block; height:100%; background:#f2994a; text-decoration:none; border-radius:99px; }
-.upd-all .upd-bar u{ background:var(--green); }
-.upd-hint{ margin:10px 0 2px; font-size:13px; color:var(--ink-soft); line-height:1.45; }
-.upd-group{ margin-top:10px; }
-.upd-gl{ font-size:11.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:5px; }
-.upd-chips{ display:flex; flex-wrap:wrap; gap:6px; }
-.upd-chip{ display:inline-flex; align-items:center; border:1px solid var(--border-strong); border-radius:999px; background:var(--card); font-size:13px; }
-.upd-todo-chip{ border-color:#f2994a; }
-.upd-done{ opacity:.78; }
-.upd-go{ display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border:0; background:none; color:var(--ink); font:inherit; cursor:pointer; border-radius:999px; }
-.upd-go:hover{ background:color-mix(in srgb, var(--accent) 10%, transparent); }
-.upd-mark{ font-size:12px; font-weight:700; color:#f2994a; }
-.upd-done .upd-mark{ color:var(--green); }
-.upd-val{ color:var(--ink-soft); font-size:12px; white-space:nowrap; }
-.upd-go{ text-align:left; min-width:0; }
-.upd-chip{ max-width:100%; }
-.upd-same{ flex:0 0 auto; }
-.upd-same{ border:0; border-left:1px solid var(--border); background:none; padding:5px 10px; font:inherit; font-size:12px; color:var(--ink-soft); cursor:pointer; border-radius:0 999px 999px 0; }
-.upd-same:hover{ color:var(--ink); background:color-mix(in srgb, var(--accent) 10%, transparent); }
-.upd-foot{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-top:14px; padding-top:12px; border-top:1px solid var(--border); font-size:13px; color:var(--ink-soft); }
-.upd-link{ border:0; background:none; padding:0; font:inherit; color:var(--accent); text-decoration:underline; cursor:pointer; }
-.field-row.upd-todo > .field-label::before{ content:''; display:inline-block; width:8px; height:8px; margin-right:7px; border-radius:50%; background:#f2994a; vertical-align:1px; }
-.field-row.upd-flash{ animation:updFlash 1.9s ease; border-radius:10px; }
-@keyframes updFlash{ 0%,100%{ background:transparent; } 20%,70%{ background:color-mix(in srgb, #f2994a 24%, transparent); } }
 .rh{ --rh1:#2a5bea; --rh2:#c9a24a; --rh3:#06b6d4; }
 :root[data-theme="dark"] .rh{ --rh1:#7ba6ff; }
-.rh-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(270px, 1fr)); gap:12px; margin-top:14px; }
+.rh-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:12px; margin-top:14px; }
 .rh-card{ border:1px solid var(--border); border-radius:12px; padding:12px 14px 10px; background:var(--card); min-width:0; }
 .rh-ct{ font-size:12.5px; font-weight:700; color:var(--ink-soft); }
 .rh-cv{ display:flex; align-items:baseline; gap:8px; font-size:22px; font-weight:700; color:var(--ink); margin:2px 0 10px; }
@@ -814,10 +777,24 @@ input.company-name:focus{ outline:none; border-bottom-color:var(--blue); }
 .rh-lg i{ width:10px; height:3px; border-radius:2px; }
 .rh-lg b{ color:var(--ink); }
 .rh-foot{ margin-top:4px; font-size:11.5px; color:var(--ink-soft); }
-.rh-btns{ display:flex; align-items:center; flex-wrap:wrap; gap:8px 14px; margin-top:14px; }
-.rh-del{ border:0; background:none; padding:0; font:inherit; font-size:12.5px; color:var(--ink-soft); text-decoration:underline; cursor:pointer; }
-.rh-del:hover{ color:var(--ink); }
-.ro-fiche [data-rh-snap], .ro-fiche [data-rh-del]{ display:none; }
+.ro-fiche .rh-pencil{ display:none; }
+.upd-dot{ display:inline-block; width:11px; height:11px; margin:0 7px 0 0; padding:0; border:0; border-radius:50%; background:#f2994a; vertical-align:-1px; cursor:pointer; box-shadow:0 0 0 3px color-mix(in srgb, #f2994a 22%, transparent); }
+.upd-dot:hover{ background:var(--green); box-shadow:0 0 0 3px color-mix(in srgb, var(--green) 25%, transparent); }
+.rh-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.rh-pencil{ flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border:1px solid var(--border-strong); border-radius:50%; background:var(--card); color:var(--ink-soft); cursor:pointer; }
+.rh-pencil:hover, .rh-pencil.on{ color:var(--accent); border-color:var(--accent); }
+.rh-edit{ margin-top:14px; padding:12px 14px; border:1px dashed var(--border-strong); border-radius:12px; background:var(--card); }
+.rh-escroll{ overflow-x:auto; padding-bottom:4px; }
+.rh-erow{ display:grid; grid-template-columns:136px repeat(7, minmax(86px, 1fr)) 34px; gap:6px; align-items:start; min-width:780px; margin-top:6px; }
+.rh-erow.rh-eh{ margin-top:0; font-size:11.5px; font-weight:700; color:var(--ink-soft); }
+.rh-erow input{ width:100%; min-width:0; padding:7px 9px; font:inherit; font-size:13.5px; border:1px solid var(--border-strong); border-radius:8px; background:var(--field); color:var(--ink); }
+.rh-erow input.bad{ border-color:var(--red); }
+.rh-est{ display:block; margin-top:2px; font-size:11px; color:var(--ink-soft); }
+.rh-x{ width:34px; height:34px; border:0; border-radius:8px; background:none; font-size:18px; line-height:1; color:var(--ink-soft); cursor:pointer; }
+.rh-x:hover{ color:var(--red); background:color-mix(in srgb, var(--red) 10%, transparent); }
+.rh-ebtns{ display:flex; align-items:center; flex-wrap:wrap; gap:8px 14px; margin-top:12px; }
+.rh-ehint{ font-size:12.5px; color:var(--ink-soft); }
+.rh-grid-one{ grid-template-columns:minmax(0, 640px); }
 
 /* Même habillage que les autres cases de saisie (le sélecteur générique ne couvre que type=text/number) ; color-scheme pour que l'icône de calendrier suive le thème */
 .field-value input.report-date-input{
@@ -5649,6 +5626,7 @@ function updateField(sectionKey, fieldKey, value, fieldType){
     value = capitalizeFirst(value);
   }
   const prevValue = c.fields[sectionKey][fieldKey];
+  autoReportBaseline(c, sectionKey, fieldKey);
   c.fields[sectionKey][fieldKey] = value;
   stampField(c, sectionKey, fieldKey);
   if(sectionKey === 'personnelle' && fieldKey === 'decision' && prevValue !== value){
@@ -6766,6 +6744,7 @@ function updateDuo(sectionKey, fieldKey, subKey, value){
   if(!c.fields[sectionKey][fieldKey] || typeof c.fields[sectionKey][fieldKey] !== 'object' || Array.isArray(c.fields[sectionKey][fieldKey])){
     c.fields[sectionKey][fieldKey] = {};
   }
+  autoReportBaseline(c, sectionKey, fieldKey);
   c.fields[sectionKey][fieldKey][subKey] = value;
   stampField(c, sectionKey, fieldKey);
   touchUpdated(c);
@@ -8002,6 +7981,7 @@ function buildInsightsSection(c){
         </div>
         ${sideHtml ? `<div class="insights-side">${sideHtml}</div>` : ''}
       </div>
+      ${scoreHistoryBox(c)}
       ${valLineHtml ? `<div class="synthesis-box"><div class="insight-card-title">Fourchette de valorisation</div>${valLineHtml}</div>` : ''}
       ${(() => { const hl = buildKeyHighlights(c); return hl ? `<div class="synthesis-box highlights-box">${hl}</div>` : ''; })()}
       <div class="synthesis-box">
@@ -8246,6 +8226,7 @@ function updateWallStreetField(sectionKey, fieldKey, subKey, value){
     c.fields[sectionKey][fieldKey] = {};
   }
   c.fields[sectionKey][fieldKey].unit = 'price';   // ce que l'on saisit ici est un prix cible, jamais un % (voir applyLegacyWallStreet)
+  autoReportBaseline(c, sectionKey, fieldKey);
   c.fields[sectionKey][fieldKey][subKey] = value;
   stampField(c, sectionKey, fieldKey);
   touchUpdated(c);
@@ -9363,10 +9344,33 @@ function updDateLocal(){
   const d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
+function updTracked(key){ return UPDATE_ITEMS.some(it => it.key === key); }
+function updPrevQuarter(iso){
+  const p = iso.split('-').map(Number), d = new Date(p[0], p[1] - 1 - 3, 1);
+  const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  d.setDate(Math.min(p[2], last));
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+// Photo de DÉPART : avant la toute première saisie qui suit un rapport, les chiffres sont encore ceux du trimestre précédent (date estimée à 3 mois avant)
+function autoReportBaseline(c, sectionKey, fieldKey){
+  if(!c || c === roCompany || !updTracked(sectionKey + '.' + fieldKey)) return;
+  const r = reportInfo(c);
+  if(!r || !r.due) return;
+  if(Array.isArray(c.reportSnaps) && c.reportSnaps.length) return;
+  recordReportSnap(c, updPrevQuarter(r.iso), true, true);
+}
+// Photo du rapport : créée ou remise à jour à chaque saisie d'un chiffre suivi, tant que le rapport est publié et pas encore terminé
+function autoReportSnap(c, key){
+  if(!c || c === roCompany || !updTracked(key)) return;
+  const r = reportInfo(c);
+  if(!r || !r.due) return;
+  recordReportSnap(c, r.iso, false);
+}
 function stampField(c, sectionKey, fieldKey){
   if(!c) return;
   if(!c.fTs || typeof c.fTs !== 'object' || Array.isArray(c.fTs)) c.fTs = {};
   c.fTs[sectionKey + '.' + fieldKey] = Date.now();
+  autoReportSnap(c, sectionKey + '.' + fieldKey);
 }
 function updRaw(c, key){
   const p = key.split('.');
@@ -9382,17 +9386,6 @@ function updFieldDef(key){
   const s = SECTIONS.find(x => x.key === p[0]);
   return s ? s.fields.find(f => f.key === p[1]) : null;
 }
-function updValueText(c, key){
-  const v = updRaw(c, key), def = updFieldDef(key) || {};
-  let t = '';
-  if(v && typeof v === 'object') t = String(v.cagr || v.moy || '').trim();
-  else t = String(v === undefined || v === null ? '' : v).trim();
-  if(!t) return '';
-  if(t.length > 14) t = t.slice(0, 13) + '…';
-  if(def.percent || (v && typeof v === 'object' && v.cagr)) t += ' %';
-  else if(def.money && /^[\d\s.,-]+$/.test(t)) t += ' ' + c.currency;
-  return t;
-}
 function updReportStart(iso){
   const p = String(iso).split('-').map(Number);
   return new Date(p[0], p[1] - 1, p[2]).getTime();
@@ -9402,93 +9395,56 @@ function updStatus(c, r){
   const start = updReportStart(r.iso), ts = c.fTs || {};
   return UPDATE_ITEMS.filter(it => updHasValue(updRaw(c, it.key))).map(it => Object.assign({}, it, { done: Number(ts[it.key]) >= start }));
 }
-function updatePanelHtml(c){
-  if(!c || c === roCompany) return '';
-  const r = reportInfo(c);
-  if(!r || !r.due) return '';
-  const items = updStatus(c, r);
-  const done = items.filter(i => i.done).length, total = items.length;
-  const all = !total || done === total;
-  const pct = total ? Math.round(done / total * 100) : 100;
-  const groups = [];
-  items.forEach(it => {
-    let g = groups.find(x => x.g === it.g);
-    if(!g){ g = { g:it.g, items:[] }; groups.push(g); }
-    g.items.push(it);
-  });
-  const chip = it => {
-    const val = updValueText(c, it.key);
-    const label = `<button type="button" class="upd-go" data-upd-go="${it.key}"><span class="upd-mark">${it.done ? '✓' : '○'}</span><span class="upd-name">${escapeHtml(it.label)}</span>${val ? `<span class="upd-val" data-i18n="off">${escapeHtml(val)}</span>` : ''}</button>`;
-    return it.done
-      ? `<span class="upd-chip upd-done">${label}</span>`
-      : `<span class="upd-chip upd-todo-chip">${label}<button type="button" class="upd-same" data-upd-same="${it.key}" data-tooltip="<div class='tt-desc'>La valeur n'a pas changé depuis le dernier rapport : la marquer comme vérifiée.</div>">inchangé</button></span>`;
-  };
-  const body = groups.map(g => `<div class="upd-group"><div class="upd-gl">${escapeHtml(g.g)}</div><div class="upd-chips">${g.items.map(chip).join('')}</div></div>`).join('');
-  const when = `${escapeHtml(formatDateFr(r.iso))} (${reportWhen(r)})`;
-  return `<div class="upd-panel${all ? ' upd-all' : ''}">
-    <div class="upd-head">
-      <span class="upd-ico">${REPORT_BELL}</span>
-      <div class="upd-title"><b>Rapport publié : mettez à jour vos données</b><span>Rapport du ${when}</span></div>
-      <div class="upd-prog"><b>${done} / ${total}</b> <span>mises à jour</span><i class="upd-bar"><u style="width:${pct}%"></u></i></div>
-    </div>
-    <div class="upd-hint">Cliquez sur une donnée pour aller à sa case. Reprenez la colonne TTM du même site, le même jour. Un point orange marque les cases à mettre à jour.</div>
-    ${body || '<div class="upd-hint">Aucun chiffre n\'est encore renseigné dans cette analyse.</div>'}
-    <div class="upd-foot">
-      <div><span>Pensez aussi à relire votre <button type="button" class="upd-link" data-upd-jump="sec-personnelle">thèse et votre conviction</button>.</span> <span>Un relevé daté sera enregistré pour les graphiques d'évolution.</span></div>
-      <button type="button" class="btn ${all ? 'btn-primary' : 'btn-outline'} btn-sm" data-rpt-done="${escapeHtml(c.id)}">${all ? 'Terminer : tout est à jour' : 'Données mises à jour'}</button>
-    </div>
-  </div>`;
-}
 function updFindField(key){
   const p = key.split('.');
   const q = `[data-section="${p[0]}"][data-field="${p[1]}"],[data-duo-section="${p[0]}"][data-duo-field="${p[1]}"],[data-ws-section="${p[0]}"][data-ws-field="${p[1]}"]`;
   return document.querySelector(q);
 }
+// Petits points orange devant les cases à mettre à jour (rapport publié, case pas encore saisie depuis) ; un clic = « la valeur n'a pas changé »
 function markUpdateRows(c){
-  document.querySelectorAll('.field-row.upd-todo').forEach(row => row.classList.remove('upd-todo'));
+  document.querySelectorAll('.field-row.upd-todo').forEach(row => { row.classList.remove('upd-todo'); const d = row.querySelector('.upd-dot'); if(d) d.remove(); });
   if(!c || c === roCompany) return;
   const r = reportInfo(c);
   if(!r || !r.due) return;
   updStatus(c, r).forEach(it => {
     if(it.done) return;
     const el = updFindField(it.key), row = el && el.closest('.field-row');
-    if(row) row.classList.add('upd-todo');
+    if(!row) return;
+    row.classList.add('upd-todo');
+    const lab = row.querySelector('.field-label');
+    if(!lab) return;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'upd-dot';
+    b.dataset.updDot = it.key;
+    b.setAttribute('aria-label', 'Marquer comme vérifiée');
+    b.setAttribute('data-tooltip', "<div class='tt-desc'>À mettre à jour. Cliquez ici si la valeur n'a pas changé depuis le dernier rapport.</div>");
+    lab.insertBefore(b, lab.firstChild);
   });
 }
-function bindUpdatePanel(el){
-  el.querySelectorAll('[data-upd-go]').forEach(b => { b.onclick = () => {
-    const f = updFindField(b.dataset.updGo);
-    if(!f) return;
-    const row = f.closest('.field-row') || f;
-    row.scrollIntoView({ behavior:'smooth', block:'center' });
-    row.classList.add('upd-flash');
-    setTimeout(() => row.classList.remove('upd-flash'), 1900);
-    setTimeout(() => { try{ f.focus({ preventScroll:true }); }catch(e){} }, 500);
-  }; });
-  el.querySelectorAll('[data-upd-same]').forEach(b => { b.onclick = e => {
-    e.stopPropagation();
-    const c = getActive();
-    if(!c) return;
-    const p = b.dataset.updSame.split('.');
-    stampField(c, p[0], p[1]);
-    touchUpdated(c);
-    saveState();
-    refreshUpdatePanel();
-  }; });
-  el.querySelectorAll('[data-upd-jump]').forEach(b => { b.onclick = () => { const t = document.getElementById(b.dataset.updJump); if(t) t.scrollIntoView({ behavior:'smooth', block:'start' }); }; });
-  bindReportDone(el);
-}
+document.addEventListener('click', e => {
+  const b = e.target && e.target.closest ? e.target.closest('.upd-dot') : null;
+  if(!b) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const c = getActive();
+  if(!c) return;
+  const p = b.dataset.updDot.split('.');
+  stampField(c, p[0], p[1]);
+  touchUpdated(c);
+  saveState();
+  refreshDerived();
+});
+// Appelée par refreshDerived : points orange + graphiques d'évolution à jour (un relevé automatique vient peut-être d'être enregistré)
 function refreshUpdatePanel(){
   const c = getActive();
-  const el = document.getElementById('updatePanel');
-  if(!c || !el) return;
-  const html = updatePanelHtml(c);
-  if(el._h !== html){
-    el._h = html;
-    el.innerHTML = html;
-    if(html) bindUpdatePanel(el);
-  }
+  if(!c) return;
   markUpdateRows(c);
+  const g = document.getElementById('rhCharts');
+  if(g){
+    const h = rhChartsHtml(c);
+    if(g._h !== h){ g._h = h; g.innerHTML = h; }
+  }
 }
 
 // ----- Relevés (option A : automatiques à « Données mises à jour », plus un bouton manuel) -----
@@ -9509,17 +9465,18 @@ function reportSnapList(c){
   return (Array.isArray(c.reportSnaps) ? c.reportSnaps : []).slice().sort((a, b) => a.d < b.d ? -1 : (a.d > b.d ? 1 : 0));
 }
 // Enregistre une photo ; renvoie vrai si elle a été ajoutée ou remplacée. Sans `force`, une photo identique à la précédente est ignorée (rien n'a changé).
-function recordReportSnap(c, iso, force){
+function recordReportSnap(c, iso, force, est){
   const vals = reportSnapValues(c);
   if(!['ca', 'net', 'fcf', 'eps', 'nd'].some(k => vals[k] !== null)) return false;
   const d = /^\d{4}-\d{2}-\d{2}$/.test(String(iso)) ? iso : updDateLocal();
   if(!Array.isArray(c.reportSnaps)) c.reportSnaps = [];
   const snap = Object.assign({ d, t:Date.now() }, vals);
+  if(est) snap.est = true;
   const i = c.reportSnaps.findIndex(s => s.d === d);
   if(i >= 0) c.reportSnaps[i] = snap;
   else{
     const list = reportSnapList(c), last = list[list.length - 1];
-    if(!force && last && ['ca', 'net', 'fcf', 'eps', 'mb', 'mo', 'mn', 'nd'].every(k => last[k] === snap[k])) return false;
+    if(!force && last && ['ca', 'net', 'fcf', 'eps', 'mb', 'mo', 'mn', 'nd', 'sc'].every(k => last[k] === snap[k])) return false;
     c.reportSnaps.push(snap);
   }
   c.reportSnaps = reportSnapList(c).slice(-SNAP_MAX);
@@ -9543,7 +9500,7 @@ function rhBarsCard(title, pts, fmt, opt){
   const cols = pts.map((p, i) => {
     const top = (max - Math.max(p.v, 0)) / span * 100, h = Math.max(Math.abs(p.v) / span * 100, 1.5);
     const neg = p.v < 0 && !opt.neutral;
-    return `<div class="rh-col" data-tooltip="${rhTip(p.d, [{ text:title + ' : ' + fmt(p.v) }])}"><i class="rh-bar${neg ? ' neg' : ''}${i === pts.length - 1 ? ' last' : ''}" style="top:${top.toFixed(2)}%;height:${h.toFixed(2)}%"></i></div>`;
+    return `<div class="rh-col" data-tooltip="${rhTip(p.d, [{ text:title + ' : ' + fmt(p.v) }].concat(p.est ? [{ text:'Date estimée' }] : []))}"><i class="rh-bar${neg ? ' neg' : ''}${i === pts.length - 1 ? ' last' : ''}" style="top:${top.toFixed(2)}%;height:${h.toFixed(2)}%"></i></div>`;
   }).join('');
   const zero = min < 0 ? `<span class="rh-zero" style="top:${(max / span * 100).toFixed(2)}%"></span>` : '';
   const foot = opt.foot && vals.some(v => v < 0) ? `<div class="rh-foot">${opt.foot}</div>` : '';
@@ -9573,7 +9530,7 @@ function rhLinesCard(title, snaps, series, fmt, big){
     flush();
   });
   const hit = have.map((s, i) => {
-    const rows = series.filter(se => s[se.key] !== null && s[se.key] !== undefined).map(se => ({ color:se.tip, text:se.label + ' : ' + fmt(s[se.key]) }));
+    const rows = series.filter(se => s[se.key] !== null && s[se.key] !== undefined).map(se => ({ color:se.tip, text:se.label + ' : ' + fmt(s[se.key]) })).concat(s.est ? [{ text:'Date estimée' }] : []);
     return `<div class="rh-hit" style="left:${(X(i) - 50 / n).toFixed(2)}%;width:${(100 / n).toFixed(2)}%" data-tooltip="${rhTip(s.d, rows)}"></div>`;
   }).join('');
   const last = have[have.length - 1];
@@ -9583,30 +9540,53 @@ function rhLinesCard(title, snaps, series, fmt, big){
   }).join('');
   return `<div class="rh-card"><div class="rh-ct">${title}</div>${big ? `<div class="rh-cv">${fmt(last[series[0].key])}</div>` : ''}<div class="rh-plot"><svg class="rh-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line class="rh-gl" x1="0" x2="100" y1="25" y2="25"/><line class="rh-gl" x1="0" x2="100" y1="50" y2="50"/><line class="rh-gl" x1="0" x2="100" y1="75" y2="75"/>${lines}</svg>${dots}${hit}</div><div class="rh-ax"><span>${escapeHtml(formatDateFrShort(have[0].d))}</span><span>${escapeHtml(formatDateFrShort(last.d))}</span></div><div class="rh-leg">${leg}</div></div>`;
 }
-function reportHistoryHtml(c){
+const RH_PENCIL = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`;
+let rhEditId = '';
+function rhInputMoney(v){
+  if(v === null || v === undefined || !Number.isFinite(v)) return '';
+  const a = Math.abs(v), r = x => String(Math.round(x * 1000) / 1000).replace('.', ',');
+  if(a >= 1e12) return r(v / 1e12) + ' T';
+  if(a >= 1e9) return r(v / 1e9) + ' ' + MD_UNIT;
+  if(a >= 1e6) return r(v / 1e6) + ' M';
+  return r(v);
+}
+function rhInputNum(v){ return (v === null || v === undefined || !Number.isFinite(v)) ? '' : String(v).replace('.', ','); }
+// Les 4 graphiques : chiffre d'affaires, bénéfice net, EPS (barres) et marges (courbes)
+function rhChartsHtml(c){
   const all = reportSnapList(c), snaps = all.slice(-SNAP_SHOWN), cur = c.currency;
-  const pts = key => snaps.filter(s => s[key] !== null && s[key] !== undefined).map(s => ({ d:s.d, v:s[key] }));
+  if(all.length < 2) return `<div class="pev-empty">${all.length ? 'Un relevé est enregistré. Le graphique apparaît dès le deuxième.' : 'Aucun relevé pour le moment.'}</div>`;
+  const pts = key => snaps.filter(s => s[key] !== null && s[key] !== undefined).map(s => ({ d:s.d, v:s[key], est:!!s.est }));
   const money = v => compactMoney(v, cur);
   const pct = v => fmtNum(v, 1) + ' %';
-  const btns = `<div class="rh-btns"><button type="button" class="btn btn-outline btn-sm" data-rh-snap>Enregistrer un relevé maintenant</button>${all.length ? '<button type="button" class="rh-del" data-rh-del>Supprimer le dernier relevé</button>' : ''}</div>`;
-  let sub, body = '';
-  if(all.length < 2){
-    sub = 'Chaque fois que vous cliquez sur « Données mises à jour » après un rapport, un relevé daté est enregistré : chiffre d\'affaires, bénéfice net, FCF, EPS, marges, dette nette et score. Les graphiques se construisent ainsi tout seuls, à partir de maintenant.';
-    body = `<div class="pev-empty">${all.length ? 'Un relevé est enregistré. Le graphique apparaît dès le deuxième.' : 'Aucun relevé pour le moment.'}</div>`;
-  }else{
-    sub = 'Une photo de vos chiffres à chaque rapport mis à jour. Passez la souris sur une barre ou un point pour voir la valeur.';
-    const cards = [
-      rhBarsCard("Chiffre d'affaires", pts('ca'), money, {}),
-      rhBarsCard('Bénéfice net', pts('net'), money, {}),
-      rhBarsCard('Free Cash Flow', pts('fcf'), money, {}),
-      rhBarsCard('EPS', pts('eps'), v => fmtNum(v, 2) + ' ' + cur, {}),
-      rhBarsCard('Dette nette', pts('nd'), money, { neutral:true, foot:'Sous zéro : plus de trésorerie que de dette.' }),
-      rhLinesCard('Marges', snaps, [{ key:'mb', label:'Brute', color:'var(--rh1)', tip:'#7ba6ff' }, { key:'mo', label:'Exploitation', color:'var(--rh2)', tip:'#e0b95a' }, { key:'mn', label:'Nette', color:'var(--rh3)', tip:'#22d3ee' }], pct, false),
-      rhLinesCard('Score composite', snaps, [{ key:'sc', label:'Score', color:'var(--rh1)', tip:'#7ba6ff' }], v => fmtNum(v, 1), true)
-    ].filter(Boolean);
-    body = `<div class="rh-grid">${cards.join('')}</div>`;
-  }
-  return `<div class="pev-h">Évolution après chaque rapport</div><div class="pev-sub">${sub}</div>${body}${btns}`;
+  const cards = [
+    rhBarsCard("Chiffre d'affaires", pts('ca'), money, {}),
+    rhBarsCard('Bénéfice net', pts('net'), money, {}),
+    rhBarsCard('EPS', pts('eps'), v => fmtNum(v, 2) + ' ' + cur, {}),
+    rhLinesCard('Marges', snaps, [{ key:'mb', label:'Brute', color:'var(--rh1)', tip:'#7ba6ff' }, { key:'mo', label:'Exploitation', color:'var(--rh2)', tip:'#e0b95a' }, { key:'mn', label:'Nette', color:'var(--rh3)', tip:'#22d3ee' }], pct, false)
+  ].filter(Boolean);
+  return cards.length ? `<div class="rh-grid">${cards.join('')}</div>` : `<div class="pev-empty">Pas encore assez de chiffres pour tracer les graphiques.</div>`;
+}
+// Mode « crayon » : tableau des relevés, chaque case est modifiable, on peut ajouter ou supprimer un trimestre
+function rhEditHtml(c){
+  c.reportSnaps = reportSnapList(c);
+  const head = `<div class="rh-erow rh-eh"><span>Date</span><span>Chiffre d'affaires</span><span>Bénéfice net</span><span>EPS</span><span>Marge brute</span><span>Marge d'exploitation</span><span>Marge nette</span><span>Score</span><span></span></div>`;
+  const rows = c.reportSnaps.map(s => `<div class="rh-erow" data-rh-d="${escapeHtml(s.d)}"><span><input type="date" data-rh-f="d" value="${escapeHtml(s.d)}">${s.est ? '<small class="rh-est">estimée</small>' : ''}</span>`
+    + [['ca', rhInputMoney], ['net', rhInputMoney], ['eps', rhInputNum], ['mb', rhInputNum], ['mo', rhInputNum], ['mn', rhInputNum], ['sc', rhInputNum]].map(x => `<span><input type="text" inputmode="decimal" data-rh-f="${x[0]}" value="${escapeHtml(x[1](s[x[0]]))}"></span>`).join('')
+    + `<button type="button" class="rh-x" data-rh-del="${escapeHtml(s.d)}" aria-label="Supprimer ce relevé" data-tooltip="<div class='tt-desc'>Supprimer ce relevé</div>">×</button></div>`).join('');
+  return `<div class="rh-edit"><div class="rh-escroll">${head}${rows}</div><div class="rh-ebtns"><button type="button" class="btn btn-outline btn-sm" data-rh-add>+ Ajouter un relevé</button><span class="rh-ehint">Chiffre d'affaires et bénéfice net : 62 Md, 850 M... Une case peut rester vide.</span></div></div>`;
+}
+function reportHistoryHtml(c){
+  const editing = rhEditId === c.id && c !== roCompany;
+  const pencil = `<button type="button" class="rh-pencil${editing ? ' on' : ''}" data-rh-edit aria-label="Modifier" data-tooltip="<div class='tt-desc'>Modifier ou ajouter des relevés à la main</div>">${RH_PENCIL}</button>`;
+  return `<div class="rh-head"><div><div class="pev-h">Évolution après chaque rapport</div><div class="pev-sub">Un relevé est enregistré tout seul quand vous mettez à jour vos chiffres après un rapport. Le crayon permet de les corriger ou d'ajouter un trimestre passé.</div></div>${pencil}</div>${editing ? rhEditHtml(c) : ''}<div id="rhCharts">${rhChartsHtml(c)}</div>`;
+}
+// Évolution du score composite (section 6, Synthèse globale) : les notes enregistrées avec chaque relevé
+function scoreHistoryBox(c){
+  const snaps = reportSnapList(c).filter(s => s.sc !== null && s.sc !== undefined).slice(-SNAP_SHOWN);
+  const t = `<div class="insight-card-title">Évolution du score composite</div>`;
+  if(snaps.length < 2) return `<div class="synthesis-box rh">${t}<div class="pev-empty">Le score est enregistré à chaque mise à jour après un rapport. Le graphique apparaît dès le deuxième relevé.</div></div>`;
+  const card = rhLinesCard('Score composite', snaps, [{ key:'sc', label:'Score', color:'var(--rh1)', tip:'#7ba6ff' }], v => fmtNum(v, 1), true);
+  return `<div class="synthesis-box rh">${t}<div class="rh-grid rh-grid-one">${card}</div></div>`;
 }
 function refreshReportHistory(){
   const c = getActive();
@@ -9615,36 +9595,70 @@ function refreshReportHistory(){
   el.innerHTML = reportHistoryHtml(c);
   bindReportHistory();
 }
+function rhSaved(c){
+  touchUpdated(c);
+  saveState();
+}
+function rhShiftDay(iso, n){
+  const p = iso.split('-').map(Number), d = new Date(p[0], p[1] - 1, p[2] + n);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function rhEditField(c, inp){
+  const row = inp.closest('[data-rh-d]');
+  const s = row ? c.reportSnaps.find(x => x.d === row.dataset.rhD) : null;
+  if(!s) return;
+  const f = inp.dataset.rhF, raw = inp.value.trim();
+  if(f === 'd'){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(raw) || raw === s.d) return;
+    if(c.reportSnaps.some(x => x !== s && x.d === raw)){ showToast('Un relevé existe déjà à cette date.'); inp.value = s.d; return; }
+    s.d = raw;
+    delete s.est;
+    c.reportSnaps = reportSnapList(c);
+    rhSaved(c);
+    refreshReportHistory();
+    refreshInsightsSection();
+    return;
+  }
+  let v = null;
+  if(raw !== ''){
+    v = (f === 'ca' || f === 'net') ? parseMoney(raw) : num(raw);
+    if(v === null || !Number.isFinite(v)) v = null;
+  }
+  s[f] = v;
+  inp.classList.toggle('bad', raw !== '' && v === null);
+  rhSaved(c);
+  const g = document.getElementById('rhCharts');
+  if(g){ g._h = ''; g.innerHTML = rhChartsHtml(c); }
+  refreshInsightsSection();
+}
 function bindReportHistory(){
   const el = document.getElementById('reportHistory');
-  if(!el) return;
-  const snap = el.querySelector('[data-rh-snap]');
-  if(snap) snap.onclick = () => {
-    const c = getActive();
-    if(!c) return;
-    if(!recordReportSnap(c, updDateLocal(), true)){ showToast("Renseignez d'abord quelques chiffres (chiffre d'affaires, bénéfice net, FCF...)."); return; }
-    touchUpdated(c);
-    saveState();
+  const c = getActive();
+  if(!el || !c) return;
+  const pen = el.querySelector('[data-rh-edit]');
+  if(pen) pen.onclick = () => { rhEditId = rhEditId === c.id ? '' : c.id; refreshReportHistory(); };
+  el.querySelectorAll('[data-rh-f]').forEach(inp => inp.addEventListener(inp.dataset.rhF === 'd' ? 'change' : 'input', () => rhEditField(c, inp)));
+  const add = el.querySelector('[data-rh-add]');
+  if(add) add.onclick = () => {
+    let d = updDateLocal();
+    while(c.reportSnaps.some(s => s.d === d)) d = rhShiftDay(d, -1);
+    c.reportSnaps.push({ d, t:Date.now(), ca:null, net:null, fcf:null, eps:null, mb:null, mo:null, mn:null, nd:null, sc:null });
+    c.reportSnaps = reportSnapList(c).slice(-SNAP_MAX);
+    rhSaved(c);
     refreshReportHistory();
-    showToast('Relevé enregistré.');
   };
-  const del = el.querySelector('[data-rh-del]');
-  if(del) del.onclick = () => {
-    const c = getActive();
-    if(!c) return;
-    if(!del.dataset.sure){
-      del.dataset.sure = '1';
-      del.textContent = 'Confirmer ?';
-      setTimeout(() => { if(del.isConnected){ delete del.dataset.sure; del.textContent = 'Supprimer le dernier relevé'; } }, 3000);
+  el.querySelectorAll('[data-rh-del]').forEach(btn => btn.onclick = () => {
+    if(!btn.dataset.sure){
+      btn.dataset.sure = '1';
+      btn.textContent = '?';
+      setTimeout(() => { if(btn.isConnected){ delete btn.dataset.sure; btn.textContent = '×'; } }, 3000);
       return;
     }
-    const list = reportSnapList(c);
-    list.pop();
-    c.reportSnaps = list;
-    touchUpdated(c);
-    saveState();
+    c.reportSnaps = reportSnapList(c).filter(s => s.d !== btn.dataset.rhDel);
+    rhSaved(c);
     refreshReportHistory();
-  };
+    refreshInsightsSection();
+  });
 }
 
 // Entreprises dont le rapport est attendu : d'abord celles à mettre à jour (le plus ancien en premier), puis les prochains rapports
@@ -9655,7 +9669,7 @@ function reportList(){
 function buildReportsCard(){
   const list = reportList();
   if(!list.length) return '';
-  const rows = (spaceMore.reports ? list : list.slice(0, SPACE_LIST_MAX)).map(({ c, r }) => `<div class="rv-row"><button type="button" class="tg-row rv-open" data-rec-open="${escapeHtml(c.id)}" data-rec-jump="${r.due ? 'updatePanel' : 'sec-identite'}">${miniAv(c)}<span class="tg-id"><span class="tg-name">${escapeHtml(c.name || 'Sans nom')}${r.due ? ` <span class="rpt-flag rpt-flag-in">${REPORT_BELL}</span>` : ''}</span><span class="tg-vals">${r.due ? `Rapport du ${escapeHtml(formatDateFr(r.iso))} (${reportWhen(r)}) : données à mettre à jour` : `Prochain rapport le ${escapeHtml(formatDateFr(r.iso))} (${reportWhen(r)})`}${c.position && c.position.active ? ' · position ouverte' : ''}</span></span></button>${r.due ? `<button type="button" class="btn btn-outline btn-sm" data-rpt-done="${escapeHtml(c.id)}">Données mises à jour</button>` : ''}</div>`).join('');
+  const rows = (spaceMore.reports ? list : list.slice(0, SPACE_LIST_MAX)).map(({ c, r }) => `<div class="rv-row"><button type="button" class="tg-row rv-open" data-rec-open="${escapeHtml(c.id)}" data-rec-jump="${r.due ? '' : 'sec-identite'}">${miniAv(c)}<span class="tg-id"><span class="tg-name">${escapeHtml(c.name || 'Sans nom')}${r.due ? ` <span class="rpt-flag rpt-flag-in">${REPORT_BELL}</span>` : ''}</span><span class="tg-vals">${r.due ? `Rapport du ${escapeHtml(formatDateFr(r.iso))} (${reportWhen(r)}) : données à mettre à jour` : `Prochain rapport le ${escapeHtml(formatDateFr(r.iso))} (${reportWhen(r)})`}${c.position && c.position.active ? ' · position ouverte' : ''}</span></span></button>${r.due ? `<button type="button" class="btn btn-outline btn-sm" data-rpt-done="${escapeHtml(c.id)}">Données mises à jour</button>` : ''}</div>`).join('');
   const nDue = list.filter(x => x.r.due).length;
   return spaceCard('s12', 'Rapports', nDue ? `${nDue} analyse${nDue > 1 ? 's' : ''} à mettre à jour, puis les rapports des ${REPORT_SOON_DAYS} prochains jours` : `Rapports attendus dans les ${REPORT_SOON_DAYS} prochains jours`, `<div class="tg-list">${rows}</div>${spaceMoreBtn('reports', list.length)}`);
 }
@@ -9886,7 +9900,7 @@ function notifPanelHtml(){
   const NF_BELL = REPORT_BELL, NF_ZAP = ALERT_ZAP;
   const actRows = act.map(it => it.kind === 'alert'
     ? `<div class="nf-row nf-active"><span class="nf-ico nf-ico-alert">${NF_ZAP}</span><button type="button" class="nf-main" data-nf-open="${escapeHtml(it.c.id)}" data-nf-jump="alertsBlock"><b>${escapeHtml(it.c.name || 'Sans nom')}</b><span>${escapeHtml(alertText(it.c, it.a))}</span><small>${escapeHtml(alertNow(it.c, it.a))}</small></button><button type="button" class="nf-btn" data-nf-ack="${escapeHtml(it.c.id)}|${escapeHtml(it.a.id)}">Compris</button></div>`
-    : `<div class="nf-row nf-active"><span class="nf-ico nf-ico-report">${NF_BELL}</span><button type="button" class="nf-main" data-nf-open="${escapeHtml(it.c.id)}" data-nf-jump="updatePanel"><b>${escapeHtml(it.c.name || 'Sans nom')}</b><span>Rapport publié : mettez à jour vos données</span><small>Prévu le ${escapeHtml(formatDateFr(it.r.iso))} (${reportWhen(it.r)})</small></button><button type="button" class="nf-btn" data-nf-rptdone="${escapeHtml(it.c.id)}">Mis à jour</button></div>`).join('');
+    : `<div class="nf-row nf-active"><span class="nf-ico nf-ico-report">${NF_BELL}</span><button type="button" class="nf-main" data-nf-open="${escapeHtml(it.c.id)}" data-nf-jump=""><b>${escapeHtml(it.c.name || 'Sans nom')}</b><span>Rapport publié : mettez à jour vos données</span><small>Prévu le ${escapeHtml(formatDateFr(it.r.iso))} (${reportWhen(it.r)})</small></button><button type="button" class="nf-btn" data-nf-rptdone="${escapeHtml(it.c.id)}">Mis à jour</button></div>`).join('');
   const histRows = hist.map(n => {
     const exists = state.companies.some(c => c.id === n.cid);
     const name = (state.companies.find(c => c.id === n.cid) || {}).name || n.name;
@@ -10125,9 +10139,12 @@ function buildCompanyMeta(c){
   const comp = companyCompletion(c);
   const progressChip = `<span class="chip chip-progress" data-tooltip="<div class='tt-desc'>Fiche complétée à ${comp.pct}&nbsp;% · ${comp.filled} champ${comp.filled > 1 ? 's' : ''} sur ${comp.total} renseigné${comp.filled > 1 ? 's' : ''}</div>"><span class="hbar-track"><i style="width:${comp.pct}%;background:${comp.pct >= 100 ? 'var(--green)' : 'var(--accent)'}"></i></span><b>${comp.pct}&nbsp;%</b></span>`;
   const rpt = reportInfo(c);
-  const reportChip = !rpt ? '' : (rpt.due
-    ? `<span class="chip chip-report-due">${REPORT_BELL} Rapport publié, mettre à jour les données</span>`
-    : (rpt.days <= REPORT_SOON_DAYS ? `<span class="chip">Prochain rapport ${reportWhen(rpt)}</span>` : ''));
+  let reportChip = '';
+  if(rpt && rpt.due){
+    const todoN = c === roCompany ? 0 : updStatus(c, rpt).filter(i => !i.done).length;
+    reportChip = `<span class="chip chip-report-due">${REPORT_BELL} ${todoN ? `Rapport publié, ${todoN} donnée${todoN > 1 ? 's' : ''} à mettre à jour` : 'Rapport publié, tout est à jour'}</span>`
+      + (c === roCompany ? '' : `<button type="button" class="btn ${todoN ? 'btn-outline' : 'btn-primary'} btn-sm" data-rpt-done="${escapeHtml(c.id)}">Données mises à jour</button>`);
+  }else if(rpt && rpt.days <= REPORT_SOON_DAYS) reportChip = `<span class="chip">Prochain rapport ${reportWhen(rpt)}</span>`;
   // Alertes déclenchées : un chip par alerte (deux au plus, puis « +N »)
   const alerts = activeAlerts(c);
   const alertChips = alerts.slice(0, 2).map(a => `<span class="chip chip-alert">${ALERT_ZAP} ${escapeHtml(alertText(c, a))}</span>`).join('') + (alerts.length > 2 ? `<span class="chip chip-alert">+${alerts.length - 2}</span>` : '');
@@ -10187,7 +10204,7 @@ function buildCompanyKpis(c){
   const c = getActive();
   if(!c) return;
   const meta = document.getElementById('company-meta');
-  if(meta) meta.innerHTML = buildCompanyMeta(c);
+  if(meta){ meta.innerHTML = buildCompanyMeta(c); bindReportDone(meta); }
   const kpis = document.getElementById('company-kpis');
   if(kpis) kpis.innerHTML = buildCompanyKpis(c);
 }
@@ -14036,7 +14053,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 319;
+const APP_BUILD = 320;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -15118,7 +15135,6 @@ function renderInner(){
       </div>
       <div class="kpis" id="company-kpis">${buildCompanyKpis(c)}</div>
     </div>
-    <div id="updatePanel"></div>
     ${buildSectionNav(c)}
   `;
 
@@ -15596,6 +15612,7 @@ function renderInner(){
   bindReportDone(document.getElementById('reportNote'));
   bindAlertsBlock();
   bindReportHistory();
+  bindReportDone(document.getElementById('company-meta'));
   refreshUpdatePanel();
 
   main.querySelectorAll('[data-section][data-field]').forEach(el => {
