@@ -1098,6 +1098,58 @@ body.sx-lock{ overflow:hidden; }
 .sx-dlall{ display:inline-flex; align-items:center; background:var(--accent); border-color:transparent; color:#fff; margin-left:8px; }
 .sx-overlay[data-cur="3"] .sx-dl{ display:inline-flex; align-items:center; background:var(--accent); border-color:transparent; color:#fff; }
 .sx-exporting .sx-zoomhost, .sx-exporting .sx-scale{ opacity:0; }
+/* ----- Fiche d'accroche du résumé, page 0 (2026-10-31, build 326) ----- */
+.sx-card.sx-cover{ width:1080px; height:1350px; gap:12px; padding:52px 64px 44px 64px; position:relative; overflow:hidden; flex-direction:column; justify-content:space-between; }
+.sx-card.sx-cover.sx-on{ display:flex; }
+.sx-stacked .sx-card.sx-cover{ display:none; }
+.sx-cover > *:not(.sx-cv-glow):not(.sx-cv-bar){ position:relative; z-index:1; }
+.sx-cv-glow{ position:absolute; inset:0; pointer-events:none; background:radial-gradient(640px 480px at 94% 3%, rgba(201,162,74,.20), transparent 70%), radial-gradient(780px 620px at 2% 99%, rgba(42,91,234,.28), transparent 70%); }
+.sx-cv-bar{ position:absolute; left:0; right:0; top:0; height:8px; background:linear-gradient(90deg,#2a5bea,#5b8cf7 45%,#c9a24a); }
+.sx-cv-top{ display:flex; align-items:center; justify-content:space-between; }
+.sx-cv-brand{ display:inline-flex; align-items:center; gap:14px; font-family:var(--font-serif); font-size:34px; font-weight:700; color:#fff; letter-spacing:-.01em; }
+.sx-cv-brand img{ border-radius:11px; }
+.sx-cv-tag{ font-size:15px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:#c9a24a; border:1.5px solid rgba(201,162,74,.5); border-radius:99px; padding:8px 18px; }
+.sx-cv-kick{ font-size:21px; font-weight:700; letter-spacing:.22em; text-transform:uppercase; color:#c9a24a; margin-bottom:14px; }
+.sx-cv-co{ display:flex; align-items:center; gap:28px; }
+.sx-cv-av.preview-avatar{ width:112px; height:112px; flex:0 0 112px; border-radius:26px; font-size:42px; }
+.sx-cv-name{ font-family:var(--font-serif); font-weight:700; line-height:1.04; letter-spacing:-.02em; color:#fff; min-width:0; }
+.sx-cv-chips{ display:flex; flex-wrap:nowrap; gap:10px; margin-top:18px; }
+.sx-cv-chips .sx-chip{ font-size:20px; padding:7px 18px; flex:0 1 auto; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sx-cv-hero{ display:flex; align-items:center; gap:38px; padding:24px 36px; border-radius:26px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); }
+.sx-cv-ring{ position:relative; width:236px; height:236px; flex:0 0 236px; }
+.sx-cv-ring svg{ width:100%; height:100%; display:block; }
+.sx-cv-rv{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:var(--font-mono); }
+.sx-cv-rv b{ font-size:98px; font-weight:700; line-height:1; letter-spacing:-.03em; }
+.sx-cv-rv small{ font-size:19px; font-family:var(--font-ui); margin-top:6px; color:#8fa1c2; }
+.sx-cv-hr{ flex:1; min-width:0; display:flex; flex-direction:column; gap:7px; }
+.sx-cv-cap{ font-size:16px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:#8fa1c2; }
+.sx-cv-tier{ font-family:var(--font-serif); font-weight:700; font-size:56px; line-height:1; }
+.sx-cv-sub{ font-size:20px; color:#a9b8d4; }
+.sx-cv-val{ margin-top:6px; padding:4px 0 4px 22px; border-left:5px solid var(--c); display:flex; flex-direction:column; gap:4px; }
+.sx-cv-val b{ font-size:36px; font-weight:800; color:var(--c); line-height:1.1; }
+.sx-cv-val span{ font-size:20px; color:#c3cee5; }
+.sx-cv-val em{ font-style:normal; font-size:19px; color:#8fa1c2; }
+.sx-cv-conv{ display:flex; align-items:center; gap:14px; margin-top:6px; font-size:18px; color:#8fa1c2; }
+.sx-cv-mid{ display:grid; grid-template-columns:1.05fr 1fr; gap:28px; align-items:center; }
+.sx-cv-mid .sx-radar{ width:100%; height:auto; display:block; }
+.sx-cv-ks{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.sx-cv-k{ background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09); border-radius:16px; padding:9px 16px; display:flex; flex-direction:column; gap:3px; min-width:0; }
+.sx-cv-k span{ font-size:15px; letter-spacing:.06em; text-transform:uppercase; color:#8fa1c2; font-weight:600; }
+.sx-cv-k b{ font-size:30px; font-weight:700; color:#fff; line-height:1.1; }
+.sx-cv-k b small{ font-size:.5em; margin-left:4px; }
+.sx-cv-k em{ font-style:normal; font-size:15px; color:#8fa1c2; }
+.sx-cv-these{ padding:4px 0 4px 26px; border-left:5px solid #c9a24a; }
+.sx-cv-tl{ font-size:15px; letter-spacing:.18em; text-transform:uppercase; color:#c9a24a; font-weight:700; margin-bottom:8px; }
+.sx-cv-these q{ display:block; quotes:none; font-family:var(--font-serif); font-size:26px; line-height:1.3; color:#f3f6fc; font-weight:600; }
+.sx-cv-next{ display:flex; flex-direction:column; gap:12px; }
+.sx-cv-nl{ font-size:18px; color:#c3cee5; font-weight:600; }
+.sx-cv-pills{ display:flex; justify-content:space-between; gap:6px; }
+.sx-cv-pill{ display:flex; align-items:center; gap:10px; padding:5px 12px 5px 6px; border-radius:99px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); font-size:16.5px; font-weight:600; color:#e6ecf8; white-space:nowrap; }
+.sx-cv-pill i{ width:27px; height:27px; flex:0 0 27px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-style:normal; font-weight:800; font-size:16px; }
+.sx-cv-foot{ display:flex; justify-content:space-between; align-items:flex-end; gap:24px; padding-top:18px; border-top:1px solid rgba(255,255,255,.12); font-size:14.5px; color:#8fa1c2; }
+.sx-cv-foot b{ font-family:var(--font-serif); font-size:24px; color:#fff; }
+.sx-cv-foot b span{ color:#c9a24a; }
+.sx-overlay[data-cur="0"] .sx-dl{ display:inline-flex; align-items:center; background:var(--accent); border-color:transparent; color:#fff; }
 .sx-zoomed .sx-scale{ display:none; }
 .sx-zoomhost{ flex:0 0 auto; }
 .sx-zoomcard{ padding:20px 20px 12px 20px; }
@@ -14245,7 +14297,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 325;
+const APP_BUILD = 326;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -14719,6 +14771,68 @@ function buffettStates(c){
     return { label:r.label, ok:(stored !== undefined) ? !!stored : (auto === true) };
   });
 }
+// ----- Fiche d'accroche (2026-10-31, demande de l'auteur : « une fiche d'accroche 'Analyse de l'action X' pour attirer l'oeil, en tête du thread X ») -----
+// Image portrait 4:5 (1080 x 1350) qui donne envie de cliquer : nom de l'entreprise, note en grand, verdict de valorisation, radar des 5 axes, chiffres clés, thèse en une phrase
+// et rappel des 6 fiches qui suivent. 100 % dérivée des données de l'analyse, rien de stocké. Elle est la page 0 du résumé (avant les pages 1 à 3) et la première image de « Tout télécharger ».
+const SX_COVER = { w:1080, h:1350 };
+function buildCoverCard(c){
+  const cur = c.currency;
+  const idn = c.fields.identite || {}, fin = c.fields.financier || {}, val = c.fields.valorisation || {}, pers = c.fields.personnelle || {};
+  const good = TOOLTIP_TIER_COLORS.tresbon, bad = TOOLTIP_TIER_COLORS.mauvais;
+  const sinfo = computeScoreInfo(c), gs = sinfo.score;
+  const col = gs === null ? 'rgba(255,255,255,.35)' : scoreColor5(gs, true);
+  const av = avatarInner(c);
+  const name = String(c.name || 'Sans nom');
+  const nfs = name.length <= 12 ? 96 : (name.length <= 20 ? 80 : (name.length <= 30 ? 64 : (name.length <= 40 ? 52 : 42)));
+  const sect = idn.secteur && idn.secteur.secteur, pays = idn.paysSiege && idn.paysSiege.pays;
+  const price = parseMoney(val.prixActuel), iv = parseMoney(val.valeurIntrinseque);
+  const plain = v => v === null ? '—' : fmtMoney(v, cur);
+  const chips = `${idn.ticker ? `<span class="sx-chip sx-mono">${escapeHtml(idn.ticker)}</span>` : ''}${idn.cotation ? `<span class="sx-chip">${escapeHtml(idn.cotation)}</span>` : ''}${pays ? `<span class="sx-chip">${flagIcon(pays)} ${escapeHtml(pays)}</span>` : ''}${sect ? `<span class="sx-chip">${escapeHtml(sect)}</span>` : ''}`;
+  // Anneau de la note
+  const R = 52, circ = 2 * Math.PI * R;
+  const ring = `<div class="sx-cv-ring"><svg viewBox="0 0 128 128" aria-hidden="true"><circle cx="64" cy="64" r="${R}" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="12"/><circle cx="64" cy="64" r="${R}" fill="none" stroke="${col}" stroke-width="12" stroke-linecap="round" stroke-dasharray="${gs === null ? 0 : (gs / 100 * circ).toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 64 64)"/></svg><div class="sx-cv-rv" style="color:${col}"><b>${gs === null ? '—' : Math.round(gs)}</b>${sinfo.provisional ? '<small>provisoire</small>' : ''}</div></div>`;
+  const t5 = scoreTier5(gs);
+  // Verdict de valorisation : le cours face à la valeur intrinsèque
+  const e = computeEcart(c, 'valeurIntrinseque');
+  let valHtml = '';
+  if(e !== null){
+    const under = e < -0.05, over = e > 0.05, vc = under ? good : (over ? bad : '#c3cee5');
+    const big = under ? 'Sous-évaluation de ' + fmtNum(Math.abs(e), 0) + '&nbsp;%' : (over ? 'Surévaluation de ' + fmtNum(e, 0) + '&nbsp;%' : 'Au juste prix');
+    valHtml = `<div class="sx-cv-val" style="--c:${vc}"><b>${big}</b><span>${under || over ? 'par rapport à la valeur intrinsèque' : 'proche de la valeur intrinsèque'}</span><em>Cours ${plain(price)} · Valeur intrinsèque ${plain(iv)}</em></div>`;
+  }else if(price !== null){
+    valHtml = `<div class="sx-cv-val" style="--c:#5b8cf7"><b>${plain(price)}</b><span>cours actuel</span></div>`;
+  }
+  const conv5 = parseFloat(pers.conviction) || 0;
+  const convHtml = conv5 ? `<div class="sx-cv-conv"><span>Conviction</span>${starsRowHtml(conv5, 'sx-stars')}</div>` : '';
+  // Chiffres clés
+  const mc = parseMoney(idn.marketCap) ?? parseMoney(fin.marketCap);
+  const cCA = num(fin.croissanceCA && fin.croissanceCA.cagr), mNette = num(fin.margeNette), roic = num(fin.roic), rFcf = computeRendementFcf(c);
+  const pe = computePeActuel(c), peF = computePeForward(c);
+  const k = (label, v, color, sub) => `<div class="sx-cv-k"><span>${label}</span><b${color ? ` style="color:${color}"` : ''}>${v}</b>${sub ? `<em>${sub}</em>` : ''}</div>`;
+  const figs = k('Capitalisation', mc === null ? '—' : compactMoney(mc, cur))
+    + k('PE', pe === null ? '—' : (pe <= 0 ? 'n.s.' : fmtNum(pe, 1)), null, peF === null || peF <= 0 ? '' : 'forward ' + fmtNum(peF, 1))
+    + k('CA (5 ans)', cCA === null ? '—' : sxPct(cCA, 1) + '<small>/an</small>', sxTier('croissanceCA', cCA))
+    + k('Marge nette', sxPct(mNette), sxTier('margeNette', mNette))
+    + k('ROIC', sxPct(roic), sxTier('roic', roic))
+    + k('Rendement FCF', rFcf === null ? '—' : (rFcf < 0 ? FCF_NEGATIF_TXT : sxPct(rFcf, 1)), sxTier('rendementFcf', rFcf));
+  // Thèse en une phrase
+  const thesePlain = sxDecode(richToPlain(pers.these)).replace(/\s+/g, ' ').trim();
+  let thesis = '';
+  if(thesePlain){ const m = thesePlain.match(/^.{40,}?[.!?](\s|$)/); thesis = (m ? m[0] : thesePlain).trim(); }
+  const theseHtml = thesis ? `<div class="sx-cv-these"><div class="sx-cv-tl">Thèse d'investissement</div><q data-i18n="off">${sxShort(escapeHtml(thesis), 175)}</q></div>` : '';
+  // Rappel des fiches qui suivent
+  const secs = [['1', 'Identité', SECTION_COLORS.identite, '#fff'], ['2', 'Financier', SECTION_COLORS.financier, '#fff'], ['3', 'Croissance', SECTION_COLORS.croissance, '#0a1328'], ['4', 'Valorisation', SECTION_COLORS.valorisation, '#0a1328'], ['5', 'Analyse perso.', SECTION_COLORS.personnelle, '#fff'], ['6', 'Synthèse', '#f3e9d7', '#0a1328']];
+  const pills = secs.map(s => `<span class="sx-cv-pill"><i style="background:${s[2]};color:${s[3]}">${s[0]}</i>${s[1]}</span>`).join('');
+  return `<div class="sx-card sx-cover" data-sx-page="0"><i class="sx-cv-glow"></i><i class="sx-cv-bar"></i>
+    <div class="sx-cv-top"><span class="sx-cv-brand"><img src="icon-192.png" alt="" width="46" height="46">The Analytics</span><span class="sx-cv-tag">Analyse fondamentale</span></div>
+    <div class="sx-cv-title"><div class="sx-cv-kick">Analyse de l'action</div><div class="sx-cv-co"><div class="preview-avatar sx-cv-av${av.cls}">${av.html}</div><div class="sx-cv-name" data-i18n="off" style="font-size:${nfs}px">${escapeHtml(name)}</div></div><div class="sx-cv-chips" data-i18n="off">${chips}</div></div>
+    <div class="sx-cv-hero">${ring}<div class="sx-cv-hr"><div class="sx-cv-cap">Score composite · sur 100</div><div class="sx-cv-tier" style="color:${col}">${t5 === null ? 'À compléter' : SCORE5_NAMES[t5]}</div><div class="sx-cv-sub">Moyenne de 5 axes${sinfo.provisional ? ' · note provisoire' : ''}</div>${valHtml}${convHtml}</div></div>
+    <div class="sx-cv-mid">${sxRadarSvg(sinfo.axes, col)}<div class="sx-cv-ks">${figs}</div></div>
+    ${theseHtml}
+    <div class="sx-cv-next"><div class="sx-cv-nl">Le détail en 6 fiches, à suivre dans ce fil&nbsp;&darr;</div><div class="sx-cv-pills">${pills}</div></div>
+    <div class="sx-cv-foot"><b>the-analytics<span>.fr</span></b><span>Analyse personnelle, pas un conseil en investissement · mise à jour le ${formatDateFr(c.updatedAt || c.createdAt)}</span></div>
+  </div>`;
+}
 // Retourne les DEUX pages (HTML de deux cartes) : [sections 1, 2, 3] et [sections 4, 5, 6]
 function buildSummaryPages(c){
   const cur = c.currency;
@@ -14910,6 +15024,7 @@ function buildSummaryPages(c){
     page(2, sxPanel(4, 'Valorisation', SECTION_COLORS.valorisation, p4, who) + sxPanel(5, 'Analyse personnelle', SECTION_COLORS.personnelle, p5, who) + sxPanel(6, 'Synthèse globale', '#f3e9d7', p6, who)),
   ];
   if(hasSk) pagesOut.push(page(3, skPanel));
+  pagesOut.unshift(buildCoverCard(c));   // page 0 : fiche d'accroche (n'est pas comptée dans « Page n sur N »)
   return pagesOut;
 }
 function sxPages(){ const ov = document.getElementById('sxOverlay'); return ov ? (parseInt(ov.dataset.pages, 10) || 2) : 2; }
@@ -14961,7 +15076,9 @@ function sxBalance(cards, cap){
 function sxFit(){
   const ov = document.getElementById('sxOverlay');
   if(!ov) return;
-  const cards = [...ov.querySelectorAll('.sx-scale .sx-card')], wrap = ov.querySelector('.sx-scale'), bar = ov.querySelector('.sx-bar');
+  const allCards = [...ov.querySelectorAll('.sx-scale .sx-card')], wrap = ov.querySelector('.sx-scale'), bar = ov.querySelector('.sx-bar');
+  const cover = allCards.find(cd => cd.dataset.sxPage === '0') || null;   // fiche d'accroche : taille fixe 1080 x 1350, hors du calcul des pages 1 à 3
+  const cards = allCards.filter(cd => cd !== cover);
   const card = ov.querySelector('.sx-scale .sx-card.sx-on') || cards[0];
   if(!card || !wrap) return;
   const vw = document.documentElement.clientWidth, vh = window.innerHeight;
@@ -14969,6 +15086,13 @@ function sxFit(){
   ov.classList.toggle('sx-stacked', stack);
   cards.forEach(cd => cd.classList.toggle('sx-stack', stack));
   const availW = vw - 104, availH = vh - (bar ? bar.offsetHeight : 52) - 24;   // 104 : place pour les deux flèches de chaque côté
+  if(card === cover && !stack){
+    const sc = Math.max(0.2, Math.min(availW / SX_COVER.w, availH / SX_COVER.h, 2.4));
+    cover.style.width = SX_COVER.w + 'px'; cover.style.height = SX_COVER.h + 'px'; cover.style.minHeight = '';
+    cover.style.transformOrigin = 'top left'; cover.style.transform = 'scale(' + sc.toFixed(4) + ')';
+    wrap.style.width = (SX_COVER.w * sc).toFixed(1) + 'px'; wrap.style.height = (SX_COVER.h * sc).toFixed(1) + 'px';
+    return;
+  }
   if(stack){
     cards.forEach(cd => { cd.style.transform = ''; cd.style.minHeight = ''; cd.style.width = Math.min(vw - 20, 620) + 'px'; sxSizeSk(cd); });
     wrap.style.width = ''; wrap.style.height = '';
@@ -15060,14 +15184,14 @@ function sxArrows(){
   if(!ov) return;
   const prev = ov.querySelector('.sx-prev'), next = ov.querySelector('.sx-next');
   const zoom = sxZoomN > 0;
-  if(prev){ prev.classList.toggle('sx-off', zoom ? sxZoomN <= 1 : sxPage === 1); prev.setAttribute('aria-label', zoom ? 'Section précédente' : 'Page précédente'); }
+  if(prev){ prev.classList.toggle('sx-off', zoom ? sxZoomN <= 1 : sxPage <= 0); prev.setAttribute('aria-label', zoom ? 'Section précédente' : 'Page précédente'); }
   if(next){ next.classList.toggle('sx-off', zoom ? sxZoomN >= 6 : sxPage >= sxPages()); next.setAttribute('aria-label', zoom ? 'Section suivante' : 'Page suivante'); }
 }
 function sxShow(n){
   const ov = document.getElementById('sxOverlay');
   if(!ov) return;
   if(ov.dataset.mode === 'cmp') return;   // la carte de comparaison n'a qu'une page
-  n = Math.max(1, Math.min(sxPages(), parseInt(n, 10) || 1));
+  const pn = parseInt(n, 10); n = Math.max(0, Math.min(sxPages(), isNaN(pn) ? 1 : pn));
   const host = ov.querySelector('.sx-zoomhost'); if(host) host.remove();
   sxZoomN = 0; ov.classList.remove('sx-zoomed');
   sxPage = n;
@@ -15154,12 +15278,12 @@ async function sxInlineImages(root, initials){
 // Même mise en forme que le résumé, mais exportée dans un CADRE DE TAILLE FIXE : les 6 sections en 4:5 (1080 x 1350, le format portrait le plus haut qui s'affiche en entier dans un fil),
 // le schéma du chiffre d'affaires au bénéfice en 16:9 (1920 x 1080). Pour les sections, la largeur de la carte est cherchée comme dans la fenêtre (sxBuildZoom) mais avec le cadre
 // d'export comme « fenêtre » : le texte est donc le plus grand possible dans l'image, et les 6 images ont exactement la même taille, quelle que soit la fenêtre de l'utilisateur.
-const SX_EXP = { sec:{ w:1080, h:1350, m:26, k:1.5 }, page:{ w:1920, h:1080, m:0, k:1.25 } };
+const SX_EXP = { sec:{ w:1080, h:1350, m:26, k:1.5 }, page:{ w:1920, h:1080, m:0, k:1.25 }, cover:{ w:1080, h:1350, m:0, k:1.5 } };
 const SX_EXP_BG = 'linear-gradient(160deg,#10203f 0%,#0a1328 62%,#0b1530 100%)';
 function sxFileName(c, n){
   const clean = s => String(s || '').replace(/[\\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
   const d = new Date(), p = x => String(x).padStart(2, '0');
-  const part = n === 7 ? 'Du CA au bénéfice' : (n + ' ' + (SX_SECTION_NAMES[n - 1] || 'Section'));
+  const part = n === 8 ? '0 Accroche' : (n === 7 ? 'Du CA au bénéfice' : (n + ' ' + (SX_SECTION_NAMES[n - 1] || 'Section')));
   return `${clean(c.name) || 'Analyse'} - ${part} - ${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}.png`;
 }
 // Fabrique le PNG d'une carte (copiée avec tous ses styles) centrée dans un cadre F de taille fixe
@@ -15210,6 +15334,11 @@ async function sxExportPage3(c, ov){
   sxSizeSk(cd, 0);
   return sxPngFrame(c, cd, cd.offsetWidth, cd.offsetHeight, SX_EXP.page, true);   // « Page 3 sur 3 » n'a pas de sens dans une image isolée
 }
+async function sxExportCover(c, ov){
+  const cd = ov.querySelector('.sx-card[data-sx-page="0"]');
+  if(!cd || !cd.offsetWidth) throw new Error('cover');
+  return sxPngFrame(c, cd, SX_COVER.w, SX_COVER.h, SX_EXP.cover, false);   // taille fixe : l'image est identique quelle que soit la fenêtre
+}
 function sxSaveBlob(blob, name){
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob); a.download = name;
@@ -15223,7 +15352,7 @@ async function sxDownload(all){
   const c = getActive();
   if(!ov || !c || ov.dataset.mode === 'cmp') return;
   const hasP3 = sxPages() > 2;
-  const single = sxZoomN > 0 ? sxZoomN : (sxPage === 3 && hasP3 ? 7 : 0);
+  const single = sxZoomN > 0 ? sxZoomN : (sxPage === 0 ? 8 : (sxPage === 3 && hasP3 ? 7 : 0));   // 8 = fiche d'accroche, 7 = schéma
   if(!all && !single) return;
   const btns = [...ov.querySelectorAll('[data-sx-download], [data-sx-downloadall]')];
   const labels = btns.map(b => b.innerHTML);
@@ -15234,10 +15363,13 @@ async function sxDownload(all){
   ov.classList.add('sx-exporting');
   let done = 0, lastName = '';
   try{
-    const jobs = all ? [...(hasP3 ? [7] : []), 1, 2, 3, 4, 5, 6] : [single];
+    const jobs = all ? [8, 1, 2, ...(hasP3 ? [7] : []), 3, 4, 5, 6] : [single];   // ordre du thread : accroche, identité, financier, schéma, puis la suite
     for(const j of jobs){
       let blob;
-      if(j === 7){
+      if(j === 8){
+        if(sxPage !== 0 || sxZoomN > 0){ sxShow(0); await sxFrames(); }
+        blob = await sxExportCover(c, ov);
+      }else if(j === 7){
         if(sxPage !== 3 || sxZoomN > 0){ sxShow(3); await sxFrames(); }
         blob = await sxExportPage3(c, ov);
       }else{
@@ -15263,7 +15395,7 @@ function sxStep(d){
   const ovm = document.getElementById('sxOverlay');
   if(!ovm || ovm.dataset.mode === 'cmp') return;
   if(sxZoomN > 0){ const n = sxZoomN + d; if(n >= 1 && n <= 6) sxZoomTo(n); }
-  else { const n = sxPage + d; if(n >= 1 && n <= sxPages()) sxShow(n); }
+  else { const n = sxPage + d; if(n >= 0 && n <= sxPages()) sxShow(n); }
 }
 function sxOpen(){
   const c = getActive();
@@ -15272,12 +15404,13 @@ function sxOpen(){
   sxZoomN = 0; sxPage = 1;
   const pages = buildSummaryPages(c);
   const ov = document.createElement('div');
-  ov.className = 'sx-overlay'; ov.id = 'sxOverlay'; ov.dataset.pages = String(pages.length);
+  ov.className = 'sx-overlay'; ov.id = 'sxOverlay'; ov.dataset.pages = String(pages.length - 1);   // la page 0 (accroche) n'est pas comptée
   ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Résumé de l\'analyse');
-  ov.innerHTML = `<div class="sx-bar"><span class="sx-bar-t">Résumé de l'analyse</span><span class="sx-pages"><button type="button" class="sx-pgb on" data-sx-go="1">Page 1 <small>Sections 1 à 3</small></button><button type="button" class="sx-pgb" data-sx-go="2">Page 2 <small>Sections 4 à 6</small></button>${pages.length > 2 ? '<button type="button" class="sx-pgb" data-sx-go="3">Page 3 <small>Du CA au bénéfice</small></button>' : ''}<button type="button" class="sx-pgb sx-dlall" data-sx-downloadall>Tout télécharger</button><button type="button" class="sx-pgb sx-back" data-sx-zoom="0">&larr; Retour au résumé</button><button type="button" class="sx-pgb sx-dl" data-sx-download>Télécharger l'image</button></span><button type="button" class="sx-close" data-sx-close>Fermer &#10005;</button></div><button type="button" class="sx-arrow sx-prev sx-off" data-sx-step="-1" aria-label="Page précédente">${SX_ARROW_L}</button><button type="button" class="sx-arrow sx-next" data-sx-step="1" aria-label="Page suivante">${SX_ARROW_R}</button><div class="sx-scale">${pages.join('')}</div>`;
+  ov.innerHTML = `<div class="sx-bar"><span class="sx-bar-t">Résumé de l'analyse</span><span class="sx-pages"><button type="button" class="sx-pgb" data-sx-go="0">Accroche <small>Fiche pour le fil X</small></button><button type="button" class="sx-pgb on" data-sx-go="1">Page 1 <small>Sections 1 à 3</small></button><button type="button" class="sx-pgb" data-sx-go="2">Page 2 <small>Sections 4 à 6</small></button>${pages.length > 3 ? '<button type="button" class="sx-pgb" data-sx-go="3">Page 3 <small>Du CA au bénéfice</small></button>' : ''}<button type="button" class="sx-pgb sx-dlall" data-sx-downloadall>Tout télécharger</button><button type="button" class="sx-pgb sx-back" data-sx-zoom="0">&larr; Retour au résumé</button><button type="button" class="sx-pgb sx-dl" data-sx-download>Télécharger l'image</button></span><button type="button" class="sx-close" data-sx-close>Fermer &#10005;</button></div><button type="button" class="sx-arrow sx-prev sx-off" data-sx-step="-1" aria-label="Page précédente">${SX_ARROW_L}</button><button type="button" class="sx-arrow sx-next" data-sx-step="1" aria-label="Page suivante">${SX_ARROW_R}</button><div class="sx-scale">${pages.join('')}</div>`;
   document.body.appendChild(ov);
   document.body.classList.add('sx-lock');
   sxFit();
+  sxArrows();
   const btn = ov.querySelector('.sx-close'); if(btn) btn.focus();
 }
 function sxClose(){
