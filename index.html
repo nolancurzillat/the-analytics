@@ -747,6 +747,78 @@ input.company-name:focus{ outline:none; border-bottom-color:var(--blue); }
 .rpt-note{ margin-top:7px; font-size:12.5px; line-height:1.45; color:var(--ink-soft); display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; }
 .rpt-note-due{ color:var(--ink); }
 .rpt-note-due svg{ color:#f2994a; vertical-align:-2px; }
+/* Panneau « Mettre à jour » et relevés après chaque rapport (2026-10-31) */
+#updatePanel{ scroll-margin-top:78px; }
+#updatePanel:empty{ display:none; }
+.upd-panel{ margin:0 0 20px; padding:16px 20px 14px; border:1px solid color-mix(in srgb, #f2994a 50%, var(--border)); border-left:5px solid #f2994a; border-radius:14px; background:color-mix(in srgb, #f2994a 7%, var(--card)); }
+.upd-panel.upd-all{ border-color:color-mix(in srgb, var(--green) 50%, var(--border)); border-left-color:var(--green); background:color-mix(in srgb, var(--green) 7%, var(--card)); }
+.upd-head{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.upd-ico{ display:inline-flex; width:34px; height:34px; border-radius:50%; align-items:center; justify-content:center; background:color-mix(in srgb, #f2994a 22%, transparent); color:#f2994a; flex:0 0 auto; }
+.upd-ico svg{ width:18px; height:18px; }
+.upd-title{ display:flex; flex-direction:column; gap:1px; flex:1 1 240px; min-width:0; }
+.upd-title b{ font-size:16px; color:var(--ink); }
+.upd-title span{ font-size:13px; color:var(--ink-soft); }
+.upd-prog{ display:flex; align-items:center; gap:7px; font-size:13px; color:var(--ink-soft); }
+.upd-prog b{ font-size:16px; color:var(--ink); }
+.upd-bar{ display:block; width:110px; height:7px; border-radius:99px; background:var(--border); overflow:hidden; }
+.upd-bar u{ display:block; height:100%; background:#f2994a; text-decoration:none; border-radius:99px; }
+.upd-all .upd-bar u{ background:var(--green); }
+.upd-hint{ margin:10px 0 2px; font-size:13px; color:var(--ink-soft); line-height:1.45; }
+.upd-group{ margin-top:10px; }
+.upd-gl{ font-size:11.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:5px; }
+.upd-chips{ display:flex; flex-wrap:wrap; gap:6px; }
+.upd-chip{ display:inline-flex; align-items:center; border:1px solid var(--border-strong); border-radius:999px; background:var(--card); font-size:13px; }
+.upd-todo-chip{ border-color:#f2994a; }
+.upd-done{ opacity:.78; }
+.upd-go{ display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border:0; background:none; color:var(--ink); font:inherit; cursor:pointer; border-radius:999px; }
+.upd-go:hover{ background:color-mix(in srgb, var(--accent) 10%, transparent); }
+.upd-mark{ font-size:12px; font-weight:700; color:#f2994a; }
+.upd-done .upd-mark{ color:var(--green); }
+.upd-val{ color:var(--ink-soft); font-size:12px; white-space:nowrap; }
+.upd-go{ text-align:left; min-width:0; }
+.upd-chip{ max-width:100%; }
+.upd-same{ flex:0 0 auto; }
+.upd-same{ border:0; border-left:1px solid var(--border); background:none; padding:5px 10px; font:inherit; font-size:12px; color:var(--ink-soft); cursor:pointer; border-radius:0 999px 999px 0; }
+.upd-same:hover{ color:var(--ink); background:color-mix(in srgb, var(--accent) 10%, transparent); }
+.upd-foot{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-top:14px; padding-top:12px; border-top:1px solid var(--border); font-size:13px; color:var(--ink-soft); }
+.upd-link{ border:0; background:none; padding:0; font:inherit; color:var(--accent); text-decoration:underline; cursor:pointer; }
+.field-row.upd-todo > .field-label::before{ content:''; display:inline-block; width:8px; height:8px; margin-right:7px; border-radius:50%; background:#f2994a; vertical-align:1px; }
+.field-row.upd-flash{ animation:updFlash 1.9s ease; border-radius:10px; }
+@keyframes updFlash{ 0%,100%{ background:transparent; } 20%,70%{ background:color-mix(in srgb, #f2994a 24%, transparent); } }
+.rh{ --rh1:#2a5bea; --rh2:#c9a24a; --rh3:#06b6d4; }
+:root[data-theme="dark"] .rh{ --rh1:#7ba6ff; }
+.rh-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(270px, 1fr)); gap:12px; margin-top:14px; }
+.rh-card{ border:1px solid var(--border); border-radius:12px; padding:12px 14px 10px; background:var(--card); min-width:0; }
+.rh-ct{ font-size:12.5px; font-weight:700; color:var(--ink-soft); }
+.rh-cv{ display:flex; align-items:baseline; gap:8px; font-size:22px; font-weight:700; color:var(--ink); margin:2px 0 10px; }
+.rh-d{ font-size:12.5px; font-weight:700; }
+.rh-d.up{ color:var(--green); }
+.rh-d.down{ color:var(--red); }
+.rh-d.flat{ color:var(--ink-soft); }
+.rh-plot{ position:relative; height:96px; }
+.rh-bars{ position:absolute; inset:0; display:flex; gap:4px; }
+.rh-col{ position:relative; flex:1 1 0; min-width:0; }
+.rh-bar{ position:absolute; left:12%; right:12%; background:var(--accent); opacity:.5; border-radius:3px 3px 0 0; pointer-events:none; }
+.rh-bar.last{ opacity:1; }
+.rh-bar.neg{ background:var(--red); border-radius:0 0 3px 3px; }
+.rh-col:hover .rh-bar{ opacity:1; }
+.rh-zero{ position:absolute; left:0; right:0; height:1px; background:var(--border-strong); pointer-events:none; }
+.rh-svg{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; }
+.rh-svg polyline{ fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke; }
+.rh-gl{ stroke:var(--border); stroke-width:1; vector-effect:non-scaling-stroke; }
+.rh-dot{ position:absolute; width:7px; height:7px; margin:-5.5px 0 0 -5.5px; border:2px solid var(--card); border-radius:50%; background:var(--c); pointer-events:none; }
+.rh-hit{ position:absolute; top:0; bottom:0; }
+.rh-ax{ display:flex; justify-content:space-between; margin-top:6px; font-size:11.5px; color:var(--ink-soft); }
+.rh-leg{ display:flex; flex-wrap:wrap; gap:3px 12px; margin-top:6px; font-size:12px; color:var(--ink-soft); }
+.rh-lg{ display:inline-flex; align-items:center; gap:5px; }
+.rh-lg i{ width:10px; height:3px; border-radius:2px; }
+.rh-lg b{ color:var(--ink); }
+.rh-foot{ margin-top:4px; font-size:11.5px; color:var(--ink-soft); }
+.rh-btns{ display:flex; align-items:center; flex-wrap:wrap; gap:8px 14px; margin-top:14px; }
+.rh-del{ border:0; background:none; padding:0; font:inherit; font-size:12.5px; color:var(--ink-soft); text-decoration:underline; cursor:pointer; }
+.rh-del:hover{ color:var(--ink); }
+.ro-fiche [data-rh-snap], .ro-fiche [data-rh-del]{ display:none; }
+
 /* Même habillage que les autres cases de saisie (le sélecteur générique ne couvre que type=text/number) ; color-scheme pour que l'icône de calendrier suive le thème */
 .field-value input.report-date-input{
   width:auto; min-width:0; max-width:100%;
@@ -3713,6 +3785,7 @@ const SECTIONS = [
       {key:'impotsResultat', label:'Impôts sur les bénéfices', type:'text', money:true, optionalFill:true, span:3},
       {key:'chargesVentes', label:'SG&A (frais de vente et généraux)', type:'text', money:true, optionalFill:true, span:3},
       {key:'sankeyVisuel', label:"Du chiffre d'affaires au bénéfice", type:'computed-sankey', span:12},
+      {key:'reportHistory', label:"Évolution après chaque rapport", type:'computed-report-history', span:12, group:"Évolution dans le temps"},
     ]
   },
   {
@@ -4916,6 +4989,9 @@ function migrateCompany(c){
   // des actions (archiveThesisAndClear, logDecisionEvent). Absents des analyses créées avant ce changement.
   if(!Array.isArray(c.thesisHistory)) c.thesisHistory = [];
   if(!Array.isArray(c.decisionLog)) c.decisionLog = [];
+  // Relevés après chaque rapport et horodatage des saisies (2026-10-31) : voir « Relevés après chaque rapport »
+  if(!Array.isArray(c.reportSnaps)) c.reportSnaps = [];
+  if(!c.fTs || typeof c.fTs !== 'object' || Array.isArray(c.fTs)) c.fTs = {};
   // Ordres clôturés (2026-10-02) : voir la section ORDRES CLÔTURÉS
   if(!Array.isArray(c.closedTrades)) c.closedTrades = [];
   // Alertes personnalisées (2026-10-02) : voir la section ALERTES. Les tags ont été retirés le 2026-10-03 (demande de l'auteur) : seul le tag « Reçue »
@@ -5574,6 +5650,7 @@ function updateField(sectionKey, fieldKey, value, fieldType){
   }
   const prevValue = c.fields[sectionKey][fieldKey];
   c.fields[sectionKey][fieldKey] = value;
+  stampField(c, sectionKey, fieldKey);
   if(sectionKey === 'personnelle' && fieldKey === 'decision' && prevValue !== value){
     journalChange(c, 'decision', prevValue, value, (a, b) => `Décision modifiée : de ${a} à ${b}.`);
   }
@@ -6655,6 +6732,7 @@ function refreshDerived(){
   refreshInsightsSection();
   refreshCompanySummary();
   refreshSectionProgress();
+  refreshUpdatePanel();
   refreshWallStreetChart();
   refreshSectionNavPosition();
   renderTabs();
@@ -6689,6 +6767,7 @@ function updateDuo(sectionKey, fieldKey, subKey, value){
     c.fields[sectionKey][fieldKey] = {};
   }
   c.fields[sectionKey][fieldKey][subKey] = value;
+  stampField(c, sectionKey, fieldKey);
   touchUpdated(c);
   saveState();
   refreshDerived();
@@ -7280,7 +7359,7 @@ function setWsReco(v, commit){
   val.wallStreet.unit = 'price';
   val.wallStreet.reco = v === null ? '' : String(Math.max(1, Math.min(5, Math.round(v * 10) / 10)));
   paintWsGauge();
-  if(commit){ touchUpdated(c); saveState(); refreshInsightsSection(); refreshValuationSummary(); }
+  if(commit){ stampField(c, 'valorisation', 'wallStreet'); touchUpdated(c); saveState(); refreshInsightsSection(); refreshValuationSummary(); }
 }
 function bindWsGauge(){
   const wrap = document.getElementById('wsGaugeWrap');
@@ -8168,6 +8247,7 @@ function updateWallStreetField(sectionKey, fieldKey, subKey, value){
   }
   c.fields[sectionKey][fieldKey].unit = 'price';   // ce que l'on saisit ici est un prix cible, jamais un % (voir applyLegacyWallStreet)
   c.fields[sectionKey][fieldKey][subKey] = value;
+  stampField(c, sectionKey, fieldKey);
   touchUpdated(c);
   saveState();
 }
@@ -9232,13 +9312,341 @@ function markReportDone(id){
   const c = state.companies.find(x => x.id === id);
   if(!c) return;
   const r = reportInfo(c);
-  if(r && r.due) notifLog('report', c, `Rapport du ${formatDateFr(r.iso)} : données mises à jour.`, `report:${c.id}:${r.iso}`);   // l'historique des notifications ne garde que ce qui a été traité
+  let snapped = false;
+  if(r && r.due){
+    notifLog('report', c, `Rapport du ${formatDateFr(r.iso)} : données mises à jour.`, `report:${c.id}:${r.iso}`);
+    snapped = recordReportSnap(c, r.iso, false);
+  }
   c.fields.identite.prochainRapport = '';
   touchUpdated(c);
   saveState();
   render();
-  showToast('Rappel retiré : saisissez la date du prochain rapport quand vous la connaîtrez.');
+  showToast(snapped ? 'Relevé enregistré pour les graphiques d\'évolution. Rappel retiré : saisissez la date du prochain rapport quand vous la connaîtrez.' : 'Rappel retiré : saisissez la date du prochain rapport quand vous la connaîtrez.');
 }
+// ---------- Relevés après chaque rapport et panneau « Mettre à jour » (2026-10-31, demande de l'auteur) ----------
+// `c.reportSnaps` : une photo datée des chiffres clés (CA, bénéfice net, FCF, EPS, marges, dette nette, score), enregistrée à chaque « Données mises à jour »
+// (ou par le bouton « Enregistrer un relevé maintenant »). Elle alimente les petits graphiques de la section Financier. Rien n'est inventé : l'historique
+// démarre au premier relevé et ne contient que ce que l'utilisateur a saisi.
+// `c.fTs['section.champ']` : horodatage de la dernière saisie de chaque champ, pour savoir ce qui a été mis à jour depuis la date du rapport.
+// Le panneau `#updatePanel` (haut de la fiche) n'apparaît QUE si la date du rapport est atteinte et tant que la date n'a pas été effacée.
+const SNAP_MAX = 40;
+const SNAP_SHOWN = 12;
+const UPDATE_ITEMS = [
+  { key:'financier.chiffreAffaires', label:"Chiffre d'affaires", g:'Financier : colonne TTM' },
+  { key:'financier.beneficeNet', label:'Bénéfice net', g:'Financier : colonne TTM' },
+  { key:'financier.fcf', label:'Free Cash Flow', g:'Financier : colonne TTM' },
+  { key:'financier.capex', label:'Capex', g:'Financier : colonne TTM' },
+  { key:'financier.margeBrute', label:'Marge brute', g:'Financier : colonne TTM' },
+  { key:'financier.margeNette', label:'Marge nette', g:'Financier : colonne TTM' },
+  { key:'financier.roe', label:'ROE', g:'Financier : colonne TTM' },
+  { key:'financier.roic', label:'ROIC', g:'Financier : colonne TTM' },
+  { key:'financier.roa', label:'ROA', g:'Financier : colonne TTM' },
+  { key:'financier.profitBrut', label:'Profit brut (bénéfice brut)', g:'Compte de résultat du schéma : colonne TTM' },
+  { key:'financier.operatingIncome', label:"Résultat d'exploitation", g:'Compte de résultat du schéma : colonne TTM' },
+  { key:'financier.impotsResultat', label:'Impôts sur les bénéfices', g:'Compte de résultat du schéma : colonne TTM' },
+  { key:'financier.chargesVentes', label:'SG&A (frais de vente et généraux)', g:'Compte de résultat du schéma : colonne TTM' },
+  { key:'financier.detteNette', label:'Dette nette', g:'Bilan : dernier rapport publié' },
+  { key:'financier.detteTotal', label:'Dette totale', g:'Bilan : dernier rapport publié' },
+  { key:'financier.totalActif', label:'Total actif', g:'Bilan : dernier rapport publié' },
+  { key:'valorisation.epsActuel', label:'EPS actuel', g:'Valorisation et prévisions' },
+  { key:'valorisation.epsEstime1an', label:'EPS estimé (12 mois)', g:'Valorisation et prévisions' },
+  { key:'valorisation.croissanceEstimeeEps', label:'Croissance estimée EPS (3 ans)', g:'Valorisation et prévisions' },
+  { key:'valorisation.wallStreet', label:'Wall Street Analyse (1 an)', g:'Valorisation et prévisions' },
+  { key:'valorisation.valeurIntrinseque', label:'Valeur intrinsèque', g:'Valorisation et prévisions' },
+  { key:'valorisation.bearCase', label:'Bear case (pessimiste)', g:'Valorisation et prévisions' },
+  { key:'valorisation.bullCase', label:'Bull case (optimiste)', g:'Valorisation et prévisions' },
+  { key:'valorisation.positionShort', label:'Position short', g:'Valorisation et prévisions' },
+  { key:'croissance.croissanceAttendueCA', label:'Croissance attendue du CA (3 ans)', g:'Valorisation et prévisions' },
+  { key:'croissance.croissanceAttendueBenef', label:'Croissance attendue du bénéfice net (3 ans)', g:'Valorisation et prévisions' }
+];
+function updDateLocal(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function stampField(c, sectionKey, fieldKey){
+  if(!c) return;
+  if(!c.fTs || typeof c.fTs !== 'object' || Array.isArray(c.fTs)) c.fTs = {};
+  c.fTs[sectionKey + '.' + fieldKey] = Date.now();
+}
+function updRaw(c, key){
+  const p = key.split('.');
+  return c.fields[p[0]] ? c.fields[p[0]][p[1]] : undefined;
+}
+function updHasValue(v){
+  if(v === undefined || v === null) return false;
+  if(typeof v === 'object') return ['max', 'moy', 'min', 'reco', 'cagr'].some(k => String(v[k] || '').trim() !== '');
+  return String(v).trim() !== '';
+}
+function updFieldDef(key){
+  const p = key.split('.');
+  const s = SECTIONS.find(x => x.key === p[0]);
+  return s ? s.fields.find(f => f.key === p[1]) : null;
+}
+function updValueText(c, key){
+  const v = updRaw(c, key), def = updFieldDef(key) || {};
+  let t = '';
+  if(v && typeof v === 'object') t = String(v.cagr || v.moy || '').trim();
+  else t = String(v === undefined || v === null ? '' : v).trim();
+  if(!t) return '';
+  if(t.length > 14) t = t.slice(0, 13) + '…';
+  if(def.percent || (v && typeof v === 'object' && v.cagr)) t += ' %';
+  else if(def.money && /^[\d\s.,-]+$/.test(t)) t += ' ' + c.currency;
+  return t;
+}
+function updReportStart(iso){
+  const p = String(iso).split('-').map(Number);
+  return new Date(p[0], p[1] - 1, p[2]).getTime();
+}
+// Pour chaque donnée DÉJÀ renseignée : mise à jour (saisie depuis la date du rapport) ou pas encore
+function updStatus(c, r){
+  const start = updReportStart(r.iso), ts = c.fTs || {};
+  return UPDATE_ITEMS.filter(it => updHasValue(updRaw(c, it.key))).map(it => Object.assign({}, it, { done: Number(ts[it.key]) >= start }));
+}
+function updatePanelHtml(c){
+  if(!c || c === roCompany) return '';
+  const r = reportInfo(c);
+  if(!r || !r.due) return '';
+  const items = updStatus(c, r);
+  const done = items.filter(i => i.done).length, total = items.length;
+  const all = !total || done === total;
+  const pct = total ? Math.round(done / total * 100) : 100;
+  const groups = [];
+  items.forEach(it => {
+    let g = groups.find(x => x.g === it.g);
+    if(!g){ g = { g:it.g, items:[] }; groups.push(g); }
+    g.items.push(it);
+  });
+  const chip = it => {
+    const val = updValueText(c, it.key);
+    const label = `<button type="button" class="upd-go" data-upd-go="${it.key}"><span class="upd-mark">${it.done ? '✓' : '○'}</span><span class="upd-name">${escapeHtml(it.label)}</span>${val ? `<span class="upd-val" data-i18n="off">${escapeHtml(val)}</span>` : ''}</button>`;
+    return it.done
+      ? `<span class="upd-chip upd-done">${label}</span>`
+      : `<span class="upd-chip upd-todo-chip">${label}<button type="button" class="upd-same" data-upd-same="${it.key}" data-tooltip="<div class='tt-desc'>La valeur n'a pas changé depuis le dernier rapport : la marquer comme vérifiée.</div>">inchangé</button></span>`;
+  };
+  const body = groups.map(g => `<div class="upd-group"><div class="upd-gl">${escapeHtml(g.g)}</div><div class="upd-chips">${g.items.map(chip).join('')}</div></div>`).join('');
+  const when = `${escapeHtml(formatDateFr(r.iso))} (${reportWhen(r)})`;
+  return `<div class="upd-panel${all ? ' upd-all' : ''}">
+    <div class="upd-head">
+      <span class="upd-ico">${REPORT_BELL}</span>
+      <div class="upd-title"><b>Rapport publié : mettez à jour vos données</b><span>Rapport du ${when}</span></div>
+      <div class="upd-prog"><b>${done} / ${total}</b> <span>mises à jour</span><i class="upd-bar"><u style="width:${pct}%"></u></i></div>
+    </div>
+    <div class="upd-hint">Cliquez sur une donnée pour aller à sa case. Reprenez la colonne TTM du même site, le même jour. Un point orange marque les cases à mettre à jour.</div>
+    ${body || '<div class="upd-hint">Aucun chiffre n\'est encore renseigné dans cette analyse.</div>'}
+    <div class="upd-foot">
+      <div><span>Pensez aussi à relire votre <button type="button" class="upd-link" data-upd-jump="sec-personnelle">thèse et votre conviction</button>.</span> <span>Un relevé daté sera enregistré pour les graphiques d'évolution.</span></div>
+      <button type="button" class="btn ${all ? 'btn-primary' : 'btn-outline'} btn-sm" data-rpt-done="${escapeHtml(c.id)}">${all ? 'Terminer : tout est à jour' : 'Données mises à jour'}</button>
+    </div>
+  </div>`;
+}
+function updFindField(key){
+  const p = key.split('.');
+  const q = `[data-section="${p[0]}"][data-field="${p[1]}"],[data-duo-section="${p[0]}"][data-duo-field="${p[1]}"],[data-ws-section="${p[0]}"][data-ws-field="${p[1]}"]`;
+  return document.querySelector(q);
+}
+function markUpdateRows(c){
+  document.querySelectorAll('.field-row.upd-todo').forEach(row => row.classList.remove('upd-todo'));
+  if(!c || c === roCompany) return;
+  const r = reportInfo(c);
+  if(!r || !r.due) return;
+  updStatus(c, r).forEach(it => {
+    if(it.done) return;
+    const el = updFindField(it.key), row = el && el.closest('.field-row');
+    if(row) row.classList.add('upd-todo');
+  });
+}
+function bindUpdatePanel(el){
+  el.querySelectorAll('[data-upd-go]').forEach(b => { b.onclick = () => {
+    const f = updFindField(b.dataset.updGo);
+    if(!f) return;
+    const row = f.closest('.field-row') || f;
+    row.scrollIntoView({ behavior:'smooth', block:'center' });
+    row.classList.add('upd-flash');
+    setTimeout(() => row.classList.remove('upd-flash'), 1900);
+    setTimeout(() => { try{ f.focus({ preventScroll:true }); }catch(e){} }, 500);
+  }; });
+  el.querySelectorAll('[data-upd-same]').forEach(b => { b.onclick = e => {
+    e.stopPropagation();
+    const c = getActive();
+    if(!c) return;
+    const p = b.dataset.updSame.split('.');
+    stampField(c, p[0], p[1]);
+    touchUpdated(c);
+    saveState();
+    refreshUpdatePanel();
+  }; });
+  el.querySelectorAll('[data-upd-jump]').forEach(b => { b.onclick = () => { const t = document.getElementById(b.dataset.updJump); if(t) t.scrollIntoView({ behavior:'smooth', block:'start' }); }; });
+  bindReportDone(el);
+}
+function refreshUpdatePanel(){
+  const c = getActive();
+  const el = document.getElementById('updatePanel');
+  if(!c || !el) return;
+  const html = updatePanelHtml(c);
+  if(el._h !== html){
+    el._h = html;
+    el.innerHTML = html;
+    if(html) bindUpdatePanel(el);
+  }
+  markUpdateRows(c);
+}
+
+// ----- Relevés (option A : automatiques à « Données mises à jour », plus un bouton manuel) -----
+function snapNum(x){ return (x !== null && x !== undefined && Number.isFinite(x)) ? x : null; }
+function reportSnapValues(c){
+  const f = c.fields.financier || {}, v = c.fields.valorisation || {};
+  const ca = snapNum(parseMoney(f.chiffreAffaires)), net = snapNum(parseMoney(f.beneficeNet)), fcf = snapNum(parseMoney(f.fcf));
+  const nd = snapNum(parseMoney(f.detteNette)), op = snapNum(parseMoney(f.operatingIncome)), pb = snapNum(parseMoney(f.profitBrut));
+  const r1 = x => x === null ? null : Math.round(x * 10) / 10;
+  let mb = snapNum(num(f.margeBrute));
+  if(mb === null && pb !== null && ca !== null && ca > 0) mb = pb / ca * 100;
+  let mn = snapNum(num(f.margeNette));
+  if(mn === null && net !== null && ca !== null && ca > 0) mn = net / ca * 100;
+  const mo = (op !== null && ca !== null && ca > 0) ? op / ca * 100 : null;
+  return { ca, net, fcf, eps:snapNum(num(v.epsActuel)), mb:r1(mb), mo:r1(mo), mn:r1(mn), nd, sc:r1(snapNum(computeGlobalScore(c))) };
+}
+function reportSnapList(c){
+  return (Array.isArray(c.reportSnaps) ? c.reportSnaps : []).slice().sort((a, b) => a.d < b.d ? -1 : (a.d > b.d ? 1 : 0));
+}
+// Enregistre une photo ; renvoie vrai si elle a été ajoutée ou remplacée. Sans `force`, une photo identique à la précédente est ignorée (rien n'a changé).
+function recordReportSnap(c, iso, force){
+  const vals = reportSnapValues(c);
+  if(!['ca', 'net', 'fcf', 'eps', 'nd'].some(k => vals[k] !== null)) return false;
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(String(iso)) ? iso : updDateLocal();
+  if(!Array.isArray(c.reportSnaps)) c.reportSnaps = [];
+  const snap = Object.assign({ d, t:Date.now() }, vals);
+  const i = c.reportSnaps.findIndex(s => s.d === d);
+  if(i >= 0) c.reportSnaps[i] = snap;
+  else{
+    const list = reportSnapList(c), last = list[list.length - 1];
+    if(!force && last && ['ca', 'net', 'fcf', 'eps', 'mb', 'mo', 'mn', 'nd'].every(k => last[k] === snap[k])) return false;
+    c.reportSnaps.push(snap);
+  }
+  c.reportSnaps = reportSnapList(c).slice(-SNAP_MAX);
+  return true;
+}
+function rhTip(d, rows){
+  return `<div class='tt-desc'><b>${escapeHtml(formatDateFrShort(d))}</b></div>` + rows.map(r => `<div class='tt-row'>${r.color ? `<span class='tt-dot' style='background:${r.color}'></span>` : ''}<span>${escapeHtml(r.text)}</span></div>`).join('');
+}
+function rhDelta(pts, opt){
+  if(pts.length < 2 || opt.neutral) return '';
+  const a = pts[pts.length - 2].v, b = pts[pts.length - 1].v;
+  if(a <= 0) return '';
+  const p = (b - a) / Math.abs(a) * 100;
+  const cls = opt.neutral ? 'flat' : (Math.abs(p) < 0.5 ? 'flat' : (p > 0 ? 'up' : 'down'));
+  return `<span class="rh-d ${cls}">${p > 0 ? '+' : ''}${fmtNum(p, 1)} %</span>`;
+}
+function rhBarsCard(title, pts, fmt, opt){
+  if(pts.length < 2) return '';
+  const vals = pts.map(p => p.v);
+  const max = Math.max(0, ...vals), min = Math.min(0, ...vals), span = (max - min) || 1;
+  const cols = pts.map((p, i) => {
+    const top = (max - Math.max(p.v, 0)) / span * 100, h = Math.max(Math.abs(p.v) / span * 100, 1.5);
+    const neg = p.v < 0 && !opt.neutral;
+    return `<div class="rh-col" data-tooltip="${rhTip(p.d, [{ text:title + ' : ' + fmt(p.v) }])}"><i class="rh-bar${neg ? ' neg' : ''}${i === pts.length - 1 ? ' last' : ''}" style="top:${top.toFixed(2)}%;height:${h.toFixed(2)}%"></i></div>`;
+  }).join('');
+  const zero = min < 0 ? `<span class="rh-zero" style="top:${(max / span * 100).toFixed(2)}%"></span>` : '';
+  const foot = opt.foot && vals.some(v => v < 0) ? `<div class="rh-foot">${opt.foot}</div>` : '';
+  return `<div class="rh-card"><div class="rh-ct">${title}</div><div class="rh-cv">${fmt(vals[vals.length - 1])}${rhDelta(pts, opt)}</div><div class="rh-plot"><div class="rh-bars">${cols}</div>${zero}</div><div class="rh-ax"><span>${escapeHtml(formatDateFrShort(pts[0].d))}</span><span>${escapeHtml(formatDateFrShort(pts[pts.length - 1].d))}</span></div>${foot}</div>`;
+}
+// Courbes : `series` = [{ key, label, color }], `pts` = relevés ; les valeurs manquantes interrompent la courbe
+function rhLinesCard(title, snaps, series, fmt, big){
+  const have = snaps.filter(s => series.some(se => s[se.key] !== null && s[se.key] !== undefined));
+  if(have.length < 2) return '';
+  const all = [];
+  have.forEach(s => series.forEach(se => { if(s[se.key] !== null && s[se.key] !== undefined) all.push(s[se.key]); }));
+  let lo = Math.min(...all), hi = Math.max(...all);
+  const pad = (hi - lo) * 0.12 || Math.max(Math.abs(hi) * 0.1, 1);
+  lo -= pad; hi += pad;
+  const n = have.length;
+  const X = i => n === 1 ? 50 : 5 + i / (n - 1) * 90, Y = v => (hi - v) / (hi - lo) * 100;
+  let lines = '', dots = '';
+  series.forEach(se => {
+    let seg = [];
+    const flush = () => { if(seg.length > 1) lines += `<polyline points="${seg.join(' ')}" style="stroke:${se.color}"/>`; seg = []; };
+    have.forEach((s, i) => {
+      const v = s[se.key];
+      if(v === null || v === undefined){ flush(); return; }
+      seg.push(X(i).toFixed(2) + ',' + Y(v).toFixed(2));
+      dots += `<i class="rh-dot" style="left:${X(i).toFixed(2)}%;top:${Y(v).toFixed(2)}%;--c:${se.color}"></i>`;
+    });
+    flush();
+  });
+  const hit = have.map((s, i) => {
+    const rows = series.filter(se => s[se.key] !== null && s[se.key] !== undefined).map(se => ({ color:se.tip, text:se.label + ' : ' + fmt(s[se.key]) }));
+    return `<div class="rh-hit" style="left:${(X(i) - 50 / n).toFixed(2)}%;width:${(100 / n).toFixed(2)}%" data-tooltip="${rhTip(s.d, rows)}"></div>`;
+  }).join('');
+  const last = have[have.length - 1];
+  const leg = series.map(se => {
+    const v = last[se.key];
+    return `<span class="rh-lg"><i style="background:${se.color}"></i>${se.label}${v !== null && v !== undefined ? ` <b>${fmt(v)}</b>` : ''}</span>`;
+  }).join('');
+  return `<div class="rh-card"><div class="rh-ct">${title}</div>${big ? `<div class="rh-cv">${fmt(last[series[0].key])}</div>` : ''}<div class="rh-plot"><svg class="rh-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line class="rh-gl" x1="0" x2="100" y1="25" y2="25"/><line class="rh-gl" x1="0" x2="100" y1="50" y2="50"/><line class="rh-gl" x1="0" x2="100" y1="75" y2="75"/>${lines}</svg>${dots}${hit}</div><div class="rh-ax"><span>${escapeHtml(formatDateFrShort(have[0].d))}</span><span>${escapeHtml(formatDateFrShort(last.d))}</span></div><div class="rh-leg">${leg}</div></div>`;
+}
+function reportHistoryHtml(c){
+  const all = reportSnapList(c), snaps = all.slice(-SNAP_SHOWN), cur = c.currency;
+  const pts = key => snaps.filter(s => s[key] !== null && s[key] !== undefined).map(s => ({ d:s.d, v:s[key] }));
+  const money = v => compactMoney(v, cur);
+  const pct = v => fmtNum(v, 1) + ' %';
+  const btns = `<div class="rh-btns"><button type="button" class="btn btn-outline btn-sm" data-rh-snap>Enregistrer un relevé maintenant</button>${all.length ? '<button type="button" class="rh-del" data-rh-del>Supprimer le dernier relevé</button>' : ''}</div>`;
+  let sub, body = '';
+  if(all.length < 2){
+    sub = 'Chaque fois que vous cliquez sur « Données mises à jour » après un rapport, un relevé daté est enregistré : chiffre d\'affaires, bénéfice net, FCF, EPS, marges, dette nette et score. Les graphiques se construisent ainsi tout seuls, à partir de maintenant.';
+    body = `<div class="pev-empty">${all.length ? 'Un relevé est enregistré. Le graphique apparaît dès le deuxième.' : 'Aucun relevé pour le moment.'}</div>`;
+  }else{
+    sub = 'Une photo de vos chiffres à chaque rapport mis à jour. Passez la souris sur une barre ou un point pour voir la valeur.';
+    const cards = [
+      rhBarsCard("Chiffre d'affaires", pts('ca'), money, {}),
+      rhBarsCard('Bénéfice net', pts('net'), money, {}),
+      rhBarsCard('Free Cash Flow', pts('fcf'), money, {}),
+      rhBarsCard('EPS', pts('eps'), v => fmtNum(v, 2) + ' ' + cur, {}),
+      rhBarsCard('Dette nette', pts('nd'), money, { neutral:true, foot:'Sous zéro : plus de trésorerie que de dette.' }),
+      rhLinesCard('Marges', snaps, [{ key:'mb', label:'Brute', color:'var(--rh1)', tip:'#7ba6ff' }, { key:'mo', label:'Exploitation', color:'var(--rh2)', tip:'#e0b95a' }, { key:'mn', label:'Nette', color:'var(--rh3)', tip:'#22d3ee' }], pct, false),
+      rhLinesCard('Score composite', snaps, [{ key:'sc', label:'Score', color:'var(--rh1)', tip:'#7ba6ff' }], v => fmtNum(v, 1), true)
+    ].filter(Boolean);
+    body = `<div class="rh-grid">${cards.join('')}</div>`;
+  }
+  return `<div class="pev-h">Évolution après chaque rapport</div><div class="pev-sub">${sub}</div>${body}${btns}`;
+}
+function refreshReportHistory(){
+  const c = getActive();
+  const el = document.getElementById('reportHistory');
+  if(!c || !el) return;
+  el.innerHTML = reportHistoryHtml(c);
+  bindReportHistory();
+}
+function bindReportHistory(){
+  const el = document.getElementById('reportHistory');
+  if(!el) return;
+  const snap = el.querySelector('[data-rh-snap]');
+  if(snap) snap.onclick = () => {
+    const c = getActive();
+    if(!c) return;
+    if(!recordReportSnap(c, updDateLocal(), true)){ showToast("Renseignez d'abord quelques chiffres (chiffre d'affaires, bénéfice net, FCF...)."); return; }
+    touchUpdated(c);
+    saveState();
+    refreshReportHistory();
+    showToast('Relevé enregistré.');
+  };
+  const del = el.querySelector('[data-rh-del]');
+  if(del) del.onclick = () => {
+    const c = getActive();
+    if(!c) return;
+    if(!del.dataset.sure){
+      del.dataset.sure = '1';
+      del.textContent = 'Confirmer ?';
+      setTimeout(() => { if(del.isConnected){ delete del.dataset.sure; del.textContent = 'Supprimer le dernier relevé'; } }, 3000);
+      return;
+    }
+    const list = reportSnapList(c);
+    list.pop();
+    c.reportSnaps = list;
+    touchUpdated(c);
+    saveState();
+    refreshReportHistory();
+  };
+}
+
 // Entreprises dont le rapport est attendu : d'abord celles à mettre à jour (le plus ancien en premier), puis les prochains rapports
 function reportList(){
   return state.companies.map(c => ({ c, r: reportInfo(c) })).filter(x => x.r && (x.r.due || x.r.days <= REPORT_SOON_DAYS))
@@ -9247,7 +9655,7 @@ function reportList(){
 function buildReportsCard(){
   const list = reportList();
   if(!list.length) return '';
-  const rows = (spaceMore.reports ? list : list.slice(0, SPACE_LIST_MAX)).map(({ c, r }) => `<div class="rv-row"><button type="button" class="tg-row rv-open" data-rec-open="${escapeHtml(c.id)}" data-rec-jump="sec-identite">${miniAv(c)}<span class="tg-id"><span class="tg-name">${escapeHtml(c.name || 'Sans nom')}${r.due ? ` <span class="rpt-flag rpt-flag-in">${REPORT_BELL}</span>` : ''}</span><span class="tg-vals">${r.due ? `Rapport du ${escapeHtml(formatDateFr(r.iso))} (${reportWhen(r)}) : données à mettre à jour` : `Prochain rapport le ${escapeHtml(formatDateFr(r.iso))} (${reportWhen(r)})`}${c.position && c.position.active ? ' · position ouverte' : ''}</span></span></button>${r.due ? `<button type="button" class="btn btn-outline btn-sm" data-rpt-done="${escapeHtml(c.id)}">Données mises à jour</button>` : ''}</div>`).join('');
+  const rows = (spaceMore.reports ? list : list.slice(0, SPACE_LIST_MAX)).map(({ c, r }) => `<div class="rv-row"><button type="button" class="tg-row rv-open" data-rec-open="${escapeHtml(c.id)}" data-rec-jump="${r.due ? 'updatePanel' : 'sec-identite'}">${miniAv(c)}<span class="tg-id"><span class="tg-name">${escapeHtml(c.name || 'Sans nom')}${r.due ? ` <span class="rpt-flag rpt-flag-in">${REPORT_BELL}</span>` : ''}</span><span class="tg-vals">${r.due ? `Rapport du ${escapeHtml(formatDateFr(r.iso))} (${reportWhen(r)}) : données à mettre à jour` : `Prochain rapport le ${escapeHtml(formatDateFr(r.iso))} (${reportWhen(r)})`}${c.position && c.position.active ? ' · position ouverte' : ''}</span></span></button>${r.due ? `<button type="button" class="btn btn-outline btn-sm" data-rpt-done="${escapeHtml(c.id)}">Données mises à jour</button>` : ''}</div>`).join('');
   const nDue = list.filter(x => x.r.due).length;
   return spaceCard('s12', 'Rapports', nDue ? `${nDue} analyse${nDue > 1 ? 's' : ''} à mettre à jour, puis les rapports des ${REPORT_SOON_DAYS} prochains jours` : `Rapports attendus dans les ${REPORT_SOON_DAYS} prochains jours`, `<div class="tg-list">${rows}</div>${spaceMoreBtn('reports', list.length)}`);
 }
@@ -9478,7 +9886,7 @@ function notifPanelHtml(){
   const NF_BELL = REPORT_BELL, NF_ZAP = ALERT_ZAP;
   const actRows = act.map(it => it.kind === 'alert'
     ? `<div class="nf-row nf-active"><span class="nf-ico nf-ico-alert">${NF_ZAP}</span><button type="button" class="nf-main" data-nf-open="${escapeHtml(it.c.id)}" data-nf-jump="alertsBlock"><b>${escapeHtml(it.c.name || 'Sans nom')}</b><span>${escapeHtml(alertText(it.c, it.a))}</span><small>${escapeHtml(alertNow(it.c, it.a))}</small></button><button type="button" class="nf-btn" data-nf-ack="${escapeHtml(it.c.id)}|${escapeHtml(it.a.id)}">Compris</button></div>`
-    : `<div class="nf-row nf-active"><span class="nf-ico nf-ico-report">${NF_BELL}</span><button type="button" class="nf-main" data-nf-open="${escapeHtml(it.c.id)}" data-nf-jump="sec-identite"><b>${escapeHtml(it.c.name || 'Sans nom')}</b><span>Rapport publié : mettez à jour vos données</span><small>Prévu le ${escapeHtml(formatDateFr(it.r.iso))} (${reportWhen(it.r)})</small></button><button type="button" class="nf-btn" data-nf-rptdone="${escapeHtml(it.c.id)}">Mis à jour</button></div>`).join('');
+    : `<div class="nf-row nf-active"><span class="nf-ico nf-ico-report">${NF_BELL}</span><button type="button" class="nf-main" data-nf-open="${escapeHtml(it.c.id)}" data-nf-jump="updatePanel"><b>${escapeHtml(it.c.name || 'Sans nom')}</b><span>Rapport publié : mettez à jour vos données</span><small>Prévu le ${escapeHtml(formatDateFr(it.r.iso))} (${reportWhen(it.r)})</small></button><button type="button" class="nf-btn" data-nf-rptdone="${escapeHtml(it.c.id)}">Mis à jour</button></div>`).join('');
   const histRows = hist.map(n => {
     const exists = state.companies.some(c => c.id === n.cid);
     const name = (state.companies.find(c => c.id === n.cid) || {}).name || n.name;
@@ -10537,6 +10945,17 @@ function cleanImportedCompany(raw){
   // Alertes importées (NON fiables) : types connus, valeurs numériques, identifiants nettoyés
   c.alerts = (Array.isArray(c.alerts) ? c.alerts : []).filter(a => a && ALERT_TYPES[a.type] && (!ALERT_TYPES[a.type].needs || (Number.isFinite(Number(a.value)) && Number(a.value) > 0))).slice(0, ALERT_MAX)
     .map((a, i) => ({ id:String(a.id || ('a' + i)).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40) || ('a' + i), type:a.type, value:ALERT_TYPES[a.type].needs ? Number(a.value) : null, on:a.on !== false, fired:!!a.fired, ack:!!a.ack, firedAt:(typeof a.firedAt === 'string' && !isNaN(Date.parse(a.firedAt))) ? new Date(a.firedAt).toISOString() : '' }));
+  // Relevés après chaque rapport et horodatages des saisies importés (NON fiables) : dates au bon format, nombres seulement
+  c.reportSnaps = (Array.isArray(c.reportSnaps) ? c.reportSnaps : []).filter(s => s && isoRe.test(String(s.d))).slice(-40).map(s => {
+    const o = { d:s.d, t:(typeof s.t === 'number' && Number.isFinite(s.t)) ? s.t : 0 };
+    ['ca', 'net', 'fcf', 'eps', 'mb', 'mo', 'mn', 'nd', 'sc'].forEach(k => { o[k] = (typeof s[k] === 'number' && Number.isFinite(s[k])) ? s[k] : null; });
+    return o;
+  });
+  {
+    const ft = {};
+    if(c.fTs && typeof c.fTs === 'object' && !Array.isArray(c.fTs)) Object.keys(c.fTs).slice(0, 120).forEach(k => { if(/^[a-zA-Z]+\.[a-zA-Z0-9]+$/.test(k) && typeof c.fTs[k] === 'number' && Number.isFinite(c.fTs[k])) ft[k] = c.fTs[k]; });
+    c.fTs = ft;
+  }
   c.fromShare = c.fromShare === true;   // seul l'indicateur « Reçue » survit (voir migrateCompany, qui convertit aussi l'ancien tag « Reçue »)
   if(!Number.isFinite(c.reviewedTs)) delete c.reviewedTs;
   // Valeurs de référence du journal de bord (journalChange) : types connus, chaînes courtes, horodatages numériques
@@ -13278,7 +13697,7 @@ let shareUi = { id:'', link:'', busy:false, msg:'', cls:'', links:null };
 // décision et prix cible sont aussi vidés.
 function sanitizeSharedCompany(c, withNotes){
   c.position = { active:false, quantite:'', prixAchat:'', montantInvesti:'' };
-  c.decisionLog = []; c.closedTrades = []; c.alerts = []; c.thesisHistory = []; delete c.tags; delete c.fromShare;
+  c.decisionLog = []; c.closedTrades = []; c.alerts = []; c.thesisHistory = []; delete c.tags; delete c.fromShare; delete c.fTs;
   ['reviewedTs', 'priceError', 'priceUpdatedAt', 'priceMicCode', 'priceMicCodeFor', 'priceSource', 'priceDay', 'avSymbol', 'avSymbolFor'].forEach(k => { delete c[k]; });
   if(c.fields.identite) c.fields.identite.prochainRapport = '';
   const p = c.fields.personnelle || (c.fields.personnelle = {});
@@ -13617,7 +14036,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 318;
+const APP_BUILD = 319;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -14699,6 +15118,7 @@ function renderInner(){
       </div>
       <div class="kpis" id="company-kpis">${buildCompanyKpis(c)}</div>
     </div>
+    <div id="updatePanel"></div>
     ${buildSectionNav(c)}
   `;
 
@@ -14731,6 +15151,10 @@ function renderInner(){
         const ph = computePeRelatifHisto(c);
         html += `<div class="field-row"><div class="field-label" data-tooltip="${fieldDescTooltip(field.key)}">${field.label}</div>
           <div class="field-value"><div class="value-with-badge"><span class="computed" id="computed-${section.key}-${field.key}" data-tooltip="${tipPeRelatifHisto(c)}">${fmtRatioPos(ph)}</span>${renderBadge(field.key, ph, `badge-${section.key}-${field.key}`)}</div></div></div>`;
+        return;
+      }
+      if(field.type === 'computed-report-history'){
+        html += `<div class="field-row"><div class="pev rh" id="reportHistory">${reportHistoryHtml(c)}</div></div>`;
         return;
       }
       if(field.type === 'computed-sankey'){
@@ -15171,6 +15595,8 @@ function renderInner(){
   if(thesisChangeBtn) thesisChangeBtn.addEventListener('click', archiveThesisAndClear);
   bindReportDone(document.getElementById('reportNote'));
   bindAlertsBlock();
+  bindReportHistory();
+  refreshUpdatePanel();
 
   main.querySelectorAll('[data-section][data-field]').forEach(el => {
     if(el.dataset.type === 'richtext'){
