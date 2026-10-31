@@ -1095,8 +1095,7 @@ body.sx-lock{ overflow:hidden; }
 .sx-dl{ display:none; }
 .sx-zoomed .sx-dl{ display:inline-flex; align-items:center; background:var(--accent); border-color:transparent; color:#fff; }
 .sx-dl:disabled, .sx-dlall:disabled{ opacity:.6; cursor:progress; }
-.sx-dlall{ display:none; }
-.sx-zoomed .sx-dlall, .sx-overlay[data-cur="3"] .sx-dlall{ display:inline-flex; align-items:center; }
+.sx-dlall{ display:inline-flex; align-items:center; background:var(--accent); border-color:transparent; color:#fff; margin-left:8px; }
 .sx-overlay[data-cur="3"] .sx-dl{ display:inline-flex; align-items:center; background:var(--accent); border-color:transparent; color:#fff; }
 .sx-exporting .sx-zoomhost, .sx-exporting .sx-scale{ opacity:0; }
 .sx-zoomed .sx-scale{ display:none; }
@@ -14246,7 +14245,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 324;
+const APP_BUILD = 325;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -15275,7 +15274,7 @@ function sxOpen(){
   const ov = document.createElement('div');
   ov.className = 'sx-overlay'; ov.id = 'sxOverlay'; ov.dataset.pages = String(pages.length);
   ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Résumé de l\'analyse');
-  ov.innerHTML = `<div class="sx-bar"><span class="sx-bar-t">Résumé de l'analyse</span><span class="sx-pages"><button type="button" class="sx-pgb on" data-sx-go="1">Page 1 <small>Sections 1 à 3</small></button><button type="button" class="sx-pgb" data-sx-go="2">Page 2 <small>Sections 4 à 6</small></button>${pages.length > 2 ? '<button type="button" class="sx-pgb" data-sx-go="3">Page 3 <small>Du CA au bénéfice</small></button>' : ''}<button type="button" class="sx-pgb sx-back" data-sx-zoom="0">&larr; Retour au résumé</button><button type="button" class="sx-pgb sx-dl" data-sx-download>Télécharger l'image</button><button type="button" class="sx-pgb sx-dlall" data-sx-downloadall>Tout télécharger</button></span><button type="button" class="sx-close" data-sx-close>Fermer &#10005;</button></div><button type="button" class="sx-arrow sx-prev sx-off" data-sx-step="-1" aria-label="Page précédente">${SX_ARROW_L}</button><button type="button" class="sx-arrow sx-next" data-sx-step="1" aria-label="Page suivante">${SX_ARROW_R}</button><div class="sx-scale">${pages.join('')}</div>`;
+  ov.innerHTML = `<div class="sx-bar"><span class="sx-bar-t">Résumé de l'analyse</span><span class="sx-pages"><button type="button" class="sx-pgb on" data-sx-go="1">Page 1 <small>Sections 1 à 3</small></button><button type="button" class="sx-pgb" data-sx-go="2">Page 2 <small>Sections 4 à 6</small></button>${pages.length > 2 ? '<button type="button" class="sx-pgb" data-sx-go="3">Page 3 <small>Du CA au bénéfice</small></button>' : ''}<button type="button" class="sx-pgb sx-dlall" data-sx-downloadall>Tout télécharger</button><button type="button" class="sx-pgb sx-back" data-sx-zoom="0">&larr; Retour au résumé</button><button type="button" class="sx-pgb sx-dl" data-sx-download>Télécharger l'image</button></span><button type="button" class="sx-close" data-sx-close>Fermer &#10005;</button></div><button type="button" class="sx-arrow sx-prev sx-off" data-sx-step="-1" aria-label="Page précédente">${SX_ARROW_L}</button><button type="button" class="sx-arrow sx-next" data-sx-step="1" aria-label="Page suivante">${SX_ARROW_R}</button><div class="sx-scale">${pages.join('')}</div>`;
   document.body.appendChild(ov);
   document.body.classList.add('sx-lock');
   sxFit();
