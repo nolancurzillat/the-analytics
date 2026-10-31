@@ -1115,27 +1115,27 @@ body.sx-lock{ overflow:hidden; }
 .sx-cv-name{ font-family:var(--font-serif); font-weight:700; line-height:1.04; letter-spacing:-.02em; color:#fff; min-width:0; }
 .sx-cv-chips{ display:flex; flex-wrap:nowrap; gap:10px; margin-top:18px; }
 .sx-cv-chips .sx-chip{ font-size:20px; padding:7px 18px; flex:0 1 auto; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.sx-cv-hero{ display:flex; align-items:center; gap:38px; padding:24px 36px; border-radius:26px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); }
-.sx-cv-ring{ position:relative; width:236px; height:236px; flex:0 0 236px; }
+.sx-cv-hero{ display:flex; align-items:center; gap:34px; padding:20px 34px; border-radius:26px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); }
+.sx-cv-ring{ position:relative; width:186px; height:186px; flex:0 0 186px; }
 .sx-cv-ring svg{ width:100%; height:100%; display:block; }
 .sx-cv-rv{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:var(--font-mono); }
-.sx-cv-rv b{ font-size:98px; font-weight:700; line-height:1; letter-spacing:-.03em; }
+.sx-cv-rv b{ font-size:76px; font-weight:700; line-height:1; letter-spacing:-.03em; }
 .sx-cv-rv small{ font-size:19px; font-family:var(--font-ui); margin-top:6px; color:#8fa1c2; }
 .sx-cv-hr{ flex:1; min-width:0; display:flex; flex-direction:column; gap:7px; }
 .sx-cv-cap{ font-size:16px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:#8fa1c2; }
-.sx-cv-tier{ font-family:var(--font-serif); font-weight:700; font-size:56px; line-height:1; }
+.sx-cv-tier{ font-family:var(--font-serif); font-weight:700; font-size:50px; line-height:1; }
 .sx-cv-sub{ font-size:20px; color:#a9b8d4; }
 .sx-cv-val{ margin-top:6px; padding:4px 0 4px 22px; border-left:5px solid var(--c); display:flex; flex-direction:column; gap:4px; }
-.sx-cv-val b{ font-size:36px; font-weight:800; color:var(--c); line-height:1.1; }
+.sx-cv-val b{ font-size:44px; font-weight:800; color:var(--c); line-height:1.1; }
 .sx-cv-val span{ font-size:20px; color:#c3cee5; }
 .sx-cv-val em{ font-style:normal; font-size:19px; color:#8fa1c2; }
 .sx-cv-conv{ display:flex; align-items:center; gap:14px; margin-top:6px; font-size:18px; color:#8fa1c2; }
-.sx-cv-mid{ display:grid; grid-template-columns:1.05fr 1fr; gap:28px; align-items:center; }
+.sx-cv-mid{ display:grid; grid-template-columns:1.42fr 1fr; gap:22px; align-items:center; }
 .sx-cv-mid .sx-radar{ width:100%; height:auto; display:block; }
 .sx-cv-ks{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 .sx-cv-k{ background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09); border-radius:16px; padding:9px 16px; display:flex; flex-direction:column; gap:3px; min-width:0; }
 .sx-cv-k span{ font-size:15px; letter-spacing:.06em; text-transform:uppercase; color:#8fa1c2; font-weight:600; }
-.sx-cv-k b{ font-size:30px; font-weight:700; color:#fff; line-height:1.1; }
+.sx-cv-k b{ font-size:28px; font-weight:700; color:#fff; line-height:1.1; }
 .sx-cv-k b small{ font-size:.5em; margin-left:4px; }
 .sx-cv-k em{ font-style:normal; font-size:15px; color:#8fa1c2; }
 .sx-cv-these{ padding:4px 0 4px 26px; border-left:5px solid #c9a24a; }
@@ -1150,6 +1150,21 @@ body.sx-lock{ overflow:hidden; }
 .sx-cv-foot b{ font-family:var(--font-serif); font-size:24px; color:#fff; }
 .sx-cv-foot b span{ color:#c9a24a; }
 .sx-overlay[data-cur="0"] .sx-dl{ display:inline-flex; align-items:center; background:var(--accent); border-color:transparent; color:#fff; }
+/* ----- Résumé : retouches du build 327 ----- */
+.sx-p[data-sx-sec="6"] .sx-pn{ color:#0a1328; font-weight:800; }
+.sx-p[data-sx-sec="4"] .sx-g4 .sx-tl{ font-size:15px; }
+.sx-p[data-sx-sec="4"] .sx-g4 .sx-tv{ font-size:29px; }
+.sx-p[data-sx-sec="4"] .sx-g4 .sx-ts{ font-size:14.5px; }
+.sx-p[data-sx-sec="4"] .sx-txv{ font-size:16.5px; line-height:1.5; }
+.sx-these{ background:rgba(201,162,74,.09); border:1px solid rgba(201,162,74,.42); }
+.sx-these .sx-txl{ color:#d9b45a; }
+.sx-these q{ color:#f3e4b5; }
+.sx-bfl span{ font-size:15.5px; align-items:center; gap:9px; }
+.sx-bfl i{ font-size:21px; width:24px; line-height:1; }
+.sx-sk .skv-r{ fill-opacity:.62; }
+.sx-sk .skv-l{ font-size:15.5px; text-shadow:0 1px 3px rgba(4,8,18,.9); }
+.sx-sk .skv-l b{ font-size:18.5px; }
+.sx-sk .skv-l .skv-v{ font-size:17.5px; font-weight:700; }
 .sx-zoomed .sx-scale{ display:none; }
 .sx-zoomhost{ flex:0 0 auto; }
 .sx-zoomcard{ padding:20px 20px 12px 20px; }
@@ -6952,7 +6967,8 @@ function tipPriceSales(c){
 // agrandit le bloc des charges au-delà de la marge brute (la partie sans flux entrant montre ce que la marge brute ne couvre pas). Dessin en SVG étiré, étiquettes en HTML (jamais du texte SVG).
 function sankeyHtml(c, opts){
   const cur = c.currency, fin = (c.fields && c.fields.financier) || {};
-  const head = (opts && opts.bare) ? '' : `<div class="pev-h">Du chiffre d'affaires au bénéfice</div>`;
+  const bare = !!(opts && opts.bare);
+  const head = bare ? '' : `<div class="pev-h">Du chiffre d'affaires au bénéfice</div>`;
   const ca = parseMoney(fin.chiffreAffaires);
   if(ca === null || !isFinite(ca) || ca <= 0) return head + `<div class="pev-empty">Renseignez le chiffre d'affaires, la marge brute et le bénéfice net pour voir où va chaque part des ventes.</div>`;
   const mb = num(fin.margeBrute);
@@ -7085,7 +7101,7 @@ function sankeyHtml(c, opts){
   const x0 = Math.max(120, Math.min(235, Math.round(nameLen * 8.2 + 16)));   // marge de gauche ajustée à la longueur des noms de sources de revenus : le reste va au schéma
   const xe = maxCol >= 4 ? 892 : 820, nc = maxCol >= 4 ? 4 : 3;
   const XS = [0, 1, 2, 3, 4].slice(0, nc + 1).map(i => Math.round(x0 + (xe - x0) * i / nc));
-  const W = 1000, NW = 16, H0 = 215, LIFT = 28, DROP = 18, GAP = 10, PITCH = 40;
+  const W = 1000, NW = bare ? 22 : 16, H0 = 215, LIFT = 28, DROP = 18, GAP = 10, PITCH = 40;
   const k = H0 / Math.max.apply(null, nodes.map(n => n.hv).concat([ca]));
   nodes.forEach(n => { n.h = Math.max(2, k * n.hv); });
   rev.y = 0;
@@ -7124,22 +7140,23 @@ function sankeyHtml(c, opts){
     segNodes.forEach(n => { n.y += shift; });
   }
   // cadre : tout est décalé pour que l'étiquette la plus haute reste dans le cadre
-  const ext = n => { const above = n.label === 'top' ? 64 : (n.label === 'left' || n.label === 'right' ? 22 - n.h / 2 : 0); const below = n.label === 'bottom' ? 48 : (n.label === 'left' || n.label === 'right' ? 22 - n.h / 2 : 0); return [n.y - Math.max(0, above), n.y + n.h + Math.max(0, below)]; };
+  const ext = n => { const above = n.label === 'top' ? (bare ? 84 : 64) : (n.label === 'left' || n.label === 'right' ? 22 - n.h / 2 : 0); const below = n.label === 'bottom' ? (bare ? 66 : 48) : (n.label === 'left' || n.label === 'right' ? 22 - n.h / 2 : 0); return [n.y - Math.max(0, above), n.y + n.h + Math.max(0, below)]; };
   const top0 = Math.min.apply(null, nodes.map(n => ext(n)[0])), bot0 = Math.max.apply(null, nodes.map(n => ext(n)[1]));
   const shiftAll = 8 - top0;
   nodes.forEach(n => { n.y += shiftAll; });
   const H = Math.round(bot0 + shiftAll + 10);
   const pctOf = v => { const p = v / ca * 100; return fmtNum(p, p < 10 ? 1 : 0); };
   const tip = n => `data-tooltip="${escapeHtml('<b>' + escapeHtml(n.name) + '</b> ' + compactMoney(n.v, cur) + ' (' + pctOf(n.v) + ' % du CA)' + (n.tip ? '<br>' + n.tip : ''))}"`;
-  let rib = '', rects = '', labels = '';
-  links.forEach(l => {
+  let rib = '', rects = '', labels = '', defs = '';
+  links.forEach((l, li) => {
+    if(bare) defs += `<linearGradient id="skgr${li}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${l.a.color}"/><stop offset="1" stop-color="${l.color}"/></linearGradient>`;   // le ruban passe de la couleur de sa source à celle de sa destination
     const lh = Math.max(0.8, k * l.v), x1 = XS[l.a.col] + NW, x2 = XS[l.b.col], xm = (x1 + x2) / 2;
     const ya = l.a.y + l.a.outC, yb = l.b.y + l.b.inC; l.a.outC += lh; l.b.inC += lh;
     const tn = (l.a.id === 'rev' || l.b.id !== 'rev') ? l.b : l.a;
-    rib += `<path class="skv-r" d="M${x1},${ya.toFixed(1)} C${xm},${ya.toFixed(1)} ${xm},${yb.toFixed(1)} ${x2},${yb.toFixed(1)} L${x2},${(yb + lh).toFixed(1)} C${xm},${(yb + lh).toFixed(1)} ${xm},${(ya + lh).toFixed(1)} ${x1},${(ya + lh).toFixed(1)} Z" fill="${l.color}" ${tip(tn)}></path>`;
+    rib += `<path class="skv-r" d="M${x1},${ya.toFixed(1)} C${xm},${ya.toFixed(1)} ${xm},${yb.toFixed(1)} ${x2},${yb.toFixed(1)} L${x2},${(yb + lh).toFixed(1)} C${xm},${(yb + lh).toFixed(1)} ${xm},${(ya + lh).toFixed(1)} ${x1},${(ya + lh).toFixed(1)} Z" fill="${bare ? 'url(#skgr' + li + ')' : l.color}" ${tip(tn)}></path>`;
   });
   nodes.forEach(n => {
-    rects += `<rect x="${XS[n.col]}" y="${n.y.toFixed(1)}" width="${NW}" height="${n.h.toFixed(1)}" rx="2" fill="${n.color}" ${tip(n)}></rect>`;
+    rects += `<rect x="${XS[n.col]}" y="${n.y.toFixed(1)}" width="${NW}" height="${n.h.toFixed(1)}" rx="${bare ? 5 : 2}" fill="${n.color}" ${tip(n)}></rect>`;
     const name = n.user ? `<b data-i18n="off">${escapeHtml(n.name)}</b>` : `<b>${n.name}</b>`;
     const txt = n.col === 0 ? name : `${name}<span class="skv-v">${compactMoney(n.v, cur)}</span>`;
     const tc = ' skv-t' + n.tone;
@@ -7150,8 +7167,8 @@ function sankeyHtml(c, opts){
     else if(n.label === 'top') labels += `<div class="skv-l skv-top${tc}" style="left:${(x + NW / 2) / 10}%; width:${Math.min((spacing !== null ? spacing : (n.col > 0 ? x - XS[n.col - 1] : 240)) - 24, 2 * (W - x - NW / 2 - 6)) / 10}%; top:${(n.y - 6).toFixed(1)}px">${txt}</div>`;
     else labels += `<div class="skv-l skv-right${tc}" style="left:calc(${(x + NW) / 10}% + 8px); width:${spacing !== null ? Math.min(20, (spacing - NW - 18) / 10) : (W - x - NW - 14) / 10}%; top:${cy}px">${txt}</div>`;
   });
-  const notes = `<div class="skv-note">Schéma simplifié, calculé avec vos chiffres. Saisissez-les sur la même période (le TTM de préférence).</div>${note ? `<div class="skv-note">${note}</div>` : ''}${warn ? `<div class="skv-note skv-warn">${warn}</div>` : ''}${gnote ? `<div class="skv-note skv-warn">${gnote}</div>` : ''}`;
-  return head + `<div class="skv-scroll"><div class="skv" style="height:${H}px${maxCol >= 4 ? ';min-width:900px' : ';min-width:760px'}"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${rib}${rects}</svg>${labels}</div></div>${notes}`;
+  const notes = bare ? `${warn ? `<div class="skv-note skv-warn">${warn}</div>` : ''}${gnote ? `<div class="skv-note skv-warn">${gnote}</div>` : ''}` : `<div class="skv-note">Schéma simplifié, calculé avec vos chiffres. Saisissez-les sur la même période (le TTM de préférence).</div>${note ? `<div class="skv-note">${note}</div>` : ''}${warn ? `<div class="skv-note skv-warn">${warn}</div>` : ''}${gnote ? `<div class="skv-note skv-warn">${gnote}</div>` : ''}`;
+  return head + `<div class="skv-scroll"><div class="skv" style="height:${H}px${maxCol >= 4 ? ';min-width:900px' : ';min-width:760px'}"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><defs>${defs}</defs>${rib}${rects}</svg>${labels}</div></div>${notes}`;
 }
 // « Où se situe le PE ? » (2026-10-17, refait le même jour : la règle à billes n'a pas plu). Forme choisie : QUATRE BARRES HORIZONTALES de même échelle (PE actuel, PE forward, moyenne
 // sur 5 ans, secteur) : comparer des longueurs alignées est la lecture la plus facile et la plus exacte ; un trait pointillé reporte la position du PE actuel sur chaque barre de repère,
@@ -14297,7 +14314,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 326;
+const APP_BUILD = 327;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -14693,8 +14710,9 @@ function sxScoreRing(gs, color, provisional){
   const r = 52, circ = 2 * Math.PI * r;
   return `<div class="sx-sring"><svg viewBox="0 0 128 128" aria-hidden="true"><circle cx="64" cy="64" r="${r}" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="12"/><circle cx="64" cy="64" r="${r}" fill="none" stroke="${color}" stroke-width="12" stroke-linecap="round" stroke-dasharray="${gs === null ? 0 : (gs / 100 * circ).toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 64 64)"/></svg><div class="sx-sringv" style="color:${color}"><b>${gs === null ? '—' : Math.round(gs)}</b>${provisional ? '<small>provisoire</small>' : ''}</div></div>`;
 }
-function sxRadarSvg(axes, color){
-  const cx = 130, cy = 100, R = 66, n = axes.length;
+function sxRadarSvg(axes, color, o){
+  o = o || {};
+  const cx = 130, cy = 100, R = o.R || 66, n = axes.length;
   const ang = i => Math.PI * 2 * i / n - Math.PI / 2;
   const pt = (i, f) => [cx + Math.cos(ang(i)) * R * f, cy + Math.sin(ang(i)) * R * f];
   const pts = arr => arr.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
@@ -14709,9 +14727,9 @@ function sxRadarSvg(axes, color){
     const anchor = Math.abs(cs) < 0.3 ? 'middle' : (cs > 0 ? 'start' : 'end');
     const ty = y + (sn > 0.3 ? 12 : (sn < -0.3 ? -3 : 4));
     const sc = a.score !== null ? scoreColor5(a.score, true) : 'rgba(255,255,255,.4)';
-    g += `<text x="${x.toFixed(1)}" y="${ty.toFixed(1)}" text-anchor="${anchor}" font-size="12.5" font-weight="600" fill="#dbe4f5" font-family="Inter, sans-serif">${a.label} <tspan fill="${sc}" font-weight="700">${a.score === null ? '—' : Math.round(a.score)}</tspan></text>`;
+    g += `<text x="${x.toFixed(1)}" y="${ty.toFixed(1)}" text-anchor="${anchor}" font-size="${o.fs || 12.5}" font-weight="600" fill="#dbe4f5" font-family="Inter, sans-serif">${a.label} <tspan fill="${sc}" font-weight="700">${a.score === null ? '—' : Math.round(a.score)}</tspan></text>`;
   });
-  return `<svg viewBox="-50 6 360 188" class="sx-radar" aria-hidden="true">${g}</svg>`;
+  return `<svg viewBox="${o.vb || '-50 6 360 188'}" class="sx-radar" aria-hidden="true">${g}</svg>`;
 }
 
 // Graphique des objectifs des analystes à 1 an, mis en forme pour le résumé : rayons depuis le prix actuel, étiquettes à droite (nom, variation, prix), axe discret
@@ -14821,13 +14839,13 @@ function buildCoverCard(c){
   if(thesePlain){ const m = thesePlain.match(/^.{40,}?[.!?](\s|$)/); thesis = (m ? m[0] : thesePlain).trim(); }
   const theseHtml = thesis ? `<div class="sx-cv-these"><div class="sx-cv-tl">Thèse d'investissement</div><q data-i18n="off">${sxShort(escapeHtml(thesis), 175)}</q></div>` : '';
   // Rappel des fiches qui suivent
-  const secs = [['1', 'Identité', SECTION_COLORS.identite, '#fff'], ['2', 'Financier', SECTION_COLORS.financier, '#fff'], ['3', 'Croissance', SECTION_COLORS.croissance, '#0a1328'], ['4', 'Valorisation', SECTION_COLORS.valorisation, '#0a1328'], ['5', 'Analyse perso.', SECTION_COLORS.personnelle, '#fff'], ['6', 'Synthèse', '#f3e9d7', '#0a1328']];
+  const secs = [['1', 'Identité', SECTION_COLORS.identite, '#fff'], ['2', 'Financier', SECTION_COLORS.financier, '#fff'], ['3', 'Croissance', SECTION_COLORS.croissance, '#0a1328'], ['4', 'Valorisation', SECTION_COLORS.valorisation, '#0a1328'], ['5', 'Analyse perso.', SECTION_COLORS.personnelle, '#fff'], ['6', 'Notation', '#c4b5fd', '#0a1328']];
   const pills = secs.map(s => `<span class="sx-cv-pill"><i style="background:${s[2]};color:${s[3]}">${s[0]}</i>${s[1]}</span>`).join('');
   return `<div class="sx-card sx-cover" data-sx-page="0"><i class="sx-cv-glow"></i><i class="sx-cv-bar"></i>
     <div class="sx-cv-top"><span class="sx-cv-brand"><img src="icon-192.png" alt="" width="46" height="46">The Analytics</span><span class="sx-cv-tag">Analyse fondamentale</span></div>
     <div class="sx-cv-title"><div class="sx-cv-kick">Analyse de l'action</div><div class="sx-cv-co"><div class="preview-avatar sx-cv-av${av.cls}">${av.html}</div><div class="sx-cv-name" data-i18n="off" style="font-size:${nfs}px">${escapeHtml(name)}</div></div><div class="sx-cv-chips" data-i18n="off">${chips}</div></div>
     <div class="sx-cv-hero">${ring}<div class="sx-cv-hr"><div class="sx-cv-cap">Score composite · sur 100</div><div class="sx-cv-tier" style="color:${col}">${t5 === null ? 'À compléter' : SCORE5_NAMES[t5]}</div><div class="sx-cv-sub">Moyenne de 5 axes${sinfo.provisional ? ' · note provisoire' : ''}</div>${valHtml}${convHtml}</div></div>
-    <div class="sx-cv-mid">${sxRadarSvg(sinfo.axes, col)}<div class="sx-cv-ks">${figs}</div></div>
+    <div class="sx-cv-mid">${sxRadarSvg(sinfo.axes, col, { R:80, fs:13.5, vb:'-66 -14 390 218' })}<div class="sx-cv-ks">${figs}</div></div>
     ${theseHtml}
     <div class="sx-cv-next"><div class="sx-cv-nl">Le détail en 6 fiches, à suivre dans ce fil&nbsp;&darr;</div><div class="sx-cv-pills">${pills}</div></div>
     <div class="sx-cv-foot"><b>the-analytics<span>.fr</span></b><span>Analyse personnelle, pas un conseil en investissement · mise à jour le ${formatDateFr(c.updatedAt || c.createdAt)}</span></div>
@@ -14894,6 +14912,7 @@ function buildSummaryPages(c){
   const conv = computeConversionFcf(c), dette = computeDetteActif(c), dta = computeDetteTotalActif(c), pf = num(fin.probaFaillite), cxr = computeCapexRatio(c);
   const fcf = parseMoney(fin.fcf), ben = parseMoney(fin.beneficeNet);
   const neg = '<span class="sx-tvs">' + FCF_NEGATIF_TXT + '</span>';
+  const tre = computeTresorerie(c), trd = computeTresorerieDette(c), solv = num(fin.scoreSolvabilite), disp = computeDisponible(c), insd = num(fin.detenuInities), inst = num(fin.detenuInstitutions);
   const donuts = sxDonut('Revenu par source', fin.revenuSource) + sxDonut('Revenu par pays', fin.revenuPays);
   const p2 = `<div class="sx-cap">Résultats et croissance</div>
     <div class="sx-g sx-g4 sx-grow">${sxTile("Chiffre d'aff.", money(parseMoney(fin.chiffreAffaires)))}${sxTile('Bénéfice net', money(ben), (ben !== null && ben < 0) ? bad : null)}${sxTile('CA (5 ans)', cCA === null ? '—' : sxPct(cCA, 1) + '<small>/an</small>', sxTier('croissanceCA', cCA))}${sxTile('Bénéf. (5 ans)', cBen === null ? '—' : sxPct(cBen, 1) + '<small>/an</small>', sxTier('croissanceBenef', cBen))}</div>
@@ -14901,6 +14920,8 @@ function buildSummaryPages(c){
     <div class="sx-g sx-g3 sx-grow">${sxTile('Marge brute', sxPct(mBrute), sxTier('margeBrute', mBrute))}${sxTile('Marge nette', sxPct(mNette), sxTier('margeNette', mNette))}${sxTile('Marge FCF', mFcf === null ? '—' : (mFcf < 0 ? neg : sxPct(mFcf)), sxTier('margeFcf', mFcf))}${sxTile('ROIC', sxPct(roic), sxTier('roic', roic))}${sxTile('ROE', sxPct(roe), sxTier('roe', roe))}${sxTile('ROA', sxPct(roa), sxTier('roa', roa))}</div>
     <div class="sx-cap">Cash et bilan</div>
     <div class="sx-g sx-g3 sx-grow">${sxTile('Free cash flow', money(fcf), (fcf !== null && fcf < 0) ? bad : null)}${sxTile('Capex / CA', sxPct(cxr, 1), sxTier('capexRatio', cxr))}${sxTile('Conv. FCF', conv === null ? '—' : (conv <= CONVERSION_NON_SIGNIFICATIVE ? 'n.s.' : (conv < 0 ? neg : sxPct(conv, 0))), sxTier('conversionFcf', conv))}${sxTile('Dette / FCF', sxFr(fmtDetteActif(dette)), sxTier('detteActif', dette))}${sxTile('Dette / actif', dta === null ? '—' : sxPct(dta, 0), sxTier('detteTotalActif', dta))}${sxTile('Faillite', sxPct(pf, pf !== null && pf < 10 ? 1 : 0), sxTier('probaFaillite', pf))}</div>
+    <div class="sx-cap">Solidité et actionnariat</div>
+    <div class="sx-g sx-g3 sx-grow">${sxTile('Trésorerie', money(tre))}${sxTile('Trésorerie / dette', trd === null ? '—' : sxPct(trd, 0), sxTier('tresorerieDette', trd))}${sxTile('Solvabilité', solv === null ? '—' : fmtNum(solv, 0) + '<small>/100</small>', sxTier('scoreSolvabilite', solv))}${sxTile('Flottant', disp === null ? '—' : sxPct(disp, 0))}${sxTile('Initiés', insd === null ? '—' : sxPct(insd, 1))}${sxTile('Institutions', inst === null ? '—' : sxPct(inst, 1))}</div>
     ${donuts ? `<div class="sx-dns">${donuts}</div>` : ''}`;
 
   // ----- 3. Croissance (l'« innovation tech » n'est pas reprise : c'est le texte le moins utile en capture) -----
@@ -14965,8 +14986,8 @@ function buildSummaryPages(c){
   const p4 = `<div class="sx-g sx-g4 sx-grow">${sxTile('PE', pe === null ? '—' : (pe <= 0 ? 'n.s.' : fmtNum(pe, 1)))}${sxTile('PE forward', peF === null ? '—' : (peF <= 0 ? 'n.s.' : fmtNum(peF, 1)))}${sxTile('PEG', sxFr(fmtRatioPos(peg)), sxTier('peg', peg))}
     ${sxTile('PE / secteur', sxFr(fmtRatioPos(peRel)), sxTier('peRelatifSecteur', peRel), peSect === null ? '' : 'PE secteur : ' + fmtNum(peSect, 1))}${sxTile('Rendement FCF', rFcf === null ? '—' : (rFcf < 0 ? neg : sxPct(rFcf, 1)), sxTier('rendementFcf', rFcf))}${sxTile('EPS', eps === null ? '—' : plain(eps), null, epsF === null ? '' : 'estimé : ' + plain(epsF))}${sxTile('Prix actuel', price === null ? '—' : plain(price), '#5b8cf7')}${sxTile('Position short', pshort === null ? '—' : sxPct(pshort, 1), sxTier('positionShort', pshort))}</div>
     ${objBlock}
-    ${sxText('Conclusion', val.conclusionValorisation)}
-    ${bar ? `<div class="sx-tx sx-frb"><div class="sx-txl">Fourchette de valorisation</div>${bar}</div>` : ''}`;
+    ${bar ? `<div class="sx-tx sx-frb"><div class="sx-txl">Fourchette de valorisation</div>${bar}</div>` : ''}
+    ${sxText('Conclusion', val.conclusionValorisation)}`;
 
   // ----- 5. Décision -----
   const conv5 = parseFloat(pers.conviction) || 0;
@@ -14986,15 +15007,15 @@ function buildSummaryPages(c){
     const gp = (price / tgtNum - 1) * 100;
     gapTile = sxTile('Écart à la cible', (gp > 0 ? '+' : (gp < 0 ? '−' : '')) + fmtNum(Math.abs(gp), 1) + '&nbsp;%', gp <= 0 ? good : null, gp <= 0 ? 'cours sous la cible' : 'cours au-dessus de la cible');
   }
-  let secTile = sxTile('Marge de sécurité', '—');
-  if(e !== null) secTile = e < -0.05 ? sxTile('Marge de sécurité', fmtNum(Math.abs(e), 0) + '&nbsp;%', good, 'sous la valeur intrinsèque') : (e > 0.05 ? sxTile('Marge de sécurité', 'Aucune', bad, 'cours ' + fmtNum(e, 0) + '&nbsp;% trop haut') : sxTile('Marge de sécurité', 'Nulle', null, 'au juste prix'));
+  let secTile = sxTile('Objectif analystes', '—');
+  if(ws && ws.target.moy !== null) secTile = sxTile('Objectif analystes', plain(ws.target.moy), ws.pct.moy === null ? null : (ws.pct.moy >= 0 ? good : bad), ws.pct.moy === null ? 'moyenne à 1 an' : (ws.pct.moy >= 0 ? '+' : '−') + fmtNum(Math.abs(ws.pct.moy), 1) + '&nbsp;% à 1 an');
   const bfList = buffettStates(c).map(s => `<span class="${s.ok ? 'sx-bfy' : 'sx-bfn'}"><i>${s.ok ? '&#10003;' : '&#10005;'}</i>${escapeHtml(s.label)}</span>`).join('');
   const p5 = `<div class="sx-g sx-g2">${decTile}${sxTile("Prix d'achat cible", target)}</div>
     <div class="sx-g sx-g3 sx-compact">${sxTile('Cours actuel', price === null ? '—' : plain(price))}${gapTile}${secTile}</div>
     <div class="sx-g sx-g2"><div class="sx-t sx-conv"><div class="sx-tl">Conviction</div><div class="sx-stars-row">${starsRowHtml(conv5, 'sx-stars')}<b>${conv5 ? String(conv5).replace('.', LANG === 'fr' ? ',' : '.') + '<small>/5</small>' : '—'}</b></div></div><div class="sx-t sx-bf"><div class="sx-tl">Checklist Buffett</div><div class="sx-tv" style="color:${buffTier ? buffColor : '#fff'}">${buff.checked}<small>/${buff.total}</small></div><div class="sx-segs">${segs}</div></div></div>
     <div class="sx-bfl">${bfList}</div>
-    ${these ? `<div class="sx-these"><div class="sx-txl">Thèse d'investissement</div><q>${these}</q></div>` : ''}
-    <div class="sx-pm">${pmBlock('sx-plus', 'Points forts', pers.pointsForts)}${pmBlock('sx-minus', 'Points faibles', pers.pointsFaibles)}</div>`;
+    <div class="sx-pm">${pmBlock('sx-plus', 'Points forts', pers.pointsForts)}${pmBlock('sx-minus', 'Points faibles', pers.pointsFaibles)}</div>
+    ${these ? `<div class="sx-these"><div class="sx-txl">Thèse d'investissement</div><q>${these}</q></div>` : ''}`;
 
   // ----- 6. Synthèse globale -----
   const scored = sinfo.axes.filter(a => a.score !== null);
@@ -15017,11 +15038,11 @@ function buildSummaryPages(c){
   const skHtml = sankeyHtml(c, { bare:true });
   const hasSk = skHtml.indexOf('skv-scroll') >= 0;
   pagesN = hasSk ? 3 : 2;
-  const skPanel = `<section class="sx-p sx-p-sk" style="--sc:${SECTION_COLORS.financier}"><header class="sx-ph"><span class="sx-pn">2</span><span class="sx-pt">Financier : du chiffre d'affaires au bénéfice</span>${who}</header><div class="sx-pb"><div class="sx-skwrap"><div class="sx-skin sx-sk">${skHtml}</div></div></div></section>`;
+  const skPanel = `<section class="sx-p sx-p-sk" style="--sc:${SECTION_COLORS.financier}"><header class="sx-ph"><span class="sx-pn">2</span><span class="sx-pt">Ventilation des revenus et dépenses</span>${who}</header><div class="sx-pb"><div class="sx-skwrap"><div class="sx-skin sx-sk">${skHtml}</div></div></div></section>`;
   const page = (n, panels) => `<div class="sx-card${n === 1 ? ' sx-on' : ''}" data-sx-page="${n}"><div class="sx-grid">${panels}</div>${foot(n)}</div>`;
   const pagesOut = [
     page(1, sxPanel(1, 'Identité', SECTION_COLORS.identite, p1, who) + sxPanel(2, 'Financier', SECTION_COLORS.financier, p2, who) + sxPanel(3, 'Croissance', SECTION_COLORS.croissance, p3, who)),
-    page(2, sxPanel(4, 'Valorisation', SECTION_COLORS.valorisation, p4, who) + sxPanel(5, 'Analyse personnelle', SECTION_COLORS.personnelle, p5, who) + sxPanel(6, 'Synthèse globale', '#f3e9d7', p6, who)),
+    page(2, sxPanel(4, 'Valorisation', SECTION_COLORS.valorisation, p4, who) + sxPanel(5, 'Analyse personnelle', SECTION_COLORS.personnelle, p5, who) + sxPanel(6, 'Notation globale', '#c4b5fd', p6, who)),
   ];
   if(hasSk) pagesOut.push(page(3, skPanel));
   pagesOut.unshift(buildCoverCard(c));   // page 0 : fiche d'accroche (n'est pas comptée dans « Page n sur N »)
@@ -15220,7 +15241,7 @@ const SX_ARROW_R = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" 
 // Sans bibliothèque : la carte affichée en plein écran est copiée avec TOUS ses styles calculés en ligne, placée dans un <svg><foreignObject>, dessinée sur un canvas puis
 // exportée en PNG (échelle ×2, net sur un écran dense). Deux choses doivent être intégrées à l'image sinon elles disparaissent : les polices (fichiers du site, en base64, sous-ensemble « latin »
 // seulement) et les logos (convertis en données ; si le serveur du logo refuse, les initiales les remplacent). Nom du fichier : « Entreprise - Section - AAAA-MM-JJ.png ».
-const SX_SECTION_NAMES = ['Identité', 'Financier', 'Croissance', 'Valorisation', 'Analyse personnelle', 'Synthèse globale'];
+const SX_SECTION_NAMES = ['Identité', 'Financier', 'Croissance', 'Valorisation', 'Analyse personnelle', 'Notation globale'];
 let sxFontCssCache = null;
 function sxBlobToDataUrl(blob){
   return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); r.readAsDataURL(blob); });
@@ -15283,7 +15304,7 @@ const SX_EXP_BG = 'linear-gradient(160deg,#10203f 0%,#0a1328 62%,#0b1530 100%)';
 function sxFileName(c, n){
   const clean = s => String(s || '').replace(/[\\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
   const d = new Date(), p = x => String(x).padStart(2, '0');
-  const part = n === 8 ? '0 Accroche' : (n === 7 ? 'Du CA au bénéfice' : (n + ' ' + (SX_SECTION_NAMES[n - 1] || 'Section')));
+  const part = n === 8 ? '0 Accroche' : (n === 7 ? 'Ventilation des revenus et dépenses' : (n + ' ' + (SX_SECTION_NAMES[n - 1] || 'Section')));
   return `${clean(c.name) || 'Analyse'} - ${part} - ${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}.png`;
 }
 // Fabrique le PNG d'une carte (copiée avec tous ses styles) centrée dans un cadre F de taille fixe
@@ -15406,7 +15427,7 @@ function sxOpen(){
   const ov = document.createElement('div');
   ov.className = 'sx-overlay'; ov.id = 'sxOverlay'; ov.dataset.pages = String(pages.length - 1);   // la page 0 (accroche) n'est pas comptée
   ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Résumé de l\'analyse');
-  ov.innerHTML = `<div class="sx-bar"><span class="sx-bar-t">Résumé de l'analyse</span><span class="sx-pages"><button type="button" class="sx-pgb" data-sx-go="0">Accroche <small>Fiche pour le fil X</small></button><button type="button" class="sx-pgb on" data-sx-go="1">Page 1 <small>Sections 1 à 3</small></button><button type="button" class="sx-pgb" data-sx-go="2">Page 2 <small>Sections 4 à 6</small></button>${pages.length > 3 ? '<button type="button" class="sx-pgb" data-sx-go="3">Page 3 <small>Du CA au bénéfice</small></button>' : ''}<button type="button" class="sx-pgb sx-dlall" data-sx-downloadall>Tout télécharger</button><button type="button" class="sx-pgb sx-back" data-sx-zoom="0">&larr; Retour au résumé</button><button type="button" class="sx-pgb sx-dl" data-sx-download>Télécharger l'image</button></span><button type="button" class="sx-close" data-sx-close>Fermer &#10005;</button></div><button type="button" class="sx-arrow sx-prev sx-off" data-sx-step="-1" aria-label="Page précédente">${SX_ARROW_L}</button><button type="button" class="sx-arrow sx-next" data-sx-step="1" aria-label="Page suivante">${SX_ARROW_R}</button><div class="sx-scale">${pages.join('')}</div>`;
+  ov.innerHTML = `<div class="sx-bar"><span class="sx-bar-t">Résumé de l'analyse</span><span class="sx-pages"><button type="button" class="sx-pgb" data-sx-go="0">Accroche <small>Fiche pour le fil X</small></button><button type="button" class="sx-pgb on" data-sx-go="1">Page 1 <small>Sections 1 à 3</small></button><button type="button" class="sx-pgb" data-sx-go="2">Page 2 <small>Sections 4 à 6</small></button>${pages.length > 3 ? '<button type="button" class="sx-pgb" data-sx-go="3">Page 3 <small>Ventilation</small></button>' : ''}<button type="button" class="sx-pgb sx-dlall" data-sx-downloadall>Tout télécharger</button><button type="button" class="sx-pgb sx-back" data-sx-zoom="0">&larr; Retour au résumé</button><button type="button" class="sx-pgb sx-dl" data-sx-download>Télécharger l'image</button></span><button type="button" class="sx-close" data-sx-close>Fermer &#10005;</button></div><button type="button" class="sx-arrow sx-prev sx-off" data-sx-step="-1" aria-label="Page précédente">${SX_ARROW_L}</button><button type="button" class="sx-arrow sx-next" data-sx-step="1" aria-label="Page suivante">${SX_ARROW_R}</button><div class="sx-scale">${pages.join('')}</div>`;
   document.body.appendChild(ov);
   document.body.classList.add('sx-lock');
   sxFit();
