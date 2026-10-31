@@ -750,37 +750,59 @@ input.company-name:focus{ outline:none; border-bottom-color:var(--blue); }
 /* Panneau « Mettre à jour » et relevés après chaque rapport (2026-10-31) */
 .rh{ --rh1:#2a5bea; --rh2:#c9a24a; --rh3:#06b6d4; }
 :root[data-theme="dark"] .rh{ --rh1:#7ba6ff; }
-.rh-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:12px; margin-top:14px; }
-.rh-card{ border:1px solid var(--border); border-radius:12px; padding:12px 14px 10px; background:var(--card); min-width:0; }
-.rh-ct{ font-size:12.5px; font-weight:700; color:var(--ink-soft); }
-.rh-cv{ display:flex; align-items:baseline; gap:8px; font-size:22px; font-weight:700; color:var(--ink); margin:2px 0 10px; }
-.rh-d{ font-size:12.5px; font-weight:700; }
-.rh-d.up{ color:var(--green); }
-.rh-d.down{ color:var(--red); }
-.rh-d.flat{ color:var(--ink-soft); }
-.rh-plot{ position:relative; height:96px; }
-.rh-bars{ position:absolute; inset:0; display:flex; gap:4px; }
+/* Graphiques d'évolution : refonte visuelle (2026-10-31) */
+.rh-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:14px; margin-top:16px; }
+.rh-grid-one{ grid-template-columns:minmax(0, 1fr); }
+.rh-card{ position:relative; min-width:0; padding:14px 16px 12px; border:1px solid var(--border); border-radius:16px; background:linear-gradient(180deg, color-mix(in srgb, var(--rh1) 6%, var(--card)), var(--card) 65%); box-shadow:0 1px 2px rgba(10,20,40,.06); }
+.rh-top{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.rh-ct{ font-size:12px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-soft); }
+.rh-cv{ margin:4px 0 0; font-size:26px; font-weight:700; line-height:1.15; color:var(--ink); }
+.rh-cv small{ margin-left:8px; font-size:12px; font-weight:500; color:var(--ink-soft); }
+.rh-d{ display:inline-flex; align-items:center; gap:4px; padding:2px 9px; border-radius:99px; font-size:12px; font-weight:700; white-space:nowrap; }
+.rh-d i{ font-style:normal; font-size:8px; }
+.rh-d.up{ color:var(--green); background:color-mix(in srgb, var(--green) 14%, transparent); }
+.rh-d.down{ color:var(--red); background:color-mix(in srgb, var(--red) 14%, transparent); }
+.rh-d.flat{ color:var(--ink-soft); background:color-mix(in srgb, var(--ink-soft) 12%, transparent); }
+.rh-plot{ position:relative; height:112px; margin-top:22px; }
+.rh-plot.tall{ height:190px; }
+.rh-in{ position:absolute; left:32px; right:0; top:0; bottom:0; }
+.rh-gl{ position:absolute; left:32px; right:0; height:0; border-top:1px dashed color-mix(in srgb, var(--border-strong) 75%, transparent); pointer-events:none; }
+.rh-gl.base{ border-top:1px solid var(--border-strong); }
+.rh-yl{ position:absolute; left:0; width:27px; transform:translateY(50%); text-align:right; font-size:10.5px; line-height:1; color:var(--ink-soft); font-variant-numeric:tabular-nums; pointer-events:none; }
+.rh-cols{ position:absolute; inset:0; display:flex; gap:6px; }
 .rh-col{ position:relative; flex:1 1 0; min-width:0; }
-.rh-bar{ position:absolute; left:12%; right:12%; background:var(--accent); opacity:.5; border-radius:3px 3px 0 0; pointer-events:none; }
-.rh-bar.last{ opacity:1; }
-.rh-bar.neg{ background:var(--red); border-radius:0 0 3px 3px; }
+.rh-bar{ position:absolute; left:18%; right:18%; border-radius:7px 7px 0 0; background:linear-gradient(180deg, var(--rh1), color-mix(in srgb, var(--rh1) 55%, transparent)); opacity:.55; transition:opacity .15s; pointer-events:none; }
+.rh-bar.neg{ border-radius:0 0 7px 7px; background:linear-gradient(0deg, var(--red), color-mix(in srgb, var(--red) 55%, transparent)); }
+.rh-bar.est{ opacity:.32; outline:1px dashed var(--rh1); outline-offset:-1px; }
+.rh-bar.last{ opacity:1; box-shadow:0 5px 16px color-mix(in srgb, var(--rh1) 38%, transparent); }
 .rh-col:hover .rh-bar{ opacity:1; }
-.rh-zero{ position:absolute; left:0; right:0; height:1px; background:var(--border-strong); pointer-events:none; }
+.rh-bv{ position:absolute; left:50%; transform:translateX(-50%); font-size:11px; font-weight:700; color:var(--ink); white-space:nowrap; opacity:0; pointer-events:none; transition:opacity .15s; }
+.rh-bv.on, .rh-col:hover .rh-bv{ opacity:1; }
+.rh-xl{ position:relative; height:16px; margin:7px 0 0 32px; font-size:11px; color:var(--ink-soft); }
+.rh-xl span{ position:absolute; top:0; left:0; white-space:nowrap; }
+.rh-xl span.c{ transform:translateX(-50%); }
+.rh-xl span.r{ left:auto; right:0; }
 .rh-svg{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; }
-.rh-svg polyline{ fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke; }
-.rh-gl{ stroke:var(--border); stroke-width:1; vector-effect:non-scaling-stroke; }
+.rh-svg polyline{ fill:none; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke; }
 .rh-dot{ position:absolute; width:7px; height:7px; margin:-5.5px 0 0 -5.5px; border:2px solid var(--card); border-radius:50%; background:var(--c); pointer-events:none; }
+.rh-dot.last{ width:9px; height:9px; margin:-6.5px 0 0 -6.5px; box-shadow:0 0 0 4px color-mix(in srgb, var(--c) 24%, transparent); }
 .rh-hit{ position:absolute; top:0; bottom:0; }
-.rh-ax{ display:flex; justify-content:space-between; margin-top:6px; font-size:11.5px; color:var(--ink-soft); }
-.rh-leg{ display:flex; flex-wrap:wrap; gap:3px 12px; margin-top:6px; font-size:12px; color:var(--ink-soft); }
-.rh-lg{ display:inline-flex; align-items:center; gap:5px; }
-.rh-lg i{ width:10px; height:3px; border-radius:2px; }
+.rh-hit .rh-guide{ position:absolute; top:0; bottom:0; width:1px; background:var(--border-strong); opacity:0; pointer-events:none; }
+.rh-hit:hover .rh-guide{ opacity:1; }
+.rh-leg{ display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:8px; padding-top:8px; border-top:1px solid var(--border); font-size:12px; color:var(--ink-soft); }
+.rh-lg{ display:inline-flex; align-items:center; gap:6px; }
+.rh-lg i{ width:12px; height:4px; border-radius:2px; }
 .rh-lg b{ color:var(--ink); }
-.rh-foot{ margin-top:4px; font-size:11.5px; color:var(--ink-soft); }
+.rh-seg{ display:inline-flex; gap:3px; padding:3px; border:1px solid var(--border); border-radius:99px; background:var(--card); }
+.rh-seg button{ white-space:nowrap; padding:4px 11px; border:0; border-radius:99px; background:none; font:inherit; font-size:12.5px; font-weight:600; color:var(--ink-soft); cursor:pointer; }
+.rh-seg button.on{ background:var(--accent); color:#fff; }
+.rh-seg button:not(.on):hover{ color:var(--ink); }
 .ro-fiche .rh-pencil{ display:none; }
 .upd-dot{ display:inline-block; width:11px; height:11px; margin:0 7px 0 0; padding:0; border:0; border-radius:50%; background:#f2994a; vertical-align:-1px; cursor:pointer; box-shadow:0 0 0 3px color-mix(in srgb, #f2994a 22%, transparent); }
 .upd-dot:hover{ background:var(--green); box-shadow:0 0 0 3px color-mix(in srgb, var(--green) 25%, transparent); }
-.rh-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.rh-head{ display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:10px 12px; }
+.rh-head > div:first-child{ flex:1 1 200px; min-width:0; }
+.rh-head > .insight-card-title{ flex:1 1 150px; margin:0; }
 .rh-pencil{ flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border:1px solid var(--border-strong); border-radius:50%; background:var(--card); color:var(--ink-soft); cursor:pointer; }
 .rh-pencil:hover, .rh-pencil.on{ color:var(--accent); border-color:var(--accent); }
 .rh-edit{ margin-top:14px; padding:12px 14px; border:1px dashed var(--border-strong); border-radius:12px; background:var(--card); }
@@ -794,7 +816,6 @@ input.company-name:focus{ outline:none; border-bottom-color:var(--blue); }
 .rh-x:hover{ color:var(--red); background:color-mix(in srgb, var(--red) 10%, transparent); }
 .rh-ebtns{ display:flex; align-items:center; flex-wrap:wrap; gap:8px 14px; margin-top:12px; }
 .rh-ehint{ font-size:12.5px; color:var(--ink-soft); }
-.rh-grid-one{ grid-template-columns:minmax(0, 640px); }
 
 /* Même habillage que les autres cases de saisie (le sélecteur générique ne couvre que type=text/number) ; color-scheme pour que l'icône de calendrier suive le thème */
 .field-value input.report-date-input{
@@ -4267,7 +4288,18 @@ function mergeRemote(remote){
     if(isDeleted(c)) return;
     const idx = state.companies.findIndex(x => x.id === c.id);
     if(idx < 0){ state.companies.push(c); changed = true; }
-    else if(companyStamp(c) > companyStamp(state.companies[idx])){ state.companies[idx] = c; changed = true; }
+    else if(companyStamp(c) > companyStamp(state.companies[idx])){
+      const un = mergeScoreHist(c.scoreHist, state.companies[idx].scoreHist);
+      if(un.length > (c.scoreHist || []).length) push = true;
+      c.scoreHist = un;
+      state.companies[idx] = c;
+      changed = true;
+    }
+    else{
+      const loc = state.companies[idx], un = mergeScoreHist(loc.scoreHist, c.scoreHist);
+      if(un.length > (loc.scoreHist || []).length) loc.scoreHist = un;
+      if(un.length > (c.scoreHist || []).length) push = true;
+    }
   });
   const before = state.companies.length;
   state.companies = state.companies.filter(c => !isDeleted(c));
@@ -4966,6 +4998,7 @@ function migrateCompany(c){
   // des actions (archiveThesisAndClear, logDecisionEvent). Absents des analyses créées avant ce changement.
   if(!Array.isArray(c.thesisHistory)) c.thesisHistory = [];
   if(!Array.isArray(c.decisionLog)) c.decisionLog = [];
+  if(!Array.isArray(c.scoreHist)) c.scoreHist = [];
   // Relevés après chaque rapport et horodatage des saisies (2026-10-31) : voir « Relevés après chaque rapport »
   if(!Array.isArray(c.reportSnaps)) c.reportSnaps = [];
   if(!c.fTs || typeof c.fTs !== 'object' || Array.isArray(c.fTs)) c.fTs = {};
@@ -6702,6 +6735,7 @@ function initCustomTooltips(){
 
 function refreshDerived(){
   checkActiveAlerts();
+  if(recordScoreToday(getActive())) saveState();
   refreshAllBadges();
   refreshAllComputed();
   refreshValuationSummary();
@@ -9485,61 +9519,127 @@ function recordReportSnap(c, iso, force, est){
 function rhTip(d, rows){
   return `<div class='tt-desc'><b>${escapeHtml(formatDateFrShort(d))}</b></div>` + rows.map(r => `<div class='tt-row'>${r.color ? `<span class='tt-dot' style='background:${r.color}'></span>` : ''}<span>${escapeHtml(r.text)}</span></div>`).join('');
 }
-function rhDelta(pts, opt){
-  if(pts.length < 2 || opt.neutral) return '';
-  const a = pts[pts.length - 2].v, b = pts[pts.length - 1].v;
-  if(a <= 0) return '';
-  const p = (b - a) / Math.abs(a) * 100;
-  const cls = opt.neutral ? 'flat' : (Math.abs(p) < 0.5 ? 'flat' : (p > 0 ? 'up' : 'down'));
-  return `<span class="rh-d ${cls}">${p > 0 ? '+' : ''}${fmtNum(p, 1)} %</span>`;
+// Unité commune d'un graphique (Md, M...) : les graduations de l'axe n'affichent que le nombre, la valeur du jour garde son unité
+function rhUnit(maxAbs){
+  if(maxAbs >= 1e12) return { div:1e12 };
+  if(maxAbs >= 1e9) return { div:1e9 };
+  if(maxAbs >= 1e6) return { div:1e6 };
+  return { div:1 };
 }
+function rhTickLabel(v, div){
+  const x = v / div;
+  return fmtNum(x, Math.abs(x) < 10 && Math.abs(x % 1) > 1e-9 ? 1 : 0);
+}
+function rhPill(text, cls){
+  const arrow = cls === 'up' ? '▲' : (cls === 'down' ? '▼' : '•');
+  return `<span class="rh-d ${cls}"><i>${arrow}</i>${text}</span>`;
+}
+function rhShortMonth(d){ return d.slice(5, 7) + '/' + d.slice(2, 4); }
+// Barres : une par relevé, graduations discrètes, valeur au-dessus de chaque barre quand il y en a peu (sinon au survol), dernière barre mise en avant
 function rhBarsCard(title, pts, fmt, opt){
+  opt = opt || {};
   if(pts.length < 2) return '';
-  const vals = pts.map(p => p.v);
-  const max = Math.max(0, ...vals), min = Math.min(0, ...vals), span = (max - min) || 1;
+  const n = pts.length, vals = pts.map(p => p.v);
+  const unit = rhUnit(Math.max(...vals.map(v => Math.abs(v))));
+  const nt = niceAxisTicks(Math.min(0, ...vals), Math.max(0, ...vals), 3);
+  const lo = nt.min, hi = nt.max, span = (hi - lo) || 1, pos = v => (v - lo) / span * 100;
+  const grid = nt.ticks.map(t => `<i class="rh-gl${t === 0 ? ' base' : ''}" style="bottom:${pos(t).toFixed(2)}%"></i><span class="rh-yl" style="bottom:${pos(t).toFixed(2)}%">${rhTickLabel(t, unit.div)}</span>`).join('');
   const cols = pts.map((p, i) => {
-    const top = (max - Math.max(p.v, 0)) / span * 100, h = Math.max(Math.abs(p.v) / span * 100, 1.5);
-    const neg = p.v < 0 && !opt.neutral;
-    return `<div class="rh-col" data-tooltip="${rhTip(p.d, [{ text:title + ' : ' + fmt(p.v) }].concat(p.est ? [{ text:'Date estimée' }] : []))}"><i class="rh-bar${neg ? ' neg' : ''}${i === pts.length - 1 ? ' last' : ''}" style="top:${top.toFixed(2)}%;height:${h.toFixed(2)}%"></i></div>`;
+    const last = i === n - 1, neg = p.v < 0;
+    const b0 = pos(Math.min(p.v, 0)), b1 = pos(Math.max(p.v, 0));
+    const bar = `<i class="rh-bar${neg ? ' neg' : ''}${p.est ? ' est' : ''}${last ? ' last' : ''}" style="bottom:${b0.toFixed(2)}%;height:${Math.max(b1 - b0, 1.2).toFixed(2)}%"></i>`;
+    const lbl = `<b class="rh-bv${(n <= 5 || last) ? ' on' : ''}" style="bottom:calc(${(neg ? pos(0) : b1).toFixed(2)}% + 5px)">${escapeHtml(fmt(p.v))}</b>`;
+    return `<div class="rh-col" data-tooltip="${rhTip(p.d, [{ text:title + ' : ' + fmt(p.v) }].concat(p.est ? [{ text:'Date estimée' }] : []))}">${bar}${lbl}</div>`;
   }).join('');
-  const zero = min < 0 ? `<span class="rh-zero" style="top:${(max / span * 100).toFixed(2)}%"></span>` : '';
-  const foot = opt.foot && vals.some(v => v < 0) ? `<div class="rh-foot">${opt.foot}</div>` : '';
-  return `<div class="rh-card"><div class="rh-ct">${title}</div><div class="rh-cv">${fmt(vals[vals.length - 1])}${rhDelta(pts, opt)}</div><div class="rh-plot"><div class="rh-bars">${cols}</div>${zero}</div><div class="rh-ax"><span>${escapeHtml(formatDateFrShort(pts[0].d))}</span><span>${escapeHtml(formatDateFrShort(pts[pts.length - 1].d))}</span></div>${foot}</div>`;
+  const xl = n <= 6
+    ? pts.map((p, i) => `<span class="c" style="left:${((i + 0.5) / n * 100).toFixed(2)}%">${rhShortMonth(p.d)}</span>`).join('')
+    : `<span>${escapeHtml(formatDateFrShort(pts[0].d))}</span><span class="r">${escapeHtml(formatDateFrShort(pts[n - 1].d))}</span>`;
+  const a = vals[n - 2], b = vals[n - 1];
+  let pill = '';
+  if(a > 0){
+    const p = (b - a) / a * 100, cls = Math.abs(p) < 0.5 ? 'flat' : (p > 0 ? 'up' : 'down');
+    pill = rhPill((p > 0 ? '+' : '') + fmtNum(p, 1) + ' %', cls);
+  }
+  return `<div class="rh-card"><div class="rh-top"><span class="rh-ct">${title}</span>${pill}</div><div class="rh-cv">${escapeHtml(fmt(b))}<small data-i18n="off">${escapeHtml(formatDateFrShort(pts[n - 1].d))}</small></div><div class="rh-plot">${grid}<div class="rh-in"><div class="rh-cols">${cols}</div></div></div><div class="rh-xl">${xl}</div></div>`;
 }
-// Courbes : `series` = [{ key, label, color }], `pts` = relevés ; les valeurs manquantes interrompent la courbe
-function rhLinesCard(title, snaps, series, fmt, big){
-  const have = snaps.filter(s => series.some(se => s[se.key] !== null && s[se.key] !== undefined));
+// Courbes : `series` = [{ key, label, color, tip }], `snaps` = points datés.
+// opt : big (valeur et évolution en grand), score (graduations de 20 en 20 et bandes de couleur des 5 paliers), fill (aire sous la première courbe),
+// time (abscisse proportionnelle aux dates), tall (graphique plus haut), extra(s) (lignes en plus dans l'infobulle), sub (texte sous la valeur)
+let rhGid = 0;
+const RH_BANDS = [[0, 20, '#ef4444'], [20, 40, '#fb923c'], [40, 60, '#eab308'], [60, 80, '#84cc16'], [80, 100, '#22c55e']];
+function rhLinesCard(title, snaps, series, fmt, opt){
+  opt = opt || {};
+  const has = v => v !== null && v !== undefined && Number.isFinite(v);
+  const have = snaps.filter(s => series.some(se => has(s[se.key])));
   if(have.length < 2) return '';
-  const all = [];
-  have.forEach(s => series.forEach(se => { if(s[se.key] !== null && s[se.key] !== undefined) all.push(s[se.key]); }));
-  let lo = Math.min(...all), hi = Math.max(...all);
-  const pad = (hi - lo) * 0.12 || Math.max(Math.abs(hi) * 0.1, 1);
-  lo -= pad; hi += pad;
-  const n = have.length;
-  const X = i => n === 1 ? 50 : 5 + i / (n - 1) * 90, Y = v => (hi - v) / (hi - lo) * 100;
-  let lines = '', dots = '';
-  series.forEach(se => {
+  const n = have.length, all = [];
+  have.forEach(s => series.forEach(se => { if(has(s[se.key])) all.push(s[se.key]); }));
+  const mn = Math.min(...all), mx = Math.max(...all);
+  let lo, hi, ticks;
+  if(opt.score){
+    lo = Math.max(0, Math.floor((mn - 4) / 10) * 10);
+    hi = Math.min(100, Math.ceil((mx + 4) / 10) * 10);
+    if(hi - lo < 20){ lo = Math.max(0, hi - 20); hi = Math.min(100, lo + 20); }
+    ticks = [];
+    for(let v = Math.ceil(lo / 20) * 20; v <= hi; v += 20) ticks.push(v);
+    if(ticks.length < 2){ ticks = [lo, hi]; }
+  }else{
+    const nt = niceAxisTicks(mn, mx, 3);
+    lo = nt.min; hi = nt.max; ticks = nt.ticks;
+  }
+  const span = (hi - lo) || 1, Yb = v => (v - lo) / span * 100, Ys = v => 100 - Yb(v);
+  const t0 = Date.parse(have[0].d), t1 = Date.parse(have[n - 1].d);
+  const X = i => (opt.time && t1 > t0) ? 3 + (Date.parse(have[i].d) - t0) / (t1 - t0) * 94 : 3 + i / (n - 1) * 94;
+  const grid = ticks.map(t => `<i class="rh-gl" style="bottom:${Yb(t).toFixed(2)}%"></i><span class="rh-yl" style="bottom:${Yb(t).toFixed(2)}%">${fmtNum(t, Math.abs(t) < 10 && Math.abs(t % 1) > 1e-9 ? 1 : 0)}</span>`).join('');
+  const gid = 'rhg' + (++rhGid);
+  let defs = '', bands = '', area = '', lines = '', dots = '';
+  if(opt.score) RH_BANDS.forEach(b => {
+    const a = Math.max(b[0], lo), z = Math.min(b[1], hi);
+    if(z > a) bands += `<rect x="0" width="100" y="${Ys(z).toFixed(2)}" height="${(Yb(z) - Yb(a)).toFixed(2)}" fill="${b[2]}" fill-opacity=".09"/>`;
+  });
+  series.forEach((se, k) => {
     let seg = [];
-    const flush = () => { if(seg.length > 1) lines += `<polyline points="${seg.join(' ')}" style="stroke:${se.color}"/>`; seg = []; };
+    const flush = () => {
+      if(seg.length > 1){
+        lines += `<polyline points="${seg.join(' ')}" style="stroke:${se.color}"/>`;
+        if(opt.fill && k === 0){
+          const first = seg[0].split(',')[0], lastX = seg[seg.length - 1].split(',')[0];
+          area += `<polygon class="rh-area" points="${first},100 ${seg.join(' ')} ${lastX},100" fill="url(#${gid})"/>`;
+        }
+      }
+      seg = [];
+    };
     have.forEach((s, i) => {
       const v = s[se.key];
-      if(v === null || v === undefined){ flush(); return; }
-      seg.push(X(i).toFixed(2) + ',' + Y(v).toFixed(2));
-      dots += `<i class="rh-dot" style="left:${X(i).toFixed(2)}%;top:${Y(v).toFixed(2)}%;--c:${se.color}"></i>`;
+      if(!has(v)){ flush(); return; }
+      seg.push(X(i).toFixed(2) + ',' + Ys(v).toFixed(2));
+      const lastPt = i === n - 1 || !have.slice(i + 1).some(q => has(q[se.key]));
+      if(n <= 24 || lastPt) dots += `<i class="rh-dot${lastPt ? ' last' : ''}" style="left:${X(i).toFixed(2)}%;top:${Ys(v).toFixed(2)}%;--c:${se.color}"></i>`;
     });
     flush();
   });
+  if(opt.fill) defs = `<defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:${series[0].color};stop-opacity:.34"/><stop offset="1" style="stop-color:${series[0].color};stop-opacity:0"/></linearGradient></defs>`;
   const hit = have.map((s, i) => {
-    const rows = series.filter(se => s[se.key] !== null && s[se.key] !== undefined).map(se => ({ color:se.tip, text:se.label + ' : ' + fmt(s[se.key]) })).concat(s.est ? [{ text:'Date estimée' }] : []);
-    return `<div class="rh-hit" style="left:${(X(i) - 50 / n).toFixed(2)}%;width:${(100 / n).toFixed(2)}%" data-tooltip="${rhTip(s.d, rows)}"></div>`;
+    const l = i === 0 ? 0 : (X(i - 1) + X(i)) / 2, r = i === n - 1 ? 100 : (X(i) + X(i + 1)) / 2;
+    const rows = series.filter(se => has(s[se.key])).map(se => ({ color:se.tip, text:se.label + ' : ' + fmt(s[se.key]) })).concat(opt.extra ? opt.extra(s) : []).concat(s.est ? [{ text:'Date estimée' }] : []);
+    return `<div class="rh-hit" style="left:${l.toFixed(2)}%;width:${Math.max(r - l, 0.5).toFixed(2)}%" data-tooltip="${rhTip(s.d, rows)}"><i class="rh-guide" style="left:${(r > l ? (X(i) - l) / (r - l) * 100 : 50).toFixed(2)}%"></i></div>`;
   }).join('');
-  const last = have[have.length - 1];
-  const leg = series.map(se => {
+  const xl = n <= 6 && !opt.time
+    ? have.map((s, i) => `<span class="c" style="left:${X(i).toFixed(2)}%">${rhShortMonth(s.d)}</span>`).join('')
+    : `<span>${escapeHtml(formatDateFrShort(have[0].d))}</span><span class="r">${escapeHtml(formatDateFrShort(have[n - 1].d))}</span>`;
+  const last = have[n - 1], first = have[0];
+  let head = `<div class="rh-top"><span class="rh-ct">${title}</span>`;
+  if(opt.big){
+    const k = series[0].key, d = last[k] - first[k], cls = Math.abs(d) < 0.05 ? 'flat' : (d > 0 ? 'up' : 'down');
+    head += rhPill((d > 0 ? '+' : '') + fmtNum(d, 1) + ' pts', cls) + `</div><div class="rh-cv">${escapeHtml(fmt(last[k]))}<small data-i18n="off">${escapeHtml(formatDateFrShort(last.d))}</small></div>`;
+  }else head += '</div>';
+  const leg = series.length > 1 ? `<div class="rh-leg">${series.map(se => {
     const v = last[se.key];
-    return `<span class="rh-lg"><i style="background:${se.color}"></i>${se.label}${v !== null && v !== undefined ? ` <b>${fmt(v)}</b>` : ''}</span>`;
-  }).join('');
-  return `<div class="rh-card"><div class="rh-ct">${title}</div>${big ? `<div class="rh-cv">${fmt(last[series[0].key])}</div>` : ''}<div class="rh-plot"><svg class="rh-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line class="rh-gl" x1="0" x2="100" y1="25" y2="25"/><line class="rh-gl" x1="0" x2="100" y1="50" y2="50"/><line class="rh-gl" x1="0" x2="100" y1="75" y2="75"/>${lines}</svg>${dots}${hit}</div><div class="rh-ax"><span>${escapeHtml(formatDateFrShort(have[0].d))}</span><span>${escapeHtml(formatDateFrShort(last.d))}</span></div><div class="rh-leg">${leg}</div></div>`;
+    return `<span class="rh-lg"><i style="background:${se.color}"></i>${se.label}${has(v) ? ` <b>${escapeHtml(fmt(v))}</b>` : ''}</span>`;
+  }).join('')}</div>` : '';
+  return `<div class="rh-card">${head}<div class="rh-plot${opt.tall ? ' tall' : ''}">${grid}<div class="rh-in"><svg class="rh-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${defs}${bands}${area}${lines}</svg>${dots}${hit}</div></div><div class="rh-xl">${xl}</div>${leg}</div>`;
 }
+
 const RH_PENCIL = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`;
 let rhEditId = '';
 function rhInputMoney(v){
@@ -9562,7 +9662,7 @@ function rhChartsHtml(c){
     rhBarsCard("Chiffre d'affaires", pts('ca'), money, {}),
     rhBarsCard('Bénéfice net', pts('net'), money, {}),
     rhBarsCard('EPS', pts('eps'), v => fmtNum(v, 2) + ' ' + cur, {}),
-    rhLinesCard('Marges', snaps, [{ key:'mb', label:'Brute', color:'var(--rh1)', tip:'#7ba6ff' }, { key:'mo', label:'Exploitation', color:'var(--rh2)', tip:'#e0b95a' }, { key:'mn', label:'Nette', color:'var(--rh3)', tip:'#22d3ee' }], pct, false)
+    rhLinesCard('Marges', snaps, [{ key:'mb', label:'Brute', color:'var(--rh1)', tip:'#7ba6ff' }, { key:'mo', label:'Exploitation', color:'var(--rh2)', tip:'#e0b95a' }, { key:'mn', label:'Nette', color:'var(--rh3)', tip:'#22d3ee' }], pct, {})
   ].filter(Boolean);
   return cards.length ? `<div class="rh-grid">${cards.join('')}</div>` : `<div class="pev-empty">Pas encore assez de chiffres pour tracer les graphiques.</div>`;
 }
@@ -9581,13 +9681,75 @@ function reportHistoryHtml(c){
   return `<div class="rh-head"><div><div class="pev-h">Évolution après chaque rapport</div><div class="pev-sub">Un relevé est enregistré tout seul quand vous mettez à jour vos chiffres après un rapport. Le crayon permet de les corriger ou d'ajouter un trimestre passé.</div></div>${pencil}</div>${editing ? rhEditHtml(c) : ''}<div id="rhCharts">${rhChartsHtml(c)}</div>`;
 }
 // Évolution du score composite (section 6, Synthèse globale) : les notes enregistrées avec chaque relevé
-function scoreHistoryBox(c){
-  const snaps = reportSnapList(c).filter(s => s.sc !== null && s.sc !== undefined).slice(-SNAP_SHOWN);
-  const t = `<div class="insight-card-title">Évolution du score composite</div>`;
-  if(snaps.length < 2) return `<div class="synthesis-box rh">${t}<div class="pev-empty">Le score est enregistré à chaque mise à jour après un rapport. Le graphique apparaît dès le deuxième relevé.</div></div>`;
-  const card = rhLinesCard('Score composite', snaps, [{ key:'sc', label:'Score', color:'var(--rh1)', tip:'#7ba6ff' }], v => fmtNum(v, 1), true);
-  return `<div class="synthesis-box rh">${t}<div class="rh-grid rh-grid-one">${card}</div></div>`;
+// ----- Score composite au jour le jour (2026-10-31, demande de l'auteur : « l'évolution du prix joue grandement sur la note ») -----
+// `c.scoreHist = [{ d:'AAAA-MM-JJ', sc, p }]` : une note par jour où l'application est ouverte (et à chaque modification ou mise à jour du prix qui la change),
+// `p` = le cours du jour. L'historique commence au premier jour enregistré : le passé n'est pas reconstitué (on ne connaît pas les anciens cours).
+// Mise à jour AUTOMATIQUE : jamais de tampon de fusion (updatedTs), comme le prix.
+const SCORE_HIST_MAX = 800;
+function recordScoreToday(c){
+  if(!c || c === roCompany) return false;
+  const sc = computeGlobalScore(c);
+  if(sc === null || sc === undefined || !Number.isFinite(sc)) return false;
+  const v = Math.round(sc * 10) / 10;
+  const pr = num(c.fields.valorisation && c.fields.valorisation.prixActuel);
+  const p = (pr !== null && Number.isFinite(pr) && pr > 0) ? Math.round(pr * 100) / 100 : null;
+  const d = updDateLocal();
+  if(!Array.isArray(c.scoreHist)) c.scoreHist = [];
+  const cur = c.scoreHist.find(h => h.d === d);
+  if(cur){
+    if(cur.sc === v && cur.p === p) return false;
+    cur.sc = v;
+    cur.p = p;
+  }else{
+    c.scoreHist.push({ d, sc:v, p });
+    c.scoreHist.sort((a, b) => a.d < b.d ? -1 : (a.d > b.d ? 1 : 0));
+    if(c.scoreHist.length > SCORE_HIST_MAX) c.scoreHist.splice(0, c.scoreHist.length - SCORE_HIST_MAX);
+  }
+  return true;
 }
+function recordScoresToday(){
+  let changed = false;
+  state.companies.forEach(c => { if(recordScoreToday(c)) changed = true; });
+  if(changed) saveState();
+}
+// Réunion de deux historiques (synchronisation entre appareils) : une note par jour, la première liste l'emporte en cas d'égalité
+function mergeScoreHist(a, b){
+  const map = {};
+  (Array.isArray(b) ? b : []).forEach(h => { if(h && h.d) map[h.d] = h; });
+  (Array.isArray(a) ? a : []).forEach(h => { if(h && h.d) map[h.d] = h; });
+  return Object.keys(map).sort().map(k => map[k]).slice(-SCORE_HIST_MAX);
+}
+// Série affichée : notes quotidiennes, complétées par les notes enregistrées avec les relevés de rapport (jour sans note quotidienne)
+function scoreSeries(c){
+  const map = {};
+  (c.reportSnaps || []).forEach(s => { if(s.sc !== null && s.sc !== undefined) map[s.d] = { d:s.d, sc:s.sc, p:null, est:!!s.est }; });
+  (c.scoreHist || []).forEach(h => { map[h.d] = { d:h.d, sc:h.sc, p:h.p }; });
+  return Object.keys(map).sort().map(k => map[k]);
+}
+let scoreRange = 'all';
+const SCORE_RANGES = [['m1', '1 mois', 31], ['m3', '3 mois', 92], ['y1', '1 an', 366], ['all', 'Tout', 36500]];
+function scoreHistoryBox(c){
+  const t = `<div class="insight-card-title">Évolution du score composite</div>`;
+  const all = scoreSeries(c);
+  if(all.length < 2) return `<div class="synthesis-box rh" id="scoreHistory">${t}<div class="pev-empty">Le score est enregistré chaque jour où vous ouvrez l'application, et à chaque rapport mis à jour. Revenez demain pour voir apparaître la courbe.</div></div>`;
+  const span = (SCORE_RANGES.find(r => r[0] === scoreRange) || SCORE_RANGES[3])[2];
+  const from = new Date(); from.setDate(from.getDate() - span);
+  const fromIso = from.getFullYear() + '-' + String(from.getMonth() + 1).padStart(2, '0') + '-' + String(from.getDate()).padStart(2, '0');
+  const pts = all.filter(s => s.d >= fromIso);
+  const chips = `<div class="rh-seg">${SCORE_RANGES.map(r => `<button type="button" class="${r[0] === scoreRange ? 'on' : ''}" data-sc-range="${r[0]}">${r[1]}</button>`).join('')}</div>`;
+  const cur = c.currency;
+  const card = pts.length < 2
+    ? `<div class="pev-empty">Pas assez de points sur cette période.</div>`
+    : `<div class="rh-grid rh-grid-one">${rhLinesCard('Score composite', pts, [{ key:'sc', label:'Score', color:'var(--rh1)', tip:'#7ba6ff' }], v => fmtNum(v, 1), { big:true, score:true, fill:true, time:true, tall:true, extra:s => (s.p !== null && s.p !== undefined) ? [{ text:'Cours : ' + fmtMoney(s.p, cur) }] : [] })}</div>`;
+  return `<div class="synthesis-box rh" id="scoreHistory"><div class="rh-head">${t}${chips}</div>${card}</div>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target && e.target.closest ? e.target.closest('[data-sc-range]') : null;
+  if(!b) return;
+  scoreRange = b.dataset.scRange;
+  refreshInsightsSection();
+});
+
 function refreshReportHistory(){
   const c = getActive();
   const el = document.getElementById('reportHistory');
@@ -10962,6 +11124,8 @@ function cleanImportedCompany(raw){
   // Alertes importées (NON fiables) : types connus, valeurs numériques, identifiants nettoyés
   c.alerts = (Array.isArray(c.alerts) ? c.alerts : []).filter(a => a && ALERT_TYPES[a.type] && (!ALERT_TYPES[a.type].needs || (Number.isFinite(Number(a.value)) && Number(a.value) > 0))).slice(0, ALERT_MAX)
     .map((a, i) => ({ id:String(a.id || ('a' + i)).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40) || ('a' + i), type:a.type, value:ALERT_TYPES[a.type].needs ? Number(a.value) : null, on:a.on !== false, fired:!!a.fired, ack:!!a.ack, firedAt:(typeof a.firedAt === 'string' && !isNaN(Date.parse(a.firedAt))) ? new Date(a.firedAt).toISOString() : '' }));
+  c.scoreHist = (Array.isArray(c.scoreHist) ? c.scoreHist : []).filter(h => h && isoRe.test(String(h.d)) && typeof h.sc === 'number' && Number.isFinite(h.sc) && h.sc >= 0 && h.sc <= 100).slice(-800)
+    .map(h => ({ d:h.d, sc:Math.round(h.sc * 10) / 10, p:(typeof h.p === 'number' && Number.isFinite(h.p) && h.p > 0) ? h.p : null }));
   // Relevés après chaque rapport et horodatages des saisies importés (NON fiables) : dates au bon format, nombres seulement
   c.reportSnaps = (Array.isArray(c.reportSnaps) ? c.reportSnaps : []).filter(s => s && isoRe.test(String(s.d))).slice(-40).map(s => {
     const o = { d:s.d, t:(typeof s.t === 'number' && Number.isFinite(s.t)) ? s.t : 0 };
@@ -12616,7 +12780,7 @@ function recordPortfolioSnapshot(){
 let snapshotTimer = null;
 function scheduleSnapshot(delay){
   clearTimeout(snapshotTimer);
-  snapshotTimer = setTimeout(recordPortfolioSnapshot, delay || 4000);
+  snapshotTimer = setTimeout(() => { recordPortfolioSnapshot(); recordScoresToday(); }, delay || 4000);
 }
 const PF_RANGES = [['s1', '1 semaine', 8], ['m1', '1 mois', 31], ['m3', '3 mois', 92], ['y1', '1 an', 366], ['all', 'Tout', 36500]];
 const PF_ARROW_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M12 5l-6 6M12 5l6 6"/></svg>`;
@@ -13714,7 +13878,7 @@ let shareUi = { id:'', link:'', busy:false, msg:'', cls:'', links:null };
 // décision et prix cible sont aussi vidés.
 function sanitizeSharedCompany(c, withNotes){
   c.position = { active:false, quantite:'', prixAchat:'', montantInvesti:'' };
-  c.decisionLog = []; c.closedTrades = []; c.alerts = []; c.thesisHistory = []; delete c.tags; delete c.fromShare; delete c.fTs;
+  c.decisionLog = []; c.closedTrades = []; c.alerts = []; c.thesisHistory = []; delete c.tags; delete c.fromShare; delete c.fTs; delete c.scoreHist;
   ['reviewedTs', 'priceError', 'priceUpdatedAt', 'priceMicCode', 'priceMicCodeFor', 'priceSource', 'priceDay', 'avSymbol', 'avSymbolFor'].forEach(k => { delete c[k]; });
   if(c.fields.identite) c.fields.identite.prochainRapport = '';
   const p = c.fields.personnelle || (c.fields.personnelle = {});
@@ -14053,7 +14217,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 320;
+const APP_BUILD = 321;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -15105,6 +15269,7 @@ function renderInner(){
     return;
   }
   if(applyLegacyWallStreet(c)) saveState();   // convertit d'anciennes prévisions en % dès que le prix actuel est connu
+  if(recordScoreToday(c)) saveState();   // une note par jour où l'analyse est ouverte (graphique de la section 6)
 
   let html = `
     <div class="wrap page">
