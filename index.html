@@ -800,143 +800,6 @@ input.company-name:focus{ outline:none; border-bottom-color:var(--blue); }
 .rh-sleg{ display:flex; flex-direction:column; gap:8px; margin-top:12px; padding-top:10px; border-top:1px solid var(--border); }
 .rh-sl{ display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:12.5px; color:var(--ink-soft); }
 .rh-sl b{ margin-right:8px; font-size:14px; color:var(--ink); }
-/* Cartes pour les réseaux sociaux (2026-10-31) : images 16:9 de 1200 x 675, très gros caractères */
-.so-overlay{ position:fixed; inset:0; z-index:5000; display:flex; flex-direction:column; overflow:auto; background:rgba(4,8,18,.94); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); color:#c3cee5; }
-.so-bar{ position:sticky; top:0; z-index:3; flex:0 0 auto; display:flex; align-items:center; flex-wrap:wrap; gap:10px 16px; padding:12px 20px; background:rgba(4,8,18,.96); }
-.so-bt{ font-family:var(--font-serif); font-weight:700; font-size:18px; color:#fff; }
-.so-tabs{ display:flex; flex-wrap:wrap; gap:6px; flex:1 1 auto; }
-.so-tab{ border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.05); color:#dbe4f5; font:inherit; font-size:14px; font-weight:700; padding:7px 15px; border-radius:99px; cursor:pointer; }
-.so-tab.on{ background:#2a5bea; border-color:#2a5bea; color:#fff; }
-.so-acts{ display:flex; flex-wrap:wrap; gap:8px; margin-left:auto; }
-.so-btn{ border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.06); color:#fff; font:inherit; font-size:14px; font-weight:600; padding:8px 16px; border-radius:99px; cursor:pointer; }
-.so-btn:hover{ background:rgba(255,255,255,.14); }
-.so-btn-p{ background:#2a5bea; border-color:#2a5bea; }
-.so-btn-p:hover{ background:#3b6cf5; }
-.so-btn:disabled{ opacity:.6; cursor:wait; }
-.so-stage{ flex:1 1 auto; display:flex; align-items:center; justify-content:center; padding:10px 8px; min-height:0; }
-.so-holder{ position:relative; flex:0 0 auto; }
-.so-card{ display:none; position:absolute; left:0; top:0; width:1200px; height:675px; transform-origin:0 0; overflow:hidden; background:linear-gradient(135deg, #0b1630 0%, #12254b 100%); color:#fff; font-family:var(--font-ui); box-shadow:0 20px 60px rgba(0,0,0,.5); }
-.so-card.on{ display:block; }
-.so-in{ position:absolute; left:0; top:0; width:1200px; height:675px; box-sizing:border-box; padding:34px 44px 22px; display:flex; flex-direction:column; gap:14px; overflow:hidden; }
-.so-head{ display:flex; align-items:center; gap:20px; flex:0 0 auto; }
-.so-av.preview-avatar{ width:76px; height:76px; flex:0 0 76px; border-radius:18px; font-size:30px; }
-.so-compact .so-av.preview-avatar{ width:60px; height:60px; flex:0 0 60px; border-radius:15px; font-size:24px; }
-.so-id{ min-width:0; }
-.so-name{ font-family:var(--font-serif); font-weight:700; font-size:46px; line-height:1.05; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:720px; }
-.so-compact .so-name{ font-size:38px; }
-.so-chips{ display:flex; gap:10px; margin-top:8px; }
-.so-compact .so-chips{ margin-top:6px; }
-.so-chip{ display:inline-flex; align-items:center; gap:8px; font-size:20px; color:#c3cee5; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:99px; padding:3px 15px; white-space:nowrap; }
-.so-chip .flag-icon{ display:inline-flex; }
-.so-mono{ font-family:var(--font-mono); font-weight:600; color:#fff; }
-.so-dec{ margin-left:auto; display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex:0 0 auto; }
-.so-dpill{ font-size:34px; font-weight:800; color:#fff; background:var(--c); border-radius:14px; padding:6px 26px; }
-.so-conv{ display:flex; align-items:center; gap:12px; }
-.so-conv b{ font-size:30px; color:#fff; }
-.so-conv small{ font-size:20px; color:#8fa1c2; font-weight:600; margin-left:2px; }
-.so-stars{ display:inline-flex; gap:3px; }
-.so-st{ position:relative; display:block; width:34px; height:34px; }
-.so-st svg{ display:block; width:34px; height:34px; }
-.so-st-e{ color:rgba(255,255,255,.2); }
-.so-st-f{ position:absolute; left:0; top:0; height:34px; overflow:hidden; color:#f5b942; }
-.so-mini{ margin-left:auto; display:flex; align-items:baseline; gap:6px; }
-.so-mini b{ font-size:54px; font-weight:800; line-height:1; }
-.so-mini small{ font-size:24px; color:#8fa1c2; font-weight:600; }
-.so-main{ flex:1 1 auto; min-height:0; display:grid; grid-template-columns:auto 1fr; align-items:center; gap:48px; }
-.so-score{ display:flex; align-items:center; gap:26px; }
-.so-ring{ position:relative; width:210px; height:210px; flex:0 0 210px; }
-.so-ring svg{ display:block; width:210px; height:210px; }
-.so-ringv{ position:absolute; left:0; top:0; width:210px; height:210px; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1; }
-.so-ringv b{ font-size:88px; font-weight:800; }
-.so-ringv small{ font-size:22px; color:#8fa1c2; margin-top:6px; font-weight:600; }
-.so-tier{ font-size:36px; font-weight:800; line-height:1.1; max-width:190px; }
-.so-val{ display:flex; flex-direction:column; gap:10px; min-width:0; }
-.so-vrow{ display:flex; align-items:baseline; justify-content:space-between; gap:20px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,.12); }
-.so-vrow span{ font-size:26px; color:#c3cee5; }
-.so-vrow b{ font-size:54px; font-weight:800; line-height:1; color:#fff; white-space:nowrap; }
-.so-vrow2 b{ font-size:44px; color:#e6ecf8; }
-.so-vrow b.so-soft{ font-size:30px; color:#8fa1c2; font-weight:600; }
-.so-verdict{ align-self:flex-start; font-size:32px; font-weight:800; color:var(--c); background:color-mix(in srgb, var(--c) 16%, transparent); border:2px solid color-mix(in srgb, var(--c) 55%, transparent); border-radius:14px; padding:6px 20px; margin-top:4px; }
-.so-tiles{ display:grid; gap:12px; flex:0 0 auto; }
-.so-t1{ grid-template-columns:repeat(1, 1fr); } .so-t2{ grid-template-columns:repeat(2, 1fr); } .so-t3{ grid-template-columns:repeat(3, 1fr); }
-.so-t4{ grid-template-columns:repeat(4, 1fr); } .so-t5{ grid-template-columns:repeat(5, 1fr); } .so-t6{ grid-template-columns:repeat(6, 1fr); }
-.so-t{ background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:16px; padding:12px 8px 10px; text-align:center; min-width:0; }
-.so-tl{ font-size:20px; color:#aab9d6; font-weight:600; line-height:1.15; white-space:nowrap; }
-.so-tv{ font-size:42px; font-weight:800; line-height:1.1; margin-top:4px; white-space:nowrap; color:#fff; }
-.so-ts{ font-size:17px; color:#8fa1c2; margin-top:2px; white-space:nowrap; }
-.so-these{ flex:0 0 auto; display:flex; gap:16px; align-items:flex-start; border-left:5px solid #c9a24a; padding:4px 0 4px 20px; }
-.so-these span{ flex:0 0 auto; font-size:20px; font-weight:800; color:#c9a24a; text-transform:uppercase; letter-spacing:.06em; padding-top:6px; }
-.so-these q{ display:block; font-size:27px; line-height:1.28; color:#f1f5ff; font-weight:600; max-height:70px; overflow:hidden; }
-.so-these q::before, .so-these q::after{ content:none; }
-.so-foot{ flex:0 0 auto; margin-top:auto; display:flex; align-items:center; gap:16px; font-size:17px; color:#8fa1c2; }
-.so-brand{ display:inline-flex; align-items:center; gap:10px; white-space:nowrap; }
-.so-brand img{ border-radius:6px; }
-.so-brand b{ font-family:var(--font-serif); font-size:22px; color:#fff; }
-.so-disc{ margin-left:auto; text-align:right; white-space:nowrap; }
-.so-pg{ background:rgba(255,255,255,.1); border-radius:99px; padding:2px 12px; font-weight:700; color:#dbe4f5; }
-.so-title{ flex:0 0 auto; font-family:var(--font-serif); font-weight:700; font-size:38px; line-height:1.1; color:#fff; }
-.so-title small{ font-family:var(--font-ui); font-size:22px; font-weight:500; color:#8fa1c2; margin-left:16px; }
-.so-empty{ flex:1 1 auto; display:flex; align-items:center; justify-content:center; text-align:center; font-size:28px; color:#8fa1c2; padding:0 80px; }
-.so-cols{ flex:1 1 auto; min-height:0; display:grid; grid-template-columns:5fr 6fr; gap:44px; align-items:start; overflow:hidden; }
-.so-axes{ display:flex; flex-direction:column; gap:30px; padding-top:14px; }
-.so-ax{ display:grid; grid-template-columns:190px 1fr 66px; align-items:center; gap:14px; }
-.so-axn{ font-size:28px; font-weight:700; color:#e6ecf8; }
-.so-axb{ display:block; height:20px; border-radius:99px; background:rgba(255,255,255,.1); overflow:hidden; }
-.so-axb i{ display:block; height:100%; border-radius:99px; }
-.so-ax b{ font-size:40px; font-weight:800; text-align:right; }
-.so-pts{ display:flex; flex-direction:column; gap:30px; min-width:0; padding-top:10px; }
-.so-plh{ font-size:24px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; }
-.so-plus .so-plh{ color:#22c55e; } .so-minus .so-plh{ color:#fb923c; }
-.so-pli{ display:flex; gap:14px; align-items:flex-start; font-size:26px; line-height:1.25; color:#f1f5ff; margin-top:9px; max-height:68px; overflow:hidden; }
-.so-pli i{ flex:0 0 34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-style:normal; font-weight:800; font-size:21px; }
-.so-plus .so-pli i{ background:rgba(34,197,94,.2); color:#22c55e; }
-.so-minus .so-pli i{ background:rgba(251,146,60,.2); color:#fb923c; }
-.so-fr{ position:relative; flex:0 0 auto; margin:2px 36px 0; --tt:10px; height:calc(var(--tt) + 40px + var(--rows) * 88px); }
-.so-fr.has-top{ --tt:100px; }
-.so-fr-track{ position:absolute; left:0; right:0; top:var(--tt); height:16px; border-radius:99px; background:rgba(255,255,255,.12); }
-.so-zone{ position:absolute; top:0; bottom:0; border-radius:99px; background:linear-gradient(90deg, rgba(248,113,113,.55), rgba(34,197,94,.55)); }
-.so-fm{ position:absolute; top:50%; width:30px; height:30px; margin:-15px 0 0 -15px; border-radius:50%; background:var(--c); border:4px solid #0f1d3d; box-sizing:border-box; box-shadow:0 0 0 2px var(--c); }
-.so-fl{ position:absolute; transform:translateX(-50%); text-align:center; white-space:nowrap; }
-.so-fl span{ display:block; font-size:21px; font-weight:700; color:var(--c); }
-.so-fl b{ display:block; font-size:34px; font-weight:800; color:#fff; line-height:1.15; }
-.so-fl em{ display:block; font-style:normal; font-size:21px; font-weight:700; color:#c3cee5; }
-.so-fl-top{ top:0; }
-.so-fl-bot{ top:calc(var(--tt) + 38px); }
-.so-fl-bot.r1{ top:calc(var(--tt) + 38px + 88px); }
-.so-charts{ flex:1 1 auto; min-height:0; display:grid; gap:26px; }
-.so-c1{ grid-template-columns:1fr; } .so-c2{ grid-template-columns:1fr 1fr; }
-.so-chart{ display:flex; flex-direction:column; min-height:0; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:18px; padding:16px 22px 12px; }
-.so-ch{ display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:23px; font-weight:800; color:#c3cee5; text-transform:uppercase; letter-spacing:.04em; }
-.so-cv{ font-size:56px; font-weight:800; color:#fff; line-height:1.1; margin:2px 0 4px; }
-.so-bars{ flex:1 1 auto; min-height:0; display:flex; gap:12px; padding-top:30px; }
-.so-bc{ flex:1 1 0; min-width:0; display:flex; flex-direction:column; }
-.so-bw{ position:relative; flex:1 1 auto; min-height:0; }
-.so-bw i{ position:absolute; left:14%; right:14%; bottom:0; border-radius:8px 8px 0 0; background:linear-gradient(180deg, #7ba6ff, #2c4a96); opacity:.7; }
-.so-bw i.last{ opacity:1; background:linear-gradient(180deg, #8fb4ff, #2a5bea); }
-.so-bw i.neg{ background:linear-gradient(180deg, #f87171, #b91c1c); }
-.so-bw b{ position:absolute; left:50%; transform:translateX(-50%); font-size:19px; font-weight:700; color:#dbe4f5; white-space:nowrap; }
-.so-bc span{ text-align:center; font-size:18px; color:#8fa1c2; margin-top:8px; }
-.so-mgs{ flex:0 0 auto; display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; }
-.so-mg{ display:flex; flex-wrap:wrap; align-items:center; gap:2px 12px; background:rgba(255,255,255,.06); border-radius:14px; padding:10px 18px; }
-.so-mg span{ flex:1 0 100%; font-size:21px; color:#c3cee5; font-weight:600; }
-.so-mg b{ font-size:36px; font-weight:800; color:#fff; }
-.so-card .rh-d{ font-size:20px; padding:3px 12px; flex:0 0 auto; width:auto; }
-.so-compact .so-t{ padding:20px 8px 18px; }
-.so-compact .so-tv{ font-size:46px; }
-.so-fr{ margin-bottom:22px; }
-.so-card .rh-d i{ font-size:12px; }
-.so-card .rh-d.up{ color:#4ade80; background:rgba(74,222,128,.16); }
-.so-card .rh-d.down{ color:#f87171; background:rgba(248,113,113,.16); }
-.so-card .rh-d.flat{ color:#c3cee5; background:rgba(255,255,255,.1); }
-.so-cap{ flex:0 0 auto; width:min(1200px, calc(100% - 32px)); box-sizing:border-box; margin:0 auto 16px; padding:12px 16px 14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:16px; }
-.so-cap-h{ display:flex; justify-content:space-between; align-items:center; font-size:14px; color:#c3cee5; }
-.so-cap-h b{ font-size:15px; color:#fff; }
-#soCount{ font-weight:700; font-variant-numeric:tabular-nums; }
-#soCount.over{ color:#f87171; }
-.so-cap textarea{ display:block; width:100%; box-sizing:border-box; margin-top:8px; min-height:100px; resize:vertical; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.18); background:rgba(0,0,0,.28); color:#fff; font:inherit; font-size:15px; line-height:1.45; }
-.so-cap-b{ display:flex; align-items:center; flex-wrap:wrap; gap:8px 14px; margin-top:10px; }
-.so-cap-hint{ font-size:13px; color:#8fa1c2; }
-@media (max-width:760px){ .so-bar{ position:static; padding:10px 12px; } .so-bt{ flex:1 0 100%; font-size:16px; } .so-acts{ margin-left:0; } }
 .ro-fiche .rh-pencil{ display:none; }
 .upd-dot{ display:inline-block; width:11px; height:11px; margin:0 7px 0 0; padding:0; border:0; border-radius:50%; background:#f2994a; vertical-align:-1px; cursor:pointer; box-shadow:0 0 0 3px color-mix(in srgb, #f2994a 22%, transparent); }
 .upd-dot:hover{ background:var(--green); box-shadow:0 0 0 3px color-mix(in srgb, var(--green) 25%, transparent); }
@@ -1231,7 +1094,11 @@ body.sx-lock{ overflow:hidden; }
 .sx-zoomed .sx-back{ display:inline-flex; }
 .sx-dl{ display:none; }
 .sx-zoomed .sx-dl{ display:inline-flex; align-items:center; background:var(--accent); border-color:transparent; color:#fff; }
-.sx-dl:disabled{ opacity:.6; cursor:progress; }
+.sx-dl:disabled, .sx-dlall:disabled{ opacity:.6; cursor:progress; }
+.sx-dlall{ display:none; }
+.sx-zoomed .sx-dlall, .sx-overlay[data-cur="3"] .sx-dlall{ display:inline-flex; align-items:center; }
+.sx-overlay[data-cur="3"] .sx-dl{ display:inline-flex; align-items:center; background:var(--accent); border-color:transparent; color:#fff; }
+.sx-exporting .sx-zoomhost, .sx-exporting .sx-scale{ opacity:0; }
 .sx-zoomed .sx-scale{ display:none; }
 .sx-zoomhost{ flex:0 0 auto; }
 .sx-zoomcard{ padding:20px 20px 12px 20px; }
@@ -14265,7 +14132,7 @@ function applyReadOnlyFiche(){
   });
   main.querySelectorAll('[contenteditable]').forEach(el => el.setAttribute('contenteditable', 'false'));
   main.querySelectorAll('[draggable="true"]').forEach(el => el.setAttribute('draggable', 'false'));
-  ['#alertsBlock', '#position-card', '.share-btn', '.soc-btn', '#thesisChangeBtn', '.snav [data-jump="position-card"]'].forEach(s => {
+  ['#alertsBlock', '#position-card', '.share-btn', '#thesisChangeBtn', '.snav [data-jump="position-card"]'].forEach(s => {
     main.querySelectorAll(s).forEach(el => el.parentNode.removeChild(el));
   });
   const cur = document.getElementById('companyCurrencyToggle');
@@ -14379,7 +14246,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 323;
+const APP_BUILD = 324;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -14685,7 +14552,6 @@ function navSync(){
 }
 function navRestore(s){
   sxClose();
-  socialClose();
   currentView = s.view;
   receivedId = s.rid || '';
   if(s.year) reviewYear = s.year;
@@ -15206,6 +15072,7 @@ function sxShow(n){
   const host = ov.querySelector('.sx-zoomhost'); if(host) host.remove();
   sxZoomN = 0; ov.classList.remove('sx-zoomed');
   sxPage = n;
+  ov.dataset.cur = String(n);
   ov.querySelectorAll('.sx-scale .sx-card').forEach(cd => cd.classList.toggle('sx-on', cd.dataset.sxPage === String(n)));
   ov.querySelectorAll('.sx-pgb[data-sx-go]').forEach(b => b.classList.toggle('on', b.dataset.sxGo === String(n)));
   sxArrows();
@@ -15284,49 +15151,113 @@ async function sxInlineImages(root, initials){
     }
   }));
 }
+// Images pour les réseaux sociaux (2026-10-31, demande de l'auteur : « optimiser les fiches résumé 1 à 6 et le graphique de ventilation pour des posts »).
+// Même mise en forme que le résumé, mais exportée dans un CADRE DE TAILLE FIXE : les 6 sections en 4:5 (1080 x 1350, le format portrait le plus haut qui s'affiche en entier dans un fil),
+// le schéma du chiffre d'affaires au bénéfice en 16:9 (1920 x 1080). Pour les sections, la largeur de la carte est cherchée comme dans la fenêtre (sxBuildZoom) mais avec le cadre
+// d'export comme « fenêtre » : le texte est donc le plus grand possible dans l'image, et les 6 images ont exactement la même taille, quelle que soit la fenêtre de l'utilisateur.
+const SX_EXP = { sec:{ w:1080, h:1350, m:26, k:1.5 }, page:{ w:1920, h:1080, m:0, k:1.25 } };
+const SX_EXP_BG = 'linear-gradient(160deg,#10203f 0%,#0a1328 62%,#0b1530 100%)';
 function sxFileName(c, n){
   const clean = s => String(s || '').replace(/[\\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
   const d = new Date(), p = x => String(x).padStart(2, '0');
-  return `${clean(c.name) || 'Analyse'} - ${SX_SECTION_NAMES[n - 1] || 'Section'} - ${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}.png`;
+  const part = n === 7 ? 'Du CA au bénéfice' : (n + ' ' + (SX_SECTION_NAMES[n - 1] || 'Section'));
+  return `${clean(c.name) || 'Analyse'} - ${part} - ${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}.png`;
 }
-async function sxDownload(){
+// Fabrique le PNG d'une carte (copiée avec tous ses styles) centrée dans un cadre F de taille fixe
+async function sxPngFrame(c, src, cw, ch, F, hidePg){
+  const s = Math.min((F.w - 2 * F.m) / cw, (F.h - 2 * F.m) / ch);
+  const clone = src.cloneNode(true);
+  sxInlineStyles(src, clone);
+  const st = clone.style;
+  st.transform = 'scale(' + s.toFixed(5) + ')'; st.transformOrigin = '0 0'; st.boxShadow = 'none'; st.margin = '0'; st.position = 'absolute';
+  st.left = ((F.w - cw * s) / 2).toFixed(2) + 'px'; st.top = ((F.h - ch * s) / 2).toFixed(2) + 'px';
+  st.width = cw + 'px'; st.height = ch + 'px'; st.minHeight = ''; st.borderRadius = '0'; st.borderColor = 'transparent'; st.background = 'transparent';
+  if(hidePg) clone.querySelectorAll('.sx-pg').forEach(e => { e.style.display = 'none'; });
+  const fr = document.createElement('div');
+  fr.style.cssText = 'position:relative;width:' + F.w + 'px;height:' + F.h + 'px;overflow:hidden;background:' + SX_EXP_BG;
+  fr.appendChild(clone);
+  await sxInlineImages(fr, String(c.name || '?').trim().slice(0, 1).toUpperCase());
+  const fonts = await sxFontFaceCss();
+  const xhtml = new XMLSerializer().serializeToString(fr);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${F.w}" height="${F.h}" viewBox="0 0 ${F.w} ${F.h}"><defs><style>${fonts}</style></defs><foreignObject x="0" y="0" width="${F.w}" height="${F.h}">${xhtml}</foreignObject></svg>`;
+  // adresse « data: » et non « blob: » : avec une adresse blob, le navigateur marque le canvas comme « contaminé » et refuse l'export en PNG
+  const img = new Image();
+  await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error('image')); img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); });
+  const cv = document.createElement('canvas'); cv.width = Math.round(F.w * F.k); cv.height = Math.round(F.h * F.k);
+  const ctx = cv.getContext('2d');
+  ctx.scale(F.k, F.k);
+  ctx.drawImage(img, 0, 0);
+  await new Promise(r => setTimeout(r, 120));   // laisse aux polices intégrées le temps de s'appliquer, puis on redessine par-dessus
+  ctx.clearRect(0, 0, F.w, F.h); ctx.drawImage(img, 0, 0);
+  return new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error('blob')), 'image/png'));
+}
+async function sxExportSection(c, ov, n){
+  const F = SX_EXP.sec, keep = sxZoomN;
+  sxZoomN = n;
+  ov.classList.add('sx-zoomed');
+  try{
+    sxBuildZoom(ov, F.w - 2 * F.m, F.h - 2 * F.m, false);
+    const zc = ov.querySelector('.sx-zoomcard');
+    if(!zc) throw new Error('zoom');
+    return await sxPngFrame(c, zc, zc.offsetWidth, zc.offsetHeight, F, false);
+  }finally{ sxZoomN = keep; }
+}
+async function sxExportPage3(c, ov){
+  const cd = ov.querySelector('.sx-card[data-sx-page="3"]');
+  if(!cd || !cd.offsetWidth) throw new Error('page3');
+  // Dans la fenêtre, la carte est étirée jusqu'en bas et le schéma réduit pour tenir en hauteur : pour l'image, on le laisse prendre TOUTE la largeur de la carte
+  // (hauteur naturelle), la carte est ensuite mise à l'échelle dans le cadre 16:9. sxFit() remet la mise en page de la fenêtre juste après (fin de sxDownload).
+  cd.style.minHeight = '';
+  sxSizeSk(cd, 0);
+  return sxPngFrame(c, cd, cd.offsetWidth, cd.offsetHeight, SX_EXP.page, true);   // « Page 3 sur 3 » n'a pas de sens dans une image isolée
+}
+function sxSaveBlob(blob, name){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+const sxFrames = () => new Promise(r => setTimeout(r, 80));   // pas de requestAnimationFrame : il ne se déclenche pas quand l'onglet est en arrière-plan
+// all = faux : l'image affichée (section en plein écran, ou page 3) ; vrai : les 6 sections et le schéma, une image chacun
+async function sxDownload(all){
   const ov = document.getElementById('sxOverlay');
   const c = getActive();
-  if(!ov || !c || sxZoomN <= 0) return;
-  const zc = ov.querySelector('.sx-zoomcard');
-  if(!zc) return;
-  const btn = ov.querySelector('[data-sx-download]');
-  const label = btn ? btn.innerHTML : '';
-  if(btn){ btn.disabled = true; btn.textContent = "Création de l'image…"; }
+  if(!ov || !c || ov.dataset.mode === 'cmp') return;
+  const hasP3 = sxPages() > 2;
+  const single = sxZoomN > 0 ? sxZoomN : (sxPage === 3 && hasP3 ? 7 : 0);
+  if(!all && !single) return;
+  const btns = [...ov.querySelectorAll('[data-sx-download], [data-sx-downloadall]')];
+  const labels = btns.map(b => b.innerHTML);
+  const active = ov.querySelector(all ? '[data-sx-downloadall]' : '[data-sx-download]');
+  btns.forEach(b => { b.disabled = true; });
+  if(active) active.textContent = all ? 'Création des images…' : "Création de l'image…";
+  const origZoom = sxZoomN, origPage = sxPage;
+  ov.classList.add('sx-exporting');
+  let done = 0, lastName = '';
   try{
-    const W = zc.offsetWidth, H = zc.offsetHeight;
-    const clone = zc.cloneNode(true);
-    sxInlineStyles(zc, clone);
-    clone.style.transform = 'none'; clone.style.boxShadow = 'none'; clone.style.margin = '0'; clone.style.position = 'static';
-    await sxInlineImages(clone, String(c.name || '?').trim().slice(0, 1).toUpperCase());
-    const fonts = await sxFontFaceCss();
-    const xhtml = new XMLSerializer().serializeToString(clone);
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><defs><style>${fonts}</style></defs><foreignObject x="0" y="0" width="${W}" height="${H}">${xhtml}</foreignObject></svg>`;
-    // adresse « data: » et non « blob: » : avec une adresse blob, le navigateur marque le canvas comme « contaminé » et refuse l'export en PNG
-    const img = new Image();
-    await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error('image')); img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); });
-    const SCALE = 2;
-    const cv = document.createElement('canvas'); cv.width = W * SCALE; cv.height = H * SCALE;
-    const ctx = cv.getContext('2d');
-    ctx.scale(SCALE, SCALE);
-    ctx.drawImage(img, 0, 0);
-    await new Promise(r => setTimeout(r, 120));   // laisse aux polices intégrées le temps de s'appliquer, puis on redessine par-dessus
-    ctx.clearRect(0, 0, W, H); ctx.drawImage(img, 0, 0);
-    const blob = await new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error('blob')), 'image/png'));
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = sxFileName(c, sxZoomN);
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-    showToast('Image téléchargée : ' + a.download);
+    const jobs = all ? [...(hasP3 ? [7] : []), 1, 2, 3, 4, 5, 6] : [single];
+    for(const j of jobs){
+      let blob;
+      if(j === 7){
+        if(sxPage !== 3 || sxZoomN > 0){ sxShow(3); await sxFrames(); }
+        blob = await sxExportPage3(c, ov);
+      }else{
+        blob = await sxExportSection(c, ov, j);
+      }
+      lastName = sxFileName(c, j);
+      sxSaveBlob(blob, lastName);
+      done++;
+      if(jobs.length > 1) await new Promise(r => setTimeout(r, 400));   // laisse le navigateur enchaîner plusieurs téléchargements
+    }
+    showToast(done > 1 ? done + ' images téléchargées.' : 'Image téléchargée : ' + lastName);
   }catch(e){
     showToast("Impossible de créer l'image. Essayez avec Chrome ou Edge.");
   }finally{
-    if(btn){ btn.disabled = false; btn.innerHTML = label; }
+    ov.classList.remove('sx-exporting');
+    ov._zoomSize = null;
+    if(origZoom > 0){ sxZoomN = origZoom; ov.classList.add('sx-zoomed'); sxFit(); }
+    else sxShow(origPage);
+    btns.forEach((b, k) => { b.disabled = false; b.innerHTML = labels[k]; });
   }
 }
 function sxStep(d){
@@ -15344,7 +15275,7 @@ function sxOpen(){
   const ov = document.createElement('div');
   ov.className = 'sx-overlay'; ov.id = 'sxOverlay'; ov.dataset.pages = String(pages.length);
   ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Résumé de l\'analyse');
-  ov.innerHTML = `<div class="sx-bar"><span class="sx-bar-t">Résumé de l'analyse</span><span class="sx-pages"><button type="button" class="sx-pgb on" data-sx-go="1">Page 1 <small>Sections 1 à 3</small></button><button type="button" class="sx-pgb" data-sx-go="2">Page 2 <small>Sections 4 à 6</small></button>${pages.length > 2 ? '<button type="button" class="sx-pgb" data-sx-go="3">Page 3 <small>Du CA au bénéfice</small></button>' : ''}<button type="button" class="sx-pgb sx-back" data-sx-zoom="0">&larr; Retour au résumé</button><button type="button" class="sx-pgb sx-dl" data-sx-download>Télécharger l'image</button></span><button type="button" class="sx-pgb sx-soc" data-social-open>Réseaux sociaux</button><button type="button" class="sx-close" data-sx-close>Fermer &#10005;</button></div><button type="button" class="sx-arrow sx-prev sx-off" data-sx-step="-1" aria-label="Page précédente">${SX_ARROW_L}</button><button type="button" class="sx-arrow sx-next" data-sx-step="1" aria-label="Page suivante">${SX_ARROW_R}</button><div class="sx-scale">${pages.join('')}</div>`;
+  ov.innerHTML = `<div class="sx-bar"><span class="sx-bar-t">Résumé de l'analyse</span><span class="sx-pages"><button type="button" class="sx-pgb on" data-sx-go="1">Page 1 <small>Sections 1 à 3</small></button><button type="button" class="sx-pgb" data-sx-go="2">Page 2 <small>Sections 4 à 6</small></button>${pages.length > 2 ? '<button type="button" class="sx-pgb" data-sx-go="3">Page 3 <small>Du CA au bénéfice</small></button>' : ''}<button type="button" class="sx-pgb sx-back" data-sx-zoom="0">&larr; Retour au résumé</button><button type="button" class="sx-pgb sx-dl" data-sx-download>Télécharger l'image</button><button type="button" class="sx-pgb sx-dlall" data-sx-downloadall>Tout télécharger</button></span><button type="button" class="sx-close" data-sx-close>Fermer &#10005;</button></div><button type="button" class="sx-arrow sx-prev sx-off" data-sx-step="-1" aria-label="Page précédente">${SX_ARROW_L}</button><button type="button" class="sx-arrow sx-next" data-sx-step="1" aria-label="Page suivante">${SX_ARROW_R}</button><div class="sx-scale">${pages.join('')}</div>`;
   document.body.appendChild(ov);
   document.body.classList.add('sx-lock');
   sxFit();
@@ -15362,7 +15293,8 @@ function initSummary(){
     if(e.target.closest && e.target.closest('[data-cmp-card-open]')){ cmpCardOpen(); return; }
     const ov = document.getElementById('sxOverlay');
     if(!ov) return;
-    if(e.target.closest && e.target.closest('[data-sx-download]')){ sxDownload(); return; }
+    if(e.target.closest && e.target.closest('[data-sx-downloadall]')){ sxDownload(true); return; }
+    if(e.target.closest && e.target.closest('[data-sx-download]')){ sxDownload(false); return; }
     const zm = e.target.closest && e.target.closest('[data-sx-zoom]');
     if(zm){ sxZoomTo(zm.dataset.sxZoom); return; }
     const st = e.target.closest && e.target.closest('[data-sx-step]');
@@ -15379,378 +15311,6 @@ function initSummary(){
   });
   let sxResizeT = 0; window.addEventListener('resize', () => { clearTimeout(sxResizeT); sxResizeT = setTimeout(sxFit, 120); });
 }
-
-// ============================================================
-// CARTES POUR LES RÉSEAUX SOCIAUX (2026-10-31, demande de l'auteur : publier ses analyses sur Twitter / X)
-// Pourquoi une version à part : les pages du résumé sont faites pour être LUES sur l'écran (beaucoup de chiffres, textes de 13 à 16 px). Réduites à la largeur
-// d'un fil Twitter (environ 500 px), elles deviennent illisibles. Ici : des images 16:9 de 1200 x 675 (le format que Twitter affiche en entier, sans recadrage),
-// un seul message par carte, de très gros caractères, les chiffres qui comptent, la note et le verdict bien en vue, et un texte de post prêt à copier (280 caractères).
-// Tout est dérivé des données déjà saisies (aucune donnée stockée) ; l'image PNG est fabriquée comme celle des sections du résumé (sxInlineStyles, polices intégrées).
-// ============================================================
-const SO_W = 1200, SO_H = 675, SO_TWEET_MAX = 280;
-let soIdx = 1;
-// Texte riche -> lignes de texte brut (n au plus, max caractères, coupées à un mot entier) ; PAS échappées
-function soLines(html, n, max){
-  const t = String(html || '').replace(/<(br|div|\/div|p|\/p|li|\/li)\b[^>]*>/gi, '\n').replace(/<[^>]*>/g, ' ');
-  return sxDecode(t).split(/\n+/).map(s => s.replace(/^[\s\-–•·*✓✔✗✘]+/, '').replace(/\s+/g, ' ').trim()).filter(Boolean).slice(0, n).map(s => {
-    if(s.length <= max) return s;
-    const cut = s.slice(0, max), sp = cut.lastIndexOf(' ');
-    return (sp > max * 0.6 ? cut.slice(0, sp) : cut).replace(/[\s,;:.\-–]+$/, '') + '…';
-  });
-}
-// Première phrase d'un texte riche (la thèse), 170 caractères au plus ; PAS échappée
-function soFirstSentence(html, max){
-  const t = sxDecode(richToPlain(html)).replace(/\s+/g, ' ').trim();
-  if(!t) return '';
-  const m = /^(.+?[.!?])(\s|$)/.exec(t);
-  const s = m && m[1].length >= 25 ? m[1] : t;
-  if(s.length <= max) return s;
-  const cut = s.slice(0, max), sp = cut.lastIndexOf(' ');
-  return (sp > max * 0.6 ? cut.slice(0, sp) : cut).replace(/[\s,;:.\-–]+$/, '') + '…';
-}
-// Indicateurs chiffrés avec leur palier de couleur (même barème que partout dans l'application)
-function soIndicators(c){
-  const fin = c.fields.financier || {};
-  const cagr = k => num(fin[k] && fin[k].cagr);
-  const pct = v => fmtNum(v, 1) + ' %';
-  const fcfNeg = v => v < 0 ? FCF_NEGATIF_TXT : pct(v);
-  return [
-    { key:'peg', label:'PEG', v:computePeg(c), f:v => fmtRatioPos(v) },
-    { key:'peRelatifSecteur', label:'PE / secteur', v:computePeRelatif(c), f:v => fmtRatioPos(v) },
-    { key:'croissanceCA', label:'Croissance du CA', v:cagr('croissanceCA'), f:pct },
-    { key:'croissanceBenef', label:'Croissance des bénéfices', v:cagr('croissanceBenef'), f:pct },
-    { key:'margeBrute', label:'Marge brute', v:num(fin.margeBrute), f:pct },
-    { key:'margeNette', label:'Marge nette', v:num(fin.margeNette), f:pct },
-    { key:'margeFcf', label:'Marge FCF', v:computeMargeFcf(c), f:fcfNeg },
-    { key:'roic', label:'ROIC', v:num(fin.roic), f:pct },
-    { key:'roe', label:'ROE', v:num(fin.roe), f:pct },
-    { key:'detteActif', label:'Dette nette / FCF', v:computeDetteActif(c), f:v => sxFr(fmtDetteActif(v)) },
-    { key:'rendementFcf', label:'Rendement du FCF', v:computeRendementFcf(c), f:fcfNeg },
-    { key:'probaFaillite', label:'Risque de faillite', v:num(fin.probaFaillite), f:pct }
-  ].filter(x => x.v !== null && x.v !== undefined && Number.isFinite(x.v)).map(x => Object.assign(x, { tier:getScaleTier(x.key, x.v), txt:x.f(x.v) }));
-}
-const soTier = t => t ? TOOLTIP_TIER_COLORS[t] : null;
-function soTile(label, value, color, sub){
-  return `<div class="so-t"><div class="so-tl">${label}</div><div class="so-tv"${color ? ` style="color:${color}"` : ''}>${value}</div>${sub ? `<div class="so-ts">${sub}</div>` : ''}</div>`;
-}
-// Les chiffres les plus parlants, dans l'ordre, ceux qui sont renseignés (6 au plus)
-function soTiles(c, max){
-  const out = [], pe = computePeActuel(c), ind = soIndicators(c);
-  if(pe !== null && pe > 0) out.push({ label:'PE', value:fmtNum(pe, 1), color:null, sub:'' });
-  [['peg', 'PEG'], ['croissanceCA', 'Croissance CA'], ['margeNette', 'Marge nette'], ['roic', 'ROIC'], ['detteActif', 'Dette / FCF'], ['rendementFcf', 'Rendement FCF'], ['margeFcf', 'Marge FCF'], ['roe', 'ROE']].forEach(k => {
-    const x = ind.find(y => y.key === k[0]);
-    if(x && out.length < max) out.push({ label:k[1], value:x.txt, color:soTier(x.tier), sub:k[0] === 'croissanceCA' ? 'par an, sur 5 ans' : '' });
-  });
-  return out.slice(0, max);
-}
-// Points forts / à surveiller : d'abord ce que l'auteur a écrit, sinon les chiffres aux paliers « très bon » et « mauvais »
-function soPoints(c){
-  const pers = c.fields.personnelle || {};
-  let forts = soLines(pers.pointsForts, 3, 90), faibles = soLines(pers.pointsFaibles, 3, 90);
-  const ind = soIndicators(c);
-  if(!forts.length) forts = ind.filter(x => x.tier === 'tresbon').slice(0, 3).map(x => x.label + ' : ' + x.txt);
-  if(!faibles.length) faibles = ind.filter(x => x.tier === 'mauvais').slice(0, 3).map(x => x.label + ' : ' + x.txt);
-  return { forts, faibles };
-}
-function soHead(c, right){
-  const idn = c.fields.identite || {}, av = avatarInner(c);
-  const sect = idn.secteur && idn.secteur.secteur, pays = idn.paysSiege && idn.paysSiege.pays;
-  return `<div class="so-head"><div class="so-av preview-avatar${av.cls}">${av.html}</div><div class="so-id"><div class="so-name">${escapeHtml(c.name || 'Sans nom')}</div><div class="so-chips">${idn.ticker ? `<span class="so-chip so-mono">${escapeHtml(idn.ticker)}</span>` : ''}${pays ? `<span class="so-chip">${flagIcon(pays)} ${escapeHtml(pays)}</span>` : ''}${sect ? `<span class="so-chip">${escapeHtml(sect)}</span>` : ''}</div></div>${right || ''}</div>`;
-}
-function soFoot(n, total){
-  return `<div class="so-foot"><span class="so-brand"><img src="icon-192.png" alt="" width="28" height="28"><b>The Analytics</b><span>the-analytics.fr</span></span><span class="so-disc"><span>Analyse personnelle, pas un conseil en investissement</span> · ${formatDateFr(updDateLocal())}</span><span class="so-pg">${n}/${total}</span></div>`;
-}
-function soStars(n){
-  const star = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.94 6.06 6.66.87-4.86 4.63 1.2 6.6L12 17.4l-5.94 3.26 1.2-6.6L2.4 9.43l6.66-.87L12 2.5z" fill="currentColor"/></svg>`;
-  let out = '';
-  for(let i = 1; i <= 5; i++){
-    const f = Math.max(0, Math.min(1, n - (i - 1))) * 100;
-    out += `<span class="so-st"><span class="so-st-e">${star}</span><span class="so-st-f" style="width:${f}%">${star}</span></span>`;
-  }
-  return `<span class="so-stars">${out}</span>`;
-}
-function soDecision(c){
-  const pers = c.fields.personnelle || {}, d = pers.decision || '', st = DECISION_STYLE[d];
-  const conv = parseFloat(pers.conviction) || 0;
-  if(!st && !conv) return '';
-  return `<div class="so-dec">${st ? `<div class="so-dpill" style="--c:${st.color}">${escapeHtml(d)}</div>` : ''}${conv ? `<div class="so-conv">${soStars(conv)}<b>${String(conv).replace('.', LANG === 'fr' ? ',' : '.')}<small>/5</small></b></div>` : ''}</div>`;
-}
-// Carte 1 : le verdict (note, décision, cours face à la valeur intrinsèque, 6 chiffres, thèse en une phrase)
-function soCard1(c, n, total){
-  const val = c.fields.valorisation || {}, pers = c.fields.personnelle || {}, cur = c.currency;
-  const sinfo = computeScoreInfo(c), gs = sinfo.score;
-  const col = gs === null ? 'rgba(255,255,255,.35)' : scoreColor5(gs, true);
-  const tierName = gs === null ? 'Note à calculer' : SCORE5_NAMES[scoreTier5(gs)];
-  const good = TOOLTIP_TIER_COLORS.tresbon, bad = TOOLTIP_TIER_COLORS.mauvais;
-  const price = parseMoney(val.prixActuel), iv = parseMoney(val.valeurIntrinseque), e = computeEcart(c, 'valeurIntrinseque');
-  const R = 100, circ = 2 * Math.PI * R;
-  const ring = `<div class="so-ring"><svg viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="${R}" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="20"/><circle cx="120" cy="120" r="${R}" fill="none" stroke="${col}" stroke-width="20" stroke-linecap="round" stroke-dasharray="${gs === null ? 0 : (gs / 100 * circ).toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 120 120)"/></svg><div class="so-ringv"><b style="color:${col}">${gs === null ? '—' : Math.round(gs)}</b><small>sur 100</small></div></div>`;
-  let verdict = '';
-  if(e !== null) verdict = e > 0.05 ? `<div class="so-verdict" style="--c:${bad}">Surévaluation de ${fmtNum(e, 0)}&nbsp;%</div>` : (e < -0.05 ? `<div class="so-verdict" style="--c:${good}">Sous-évaluation de ${fmtNum(Math.abs(e), 0)}&nbsp;%</div>` : `<div class="so-verdict" style="--c:#c3cee5">Prix proche de la valeur</div>`);
-  const valBlock = (price !== null || iv !== null)
-    ? `<div class="so-val">${price !== null ? `<div class="so-vrow"><span>Cours actuel</span><b>${escapeHtml(fmtMoney(price, cur))}</b></div>` : ''}${iv !== null ? `<div class="so-vrow so-vrow2"><span>Valeur intrinsèque</span><b>${escapeHtml(fmtMoney(iv, cur))}</b></div>` : ''}${verdict}</div>`
-    : `<div class="so-val"><div class="so-vrow"><span>Valorisation</span><b class="so-soft">à renseigner</b></div></div>`;
-  const tiles = soTiles(c, 6);
-  const tilesHtml = tiles.length ? `<div class="so-tiles so-t${tiles.length}">${tiles.map(t => soTile(t.label, t.value, t.color, t.sub)).join('')}</div>` : '';
-  const these = soFirstSentence(pers.these, 170);
-  const theseHtml = these ? `<div class="so-these"><span>Thèse</span><q>${escapeHtml(these)}</q></div>` : '';
-  return `<div class="so-in">${soHead(c, soDecision(c))}<div class="so-main">${ring ? `<div class="so-score">${ring}<div class="so-tier" style="color:${col}">${escapeHtml(tierName)}</div></div>` : ''}${valBlock}</div>${tilesHtml}${theseHtml}${soFoot(n, total)}</div>`;
-}
-// Carte 2 : le profil (les 5 axes de la note, points forts et points à surveiller)
-function soCard2(c, n, total){
-  const sinfo = computeScoreInfo(c), gs = sinfo.score, none = 'rgba(255,255,255,.3)';
-  const col = gs === null ? none : scoreColor5(gs, true);
-  const bars = sinfo.axes.map(a => { const k = a.score !== null ? scoreColor5(a.score, true) : none; return `<div class="so-ax"><span class="so-axn">${a.label}</span><span class="so-axb"><i style="width:${a.score === null ? 0 : Math.round(a.score)}%;background:${k}"></i></span><b style="color:${a.score === null ? '#fff' : k}">${a.score === null ? '—' : Math.round(a.score)}</b></div>`; }).join('');
-  const pts = soPoints(c);
-  const list = (cls, title, arr, mark) => arr.length ? `<div class="so-pl ${cls}"><div class="so-plh">${title}</div>${arr.map(s => `<div class="so-pli"><i>${mark}</i><span>${escapeHtml(s)}</span></div>`).join('')}</div>` : '';
-  const right = [list('so-plus', 'Points forts', pts.forts, '&#10003;'), list('so-minus', 'À surveiller', pts.faibles, '!')].join('');
-  return `<div class="so-in so-compact">${soHead(c, gs === null ? '' : `<div class="so-mini"><b style="color:${col}">${Math.round(gs)}</b><small>/100</small></div>`)}<div class="so-title">Ce qui fait la note</div><div class="so-cols"><div class="so-axes">${bars}</div>${right ? `<div class="so-pts">${right}</div>` : ''}</div>${soFoot(n, total)}</div>`;
-}
-// Carte 3 : la valorisation (le prix est-il justifié ?)
-function soCard3(c, n, total){
-  const val = c.fields.valorisation || {}, cur = c.currency;
-  const good = TOOLTIP_TIER_COLORS.tresbon, bad = TOOLTIP_TIER_COLORS.mauvais;
-  const price = parseMoney(val.prixActuel), iv = parseMoney(val.valeurIntrinseque), bear = parseMoney(val.bearCase), bull = parseMoney(val.bullCase);
-  const e = computeEcart(c, 'valeurIntrinseque');
-  const fm = v => escapeHtml(fmtMoney(v, cur));
-  const vs = v => price === null || price <= 0 ? '' : (v / price - 1 >= 0 ? '+' : '−') + fmtNum(Math.abs(v / price - 1) * 100, 0) + ' %';
-  const fr = [];
-  if(bear !== null) fr.push({ k:'bear', label:'Pessimiste', v:bear, col:'#f87171', sub:vs(bear) });
-  if(iv !== null) fr.push({ k:'iv', label:'Valeur intrinsèque', v:iv, col:'#ffffff', sub:e === null ? '' : (e > 0.05 ? 'surévalué' : (e < -0.05 ? 'sous-évalué' : 'au juste prix')) });
-  if(bull !== null) fr.push({ k:'bull', label:'Optimiste', v:bull, col:'#22c55e', sub:vs(bull) });
-  if(price !== null) fr.push({ k:'px', label:'Cours actuel', v:price, col:'#5b8cf7', sub:'' });
-  let bar = '';
-  if(fr.length >= 2){
-    const lo = Math.min.apply(null, fr.map(x => x.v)), hi = Math.max.apply(null, fr.map(x => x.v)), sp = (hi - lo) || 1;
-    fr.forEach(x => { x.p = 11 + (x.v - lo) / sp * 78; });
-    const bottoms = fr.filter(x => x.k !== 'px').sort((a, b) => a.p - b.p), lastP = [];
-    bottoms.forEach(x => { let r = 0; while(lastP[r] !== undefined && x.p - lastP[r] < 25 && r < 1) r++; x.row = r; lastP[r] = x.p; });
-    const px = fr.find(x => x.k === 'px'), bear_ = fr.find(x => x.k === 'bear'), bull_ = fr.find(x => x.k === 'bull');
-    const zone = (bear_ && bull_) ? `<i class="so-zone" style="left:${bear_.p.toFixed(1)}%;width:${(bull_.p - bear_.p).toFixed(1)}%"></i>` : '';
-    const marks = fr.map(x => `<i class="so-fm" style="left:${x.p.toFixed(1)}%;--c:${x.col}"></i>`).join('');
-    const topLab = px ? `<div class="so-fl so-fl-top" style="left:${px.p.toFixed(1)}%;--c:${px.col}"><span>${px.label}</span><b>${fm(px.v)}</b></div>` : '';
-    const botLab = bottoms.map(x => `<div class="so-fl so-fl-bot r${x.row}" style="left:${x.p.toFixed(1)}%;--c:${x.col}"><span>${x.label}</span><b>${fm(x.v)}</b>${x.sub ? `<em>${x.sub}</em>` : ''}</div>`).join('');
-    const rows = bottoms.length ? Math.max.apply(null, bottoms.map(x => x.row)) + 1 : 0;
-    bar = `<div class="so-fr${px ? ' has-top' : ''}" style="--rows:${rows}"><div class="so-fr-track">${zone}${marks}</div>${topLab}${botLab}</div>`;
-  }
-  // chiffres de valorisation : PE, PEG, rendement du FCF, objectif des analystes, consensus
-  const out = [], pe = computePeActuel(c), peg = computePeg(c), rf = computeRendementFcf(c), peRel = computePeRelatif(c), peSect = num(val.peSectoriel);
-  if(pe !== null && pe > 0) out.push(soTile('PE', fmtNum(pe, 1), null, peSect !== null && peSect > 0 ? 'secteur : ' + fmtNum(peSect, 1) : ''));
-  if(peg !== null) out.push(soTile('PEG', sxFr(fmtRatioPos(peg)), soTier(getScaleTier('peg', peg)), ''));
-  if(peRel !== null && out.length < 4 && !(peSect !== null && peSect > 0)) out.push(soTile('PE / secteur', sxFr(fmtRatioPos(peRel)), soTier(getScaleTier('peRelatifSecteur', peRel)), ''));
-  if(rf !== null) out.push(soTile('Rendement FCF', rf < 0 ? FCF_NEGATIF_TXT : fmtNum(rf, 1) + ' %', soTier(getScaleTier('rendementFcf', rf)), ''));
-  const ws = computeWallStreetTargets(c);
-  if(ws && ws.pct.moy !== null) out.push(soTile('Objectif analystes', (ws.pct.moy >= 0 ? '+' : '−') + fmtNum(Math.abs(ws.pct.moy), 0) + ' %', soTier(wallStreetTier(ws.pct.moy)), 'à 1 an, en moyenne'));
-  const reco = wsRecoValue(c);
-  if(reco !== null && out.length < 4){ const z = WS_RECO[wsRecoIndex(reco)]; out.push(soTile('Consensus', z.label, z.color, 'des analystes')); }
-  const tiles = out.slice(0, 4);
-  const empty = !bar && !tiles.length ? `<div class="so-empty">Renseignez le cours, la valeur intrinsèque et les ratios de valorisation pour remplir cette carte.</div>` : '';
-  const head = e === null ? 'Le prix est-il justifié ?' : (e < -0.05 ? 'Le prix est sous la valeur estimée' : (e > 0.05 ? 'Le prix dépasse la valeur estimée' : 'Le prix est proche de la valeur estimée'));
-  const headCol = e === null ? '#fff' : (e < -0.05 ? good : (e > 0.05 ? bad : '#fff'));
-  return `<div class="so-in so-compact">${soHead(c, '')}<div class="so-title" style="color:${headCol}">${head}</div>${bar}${tiles.length ? `<div class="so-tiles so-t${tiles.length}">${tiles.join('')}</div>` : ''}${empty}${soFoot(n, total)}</div>`;
-}
-// Carte 4 : les derniers résultats (chiffre d'affaires et bénéfice net sur les derniers relevés, marges avec leur évolution)
-function soBars(title, pts, fmt){
-  const n = pts.length, vals = pts.map(p => p.v), max = Math.max(1e-9, ...vals.map(v => Math.abs(v)));
-  const last = vals[n - 1], prev = vals[n - 2];
-  let pill = '';
-  if(prev > 0){ const p = (last - prev) / prev * 100, cls = Math.abs(p) < 0.5 ? 'flat' : (p > 0 ? 'up' : 'down'); pill = rhPill((p > 0 ? '+' : '') + fmtNum(p, 1) + ' %', cls); }
-  const cols = pts.map((p, i) => { const h = Math.max(3, Math.abs(p.v) / max * 100); return `<div class="so-bc"><div class="so-bw"><i class="${i === n - 1 ? 'last' : ''}${p.v < 0 ? ' neg' : ''}" style="height:${h.toFixed(1)}%"></i><b style="bottom:calc(${h.toFixed(1)}% + 8px)">${escapeHtml(fmt(p.v))}</b></div><span>${rhShortMonth(p.d)}</span></div>`; }).join('');
-  return `<div class="so-chart"><div class="so-ch"><span>${title}</span>${pill}</div><div class="so-cv">${escapeHtml(fmt(last))}</div><div class="so-bars">${cols}</div></div>`;
-}
-function soCard4(c, n, total){
-  const snaps = reportSnapList(c).slice(-6), cur = c.currency;
-  const pts = k => snaps.filter(s => s[k] !== null && s[k] !== undefined).map(s => ({ d:s.d, v:s[k] }));
-  const ca = pts('ca'), net = pts('net');
-  const charts = [ca.length >= 2 ? soBars("Chiffre d'affaires", ca, v => compactMoney(v, cur)) : '', net.length >= 2 ? soBars('Bénéfice net', net, v => compactMoney(v, cur)) : ''].filter(Boolean);
-  const has = v => v !== null && v !== undefined && Number.isFinite(v);
-  const mg = [['mb', 'Marge brute'], ['mo', "Marge d'exploitation"], ['mn', 'Marge nette']].map(m => {
-    const ps = snaps.filter(s => has(s[m[0]]));
-    if(!ps.length) return '';
-    const v = ps[ps.length - 1][m[0]], p = ps.length > 1 ? ps[ps.length - 2][m[0]] : null;
-    let pill = '';
-    if(p !== null){ const d = v - p; pill = rhPill((d > 0 ? '+' : '') + fmtNum(d, 1) + ' pt', Math.abs(d) < 0.05 ? 'flat' : (d > 0 ? 'up' : 'down')); }
-    return `<div class="so-mg"><span>${m[1]}</span><b>${fmtNum(v, 1)}&nbsp;%</b>${pill}</div>`;
-  }).filter(Boolean);
-  const last = snaps[snaps.length - 1];
-  return `<div class="so-in so-compact">${soHead(c, '')}<div class="so-title">Les derniers résultats${last ? `<small>${escapeHtml(formatDateFr(last.d))}</small>` : ''}</div><div class="so-charts so-c${charts.length || 1}">${charts.join('') || '<div class="so-empty">Pas encore assez de relevés pour tracer les chiffres.</div>'}</div>${mg.length ? `<div class="so-mgs">${mg.join('')}</div>` : ''}${soFoot(n, total)}</div>`;
-}
-function soBuildCards(c){
-  const hasRes = (() => { const s = reportSnapList(c); return s.filter(x => x.ca !== null && x.ca !== undefined).length >= 2 || s.filter(x => x.net !== null && x.net !== undefined).length >= 2; })();
-  const defs = [['Verdict', soCard1], ['Profil', soCard2], ['Valorisation', soCard3]];
-  if(hasRes) defs.push(['Résultats', soCard4]);
-  return defs.map((d, i) => ({ title:d[0], html:d[1](c, i + 1, defs.length) }));
-}
-// Texte du post (280 caractères au plus) : l'essentiel d'abord, les lignes facultatives sont ajoutées tant qu'il reste de la place
-function soTweet(c){
-  const idn = c.fields.identite || {}, val = c.fields.valorisation || {}, pers = c.fields.personnelle || {}, cur = c.currency;
-  const sinfo = computeScoreInfo(c), gs = sinfo.score;
-  const tk = idn.ticker ? String(idn.ticker).trim().toUpperCase() : '';
-  const first = (c.name || 'Analyse') + (tk ? ' ($' + tk + ')' : '') + (gs === null ? '' : ' : note ' + Math.round(gs) + '/100, ' + SCORE5_NAMES[scoreTier5(gs)].toLowerCase() + (sinfo.provisional ? ' (provisoire)' : ''));
-  const st = DECISION_STYLE[pers.decision], conv = parseFloat(pers.conviction) || 0;
-  const decLine = (st || conv) ? ['Ma décision : ' + (st ? pers.decision : 'à définir'), conv ? 'conviction ' + String(conv).replace('.', ',') + '/5' : ''].filter(Boolean).join(' · ') : '';
-  const price = parseMoney(val.prixActuel), iv = parseMoney(val.valeurIntrinseque), e = computeEcart(c, 'valeurIntrinseque');
-  let valLine = '';
-  if(price !== null && iv !== null && e !== null) valLine = 'Cours ' + fmtMoney(price, cur) + ' pour une valeur intrinsèque estimée à ' + fmtMoney(iv, cur) + ' : ' + (e > 0.05 ? 'surévaluation de ' + fmtNum(e, 0) + ' %' : (e < -0.05 ? 'sous-évaluation de ' + fmtNum(Math.abs(e), 0) + ' %' : 'prix proche de la valeur')) + '.';
-  else if(price !== null) valLine = 'Cours : ' + fmtMoney(price, cur) + '.';
-  const pts = soPoints(c);
-  const forts = pts.forts.length ? 'Points forts : ' + pts.forts.slice(0, 2).map(s => s.length > 60 ? s.slice(0, 57).replace(/[\s,;:.\-–]+$/, '') + '…' : s).join(' ; ') : '';
-  const faibles = pts.faibles.length ? 'À surveiller : ' + (pts.faibles[0].length > 60 ? pts.faibles[0].slice(0, 57).replace(/[\s,;:.\-–]+$/, '') + '…' : pts.faibles[0]) : '';
-  const disc = 'Analyse personnelle, pas un conseil en investissement.';
-  const tags = '#bourse #investissement';
-  const req = [first, decLine, valLine].filter(Boolean);
-  const join = (opt) => req.concat(opt, [disc, tags]).join('\n');
-  let opt = [];
-  const sh = s => s.length > 60 ? s.slice(0, 57).replace(/[\s,;:.\-–]+$/, '') + '…' : s;
-  const fortsOne = pts.forts.length ? 'Point fort : ' + sh(pts.forts[0]) : '';
-  [[forts, fortsOne], [faibles]].forEach(cands => { const l = cands.find(x => x && join(opt.concat([x])).length <= SO_TWEET_MAX); if(l) opt = opt.concat([l]); });
-  let text = join(opt);
-  if(text.length > SO_TWEET_MAX) text = req.concat([disc]).join('\n');
-  return text;
-}
-function soFit(){
-  const ov = document.getElementById('soOverlay');
-  if(!ov) return;
-  const holder = ov.querySelector('.so-holder'), bar = ov.querySelector('.so-bar'), cap = ov.querySelector('.so-cap');
-  const vw = document.documentElement.clientWidth, vh = window.innerHeight;
-  const narrow = vw < 760;
-  const availW = vw - (narrow ? 16 : 48);
-  const availH = vh - bar.offsetHeight - cap.offsetHeight - 28;
-  const s = Math.max(0.2, narrow ? availW / SO_W : Math.min(availW / SO_W, availH / SO_H));
-  holder.style.width = Math.round(SO_W * s) + 'px';
-  holder.style.height = Math.round(SO_H * s) + 'px';
-  ov.querySelectorAll('.so-card').forEach(cd => { cd.style.transform = 'scale(' + s + ')'; });
-}
-function soSelect(i){
-  const ov = document.getElementById('soOverlay');
-  if(!ov) return;
-  const total = ov.querySelectorAll('.so-card').length;
-  soIdx = Math.max(1, Math.min(total, i));
-  ov.querySelectorAll('.so-card').forEach(cd => cd.classList.toggle('on', cd.dataset.soCard === String(soIdx)));
-  ov.querySelectorAll('.so-tab').forEach(t => t.classList.toggle('on', t.dataset.soGo === String(soIdx)));
-}
-function soCount(){
-  const ta = document.getElementById('soText'), ct = document.getElementById('soCount');
-  if(!ta || !ct) return;
-  const n = ta.value.length;
-  ct.textContent = n + ' / ' + SO_TWEET_MAX;
-  ct.classList.toggle('over', n > SO_TWEET_MAX);
-}
-function socialOpen(){
-  const c = getActive();
-  if(!c) return;
-  sxClose();
-  socialClose();
-  const cards = soBuildCards(c);
-  soIdx = 1;
-  const ov = document.createElement('div');
-  ov.className = 'so-overlay'; ov.id = 'soOverlay';
-  ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Cartes pour les réseaux sociaux');
-  ov.innerHTML = `<div class="so-bar"><span class="so-bt">Cartes pour les réseaux sociaux</span><span class="so-tabs">${cards.map((k, i) => `<button type="button" class="so-tab${i === 0 ? ' on' : ''}" data-so-go="${i + 1}">${i + 1} · <span>${k.title}</span></button>`).join('')}</span><span class="so-acts"><button type="button" class="so-btn so-btn-p" data-so-dl>Télécharger l'image</button>${cards.length > 1 ? '<button type="button" class="so-btn" data-so-dlall>Tout télécharger</button>' : ''}<button type="button" class="so-btn" data-so-close>Fermer &#10005;</button></span></div>`
-    + `<div class="so-stage"><div class="so-holder">${cards.map((k, i) => `<div class="so-card${i === 0 ? ' on' : ''}" data-so-card="${i + 1}">${k.html}</div>`).join('')}</div></div>`
-    + `<div class="so-cap"><div class="so-cap-h"><b>Texte du post</b><span id="soCount"></span></div><textarea id="soText" rows="5" spellcheck="false" aria-label="Texte du post"></textarea><div class="so-cap-b"><button type="button" class="so-btn so-btn-p" data-so-copy>Copier le texte</button><span class="so-cap-hint">Le texte se modifie. Images au format 16:9 (1200 × 675), affichées en entier dans le fil Twitter / X.</span></div></div>`;
-  document.body.appendChild(ov);
-  document.body.classList.add('sx-lock');
-  const ta = document.getElementById('soText');
-  ta.value = soTweet(c);
-  ta.addEventListener('input', soCount);
-  soCount();
-  soFit();
-  const b = ov.querySelector('.so-btn-p'); if(b) b.focus();
-}
-function socialClose(){
-  const ov = document.getElementById('soOverlay');
-  if(ov) ov.remove();
-  if(!document.getElementById('sxOverlay')) document.body.classList.remove('sx-lock');
-}
-function soFileName(c, i, title){
-  const clean = s => String(s || '').replace(/[\\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
-  return `${clean(c.name) || 'Analyse'} - ${i} ${clean(title)} - ${updDateLocal()}.png`;
-}
-// Fabrique le PNG (2 x la taille de dessin : 2400 x 1350) de la carte affichée
-async function soRender(el, c){
-  const clone = el.cloneNode(true);
-  sxInlineStyles(el, clone);
-  clone.style.transform = 'none'; clone.style.boxShadow = 'none'; clone.style.margin = '0'; clone.style.position = 'static'; clone.style.display = 'block';
-  await sxInlineImages(clone, String(c.name || '?').trim().slice(0, 1).toUpperCase());
-  const fonts = await sxFontFaceCss();
-  const xhtml = new XMLSerializer().serializeToString(clone);
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${SO_W}" height="${SO_H}" viewBox="0 0 ${SO_W} ${SO_H}"><defs><style>${fonts}</style></defs><foreignObject x="0" y="0" width="${SO_W}" height="${SO_H}">${xhtml}</foreignObject></svg>`;
-  const img = new Image();
-  await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error('image')); img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); });
-  const cv = document.createElement('canvas'); cv.width = SO_W * 2; cv.height = SO_H * 2;
-  const ctx = cv.getContext('2d');
-  ctx.scale(2, 2);
-  ctx.drawImage(img, 0, 0);
-  await new Promise(r => setTimeout(r, 120));
-  ctx.clearRect(0, 0, SO_W, SO_H); ctx.drawImage(img, 0, 0);
-  return new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error('blob')), 'image/png'));
-}
-function soSave(blob, name){
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = name;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-}
-async function soDownload(all){
-  const ov = document.getElementById('soOverlay'), c = getActive();
-  if(!ov || !c) return;
-  const titles = [...ov.querySelectorAll('.so-tab')].map(t => t.textContent.replace(/^\d+\s*·\s*/, ''));
-  const idxs = all ? titles.map((_, i) => i + 1) : [soIdx];
-  const btns = [...ov.querySelectorAll('[data-so-dl], [data-so-dlall]')];
-  const labels = btns.map(b => b.innerHTML);
-  btns.forEach(b => { b.disabled = true; });
-  const keep = soIdx;
-  try{
-    for(const i of idxs){
-      soSelect(i);
-      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-      const el = ov.querySelector('.so-card[data-so-card="' + i + '"]');
-      const blob = await soRender(el, c);
-      soSave(blob, soFileName(c, i, titles[i - 1]));
-      if(idxs.length > 1) await new Promise(r => setTimeout(r, 350));
-    }
-    showToast(idxs.length > 1 ? idxs.length + ' images téléchargées.' : 'Image téléchargée.');
-  }catch(e){
-    showToast("Impossible de créer l'image. Essayez avec Chrome ou Edge.");
-  }finally{
-    soSelect(keep);
-    btns.forEach((b, k) => { b.disabled = false; b.innerHTML = labels[k]; });
-  }
-}
-async function soCopy(){
-  const ta = document.getElementById('soText');
-  if(!ta) return;
-  try{
-    if(navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(ta.value);
-    else{ ta.select(); document.execCommand('copy'); }
-    showToast('Texte copié.');
-  }catch(e){
-    ta.select();
-    showToast('Sélectionnez le texte et copiez-le avec Ctrl + C.');
-  }
-}
-document.addEventListener('click', e => {
-  const t = e.target;
-  if(!t || !t.closest) return;
-  if(t.closest('[data-social-open]')){ socialOpen(); return; }
-  const ov = document.getElementById('soOverlay');
-  if(!ov) return;
-  if(t.closest('[data-so-dl]')){ soDownload(false); return; }
-  if(t.closest('[data-so-dlall]')){ soDownload(true); return; }
-  if(t.closest('[data-so-copy]')){ soCopy(); return; }
-  const go = t.closest('[data-so-go]');
-  if(go){ soSelect(parseInt(go.dataset.soGo, 10)); return; }
-  if(t.closest('[data-so-close]') || t === ov || t.classList.contains('so-stage')) socialClose();
-});
-document.addEventListener('keydown', e => {
-  if(!document.getElementById('soOverlay')) return;
-  const inText = e.target && e.target.id === 'soText';
-  if(e.key === 'Escape') socialClose();
-  else if(!inText && e.key === 'ArrowRight') soSelect(soIdx + 1);
-  else if(!inText && e.key === 'ArrowLeft') soSelect(soIdx - 1);
-});
-window.addEventListener('resize', () => { soFit(); });
 
 function render(){
   renderInner();
@@ -15822,8 +15382,7 @@ function renderInner(){
         </div>
         <div class="chead-side">
           <button type="button" class="btn btn-primary btn-sm sx-open" data-summary-open data-tooltip="<div class='tt-desc'>Une carte qui résume toute l'analyse (les 6 sections) sur un seul écran, prête à être capturée pour la partager.</div>"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Afficher le résumé</button>
-          <button type="button" class="btn btn-outline btn-sm share-btn soc-btn" data-social-open data-tooltip="<div class='tt-desc'>Des images 16:9 très lisibles (note, valorisation, chiffres clés) et un texte de post prêts pour Twitter / X.</div>">Réseaux sociaux</button>
-          <button type="button" class="btn btn-outline btn-sm share-btn" data-share-open data-tooltip="<div class='tt-desc'>Envoyer cette analyse à quelqu'un : par lien ou par fichier. Il la reçoit à part de ses analyses et choisit de l'ajouter ou non.</div>"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg>Partager</button>
+                    <button type="button" class="btn btn-outline btn-sm share-btn" data-share-open data-tooltip="<div class='tt-desc'>Envoyer cette analyse à quelqu'un : par lien ou par fichier. Il la reçoit à part de ses analyses et choisit de l'ajouter ou non.</div>"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg>Partager</button>
           <div class="currency-toggle" id="companyCurrencyToggle" data-tooltip="<div class='tt-desc'>Devise de cette analyse : appliquée automatiquement à toutes les valeurs monétaires (prix, chiffres financiers, position...), sans avoir à écrire le symbole. Changer la devise ne convertit pas les montants déjà saisis.</div>">
             <button type="button" class="cur-opt${c.currency === '$' ? ' active' : ''}" data-currency="$">$ Dollar</button>
             <button type="button" class="cur-opt${c.currency === '€' ? ' active' : ''}" data-currency="€">€ Euro</button>
