@@ -3275,7 +3275,7 @@ a.btn{ text-decoration:none; }
   #companiesTableWrap tbody tr{ border-bottom:1px solid var(--border); padding-top:10px; padding-bottom:10px; row-gap:9px; }
   #companiesTableWrap tbody tr:last-child{ border-bottom:0; }
   #companiesTableWrap thead tr{ padding-top:2px; padding-bottom:2px; row-gap:0; border-bottom:1px solid var(--border-strong); }
-  #companiesTableWrap thead th{ display:flex; align-items:center; justify-content:center; gap:1px; min-width:0; padding:7px 0; font-size:10px; letter-spacing:0; text-transform:none; white-space:nowrap; text-align:center; }
+  #companiesTableWrap thead th{ display:flex; align-items:center; justify-content:center; gap:1px; min-width:0; padding:8px 0; font-size:10.5px; letter-spacing:0; text-transform:none; white-space:nowrap; text-align:center; }
   #companiesTableWrap thead th.tc-co{ justify-content:flex-start; padding-left:2px; }
   #companiesTableWrap thead th.th-sort-active{ color:var(--blue); }
   #companiesTableWrap td{ display:flex; align-items:center; justify-content:center; min-width:0; padding:0 !important; border:0 !important; background:none !important; text-align:center; }
@@ -3285,17 +3285,20 @@ a.btn{ text-decoration:none; }
   #companiesTableWrap .tc-peg{ grid-row:1; grid-column:54 / span 14; }
   #companiesTableWrap .tc-moat{ grid-row:1; grid-column:68 / span 16; }
   #companiesTableWrap .tc-buff{ grid-row:1; grid-column:84 / span 17; }
-  #companiesTableWrap .tc-dec{ grid-row:2; grid-column:1 / span 25; justify-content:flex-start; }
-  #companiesTableWrap .tc-conv{ grid-row:2; grid-column:26 / span 19; }
-  #companiesTableWrap .tc-prog{ grid-row:2; grid-column:45 / span 20; }
-  #companiesTableWrap .tc-cap{ grid-row:2; grid-column:65 / span 18; }
-  #companiesTableWrap .tc-date{ grid-row:2; grid-column:83 / span 18; }
+  #companiesTableWrap .tc-dec{ grid-row:2; grid-column:1 / span 40; justify-content:flex-start; }
+  #companiesTableWrap .tc-conv{ grid-row:2; grid-column:41 / span 60; justify-content:flex-start; padding-left:2px !important; }
+  #companiesTableWrap .tc-prog, #companiesTableWrap .tc-cap, #companiesTableWrap .tc-date{ display:none !important; }
+  
+  
   #companiesTableWrap.has-axis .tc-co{ grid-column:1 / span 30; }
   #companiesTableWrap.has-axis .tc-axis{ grid-row:1; grid-column:31 / span 12; }
   #companiesTableWrap.has-axis .tc-score{ grid-column:43 / span 12; }
   #companiesTableWrap.has-axis .tc-peg{ grid-column:55 / span 12; }
   #companiesTableWrap.has-axis .tc-moat{ grid-column:67 / span 17; }
-  #companiesTableWrap thead th.tc-dec, #companiesTableWrap thead th.tc-conv, #companiesTableWrap thead th.tc-prog, #companiesTableWrap thead th.tc-cap, #companiesTableWrap thead th.tc-date{ grid-row:2; }
+  #companiesTableWrap thead th.tc-dec, #companiesTableWrap thead th.tc-conv{ grid-row:2; }
+  #companiesTableWrap thead th.tc-dec{ justify-content:flex-start; padding-left:2px; }
+  #companiesTableWrap thead th.tc-conv{ justify-content:flex-start; }
+  #companiesTableWrap thead th.tc-prog, #companiesTableWrap thead th.tc-cap, #companiesTableWrap thead th.tc-date{ display:none; }
   #companiesTableWrap thead th.tc-co, #companiesTableWrap thead th.tc-score, #companiesTableWrap thead th.tc-peg, #companiesTableWrap thead th.tc-moat, #companiesTableWrap thead th.tc-buff, #companiesTableWrap thead th.tc-axis{ grid-row:1; }
   #companiesTableWrap .ht-co{ min-width:0; width:100%; gap:8px; }
   #companiesTableWrap .mini-av{ width:32px; height:32px; flex:0 0 32px; border-radius:9px; font-size:11px; }
@@ -3304,12 +3307,12 @@ a.btn{ text-decoration:none; }
   #companiesTableWrap .home-td-name-txt{ max-width:100%; overflow:visible; white-space:normal; text-overflow:clip; font-size:13px; line-height:1.25; }
   #companiesTableWrap .home-ticker{ margin-left:0; font-size:11.5px; }
   #companiesTableWrap .ht-sec{ max-width:none; text-align:left; font-size:11px; line-height:1.25; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-  #companiesTableWrap .vchip{ min-width:0; padding:2px 5px; font-size:12px; border-radius:7px; }
-  #companiesTableWrap .vchip-lg{ min-width:0; padding:3px 7px; font-size:14.5px; border-radius:8px; }
-  #companiesTableWrap .pill{ padding:2px 6px; font-size:10px; white-space:nowrap; }
+  #companiesTableWrap .vchip{ min-width:0; padding:3px 6px; font-size:13px; border-radius:8px; }
+  #companiesTableWrap .vchip-lg{ min-width:0; padding:4px 8px; font-size:16px; border-radius:9px; }
+  #companiesTableWrap .pill{ padding:3px 10px; font-size:12px; white-space:nowrap; }
   #companiesTableWrap .ct-stars{ gap:0; }
-  #companiesTableWrap .ct-stars .star-slot, #companiesTableWrap .ct-stars .star-empty, #companiesTableWrap .ct-stars .star-fill, #companiesTableWrap .ct-stars .star-empty svg, #companiesTableWrap .ct-stars .star-fill svg{ width:12px; height:12px; }
-  #companiesTableWrap .ct-stars .star-fill{ height:12px; }
+  #companiesTableWrap .ct-stars .star-slot, #companiesTableWrap .ct-stars .star-empty, #companiesTableWrap .ct-stars .star-fill, #companiesTableWrap .ct-stars .star-empty svg, #companiesTableWrap .ct-stars .star-fill svg{ width:15px; height:15px; }
+  #companiesTableWrap .ct-stars .star-fill{ height:15px; }
   #companiesTableWrap .comp-cell{ display:flex; align-items:center; gap:4px; width:100%; justify-content:center; }
   #companiesTableWrap .comp-cell .hbar-track{ width:auto; flex:1 1 0; min-width:12px; max-width:34px; height:6px; }
   #companiesTableWrap .comp-cell b{ font-size:11px; flex:0 0 auto; }
@@ -14710,7 +14713,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 346;
+const APP_BUILD = 347;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
