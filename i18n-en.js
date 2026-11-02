@@ -536,6 +536,7 @@ const I18N_EN = {
   "Objectifs des analystes sur 1 an": "Analyst targets in 1 year",
   "moyenne": "average",
   "Solvabilité /100": "Solvency /100",
+  "Téléchargez la carte en image, ou faites une capture d'écran.": "Download the card as an image, or take a screenshot.",
   "Décision retirée": "Decision removed",
   "Ne pas mettre à jour": "Do not update",
   "Vous renoncez à mettre à jour les données de ce rapport : le rappel et les points orange disparaissent.": "You give up updating the data for this report: the reminder and the orange dots disappear.",

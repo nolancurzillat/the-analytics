@@ -1539,6 +1539,49 @@ body.sx-lock{ overflow:hidden; }
 .sx-cv-conv .sx-stars .star-fill{ width:auto; }
 .sx-cv-k{ padding-top:7px; padding-bottom:7px; }
 .sx-cv-k b{ font-size:27px; }
+/* ----- Résumé de la comparaison : refonte visuelle (build 331) ----- */
+.sx-dlc{ display:inline-flex; align-items:center; background:var(--accent); border-color:transparent; color:#fff; }
+.sx-dlc:disabled{ opacity:.6; cursor:progress; }
+.cx-card{ width:1280px; padding:34px 38px 20px 38px; }
+.cx-top{ display:block; padding-bottom:0; }
+.cx-kick{ font-size:15px; font-weight:700; letter-spacing:.24em; text-transform:uppercase; color:#c9a24a; margin-bottom:8px; }
+.cx-title{ display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 20px; font-size:50px; line-height:1.08; }
+.cx-title em{ font-family:var(--font-ui); font-style:normal; font-size:22px; font-weight:700; letter-spacing:.08em; color:#8fa1c2; }
+.cx-banner{ display:flex; align-items:center; gap:22px; margin:16px 0 8px 0; padding:16px 24px; border-radius:20px; background:linear-gradient(135deg, rgba(201,162,74,.16), rgba(255,255,255,.04)); border:1px solid rgba(201,162,74,.4); border-left:8px solid var(--co, #c9a24a); }
+.cx-trophy{ flex:0 0 64px; width:64px; height:64px; }
+.cx-trophy svg{ width:100%; height:100%; display:block; }
+.cx-bt{ min-width:0; }
+.cx-banner .cx-vk{ font-size:13px; letter-spacing:.14em; }
+.cx-bh{ font-size:30px; font-weight:800; line-height:1.2; color:#fff; margin-top:2px; }
+.cx-chips{ display:flex; flex-wrap:wrap; gap:9px; margin-top:13px; }
+.cx-chip{ display:inline-flex; align-items:center; gap:8px; font-size:16px; color:#c3cee5; padding:6px 14px; border-radius:99px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1); }
+.cx-chip i{ width:11px; height:11px; border-radius:50%; background:var(--co, #5b6b8c); }
+.cx-chip b{ color:#fff; font-weight:700; }
+.cx-s{ display:flex; align-items:center; gap:12px; margin:12px 0 2px 0; font-size:15px; letter-spacing:.16em; color:#e6ecf8; }
+.cx-s:before{ content:''; flex:0 0 5px; height:20px; border-radius:3px; background:#c9a24a; }
+.cx-grid{ gap:6px; margin-top:4px; }
+.cx-r{ grid-template-columns:240px repeat(var(--n), minmax(0, 1fr)); gap:12px; }
+.cx-l{ font-size:18px; }
+.cx-c{ font-size:22px; padding:6px 16px; }
+.cx-c b{ font-size:26px; }
+.cx-bar{ height:16px; border-radius:8px; }
+.cx-bar i{ border-radius:8px; }
+.cx-main .cx-c{ padding:6px 16px; }
+.cx-sc .sx-sring{ width:96px; height:96px; flex:0 0 96px; }
+.cx-sc .sx-sring svg{ width:96px; height:96px; }
+.cx-sc .sx-sringv b{ font-size:32px; }
+.cx-scw{ font-size:19px; }
+.cx-dec{ font-size:19px; padding:5px 18px; }
+.cx-conv{ font-size:20px; }
+.sx-stack .cx-title{ font-size:30px; }
+.sx-stack .cx-title em{ font-size:15px; }
+.sx-stack .cx-banner{ padding:14px 14px; gap:12px; border-left-width:6px; }
+.sx-stack .cx-trophy{ flex:0 0 38px; width:38px; height:38px; }
+.sx-stack .cx-bh{ font-size:18px; }
+.sx-stack .cx-chip{ font-size:12px; padding:4px 9px; }
+.sx-stack .cx-l{ font-size:12px; }
+.sx-stack .cx-c{ font-size:14px; padding:7px 8px; }
+.sx-stack .cx-c b{ font-size:15px; }
 .sx-stack .sx-t, .sx-stack .sx-g4 .sx-t, .sx-stack .sx-compact .sx-t{ padding:7px 4px 8px 4px; }
 .sx-stack .sx-tl, .sx-stack .sx-g4 .sx-tl, .sx-stack .sx-compact .sx-tl{ font-size:11.5px; }
 .sx-stack .sx-tv{ font-size:17px; }
@@ -11879,7 +11922,7 @@ function buildCompareCard(cs){
   const sec = t => `<div class="cx-s">${t}</div>`;
   const heads = cs.map((c, i) => {
     const av = avatarInner(c), idn = c.fields.identite || {}, sect = idn.secteur && idn.secteur.secteur, pays = idn.paysSiege && idn.paysSiege.pays;
-    return `<div class="cx-c cx-h" style="--co:${cols[i]}"><div class="preview-avatar cx-av${av.cls}">${av.html}</div><div class="cx-hn" data-i18n="off"><div class="cx-name">${escapeHtml(c.name || 'Sans nom')}</div><div class="cx-meta">${idn.ticker ? `<span class="sx-mono">${escapeHtml(idn.ticker)}</span>` : ''}${sect ? ` · ${escapeHtml(sect)}` : ''}${pays ? ` · ${escapeHtml(pays)}` : ''}</div></div></div>`;
+    return `<div class="cx-c cx-h" style="--co:${cols[i]}"><div class="preview-avatar cx-av${av.cls}" data-ini="${escapeHtml(String(c.name || '?').trim().slice(0, 1).toUpperCase())}">${av.html}</div><div class="cx-hn" data-i18n="off"><div class="cx-name">${escapeHtml(c.name || 'Sans nom')}</div><div class="cx-meta">${idn.ticker ? `<span class="sx-mono">${escapeHtml(idn.ticker)}</span>` : ''}${sect ? ` · ${escapeHtml(sect)}` : ''}${pays ? ` · ${escapeHtml(pays)}` : ''}</div></div></div>`;
   }).join('');
   let rows = `<div class="cx-r cx-hr"><div class="cx-l"></div>${heads}</div>`;
   rows += row('Note globale', infos.map((x, i) => x.score === null ? '—' : `<div class="cx-sc">${sxScoreRing(x.score, scoreColor5(x.score, true), x.provisional)}<div class="cx-scw">${V.wins[i]} axe${V.wins[i] > 1 ? 's' : ''} sur ${V.total}</div></div>`), cmpBestOf(V.gs), 'cx-main');
@@ -11902,7 +11945,13 @@ function buildCompareCard(cs){
   });
   const t = new Date(), iso = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
   const foot = `<div class="sx-foot"><span class="sx-brand"><img src="icon-192.png" alt="" width="20" height="20">The Analytics<span class="sx-mut"> · the-analytics.fr</span></span><span class="sx-mut">Analyses personnelles, pas un conseil en investissement · ${formatDateFr(iso)}</span></div>`;
-  return `<div class="sx-card sx-on cx-card" data-sx-page="1"><div class="cx-top"><div><div class="cx-title">Comparaison</div><div class="cx-sub" data-i18n="off">${cs.map(c => escapeHtml(c.name || 'Sans nom')).join(' · ')}</div></div><div class="cx-verdict"><div class="cx-vk">Le verdict</div><div class="cx-vh">${escapeHtml(V.headline)}</div></div></div><div class="cx-grid" style="--n:${N}">${rows}</div>${foot}</div>`;
+  // Refonte visuelle (build 331) : titre avec les noms dans la couleur de leur colonne, bandeau du verdict (coupe, phrase, qui gagne chaque axe), puis la grille
+  const title = cs.map((c, i) => `<span style="color:${cols[i]}">${escapeHtml(c.name || 'Sans nom')}</span>`).join('<em>vs</em>');
+  const trophy = V.leader >= 0
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="#e3c06a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="#8fa1c2" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M5 9h14M5 15h14"/></svg>';
+  const chips = V.perAxis.map(a => `<span class="cx-chip"${a.win >= 0 ? ` style="--co:${cols[a.win]}"` : ''}><i></i>${escapeHtml(a.label)} <b>${!a.comparable ? '—' : (a.win < 0 ? 'égalité' : `<span data-i18n="off">${escapeHtml(V.names[a.win])}</span>`)}</b></span>`).join('');
+  return `<div class="sx-card sx-on cx-card" data-sx-page="1"><div class="cx-top"><div class="cx-kick">Comparaison</div><div class="cx-title" data-i18n="off">${title}</div></div><div class="cx-banner"${V.leader >= 0 ? ` style="--co:${cols[V.leader]}"` : ''}><div class="cx-trophy">${trophy}</div><div class="cx-bt"><div class="cx-vk">Le verdict</div><div class="cx-bh">${escapeHtml(V.headline)}</div><div class="cx-chips">${chips}</div></div></div><div class="cx-grid" style="--n:${N}">${rows}</div>${foot}</div>`;
 }
 function cmpCardOpen(){
   const cs = compareIds.map(id => state.companies.find(c => c.id === id)).filter(Boolean);
@@ -11912,7 +11961,7 @@ function cmpCardOpen(){
   const ov = document.createElement('div');
   ov.className = 'sx-overlay'; ov.id = 'sxOverlay'; ov.dataset.mode = 'cmp';
   ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Résumé de la comparaison');
-  ov.innerHTML = `<div class="sx-bar"><span class="sx-bar-t">Résumé de la comparaison</span><span class="sx-bar-h">Faites une capture d'écran de la carte pour la partager.</span><button type="button" class="sx-close" data-sx-close>Fermer &#10005;</button></div><div class="sx-scale">${buildCompareCard(cs)}</div>`;
+  ov.innerHTML = `<div class="sx-bar"><span class="sx-bar-t">Résumé de la comparaison</span><span class="sx-bar-h">Téléchargez la carte en image, ou faites une capture d'écran.</span><button type="button" class="sx-pgb sx-dlc" data-sx-download-cmp>Télécharger l'image</button><button type="button" class="sx-close" data-sx-close>Fermer &#10005;</button></div><div class="sx-scale">${buildCompareCard(cs)}</div>`;
   document.body.appendChild(ov);
   document.body.classList.add('sx-lock');
   sxFit();
@@ -14384,7 +14433,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 330;
+const APP_BUILD = 331;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -15224,9 +15273,10 @@ function sxFit(){
   const fits = (W, H) => H * (availW / W) <= availH + 0.5;
   const steps = Math.max(0, Math.floor((maxW - minW) / STEP));
   let bi = -1;
-  for(let m = 0; m <= steps; m++){ const W = minW + m * STEP; if(fits(W, heightAt(W))){ bi = m; break; } }   // premier W qui convient (la hauteur n'est pas strictement décroissante : pas de dichotomie)
+  if(!isCmp) for(let m = 0; m <= steps; m++){ const W = minW + m * STEP; if(fits(W, heightAt(W))){ bi = m; break; } }   // premier W qui convient (la hauteur n'est pas strictement décroissante : pas de dichotomie)
   let bestW, bestH, s;
-  if(bi >= 0){ bestW = minW + bi * STEP; bestH = heightAt(bestW); s = availW / bestW; }
+  if(isCmp){ bestW = 1280; bestH = heightAt(bestW); s = Math.min(availW / bestW, availH / bestH); }   // carte de comparaison : largeur de dessin fixe, mise à l'échelle pour tenir en entier dans la fenêtre (pas d'élargissement)
+  else if(bi >= 0){ bestW = minW + bi * STEP; bestH = heightAt(bestW); s = availW / bestW; }
   else{   // même à la largeur maximale la carte est trop haute (rare) : on garde la meilleure échelle
     let bs = 0;
     for(let m = 0; m <= steps; m += 4){ const W = minW + m * STEP, H = heightAt(W), sc = Math.min(availW / W, availH / H); if(sc > bs){ bs = sc; bestW = W; bestH = H; } }
@@ -15380,7 +15430,7 @@ async function sxInlineImages(root, initials){
       im.setAttribute('src', await sxBlobToDataUrl(await r.blob()));
     }catch(e){
       const sp = document.createElement('span');
-      sp.textContent = initials;
+      const own = im.closest && im.closest('[data-ini]'); sp.textContent = own ? own.dataset.ini : initials;   // une carte de comparaison porte plusieurs entreprises : chacune garde SON initiale
       sp.setAttribute('style', (im.getAttribute('style') || '') + ';display:flex;align-items:center;justify-content:center;font-weight:800;color:#17294e;background:#fff;');
       im.replaceWith(sp);
     }
@@ -15503,6 +15553,32 @@ async function sxDownload(all){
     btns.forEach((b, k) => { b.disabled = false; b.innerHTML = labels[k]; });
   }
 }
+// Téléchargement de la carte de comparaison (build 331) : cadre de 1600 px de large à la proportion de la carte, exporté à 1,5 ; nom « Comparaison entre A et B (et C) »
+async function sxDownloadCompare(){
+  const ov = document.getElementById('sxOverlay');
+  if(!ov || ov.dataset.mode !== 'cmp') return;
+  const cd = ov.querySelector('.cx-card');
+  const cs = compareIds.map(id => state.companies.find(c => c.id === id)).filter(Boolean);
+  if(!cd || !cs.length) return;
+  const btn = ov.querySelector('[data-sx-download-cmp]'), label = btn ? btn.innerHTML : '';
+  if(btn){ btn.disabled = true; btn.textContent = LANG === 'en' ? 'Creating the image…' : "Création de l'image…"; }
+  ov.classList.add('sx-exporting');
+  try{
+    const cw = cd.offsetWidth, ch = cd.offsetHeight, W = 1600;
+    const blob = await sxPngFrame(cs[0], cd, cw, ch, { w:W, h:Math.round(ch * W / cw), m:0, k:1.5 }, false);
+    const clean = s => String(s || '').replace(/[\\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim() || 'Analyse';
+    const names = cs.map(c => clean(c.name)), and = LANG === 'en' ? ' and ' : ' et ';
+    const list = names.length < 2 ? names[0] : names.slice(0, -1).join(', ') + and + names[names.length - 1];
+    const name = (LANG === 'en' ? 'Comparison between ' : 'Comparaison entre ') + list + '.png';
+    sxSaveBlob(blob, name);
+    showToast((LANG === 'en' ? 'Image downloaded: ' : 'Image téléchargée : ') + name);
+  }catch(e){
+    showToast("Impossible de créer l'image. Essayez avec Chrome ou Edge.");
+  }finally{
+    ov.classList.remove('sx-exporting');
+    if(btn){ btn.disabled = false; btn.innerHTML = label; }
+  }
+}
 function sxStep(d){
   const ovm = document.getElementById('sxOverlay');
   if(!ovm || ovm.dataset.mode === 'cmp') return;
@@ -15537,6 +15613,7 @@ function initSummary(){
     if(e.target.closest && e.target.closest('[data-cmp-card-open]')){ cmpCardOpen(); return; }
     const ov = document.getElementById('sxOverlay');
     if(!ov) return;
+    if(e.target.closest && e.target.closest('[data-sx-download-cmp]')){ sxDownloadCompare(); return; }
     if(e.target.closest && e.target.closest('[data-sx-downloadall]')){ sxDownload(true); return; }
     if(e.target.closest && e.target.closest('[data-sx-download]')){ sxDownload(false); return; }
     const zm = e.target.closest && e.target.closest('[data-sx-zoom]');
