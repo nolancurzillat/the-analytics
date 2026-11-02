@@ -6,6 +6,22 @@
 <title>The Analytics</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0a1224">
+<meta name="description" content="Analysez les entreprises comme un investisseur professionnel : un score sur 100, 5 axes, une méthode value et quality. Gratuit, compte facultatif.">
+<link rel="canonical" href="https://the-analytics.fr/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="The Analytics">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://the-analytics.fr/">
+<meta property="og:title" content="The Analytics : analysez les entreprises comme un investisseur professionnel">
+<meta property="og:description" content="Un score sur 100, 5 axes (qualité, rentabilité, croissance, solidité, valorisation) et une méthode value et quality. Gratuit, compte facultatif.">
+<meta property="og:image" content="https://the-analytics.fr/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The Analytics : un score sur 100 et le profil d'une entreprise sur 5 axes">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Analytics : analysez les entreprises comme un investisseur professionnel">
+<meta name="twitter:description" content="Un score sur 100, 5 axes et une méthode value et quality. Gratuit, compte facultatif.">
+<meta name="twitter:image" content="https://the-analytics.fr/og-image.jpg">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="The Analytics">
@@ -5412,6 +5428,66 @@ function createAndOpenCompany(name, currency, extra){
   resolveLogo(c.id);
   if(currency !== chosenCurrency && ex) showToast(`Devise réglée sur ${currency === '€' ? 'l\'euro' : 'le dollar'} d'après la bourse (${ex.label}). Vous pouvez la changer en haut à droite de la fiche.`);
   return c;
+}
+// ----- Analyse d'exemple (2026-11-03, demande de l'auteur : un visiteur ne doit pas arriver sur une application vide) -----
+// Une entreprise FICTIVE, entièrement renseignée, créée en un clic depuis l'accueil (« Voir un exemple ») : score, radar, graphiques, schéma, résumé, tout s'affiche tout de suite.
+// C'est une analyse normale (elle se renomme, se modifie et se supprime) ; si elle existe déjà (même nom), on se contente de l'ouvrir. Sans ticker : aucune recherche de prix ni de logo.
+const EXAMPLE_NAME = 'Alpha Tech (exemple)';
+function openExampleAnalysis(){
+  let c = state.companies.find(x => x.name === EXAMPLE_NAME);
+  if(!c){
+    c = newCompany(EXAMPLE_NAME, '$');
+    const f = c.fields;
+    Object.assign(f.identite, {
+      dateCreation: '2004', secteur: { secteur:'Technologie', industrie:"Logiciels d'entreprise" }, paysSiege: { pays:'États-Unis', siegeSocial:'Austin' },
+      marketCap: '85 Md', nbEmployes: '24 K', dateIPO: { date:'2012', prixInitial:'18' }, ceo: 'Claire Martin', moatNote: '8',
+      activitePrincipale: "Alpha Tech est une entreprise imaginaire qui vend à d'autres entreprises des logiciels de gestion payés par abonnement. Cette fiche est un EXEMPLE : tous les chiffres sont inventés pour montrer comment The Analytics présente une analyse.",
+      autresActivites: "Services de cloud pour héberger les données de ses clients, et un peu de conseil pour les aider à installer ses logiciels.",
+      moatDescription: "Ses clients utilisent ses logiciels tous les jours et y stockent des années de données : changer de fournisseur serait long et coûteux. Plus il y a d'utilisateurs, plus les outils reliés à ses logiciels se multiplient.",
+      clients: ['Grandes entreprises', 'Banques et assurances', 'Administrations', 'PME'],
+      politiqueDividende: { mode:'verse', dividendeAction:'1,2', frequence:'Trimestrielle', croissance:'40', securite:'80', notes:'', notesHidden:'1' },
+    });
+    Object.assign(f.financier, {
+      chiffreAffaires: '28 Md', beneficeNet: '6,2 Md', croissanceCA: { cagr:'14' }, croissanceBenef: { cagr:'18' },
+      margeBrute: '72', margeNette: '22', roe: '24', roic: '21', roa: '12',
+      fcf: '7,1 Md', capex: '1,4 Md', totalActif: '52 Md', detteTotal: '6 Md', detteNette: '1,5 Md', scoreSolvabilite: '82', probaFaillite: '1',
+      nbActions: { freeFloat:'1,6 Md', closelyHeld:'90 M' }, detenuInities: '3', detenuInstitutions: '72',
+      revenuSource: [{ label:'Abonnements logiciels', value:'19 Md' }, { label:'Services cloud', value:'6 Md' }, { label:'Conseil', value:'3 Md' }],
+      revenuPays: [{ label:'États-Unis', value:'17 Md' }, { label:'Europe', value:'7 Md' }, { label:'Reste du monde', value:'4 Md' }],
+      profitBrut: '20,2 Md', operatingIncome: '7,6 Md', impotsResultat: '1,4 Md', chargesVentes: '8,8 Md',
+    });
+    Object.assign(f.croissance, {
+      marcheEnCroissance: "Le marché des logiciels de gestion par abonnement progresse chaque année, porté par la numérisation des entreprises et l'intelligence artificielle.",
+      partMarche: "Environ le troisième acteur de son marché, loin derrière les deux géants mais devant une multitude de petits concurrents.",
+      concurrents: "Deux géants du secteur, plus quelques spécialistes plus petits (noms fictifs).",
+      diversificationSecteur: "Les revenus viennent de trois activités et de trois grandes régions : aucune ne pèse plus des deux tiers du total.",
+      croissanceAttendueCA: { cagr:'12' }, croissanceAttendueBenef: { cagr:'14' },
+      innovationTech: "Assistant intelligent intégré à tous ses logiciels, lancé cette année.",
+      catalyseurs: "Succès de l'assistant intelligent, hausse des prix des abonnements, rachats de petites entreprises.",
+      risque: "Un concurrent plus gros peut baisser ses prix ; une partie des clients peut réduire ses dépenses en cas de ralentissement économique.",
+    });
+    Object.assign(f.valorisation, {
+      prixActuel: '118', epsActuel: '3,9', epsEstime1an: '4,5', peSectoriel: '30', peHistorique: '33', croissanceEstimeeEps: { cagr:'20' },
+      valeurIntrinseque: '150', bearCase: '95', bullCase: '195', beta: '1,15', positionShort: '1,2', ratioVenteADecouvert: '1,8',
+      wallStreet: { max:'190', moy:'140', min:'100', reco:'4', ca5:'48 Md', benef5:'11 Md', unit:'price' },
+      conclusionValorisation: "Exemple fictif : le cours est sous la valeur intrinsèque estimée, avec une marge de sécurité raisonnable. Le PE reste un peu plus bas que sa moyenne des cinq dernières années.",
+    });
+    Object.assign(f.personnelle, {
+      regleBuffett: { longterme: true, comprehension: true },
+      pointsForts: "Forte marge, trésorerie abondante, dette faible, clients fidèles et revenus récurrents.",
+      pointsFaibles: "Valorisation encore exigeante, concurrence de géants, dépendance à la bonne santé des dépenses informatiques des entreprises.",
+      these: "<b>Exemple fictif.</b> Une entreprise rentable et peu endettée, dont les clients restent fidèles. J'achèterais si le cours passait sous 110 $, ce qui laisserait une vraie marge de sécurité.",
+      conviction: 4, decision: 'Surveiller', prixAchatCible: '110',
+    });
+    c.logo = { url:'', src:'file', q: logoQuery(c) };   // pas de logo : les initiales suffisent, et on évite de chercher le logo d'une vraie entreprise du même nom
+    state.companies.push(c);
+  }
+  state.activeId = c.id;
+  currentView = 'company';
+  saveState();
+  render();
+  window.scrollTo(0, 0);
+  trackEvent('example');
 }
 function confirmNewCompany(){
   const input = document.getElementById('newCompanyInput');
@@ -13560,8 +13636,8 @@ const CONTACT_FORM_HTML = `<form id="contactForm" class="contact-form" novalidat
 
 // ---------- Informations légales : confidentialité, conditions, mentions légales ----------
 // Textes rédigés comme base de travail, à faire relire avant une ouverture large au public. Pas de `${` ni de guillemet oblique dans les textes.
-const LEGAL_VERSION = '2026-10-07';
-const LEGAL_DATE_TXT = '7 octobre 2026';
+const LEGAL_VERSION = '2026-11-02';
+const LEGAL_DATE_TXT = '2 novembre 2026';
 // Le nom de l'éditeur n'apparaît plus dans les textes (demande de l'auteur, 2026-10-04) : éditeur anonyme, voir « Éditeur du site » des mentions légales.
 const LEGAL_CONTACT = `<a href="mailto:the.analytics.app@gmail.com">the.analytics.app@gmail.com</a>`;
 const LEGAL_TABS = [
@@ -13573,7 +13649,7 @@ const LEGAL_TABS = [
 const LEGAL_CONTENT = {
   confidentialite: [
     LH('En bref'),
-    LP(`The Analytics est un outil d'analyse d'actions. Vous pouvez l'utiliser <strong>sans compte</strong> : vos analyses restent alors uniquement dans votre navigateur, et nous n'en recevons rien. Si vous <strong>créez un compte</strong>, vos analyses sont enregistrées en ligne pour que vous les retrouviez sur vos appareils. Nous ne vendons pas vos données, nous n'affichons aucune publicité et nous n'utilisons aucun outil de statistiques ou de suivi.`),
+    LP(`The Analytics est un outil d'analyse d'actions. Vous pouvez l'utiliser <strong>sans compte</strong> : vos analyses restent alors uniquement dans votre navigateur, et nous n'en recevons rien. Si vous <strong>créez un compte</strong>, vos analyses sont enregistrées en ligne pour que vous les retrouviez sur vos appareils. Nous ne vendons pas vos données, nous n'affichons aucune publicité et nous ne vous suivons pas : seule une mesure de fréquentation anonyme, sans cookie ni identifiant, compte les visites du site.`),
     LH('Qui est responsable de vos données'),
     LP(`Le responsable du traitement est l'éditeur du site (voir les mentions légales). Pour toute question sur vos données : ${LEGAL_CONTACT}.`),
     LH('Quelles données, pourquoi'),
@@ -13581,6 +13657,7 @@ const LEGAL_CONTENT = {
       `<strong>Sans compte</strong> : ce que vous saisissez est stocké dans le stockage local de votre navigateur, sur votre appareil. Nous n'y avons pas accès.`,
       `<strong>Adresse e-mail et mot de passe</strong> (avec un compte) : pour créer et protéger votre compte. Le mot de passe est stocké sous forme chiffrée par notre prestataire d'authentification, nous ne le voyons jamais. Base légale : l'exécution du service que vous demandez.`,
       `<strong>Vos analyses et préférences</strong> (avec un compte) : contenu de vos fiches, devise par défaut, ordre de tri, progression dans l'apprentissage. Elles servent uniquement à la synchronisation entre vos appareils. Base légale : l'exécution du service.`,
+      `<strong>Mesure de fréquentation</strong> (tout visiteur, avec ou sans compte) : à l'ouverture du site, un compteur anonyme enregistre la date, la langue, le type d'appareil (téléphone ou ordinateur), le site d'où vous venez et l'étiquette éventuelle du lien reçu. Il n'enregistre ni cookie, ni identifiant, ni votre adresse IP dans nos données, et ne peut pas vous reconnaître d'une visite à l'autre. Il est ignoré si votre navigateur envoie le signal « Ne pas me suivre ». Base légale : notre intérêt légitime à savoir si le site est utilisé.`,
       `<strong>Date et version de votre acceptation</strong> de ces règles, enregistrées à la création du compte, pour pouvoir prouver votre accord. Base légale : notre intérêt légitime à conserver cette preuve.`,
       `<strong>Vos clés API Twelve Data et Alpha Vantage</strong>, si vous en utilisez : elles sont stockées sur votre appareil. Avec un compte, elles sont aussi synchronisées avec vos analyses pour que vous n'ayez pas à les ressaisir sur chaque appareil.`,
       `<strong>Analyses partagées par lien</strong> (avec un compte, si vous cliquez sur « Partager » puis « Créer un lien ») : une copie de l'analyse choisie est stockée à part sur nos serveurs, et lisible par toute personne qui possède le lien (sans compte). Vous décidez des notes incluses (thèse, points forts et faibles, conviction, décision, prix cible) et du nom affiché ; votre position, vos ordres clôturés, votre journal de décisions et vos alertes ne sont jamais envoyés. Vous pouvez révoquer un lien à tout moment, ce qui le rend inutilisable, et la suppression de votre compte supprime tous vos liens. Les analyses que d'autres vous envoient (« Analyses reçues ») sont enregistrées comme vos propres données : sur votre appareil, et en ligne si vous avez un compte.`,
@@ -14103,7 +14180,8 @@ function renderHomeView(){
     </div>`;
   const ctaButtons = visitor
     ? `<button class="btn btn-primary" data-auth-open="signup">Créer un compte gratuit</button>
-            <button class="btn btn-ghost" data-new-analysis>Essayer sans compte</button>`
+            <button class="btn btn-ghost" data-new-analysis>Essayer sans compte</button>
+            <button class="btn btn-ghost" data-example>Voir un exemple</button>`
     : `<button class="btn btn-primary" data-new-analysis>Commencer une analyse</button>`;
 
   main.innerHTML = `
@@ -14176,7 +14254,7 @@ function renderHomeView(){
         <h2>De la première ligne à la décision, en trois étapes</h2>
       </div>
       <div class="steps">${steps}</div>
-      ${visitor ? `<div class="steps-cta"><button class="btn btn-primary" data-auth-open="signup">Créer un compte gratuit</button><button class="btn btn-outline" data-new-analysis>Essayer sans compte</button></div>` : ''}
+      ${visitor ? `<div class="steps-cta"><button class="btn btn-primary" data-auth-open="signup">Créer un compte gratuit</button><button class="btn btn-outline" data-new-analysis>Essayer sans compte</button><button class="btn btn-outline" data-example>Voir un exemple</button></div>` : ''}
     </section>
 
     <section class="hsec" id="score-limits">
@@ -14213,6 +14291,9 @@ function renderHomeView(){
   });
   main.querySelectorAll('[data-new-analysis]').forEach(el => {
     el.addEventListener('click', openNewCompanyModal);
+  });
+  main.querySelectorAll('[data-example]').forEach(el => {
+    el.addEventListener('click', openExampleAnalysis);
   });
   main.querySelectorAll('[data-go-space]').forEach(el => {
     el.addEventListener('click', goSpace);
@@ -14584,7 +14665,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 336;
+const APP_BUILD = 337;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -15851,6 +15932,24 @@ function sxClose(){
   document.body.classList.remove('sx-lock');
   sxZoomN = 0;
 }
+// ----- Mesure de fréquentation ANONYME (2026-11-03, demande de l'auteur : savoir si les liens envoyés sont ouverts) -----
+// Un compteur maison dans Supabase (table `page_views`, script supabase/visites-setup.sql, lecture réservée à l'éditeur) : date, langue, appareil, site d'origine et étiquette du lien (?r=nom).
+// Ni cookie, ni identifiant, ni adresse IP dans nos données ; une seule visite comptée par session ; ignoré si le navigateur envoie « Ne pas me suivre » ; jamais envoyé depuis un ordinateur de test
+// (seulement the-analytics.fr et son adresse github.io). Sans la table, l'envoi échoue en silence. `kind` : 'visit' (ouverture du site) ou 'example' (clic sur « Voir un exemple »).
+function trackEvent(kind){
+  try{
+    const h = location.hostname;
+    if(!(/(^|\.)the-analytics\.fr$/.test(h) || h === 'nolancurzillat.github.io')) return;
+    if(navigator.doNotTrack === '1' || window.doNotTrack === '1') return;
+    if(kind === 'visit'){ if(sessionStorage.getItem('analytics-visit-sent')) return; sessionStorage.setItem('analytics-visit-sent', '1'); }
+    const q = new URLSearchParams(location.search);
+    const src = String(q.get('r') || q.get('ref') || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 30);
+    let ref = ''; try{ ref = document.referrer ? new URL(document.referrer).hostname.replace(/^www\./, '').slice(0, 60) : ''; }catch(e){}
+    if(ref === h) ref = '';
+    const device = window.matchMedia && window.matchMedia('(max-width: 760px)').matches ? 'mobile' : 'ordinateur';
+    sbFetch('/rest/v1/page_views', { method:'POST', headers:{ Prefer:'return=minimal' }, body:{ kind, src, ref, lang: LANG === 'en' ? 'en' : 'fr', device, standalone: !!((window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone) } }).catch(() => {});
+  }catch(e){}
+}
 function initSummary(){
   document.addEventListener('click', e => {
     if(e.target.closest && e.target.closest('[data-summary-open]')){ sxOpen(); return; }
@@ -16792,6 +16891,7 @@ initTour();
 initPieHover();
 initGotoLinks();
 initSummary();
+trackEvent('visit');
 evalAllAlerts();
 initNotifCenter();
 notifyDueReports();

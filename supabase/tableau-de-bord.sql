@@ -68,3 +68,33 @@ from public.user_data
 where updated_at > now() - interval '14 days'
 group by 1
 order by 1 desc;
+
+-- ============================================================
+-- 6. FRÉQUENTATION : visites et exemples ouverts, par jour (30 derniers jours)
+--    (nécessite d'avoir exécuté supabase/visites-setup.sql une fois)
+-- ============================================================
+select created_at::date as jour,
+       count(*) filter (where kind = 'visit')   as visites,
+       count(*) filter (where kind = 'example') as exemples_ouverts
+from public.page_views
+where created_at > now() - interval '30 days'
+group by 1 order by 1 desc;
+
+-- ============================================================
+-- 7. D'OÙ VIENNENT LES VISITES : par étiquette de lien (?r=nom), sinon par site d'origine
+--    Astuce : envoyez à chaque personne un lien différent, par exemple https://the-analytics.fr/?r=julie
+-- ============================================================
+select coalesce(nullif(src, ''), '(sans étiquette)') as lien,
+       coalesce(nullif(ref, ''), '(direct)')         as site_origine,
+       count(*) filter (where kind = 'visit')        as visites,
+       count(*) filter (where kind = 'example')      as exemples_ouverts,
+       max(created_at)                               as derniere_visite
+from public.page_views
+group by 1, 2 order by visites desc, derniere_visite desc;
+
+-- ============================================================
+-- 8. APPAREILS ET LANGUES
+-- ============================================================
+select device as appareil, lang as langue, standalone as application_installee, count(*) as visites
+from public.page_views where kind = 'visit'
+group by 1, 2, 3 order by visites desc;
