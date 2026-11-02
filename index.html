@@ -1506,6 +1506,39 @@ body.sx-lock{ overflow:hidden; }
 .sx-p[data-sx-sec="5"] .sx-pt2 b{ font-size:14px; }
 .sx-p[data-sx-sec="5"] .sx-these{ padding:14px 18px 16px 18px; }
 .sx-p[data-sx-sec="5"] .sx-these q{ font-size:19px; line-height:1.55; }
+/* ----- Résumé : retouches du build 330 ----- */
+.sx-p[data-sx-sec="5"] .sx-these{ background:transparent; }
+.sx-p[data-sx-sec="5"] .sx-these q, .sx-p[data-sx-sec="5"] .sx-these .sx-txl{ color:#fff; }
+.sx-bf .sx-segs{ width:100%; max-width:200px; margin-top:8px; }
+.sx-bf .sx-segs i{ height:6px; }
+.sx-conv-big{ padding:14px 18px 18px 18px; }
+.sx-p[data-sx-sec="5"] .sx-conv-big .sx-tl{ font-size:17px; letter-spacing:.08em; text-transform:uppercase; color:#e6ecf8; margin-bottom:8px; font-weight:700; }
+.sx-conv-big .sx-stars-row{ gap:18px; justify-content:center; }
+.sx-conv-big .sx-stars{ gap:8px; }
+.sx-conv-big .sx-stars .star-slot, .sx-conv-big .sx-stars .star-empty, .sx-conv-big .sx-stars .star-fill{ width:54px; height:54px; }
+.sx-conv-big .sx-stars .star-empty svg, .sx-conv-big .sx-stars .star-fill svg{ width:54px; height:54px; }
+.sx-conv-big .sx-stars .star-fill{ width:auto; }
+.sx-conv-big .sx-stars-row b{ font-size:42px; }
+.sx-conv-big .sx-stars-row b small{ font-size:.5em; }
+.sx-cv-val{ margin-top:2px; padding:0; border-left:none; gap:2px; }
+.sx-cv-val b{ font-size:22px; font-weight:700; }
+.sx-cv-val span{ font-size:16.5px; }
+.sx-cv-val em{ font-size:15.5px; }
+.sx-cv-conv{ display:flex; flex-direction:column; align-items:flex-start; gap:8px; margin:10px 0 6px 0; font-size:inherit; }
+.sx-cv-cl{ font-size:19px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:#e6ecf8; }
+.sx-cv-cr{ display:flex; align-items:center; gap:16px; }
+.sx-cv-conv .sx-stars{ gap:6px; }
+.sx-cv-conv .sx-stars .star-slot, .sx-cv-conv .sx-stars .star-empty, .sx-cv-conv .sx-stars .star-fill{ width:50px; height:50px; }
+.sx-cv-conv .sx-stars .star-empty svg, .sx-cv-conv .sx-stars .star-fill svg{ width:50px; height:50px; }
+.sx-cv-conv .sx-stars .star-fill{ width:auto; }
+.sx-cv-cr b{ font-family:var(--font-mono); font-size:40px; font-weight:700; color:#f5b301; line-height:1; }
+.sx-cv-cr b small{ font-size:.5em; color:#8fa1c2; margin-left:2px; }
+.sx-card.sx-cover{ padding-top:44px; padding-bottom:38px; }
+.sx-cv-av.preview-avatar{ width:104px; height:104px; flex:0 0 104px; }
+.sx-cv-conv .sx-stars .star-slot, .sx-cv-conv .sx-stars .star-empty, .sx-cv-conv .sx-stars .star-fill, .sx-cv-conv .sx-stars .star-empty svg, .sx-cv-conv .sx-stars .star-fill svg{ width:46px; height:46px; }
+.sx-cv-conv .sx-stars .star-fill{ width:auto; }
+.sx-cv-k{ padding-top:7px; padding-bottom:7px; }
+.sx-cv-k b{ font-size:27px; }
 .sx-stack .sx-t, .sx-stack .sx-g4 .sx-t, .sx-stack .sx-compact .sx-t{ padding:7px 4px 8px 4px; }
 .sx-stack .sx-tl, .sx-stack .sx-g4 .sx-tl, .sx-stack .sx-compact .sx-tl{ font-size:11.5px; }
 .sx-stack .sx-tv{ font-size:17px; }
@@ -14351,7 +14384,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 329;
+const APP_BUILD = 330;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -14830,6 +14863,22 @@ function buffettStates(c){
 // Image portrait 4:5 (1080 x 1350) qui donne envie de cliquer : nom de l'entreprise, note en grand, verdict de valorisation, radar des 5 axes, chiffres clés, thèse en une phrase
 // et rappel des 6 fiches qui suivent. 100 % dérivée des données de l'analyse, rien de stocké. Elle est la page 0 du résumé (avant les pages 1 à 3) et la première image de « Tout télécharger ».
 const SX_COVER = { w:1080, h:1350 };
+// Thèse de la fiche d'accroche : le texte entier, coupé à un mot entier seulement s'il dépasse `maxLines` lignes (mesuré dans un bloc caché de même largeur et de même police), de sorte que la dernière ligne soit toujours COMPLÈTE
+function sxCoverThesis(text, maxLines){
+  const holder = document.createElement('div');
+  holder.className = 'sx-cv-these';
+  holder.style.cssText = 'position:absolute;left:-99999px;top:0;visibility:hidden;width:952px;box-sizing:border-box;';
+  const q = document.createElement('q'); holder.appendChild(q); document.body.appendChild(holder);
+  const lh = parseFloat(getComputedStyle(q).lineHeight) || 34, fits = s => { q.textContent = s; return q.offsetHeight <= lh * maxLines + 2; };
+  let out = text;
+  if(!fits(text)){
+    const words = text.split(' '); let lo = 0, hi = words.length;
+    while(lo < hi){ const mid = (lo + hi + 1) >> 1; if(fits(words.slice(0, mid).join(' ') + '…')) lo = mid; else hi = mid - 1; }
+    out = words.slice(0, lo).join(' ').replace(/[\s,;:.\-–]+$/, '') + '…';
+  }
+  holder.remove();
+  return out;
+}
 function buildCoverCard(c){
   const cur = c.currency;
   const idn = c.fields.identite || {}, fin = c.fields.financier || {}, val = c.fields.valorisation || {}, pers = c.fields.personnelle || {};
@@ -14858,7 +14907,7 @@ function buildCoverCard(c){
     valHtml = `<div class="sx-cv-val" style="--c:#5b8cf7"><b>${plain(price)}</b><span>cours actuel</span></div>`;
   }
   const conv5 = parseFloat(pers.conviction) || 0;
-  const convHtml = conv5 ? `<div class="sx-cv-conv"><span>Conviction</span>${starsRowHtml(conv5, 'sx-stars')}</div>` : '';
+  const convHtml = conv5 ? `<div class="sx-cv-conv"><div class="sx-cv-cl">Conviction</div><div class="sx-cv-cr">${starsRowHtml(conv5, 'sx-stars')}<b>${String(conv5).replace('.', LANG === 'fr' ? ',' : '.')}<small>/5</small></b></div></div>` : '';
   // Chiffres clés
   const mc = parseMoney(idn.marketCap) ?? parseMoney(fin.marketCap);
   const cCA = num(fin.croissanceCA && fin.croissanceCA.cagr), mNette = num(fin.margeNette), roic = num(fin.roic), rFcf = computeRendementFcf(c);
@@ -14869,19 +14918,19 @@ function buildCoverCard(c){
     + k('CA (5 ans)', cCA === null ? '—' : sxPct(cCA, 1) + '<small>/an</small>', sxTier('croissanceCA', cCA))
     + k('Marge nette', sxPct(mNette), sxTier('margeNette', mNette))
     + k('ROIC', sxPct(roic), sxTier('roic', roic))
-    + k('Rendement FCF', rFcf === null ? '—' : (rFcf < 0 ? FCF_NEGATIF_TXT : sxPct(rFcf, 1)), sxTier('rendementFcf', rFcf));
+    + k('PEG', sxFr(fmtRatioPos(computePeg(c))), sxTier('peg', computePeg(c)));
   // Thèse en une phrase
   const thesePlain = sxDecode(richToPlain(pers.these)).replace(/\s+/g, ' ').trim();
-  let thesis = '';
-  if(thesePlain){ const m = thesePlain.match(/^.{40,}?[.!?](\s|$)/); thesis = (m ? m[0] : thesePlain).trim(); }
-  const theseHtml = thesis ? `<div class="sx-cv-these"><div class="sx-cv-tl">Thèse d'investissement</div><q data-i18n="off">${sxShort(escapeHtml(thesis), 175)}</q></div>` : '';
+  const thesis = thesePlain ? sxCoverThesis(thesePlain, 3) : '';
+
+  const theseHtml = thesis ? `<div class="sx-cv-these"><div class="sx-cv-tl">Thèse d'investissement</div><q data-i18n="off">${escapeHtml(thesis)}</q></div>` : '';
   // Rappel des fiches qui suivent
   const secs = [['1', 'Identité', SECTION_COLORS.identite, '#fff'], ['2', 'Financier', SECTION_COLORS.financier, '#fff'], ['3', 'Croissance', SECTION_COLORS.croissance, '#0a1328'], ['4', 'Valorisation', SECTION_COLORS.valorisation, '#0a1328'], ['5', 'Analyse perso.', SECTION_COLORS.personnelle, '#fff'], ['6', 'Notation', '#c4b5fd', '#0a1328']];
   const pills = secs.map(s => `<span class="sx-cv-pill"><i style="background:${s[2]};color:${s[3]}">${s[0]}</i>${s[1]}</span>`).join('');
   return `<div class="sx-card sx-cover" data-sx-page="0"><i class="sx-cv-glow"></i><i class="sx-cv-bar"></i>
     <div class="sx-cv-top"><span class="sx-cv-brand"><img src="icon-192.png" alt="" width="46" height="46">The Analytics</span><span class="sx-cv-tag">Analyse fondamentale</span></div>
     <div class="sx-cv-title"><div class="sx-cv-kick">Analyse de l'action</div><div class="sx-cv-co"><div class="preview-avatar sx-cv-av${av.cls}">${av.html}</div><div class="sx-cv-name" data-i18n="off" style="font-size:${nfs}px">${escapeHtml(name)}</div></div><div class="sx-cv-chips" data-i18n="off">${chips}</div></div>
-    <div class="sx-cv-hero">${ring}<div class="sx-cv-hr"><div class="sx-cv-cap">Score composite · sur 100</div><div class="sx-cv-tier" style="color:${col}">${t5 === null ? 'À compléter' : SCORE5_NAMES[t5]}</div><div class="sx-cv-sub">Moyenne de 5 axes${sinfo.provisional ? ' · note provisoire' : ''}</div>${valHtml}${convHtml}</div></div>
+    <div class="sx-cv-hero">${ring}<div class="sx-cv-hr"><div class="sx-cv-cap">Score composite · sur 100</div><div class="sx-cv-tier" style="color:${col}">${t5 === null ? 'À compléter' : SCORE5_NAMES[t5]}</div>${sinfo.provisional ? '<div class="sx-cv-sub">Note provisoire</div>' : ''}${convHtml}${valHtml}</div></div>
     <div class="sx-cv-mid">${sxRadarSvg(sinfo.axes, col, { R:90, fs:14, vb:'-76 -30 412 246' })}<div class="sx-cv-ks">${figs}</div></div>
     ${theseHtml}
     <div class="sx-cv-next"><div class="sx-cv-nl">Le détail en 6 fiches, à suivre dans ce fil&nbsp;&darr;</div><div class="sx-cv-pills">${pills}</div></div>
@@ -15047,10 +15096,12 @@ function buildSummaryPages(c){
   let secTile = sxTile('Objectifs des analystes sur 1 an', '—', null, '', 'sx-t-wrap');
   if(ws && ws.target.moy !== null) secTile = sxTile('Objectifs des analystes sur 1 an', plain(ws.target.moy), ws.pct.moy === null ? null : (ws.pct.moy >= 0 ? good : bad), ws.pct.moy === null ? 'moyenne' : (ws.pct.moy >= 0 ? '+' : '−') + fmtNum(Math.abs(ws.pct.moy), 1) + '&nbsp;%', 'sx-t-wrap');
   const bfList = buffettStates(c).map(s => `<span class="${s.ok ? 'sx-bfy' : 'sx-bfn'}"><i>${s.ok ? '&#10003;' : '&#10005;'}</i>${escapeHtml(s.label)}</span>`).join('');
-  const p5 = `<div class="sx-g sx-g2">${decTile}${sxTile("Prix d'achat cible", target)}</div>
+  const convBig = `<div class="sx-t sx-conv sx-conv-big"><div class="sx-tl">Conviction</div><div class="sx-stars-row">${starsRowHtml(conv5, 'sx-stars')}<b>${conv5 ? String(conv5).replace('.', LANG === 'fr' ? ',' : '.') + '<small>/5</small>' : '—'}</b></div></div>`;
+  const buffTile = `<div class="sx-t sx-bf"><div class="sx-tl">Checklist Buffett</div><div class="sx-tv" style="color:${buffTier ? buffColor : '#fff'}">${buff.checked}<small>/${buff.total}</small></div><div class="sx-segs">${segs}</div></div>`;
+  const p5 = `${convBig}
+    <div class="sx-g sx-g2">${sxTile("Prix d'achat cible", target)}${buffTile}</div>
     <div class="sx-g sx-g3 sx-compact">${sxTile('Cours actuel', price === null ? '—' : plain(price))}${gapTile}${secTile}</div>
-    <div class="sx-g sx-g2"><div class="sx-t sx-conv"><div class="sx-tl">Conviction</div><div class="sx-stars-row">${starsRowHtml(conv5, 'sx-stars')}<b>${conv5 ? String(conv5).replace('.', LANG === 'fr' ? ',' : '.') + '<small>/5</small>' : '—'}</b></div></div><div class="sx-t sx-bf"><div class="sx-tl">Checklist Buffett</div><div class="sx-tv" style="color:${buffTier ? buffColor : '#fff'}">${buff.checked}<small>/${buff.total}</small></div></div></div>
-    <div class="sx-bfl">${bfList}</div><div class="sx-segs sx-segs-big">${segs}</div>
+    <div class="sx-bfl">${bfList}</div>
     <div class="sx-pm">${pmBlock('sx-plus', 'Points forts', pers.pointsForts)}${pmBlock('sx-minus', 'Points faibles', pers.pointsFaibles)}</div>
     ${these ? `<div class="sx-these"><div class="sx-txl">Thèse d'investissement</div><q>${these}</q></div>` : ''}`;
 
@@ -15467,7 +15518,7 @@ function sxOpen(){
   const ov = document.createElement('div');
   ov.className = 'sx-overlay'; ov.id = 'sxOverlay'; ov.dataset.pages = String(pages.length - 1);   // la page 0 (accroche) n'est pas comptée
   ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Résumé de l\'analyse');
-  ov.innerHTML = `<div class="sx-bar"><span class="sx-bar-t">Résumé de l'analyse</span><span class="sx-pages"><button type="button" class="sx-pgb" data-sx-go="0">Accroche <small>Fiche pour le fil X</small></button><button type="button" class="sx-pgb on" data-sx-go="1">Page 1 <small>Sections 1 à 3</small></button><button type="button" class="sx-pgb" data-sx-go="2">Page 2 <small>Sections 4 à 6</small></button>${pages.length > 3 ? '<button type="button" class="sx-pgb" data-sx-go="3">Page 3 <small>Ventilation</small></button>' : ''}<button type="button" class="sx-pgb sx-dlall" data-sx-downloadall>Tout télécharger</button><button type="button" class="sx-pgb sx-back" data-sx-zoom="0">&larr; Retour au résumé</button><button type="button" class="sx-pgb sx-dl" data-sx-download>Télécharger l'image</button></span><button type="button" class="sx-close" data-sx-close>Fermer &#10005;</button></div><button type="button" class="sx-arrow sx-prev sx-off" data-sx-step="-1" aria-label="Page précédente">${SX_ARROW_L}</button><button type="button" class="sx-arrow sx-next" data-sx-step="1" aria-label="Page suivante">${SX_ARROW_R}</button><div class="sx-scale">${pages.join('')}</div>`;
+  ov.innerHTML = `<div class="sx-bar"><span class="sx-bar-t">Résumé de l'analyse</span><span class="sx-pages"><button type="button" class="sx-pgb" data-sx-go="0">Accroche</button><button type="button" class="sx-pgb on" data-sx-go="1">Page 1 <small>Sections 1 à 3</small></button><button type="button" class="sx-pgb" data-sx-go="2">Page 2 <small>Sections 4 à 6</small></button>${pages.length > 3 ? '<button type="button" class="sx-pgb" data-sx-go="3">Page 3 <small>Ventilation</small></button>' : ''}<button type="button" class="sx-pgb sx-dlall" data-sx-downloadall>Tout télécharger</button><button type="button" class="sx-pgb sx-back" data-sx-zoom="0">&larr; Retour au résumé</button><button type="button" class="sx-pgb sx-dl" data-sx-download>Télécharger l'image</button></span><button type="button" class="sx-close" data-sx-close>Fermer &#10005;</button></div><button type="button" class="sx-arrow sx-prev sx-off" data-sx-step="-1" aria-label="Page précédente">${SX_ARROW_L}</button><button type="button" class="sx-arrow sx-next" data-sx-step="1" aria-label="Page suivante">${SX_ARROW_R}</button><div class="sx-scale">${pages.join('')}</div>`;
   document.body.appendChild(ov);
   document.body.classList.add('sx-lock');
   sxFit();
