@@ -14584,7 +14584,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 335;
+const APP_BUILD = 336;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -15648,13 +15648,31 @@ async function sxPngFrame(c, src, cw, ch, F, hidePg){
   ctx.clearRect(0, 0, F.w, F.h); ctx.drawImage(img, 0, 0);
   return new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error('blob')), 'image/png'));
 }
+// Carte d'une section à une largeur donnée, hauteur naturelle (sans étirement), pour l'export en image. Elle est posée dans un `.sx-zoomhost` caché (la liste du téléphone contient aussi des `.sx-zoomcard`)
+function sxExportCardAt(ov, n, cw){
+  const src = [...ov.querySelectorAll('.sx-scale .sx-p')].find(x => x.dataset.sxSec === String(n));
+  if(!src) return null;
+  ov.querySelectorAll('.sx-zoomhost').forEach(h => h.remove());
+  const zc = document.createElement('div'); zc.className = 'sx-card sx-on sx-zoomcard';
+  const cl = src.cloneNode(true); const zb = cl.querySelector('.sx-zb'); if(zb) zb.remove();
+  cl.querySelectorAll('.sx-pb').forEach(pb => { pb.style.gap = ''; }); cl.style.height = ''; cl.style.minHeight = '';
+  const f = src.closest('.sx-card').querySelector('.sx-foot').cloneNode(true); const pg = f.querySelector('.sx-pg'); if(pg) pg.textContent = 'Section ' + n + ' sur 6';
+  zc.appendChild(cl); zc.appendChild(f);
+  const host = document.createElement('div'); host.className = 'sx-zoomhost'; host.style.visibility = 'hidden'; host.appendChild(zc); ov.appendChild(host);
+  zc.style.width = cw + 'px'; zc.style.transform = 'none'; zc.style.minHeight = '';
+  return zc;
+}
 async function sxExportSection(c, ov, n){
   const F0 = SX_EXP.sec, keep = sxZoomN;
   sxZoomN = n;
   ov.classList.add('sx-zoomed');
   try{
-    sxBuildZoom(ov, F0.w - 2 * F0.m, F0.w * 2 - 2 * F0.m, false);   // boîte très haute : la carte retenue est la plus étroite (700 px), donc la même image verticale sur téléphone et sur ordinateur
-    const zc = ov.querySelector('.sx-zoomhost .sx-zoomcard');   // et non la première .sx-zoomcard : la liste du téléphone en contient aussi
+    // Hauteur NATURELLE (2026-11-03, demande de l'auteur : « trop d'espace vide, trop vertical, plus comme avant ») : plus de hauteur imposée ni d'écarts étirés. On cherche la PLUS PETITE largeur de carte
+    // (donc le texte le plus grand) qui donne une image pas plus haute que 4:5 ; si même 700 px la rend plus large que 4:5 (section courte), on garde 700 ; au-delà de 1200 px on s'arrête.
+    let zc0 = null;
+    for(let w = 700; w <= 1200; w += 50){ zc0 = sxExportCardAt(ov, n, w); if(zc0 && (w / zc0.offsetHeight >= 0.8 || w === 1200)) break; }
+    const zc = zc0;
+    if(zc && zc.parentNode) zc.parentNode.style.visibility = '';   // sinon la copie hérite de visibility:hidden et l'image est vide
     if(!zc) throw new Error('zoom');
     // Format VERTICAL (2026-11-03, demande de l'auteur : « plus vertical comme avant ») : le cadre prend la proportion de la carte (même largeur de 1080 px, hauteur selon la carte, 2 fois la largeur au plus),
     // au lieu d'un 4:5 fixe qui laissait de grandes marges de chaque côté d'une carte étroite. Les 6 sections ont la même taille puisque leur carte a la même taille.
