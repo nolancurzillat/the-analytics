@@ -14584,7 +14584,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 334;
+const APP_BUILD = 335;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -15576,15 +15576,30 @@ function sxInlineStyles(src, dst){
   const a = src.children, b = dst.children;
   for(let i = 0; i < a.length && i < b.length; i++) sxInlineStyles(a[i], b[i]);
 }
+// Récupère une image sous forme de données (data:) pour l'intégrer à l'export. Les logos enregistrés sont des adresses « commons.wikimedia.org/wiki/Special:FilePath/... » :
+// cette adresse redirige SANS en-tête CORS, donc le navigateur refuse de la lire. On demande alors à l'API de Wikimedia (CORS ouvert avec origin=*) l'adresse directe
+// de la vignette sur upload.wikimedia.org (CORS ouvert), qui, elle, peut être lue. Les favicons Google ne sont pas lisibles : les initiales les remplacent.
+async function sxFetchLogoData(src){
+  try{
+    const r = await fetch(src, { mode:'cors' });
+    if(r.ok) return await sxBlobToDataUrl(await r.blob());
+  }catch(e){}
+  const m = /^https:\/\/commons\.wikimedia\.org\/wiki\/Special:FilePath\/([^?#]+)(?:\?width=(\d+))?/.exec(src);
+  if(m){
+    const api = 'https://commons.wikimedia.org/w/api.php?action=query&titles=' + encodeURIComponent('File:' + decodeURIComponent(m[1])) + '&prop=imageinfo&iiprop=url&iiurlwidth=' + (m[2] || 200) + '&format=json&origin=*';
+    const j = await (await fetch(api)).json();
+    const pg = Object.values((j.query || {}).pages || {})[0], ii = pg && pg.imageinfo && pg.imageinfo[0], u = ii && (ii.thumburl || ii.url);
+    if(u){ const r2 = await fetch(u, { mode:'cors' }); if(r2.ok) return await sxBlobToDataUrl(await r2.blob()); }
+  }
+  throw new Error('logo');
+}
 async function sxInlineImages(root, initials){
   const imgs = Array.from(root.querySelectorAll('img'));
   await Promise.all(imgs.map(async im => {
     const src = im.getAttribute('src') || '';
     if(!src || src.indexOf('data:') === 0) return;
     try{
-      const r = await fetch(src, { mode:'cors' });
-      if(!r.ok) throw new Error('http');
-      im.setAttribute('src', await sxBlobToDataUrl(await r.blob()));
+      im.setAttribute('src', await sxFetchLogoData(src));
     }catch(e){
       const sp = document.createElement('span');
       const own = im.closest && im.closest('[data-ini]'); sp.textContent = own ? own.dataset.ini : initials;   // une carte de comparaison porte plusieurs entreprises : chacune garde SON initiale
@@ -15597,7 +15612,7 @@ async function sxInlineImages(root, initials){
 // Même mise en forme que le résumé, mais exportée dans un CADRE DE TAILLE FIXE : les 6 sections en 4:5 (1080 x 1350, le format portrait le plus haut qui s'affiche en entier dans un fil),
 // le schéma du chiffre d'affaires au bénéfice en 16:9 (1920 x 1080). Pour les sections, la largeur de la carte est cherchée comme dans la fenêtre (sxBuildZoom) mais avec le cadre
 // d'export comme « fenêtre » : le texte est donc le plus grand possible dans l'image, et les 6 images ont exactement la même taille, quelle que soit la fenêtre de l'utilisateur.
-const SX_EXP = { sec:{ w:1080, h:1350, m:26, k:1.5 }, page:{ w:1920, h:1080, m:0, k:1.25 }, cover:{ w:1080, h:1350, m:0, k:1.5 } };
+const SX_EXP = { sec:{ w:1080, h:1350, m:0, k:1.5 }, page:{ w:1920, h:1080, m:0, k:1.25 }, cover:{ w:1080, h:1350, m:0, k:1.5 } };
 const SX_EXP_BG = 'linear-gradient(160deg,#10203f 0%,#0a1328 62%,#0b1530 100%)';
 function sxFileName(c, n){
   const clean = s => String(s || '').replace(/[\\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
