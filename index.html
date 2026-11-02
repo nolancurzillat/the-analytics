@@ -745,10 +745,7 @@ main{ display:block; }
 .fiche-share{ display:flex; align-items:center; gap:16px; margin-top:20px; padding:18px 22px; border-radius:16px; background:var(--navy); border:1px solid rgba(255,255,255,.1); color:#c3cee5; font-size:15px; line-height:1.55; }
 .fiche-share b{ color:#fff; }
 .fiche-share .fs-ico{ flex:0 0 44px; width:44px; height:44px; border-radius:11px; background:rgba(201,162,74,.16); color:var(--gold); display:flex; align-items:center; justify-content:center; }
-@media (min-width:901px){
-  .step{ position:relative; }
-  .step:not(:last-child):after{ content:''; position:absolute; top:51px; left:92px; right:-20px; border-top:2px dashed var(--border-strong); }
-}
+/* Les pointillés entre les étapes ont été retirés (2026-11-02, demande de l'auteur : ils dépassaient sous la carte suivante) */
 @media (max-width:1180px){
   .hero .hero-inner{ padding-bottom:110px; }
   .fiche-strip{ grid-template-columns:repeat(3, minmax(0,1fr)); }
@@ -1399,6 +1396,10 @@ body.sx-lock{ overflow:hidden; }
 .sx-ax-t{ height:11px; border-radius:6px; }
 .sx-ax-t i{ border-radius:6px; }
 .sx-ax b{ font-size:18px; }
+.sx-axes{ gap:14px; }
+.sx-axb{ display:flex; flex-direction:column; gap:4px; }
+.sx-axd{ display:flex; flex-wrap:wrap; justify-content:space-between; gap:2px 12px; margin:0 48px 0 130px; font-size:13px; font-weight:600; line-height:1.3; }
+.sx-stack .sx-axd{ margin:0; flex-wrap:wrap; }
 .sx-stack .sx-sc{ flex-wrap:wrap; }
 /* ----- Comparateur : verdict, catégories repliables, carte à partager (build 280) ----- */
 .cmp-verdict{ margin-top:16px; padding:16px 18px 12px 18px; background:var(--card); border:1px solid var(--border); border-left:6px solid var(--accent); border-radius:14px; box-shadow:var(--shadow); }
@@ -1510,7 +1511,7 @@ body.sx-lock{ overflow:hidden; }
 .sx-khg{ border-left:2px solid var(--k, #8fa1c2); padding-left:10px; }
 .sx-khg.sx-plus{ --k:#22c55e; } .sx-khg.sx-minus{ --k:#f87171; }
 .sx-khc{ display:flex; flex-wrap:wrap; gap:6px; margin-top:3px; }
-.sx-khc span{ background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1); border-radius:99px; padding:3px 11px; font-size:14px; color:#e6ecf8; }
+.sx-khc span{ white-space:nowrap; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1); border-radius:99px; padding:3px 11px; font-size:14px; color:#e6ecf8; }
 /* ----- Résumé : build 284, mise en page FIXE (1800 px de dessin) identique pour toutes les analyses : mêmes polices, mêmes cases à leur taille naturelle (plus d'étirement), mêmes écarts ----- */
 .sx-card{ padding:24px 28px 14px 28px; }
 .sx-head{ padding-bottom:16px; gap:20px; }
@@ -14679,7 +14680,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 343;
+const APP_BUILD = 344;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -15407,7 +15408,17 @@ function buildSummaryPages(c){
     const best = scored.reduce((m, a) => a.score > m.score ? a : m), worst = scored.reduce((m, a) => a.score < m.score ? a : m);
     insight = `<div class="sx-g sx-g1">${sxTile('Point fort', '<span>' + best.label + '</span> ' + Math.round(best.score), scoreColor5(best.score, true) || good, '', 'sx-t-s')}${sxTile('À surveiller', '<span>' + worst.label + '</span> ' + Math.round(worst.score), scoreColor5(worst.score, true) || bad, '', 'sx-t-s')}</div>`;
   }
-  const axBars = sinfo.axes.map(a => { const col = a.score !== null ? scoreColor5(a.score, true) : none; return `<div class="sx-ax"><span>${a.label}</span><span class="sx-ax-t"><i style="width:${a.score === null ? 0 : Math.round(a.score)}%;background:${col}"></i></span><b style="color:${a.score === null ? '#fff' : col}">${a.score === null ? '—' : Math.round(a.score)}</b></div>`; }).join('');
+  // Pour chaque axe : la barre, puis (2026-11-02, demande de l'auteur : mieux occuper la place) l'indicateur qui tire l'axe vers le haut (▲) et celui qui le tire vers le bas (▼), avec leur note /100
+  const axBars = sinfo.axes.map(a => {
+    const col = a.score !== null ? scoreColor5(a.score, true) : none;
+    const sp = (a.parts || []).filter(p => p.score !== null && p.score !== undefined);
+    let det = '';
+    if(sp.length >= 2){
+      const bp = sp.reduce((m, p) => p.score > m.score ? p : m), wp = sp.reduce((m, p) => p.score < m.score ? p : m);
+      if(bp !== wp) det = `<div class="sx-axd"><span style="color:${scoreColor5(bp.score, true)}">▲ ${escapeHtml(bp.label)} ${Math.round(bp.score)}</span><span style="color:${scoreColor5(wp.score, true)}">▼ ${escapeHtml(wp.label)} ${Math.round(wp.score)}</span></div>`;
+    }
+    return `<div class="sx-axb"><div class="sx-ax"><span>${a.label}</span><span class="sx-ax-t"><i style="width:${a.score === null ? 0 : Math.round(a.score)}%;background:${col}"></i></span><b style="color:${a.score === null ? '#fff' : col}">${a.score === null ? '—' : Math.round(a.score)}</b></div>${det}</div>`;
+  }).join('');
   // Chiffres qui ressortent (palier « très bon » ou « mauvais » du barème de chaque indicateur), pour que la synthèse dise aussi QUELS chiffres expliquent la note
   const KH = [['peg', 'PEG', peg], ['detteActif', 'Dette nette / FCF', dette], ['conversionFcf', 'Conversion du FCF', conv], ['margeBrute', 'Marge brute', mBrute], ['margeNette', 'Marge nette', mNette], ['roe', 'ROE', roe], ['roic', 'ROIC', roic], ['roa', 'ROA', roa], ['margeFcf', 'Marge FCF', mFcf], ['tailleCapi', 'Taille', md], ['croissanceCA', 'Croissance du CA', cCA], ['croissanceBenef', 'Croissance des bénéfices', cBen], ['capexRatio', 'Capex / CA', cxr], ['peRelatifSecteur', 'PE / secteur', peRel], ['rendementFcf', 'Rendement du FCF', rFcf], ['positionShort', 'Position short', pshort]]
     .map(x => ({ label:x[1], tier:getScaleTier(x[0], x[2]) })).filter(x => x.tier);
