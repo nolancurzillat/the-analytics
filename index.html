@@ -701,6 +701,67 @@ main{ display:block; }
 .step p{ margin:0; font-size:14.5px; line-height:1.65; color:var(--ink-soft); }
 
 .legal{ max-width:820px; margin:0 auto; padding:44px 24px 56px 24px; text-align:center; font-size:13px; line-height:1.6; color:var(--ink-soft); }
+/* ----- Accueil remodelé (build 332) ----- */
+.hero .hero-inner{ z-index:1; }
+.hero:after{ content:''; position:absolute; inset:0; pointer-events:none; background-image:radial-gradient(rgba(255,255,255,.09) 1px, transparent 1.4px); background-size:28px 28px; -webkit-mask-image:linear-gradient(180deg, #000, transparent 80%); mask-image:linear-gradient(180deg, #000, transparent 80%); }
+.hero-trust{ gap:8px; margin-top:30px; }
+.hero-trust span{ padding:6px 11px; font-size:13px; gap:6px; border:1px solid rgba(255,255,255,.14); border-radius:999px; background:rgba(255,255,255,.05); }
+.hero-visual{ position:relative; }
+.hero-float{ position:absolute; right:22px; bottom:-46px; display:flex; align-items:stretch; border-radius:14px; background:#f4f6fb; color:#17294e; box-shadow:0 18px 40px rgba(0,0,0,.35); overflow:hidden; }
+.hero-float > div{ padding:11px 18px; display:flex; flex-direction:column; gap:4px; justify-content:center; }
+.hero-float > div + div{ border-left:1px solid #d5dbea; }
+.hero-float small{ font-size:11.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:#5b6b8c; }
+.hero-float b{ display:inline-flex; align-items:center; gap:8px; font-size:15.5px; font-weight:700; }
+.hero-float b i{ width:10px; height:10px; border-radius:50%; display:inline-block; }
+.hero-float .ct-stars{ margin:0; }
+.fiche-strip{ display:grid; grid-template-columns:repeat(6, minmax(0,1fr)); gap:14px; }
+.fs-item{ position:relative; display:flex; flex-direction:column; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:22px 18px 18px 18px; box-shadow:var(--shadow); overflow:hidden; transition:transform .15s ease, box-shadow .15s ease; }
+.fs-item:before{ content:''; position:absolute; left:0; right:0; top:0; height:4px; background:var(--c); }
+.fs-item:after{ content:''; position:absolute; inset:0; pointer-events:none; background:linear-gradient(180deg, color-mix(in srgb, var(--c) 10%, transparent), transparent 55%); }
+.fs-item:hover{ transform:translateY(-3px); box-shadow:var(--shadow-lg); }
+.fs-n{ position:relative; z-index:1; width:38px; height:38px; border-radius:50%; background:var(--c); color:#fff; display:flex; align-items:center; justify-content:center; font-family:var(--font-serif); font-weight:700; font-size:19px; line-height:1; margin-bottom:14px; }
+.fs-item:nth-child(4) .fs-n, .fs-item:nth-child(6) .fs-n{ color:#17294e; }
+.fs-item h3{ position:relative; z-index:1; font-size:16px; font-weight:600; margin:0 0 6px 0; }
+.fs-item p{ position:relative; z-index:1; margin:0 0 14px 0; font-size:13.5px; line-height:1.55; color:var(--ink-soft); }
+.fs-count{ position:relative; z-index:1; margin-top:auto; align-self:flex-start; font-size:12px; font-weight:600; color:color-mix(in srgb, var(--c) 70%, var(--ink)); background:color-mix(in srgb, var(--c) 14%, transparent); border-radius:999px; padding:3px 10px; }
+.fiche-share{ display:flex; align-items:center; gap:16px; margin-top:20px; padding:18px 22px; border-radius:16px; background:var(--navy); border:1px solid rgba(255,255,255,.1); color:#c3cee5; font-size:15px; line-height:1.55; }
+.fiche-share b{ color:#fff; }
+.fiche-share .fs-ico{ flex:0 0 44px; width:44px; height:44px; border-radius:11px; background:rgba(201,162,74,.16); color:var(--gold); display:flex; align-items:center; justify-content:center; }
+@media (min-width:901px){
+  .step{ position:relative; }
+  .step:not(:last-child):after{ content:''; position:absolute; top:51px; left:92px; right:-20px; border-top:2px dashed var(--border-strong); }
+}
+@media (max-width:1180px){
+  .hero .hero-inner{ padding-bottom:110px; }
+  .fiche-strip{ grid-template-columns:repeat(3, minmax(0,1fr)); }
+}
+@media (min-width:641px) and (max-width:1180px){
+  .feature-grid .feature:last-child:nth-child(odd){ grid-column:1 / -1; }
+}
+@media (max-width:640px){
+  .fiche-strip{ grid-template-columns:repeat(2, minmax(0,1fr)); }
+  .hero-float{ right:12px; bottom:-46px; }
+  .hero-float > div{ padding:9px 14px; }
+}
+@media (max-width:340px){
+  .fiche-strip{ grid-template-columns:1fr; }
+}
+@media (prefers-reduced-motion:no-preference){
+  @keyframes hmRise{ from{ opacity:0; transform:translateY(16px); } to{ opacity:1; transform:none; } }
+  @keyframes hmBar{ from{ transform:scaleX(0); } to{ transform:scaleX(1); } }
+  @keyframes hmPop{ from{ opacity:0; transform:scale(.82); } to{ opacity:1; transform:none; } }
+  .hero-inner > div:first-child > *{ animation:hmRise .7s cubic-bezier(.2,.7,.2,1) both; }
+  .hero-inner > div:first-child > :nth-child(2){ animation-delay:.06s; }
+  .hero-inner > div:first-child > :nth-child(3){ animation-delay:.12s; }
+  .hero-inner > div:first-child > :nth-child(4){ animation-delay:.18s; }
+  .hero-inner > div:first-child > :nth-child(5){ animation-delay:.24s; }
+  .hero-inner > div:first-child > :nth-child(6){ animation-delay:.30s; }
+  .hero-inner > div:first-child > :nth-child(7){ animation-delay:.36s; }
+  .hero .preview{ animation:hmRise .9s .2s cubic-bezier(.2,.7,.2,1) both; }
+  .hero .preview-ring{ animation:hmPop .8s .45s cubic-bezier(.2,.7,.2,1) both; }
+  .hero .pbar-fill{ transform-origin:left center; animation:hmBar 1s .6s cubic-bezier(.2,.7,.2,1) both; }
+  .hero-float{ animation:hmRise .8s 1s cubic-bezier(.2,.7,.2,1) both; }
+}
 
 /* ============================================================
    PAGE D'ANALYSE
@@ -10689,6 +10750,9 @@ const HOME_ICONS = {
   score: `<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>`,
   value: `<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>`,
   decide: `<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>`,
+  share: `<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/>`,
+  timeline: `<path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/>`,
+  image: `<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>`,
   lock: `<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>`,
   portfolio: `<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>`,
   compare: `<rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="16" rx="1.5"/><line x1="6.5" y1="14" x2="6.5" y2="17"/><line x1="17.5" y1="9" x2="17.5" y2="17"/>`,
@@ -13932,6 +13996,9 @@ function renderHomeView(){
     ['decide', "Décidez avec discipline", "Checklist Buffett, thèse d'investissement, conviction, prix d'achat cible. Un journal de bord garde l'évolution de votre regard, et un bilan annuel le résume."],
     ['portfolio', "Suivez votre portefeuille", "Positions, résultat latent, dividendes attendus, ordres clôturés et courbe dans le temps : tout est calculé à partir de vos propres saisies, en dollars comme en euros."],
     ['compare', "Comparez et restez alerté", "Comparez jusqu'à 3 entreprises côte à côte. Fixez des alertes de cours et des dates de rapport : l'application vous prévient quand il est temps de mettre à jour vos données."],
+    ['image', "Des résumés prêts à partager", "Chaque analyse se résume en images nettes, une par section, avec une fiche d'accroche. Téléchargez-les pour les publier ou les envoyer."],
+    ['timeline', "Suivez l'évolution dans le temps", "À chaque rapport publié, vos chiffres sont relevés : chiffre d'affaires, bénéfice, marges. La note de l'entreprise est aussi suivie jour après jour."],
+    ['share', "Partagez une analyse", "Envoyez une analyse par fichier, ou par lien avec un compte, avec ou sans vos notes personnelles. Votre position et vos ordres ne sont jamais transmis."],
   ].map(f => `<div class="feature"><div class="feature-ico">${svgIcon(HOME_ICONS[f[0]])}</div><h3>${f[1]}</h3><p>${f[2]}</p></div>`).join('');
 
   const learnBullets = [
@@ -13948,6 +14015,17 @@ function renderHomeView(){
   ].map(s => `<div class="step"><div class="step-n">${s[0]}</div><h3>${s[1]}</h3><p>${s[2]}</p></div>`).join('');
 
   const visitor = !cloud.session && !state.companies.length;
+  // Bande « une fiche, six sections » (build 332) : couleurs et sous-titres lus dans l'application, nombre de champs lu dans SECTIONS
+  const ficheItems = [
+    ['identite', "Identité"],
+    ['financier', "Financier"],
+    ['croissance', "Croissance future"],
+    ['valorisation', "Valorisation"],
+    ['personnelle', "Analyse personnelle"],
+  ].map((it, i) => {
+    const sec = SECTIONS.find(s => s.key === it[0]);
+    return `<div class="fs-item" style="--c:${SECTION_COLORS[it[0]]}"><div class="fs-n">${i + 1}</div><h3>${it[1]}</h3><p>${SECTION_SUBTITLES[it[0]]}</p><span class="fs-count">${sec ? sec.fields.length : 0} champs</span></div>`;
+  }).join('') + `<div class="fs-item" style="--c:#9b8afb"><div class="fs-n">6</div><h3>Synthèse globale</h3><p>Score sur 100, radar des 5 axes, points forts et points à surveiller</p><span class="fs-count">Calculée pour vous</span></div>`;
   const accountCards = `<div class="acct-compare">
       <div class="feature"><h3>Sans compte</h3><ul class="learn-list">${[
         "Vous commencez tout de suite, en quelques secondes.",
@@ -13987,11 +14065,21 @@ function renderHomeView(){
             <span>${HOME_ICONS.check}Installable comme une application</span>
           </div>
         </div>
-        ${buildHeroPreview()}
+        <div class="hero-visual">${buildHeroPreview()}<div class="hero-float" aria-hidden="true"><div><small>Décision</small><b><i style="background:${DECISION_STYLE['Surveiller'] ? DECISION_STYLE['Surveiller'].color : '#c9a24a'}"></i>Surveiller</b></div><div><small>Conviction</small>${starsRowHtml(4, 'ct-stars')}</div></div></div>
       </div>
     </section>
 
     <div class="stats"><div class="stats-grid">${stats}</div></div>
+
+    <section class="hsec" id="sheet">
+      <div class="hsec-head">
+        <div class="kicker">Une fiche, six sections</div>
+        <h2>Un cadre unique pour toutes vos analyses</h2>
+        <p class="hsec-lead">De l'identité de l'entreprise à votre décision, chaque fiche suit le même parcours, avec les mêmes couleurs que dans l'application.</p>
+      </div>
+      <div class="fiche-strip">${ficheItems}</div>
+      <div class="fiche-share"><span class="fs-ico">${svgIcon(HOME_ICONS.image)}</span><span><b>Un résumé en images, prêt à partager.</b> Une fois l'analyse terminée, chaque section et une fiche d'accroche se téléchargent en image nette.</span></div>
+    </section>
 
     <section class="hsec" id="why">
       <div class="hsec-head">
@@ -14433,7 +14521,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 331;
+const APP_BUILD = 332;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
