@@ -877,7 +877,7 @@ input.company-name:focus{ outline:none; border-bottom-color:var(--blue); }
 .rh-sleg{ display:flex; flex-direction:column; gap:8px; margin-top:12px; padding-top:10px; border-top:1px solid var(--border); }
 .rh-sl{ display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:12.5px; color:var(--ink-soft); }
 .rh-sl b{ margin-right:8px; font-size:14px; color:var(--ink); }
-.rh-bar.sc{ opacity:.9; border-radius:7px 7px 0 0; background:linear-gradient(180deg, var(--rh1), color-mix(in srgb, var(--rh1) 70%, transparent)); }
+.rh-bar.sc{ left:calc(50% - 9px); right:auto; width:18px; opacity:.9; border-radius:6px 6px 0 0; background:linear-gradient(180deg, var(--rh1), color-mix(in srgb, var(--rh1) 70%, transparent)); }
 .rh-bar.sc.last{ opacity:1; box-shadow:0 5px 16px color-mix(in srgb, var(--rh1) 45%, transparent); }
 .rh-lg i.sq{ width:11px; height:11px; border-radius:3px; }
 .rh-lg b{ font-weight:700; }
@@ -10140,20 +10140,23 @@ function scoreBarsCard(all, fromIso, cur){
   const dlt = ch.length > 1 ? ch[ch.length - 1].r - ch[ch.length - 2].r : null;
   const pill = dlt === null ? '' : rhPill((dlt > 0 ? '+' : '') + dlt + ' pt' + (Math.abs(dlt) > 1 ? 's' : ''), dlt > 0 ? 'up' : (dlt < 0 ? 'down' : 'flat'));
   const head = `<div class="rh-top"><span class="rh-ct">Score composite</span>${pill}</div><div class="rh-cv" style="color:${scoreColor5(lastS.sc)}">${fmtNum(lastS.sc, 1)}<small data-i18n="off">${escapeHtml(formatDateFrShort(lastS.d))}</small></div>`;
-  const legend = `<div class="rh-leg">${[0, 1, 2, 3, 4].map(i => `<span class="rh-lg"><i class="sq" style="background:${scoreColor5(i * 20 + 10)}"></i><b>${SCORE5_NAMES[i]}</b> ${SCORE5_LABELS[i]}</span>`).join('')}</div><div class="rh-leg rh-legn">Une barre est ajoutée à chaque changement de note (arrondie à l'unité).</div>`;
+  const legend = `<div class="rh-leg">${[0, 1, 2, 3, 4].map(i => `<span class="rh-lg"><i class="sq" style="background:${scoreColor5(i * 20 + 10)}"></i><b>${SCORE5_NAMES[i]}</b> ${SCORE5_LABELS[i]}</span>`).join('')}</div><div class="rh-leg rh-legn">Une barre est ajoutée à chaque changement de note (arrondie à l'unité). L'échelle est zoomée sur les notes affichées.</div>`;
   if(!n) return `<div class="rh-card">${head}<div class="pev-empty">Aucun changement de note sur cette période.</div>${legend}</div>`;
-  const grid = [0, 20, 40, 60, 80, 100].map(t => `<i class="rh-gl${t === 0 ? ' base' : ''}" style="bottom:${t}%"></i><span class="rh-yl" style="bottom:${t}%">${t}</span>`).join('');
-  const multiYear = shown.some(s => s.d.slice(0, 4) !== shown[0].d.slice(0, 4));
+  // Échelle ZOOMÉE sur les notes affichées (demande de l'auteur : voir les variations) : de la plus basse à la plus haute, avec un peu de marge ; la ligne du bas est la borne basse, pas zéro
+  const rs = shown.map(s => s.sc), mn = Math.min.apply(null, rs), mx = Math.max.apply(null, rs), pad = Math.max(2, (mx - mn) * 0.3);
+  const nt = niceAxisTicks(Math.max(0, mn - pad), Math.min(100, mx + pad), 4);
+  const lo = Math.max(0, nt.min), hi = Math.min(100, nt.max), sp = (hi - lo) || 1, pos = v => Math.min(100, Math.max(3, (v - lo) / sp * 100));
+  const grid = nt.ticks.filter(t => t >= lo && t <= hi).map(t => { const b = ((t - lo) / sp * 100).toFixed(2); return `<i class="rh-gl${t === lo ? ' base' : ''}" style="bottom:${b}%"></i><span class="rh-yl" style="bottom:${b}%">${t}</span>`; }).join('');
   const cols = shown.map((p, i) => {
     const last = i === n - 1, col = scoreColor5(p.sc), name = SCORE5_NAMES[scoreTier5(p.sc)];
-    const bar = `<i class="rh-bar sc${p.est ? ' est' : ''}${last ? ' last' : ''}" style="--rh1:${col};bottom:0;height:${Math.max(p.r, 1.5)}%"></i>`;
-    const lbl = `<b class="rh-bv on" style="bottom:calc(${Math.max(p.r, 1.5)}% + 5px)">${p.r}</b>`;
+    const bar = `<i class="rh-bar sc${p.est ? ' est' : ''}${last ? ' last' : ''}" style="--rh1:${col};bottom:0;height:${pos(p.sc).toFixed(2)}%"></i>`;
+    const lbl = `<b class="rh-bv on" style="bottom:calc(${pos(p.sc).toFixed(2)}% + 5px)">${p.r}</b>`;
     const rows = [{ text:'Note : ' + fmtNum(p.sc, 1) + ' · ' + name, color:col }];
     if(p.p !== null && p.p !== undefined) rows.push({ text:'Cours : ' + fmtMoney(p.p, cur) });
     if(p.est) rows.push({ text:'Date estimée' });
     return `<div class="rh-col" data-tooltip="${rhTip(p.d, rows)}">${bar}${lbl}</div>`;
   }).join('');
-  const xl = shown.map((p, i) => `<span class="c" style="left:${((i + 0.5) / n * 100).toFixed(2)}%" data-i18n="off">${p.d.slice(8, 10)}/${p.d.slice(5, 7)}${multiYear ? '/' + p.d.slice(2, 4) : ''}</span>`).join('');
+  const xl = shown.map((p, i) => `<span class="c" style="left:${((i + 0.5) / n * 100).toFixed(2)}%" data-i18n="off">${p.d.slice(8, 10)}/${p.d.slice(5, 7)}/${p.d.slice(2, 4)}</span>`).join('');
   return `<div class="rh-card">${head}<div class="rh-plot tall">${grid}<div class="rh-in"><div class="rh-cols">${cols}</div></div></div><div class="rh-xl sc">${xl}</div>${legend}</div>`;
 }
 function scoreHistoryBox(c){
@@ -14691,7 +14694,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 338;
+const APP_BUILD = 339;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.

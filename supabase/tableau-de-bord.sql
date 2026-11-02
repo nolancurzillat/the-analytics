@@ -70,7 +70,21 @@ group by 1
 order by 1 desc;
 
 -- ============================================================
--- 6. FRÉQUENTATION : visites et exemples ouverts, par jour (30 derniers jours)
+-- 6. NOMBRE DE VISITES : aujourd'hui, 7 derniers jours, 30 derniers jours, total depuis le début
+--    (« aujourd'hui » = depuis minuit, heure de Paris ; une visite = une ouverture du site, une seule par session)
+--    (nécessite d'avoir exécuté supabase/visites-setup.sql une fois)
+-- ============================================================
+select
+  count(*) filter (where kind = 'visit' and created_at >= (date_trunc('day', now() at time zone 'Europe/Paris') at time zone 'Europe/Paris')) as aujourdhui,
+  count(*) filter (where kind = 'visit' and created_at > now() - interval '7 days')                                                          as sept_derniers_jours,
+  count(*) filter (where kind = 'visit' and created_at > now() - interval '30 days')                                                         as trente_derniers_jours,
+  count(*) filter (where kind = 'visit')                                                                                                     as total_depuis_le_debut,
+  count(*) filter (where kind = 'example')                                                                                                   as exemples_ouverts_total
+from public.page_views;
+
+
+-- ============================================================
+-- 7. FRÉQUENTATION : visites et exemples ouverts, par jour (30 derniers jours)
 --    (nécessite d'avoir exécuté supabase/visites-setup.sql une fois)
 -- ============================================================
 select created_at::date as jour,
@@ -81,7 +95,7 @@ where created_at > now() - interval '30 days'
 group by 1 order by 1 desc;
 
 -- ============================================================
--- 7. D'OÙ VIENNENT LES VISITES : par étiquette de lien (?r=nom), sinon par site d'origine
+-- 8. D'OÙ VIENNENT LES VISITES : par étiquette de lien (?r=nom), sinon par site d'origine
 --    Astuce : envoyez à chaque personne un lien différent, par exemple https://the-analytics.fr/?r=julie
 -- ============================================================
 select coalesce(nullif(src, ''), '(sans étiquette)') as lien,
@@ -93,7 +107,7 @@ from public.page_views
 group by 1, 2 order by visites desc, derniere_visite desc;
 
 -- ============================================================
--- 8. APPAREILS ET LANGUES
+-- 9. APPAREILS ET LANGUES
 -- ============================================================
 select device as appareil, lang as langue, standalone as application_installee, count(*) as visites
 from public.page_views where kind = 'visit'
