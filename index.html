@@ -1163,9 +1163,9 @@ body.sx-lock{ overflow:hidden; }
 .sx-p[data-sx-sec="4"] .sx-g4 .sx-tv{ font-size:29px; }
 .sx-p[data-sx-sec="4"] .sx-g4 .sx-ts{ font-size:14.5px; }
 .sx-p[data-sx-sec="4"] .sx-txv{ font-size:16.5px; line-height:1.5; }
-.sx-these{ background:rgba(201,162,74,.09); border:1px solid rgba(201,162,74,.42); }
-.sx-these .sx-txl{ color:#d9b45a; }
-.sx-these q{ color:#f3e4b5; }
+.sx-these{ border:1.5px solid rgba(201,162,74,.6); }
+
+
 .sx-bfl span{ font-size:15.5px; align-items:center; gap:9px; }
 .sx-bfl i{ font-size:21px; width:24px; line-height:1; }
 .sx-sk .skv-r{ fill-opacity:.62; }
@@ -1476,6 +1476,36 @@ body.sx-lock{ overflow:hidden; }
 .sx-th5 .sx-tl{ white-space:normal; }
 .sx-obj3 .sx-th5 .sx-tv{ font-size:23px; }
 .sx-stack .sx-obj3{ grid-template-columns:1fr; }
+/* ----- Résumé : retouches du build 329 ----- */
+.sx-p[data-sx-sec="1"] .sx-act, .sx-p[data-sx-sec="1"] .sx-actb .sx-act{ font-size:19px; line-height:1.55; }
+.sx-p[data-sx-sec="1"] .sx-txv{ font-size:18px; line-height:1.55; }
+.sx-p[data-sx-sec="1"] .sx-moat .sx-txv{ font-size:18px; line-height:1.5; }
+.sx-p[data-sx-sec="2"] .sx-g4 .sx-tl{ white-space:normal; line-height:1.15; }
+.sx-g5{ grid-template-columns:repeat(6,minmax(0,1fr)); }
+.sx-p[data-sx-sec="2"] .sx-g5 .sx-tv{ font-size:26px; }
+.sx-p[data-sx-sec="2"] .sx-g5 .sx-tl{ font-size:13.5px; }
+.sx-g5 > :nth-child(-n+3){ grid-column:span 2; }
+.sx-g5 > :nth-child(n+4){ grid-column:span 3; }
+.sx-p[data-sx-sec="2"] .sx-dn svg{ width:210px; height:210px; margin:10px auto 16px auto; }
+.sx-p[data-sx-sec="2"] .sx-dleg{ font-size:17px; gap:7px; }
+.sx-p[data-sx-sec="2"] .sx-dn .sx-txl{ font-size:14.5px; }
+.sx-p[data-sx-sec="4"] .sx-obj3 .sx-th5 .sx-tv{ font-size:28px; }
+.sx-p[data-sx-sec="4"] .sx-obj3 .sx-th5 .sx-tl, .sx-p[data-sx-sec="4"] .sx-cons-c{ font-size:15px; }
+.sx-p[data-sx-sec="4"] .sx-obj3 .sx-th5 .sx-ts{ font-size:14.5px; }
+.sx-p[data-sx-sec="4"] .sx-obj3 .sx-cons-l{ font-size:23px; }
+.sx-p[data-sx-sec="4"] .sx-obj3 .sx-cons svg{ max-width:170px; }
+.sx-p[data-sx-sec="4"] .sx-tx:last-child .sx-txv{ font-size:19.5px; line-height:1.55; }
+.sx-t-wrap .sx-tl{ white-space:normal; line-height:1.2; }
+.sx-p[data-sx-sec="5"] .sx-bfl span{ font-size:17.5px; gap:10px; }
+.sx-p[data-sx-sec="5"] .sx-bfl i{ font-size:23px; width:26px; }
+.sx-segs-big{ display:flex; gap:6px; margin:6px 0 4px 0; }
+.sx-segs-big i{ flex:1; height:13px; border-radius:4px; }
+.sx-p[data-sx-sec="5"] .sx-pm{ gap:14px; }
+.sx-p[data-sx-sec="5"] .sx-pt2{ padding-left:14px; }
+.sx-p[data-sx-sec="5"] .sx-pt2 div{ font-size:18px; line-height:1.55; }
+.sx-p[data-sx-sec="5"] .sx-pt2 b{ font-size:14px; }
+.sx-p[data-sx-sec="5"] .sx-these{ padding:14px 18px 16px 18px; }
+.sx-p[data-sx-sec="5"] .sx-these q{ font-size:19px; line-height:1.55; }
 .sx-stack .sx-t, .sx-stack .sx-g4 .sx-t, .sx-stack .sx-compact .sx-t{ padding:7px 4px 8px 4px; }
 .sx-stack .sx-tl, .sx-stack .sx-g4 .sx-tl, .sx-stack .sx-compact .sx-tl{ font-size:11.5px; }
 .sx-stack .sx-tv{ font-size:17px; }
@@ -14321,7 +14351,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 328;
+const APP_BUILD = 329;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -14906,7 +14936,7 @@ function buildSummaryPages(c){
   const ipoPx = parseMoney(idn.dateIPO && idn.dateIPO.prixInitial);
   const sectBlock = (sect || indus) ? `<div class="sx-sector">${sect ? `<div><span>Secteur</span><b>${escapeHtml(sect)}</b></div>` : ''}${indus ? `<div><span>Industrie</span><b>${escapeHtml(indus)}</b></div>` : ''}</div>` : '';
   const p1 = `<div class="sx-meta sx-meta-in">${chips}</div>${sectBlock}
-    <div class="sx-act">${sxFull(idn.activitePrincipale) || '<span class="sx-mut">Activité à renseigner</span>'}</div>
+    <div class="sx-tx sx-actb"><div class="sx-txl">Activité principale</div><div class="sx-act">${sxFull(idn.activitePrincipale) || '<span class="sx-mut">Activité à renseigner</span>'}</div></div>
     ${sxText('Autres activités', idn.autresActivites)}
     <div class="sx-g sx-g4 sx-compact">${sxTile('Market Cap', money(mc))}${sxTile('Taille', tt ? ({ tresbon:'Méga-cap.', bon:'Grande cap.', moyen:'Cap. moyenne', mauvais:'Petite cap.' })[tt] : '—', tt ? TOOLTIP_TIER_COLORS[tt] : null, '', 'sx-t-s')}${sxTile('Fondée', sxShort(idn.dateCreation, 14) || '—')}${sxTile('IPO', sxShort(ipo, 14) || '—', null, ipoPx === null ? '' : 'prix initial : ' + plain(ipoPx), ipoPx === null ? '' : 'sx-t-ipo')}${sxTile('Employés', emp === null ? '—' : fmtNum(emp, 0))}${sxTile('CEO', sxShort(idn.ceo, 30) || '—', null, '', 'sx-t-s')}${sxTile('Siège', sxShort(idn.paysSiege && idn.paysSiege.siegeSocial, 30) || '—', null, '', 'sx-t-s')}${sxTile('Dividende', divV, divC, divS, divS ? 'sx-t-s' : '')}</div>
     <div class="sx-moat">${sxGauge(moat === null ? 0 : moat / 10, moatCol || none, moat === null ? '—' : fmtNum(moat, 1) + '<i>/10</i>', 'MOAT')}<div class="sx-tx sx-moat-t"><div class="sx-txl">Avantage concurrentiel</div><div class="sx-txv">${moatTxt || '<span class="sx-mut">À renseigner</span>'}</div></div></div>
@@ -14926,9 +14956,9 @@ function buildSummaryPages(c){
     <div class="sx-cap">Rentabilité</div>
     <div class="sx-g sx-g3 sx-grow">${sxTile('Marge brute', sxPct(mBrute), sxTier('margeBrute', mBrute))}${sxTile('Marge nette', sxPct(mNette), sxTier('margeNette', mNette))}${sxTile('Marge FCF', mFcf === null ? '—' : (mFcf < 0 ? neg : sxPct(mFcf)), sxTier('margeFcf', mFcf))}${sxTile('ROIC', sxPct(roic), sxTier('roic', roic))}${sxTile('ROE', sxPct(roe), sxTier('roe', roe))}${sxTile('ROA', sxPct(roa), sxTier('roa', roa))}</div>
     <div class="sx-cap">Cash et bilan</div>
-    <div class="sx-g sx-g3 sx-grow">${sxTile('Free cash flow', money(fcf), (fcf !== null && fcf < 0) ? bad : null)}${sxTile('Capex / CA', sxPct(cxr, 1), sxTier('capexRatio', cxr))}${sxTile('Conv. FCF', conv === null ? '—' : (conv <= CONVERSION_NON_SIGNIFICATIVE ? 'n.s.' : (conv < 0 ? neg : sxPct(conv, 0))), sxTier('conversionFcf', conv))}${sxTile('Dette / FCF', sxFr(fmtDetteActif(dette)), sxTier('detteActif', dette))}${sxTile('Dette / actif', dta === null ? '—' : sxPct(dta, 0), sxTier('detteTotalActif', dta))}${sxTile('Faillite', sxPct(pf, pf !== null && pf < 10 ? 1 : 0), sxTier('probaFaillite', pf))}</div>
+    <div class="sx-g sx-g5 sx-grow">${sxTile('Free cash flow', money(fcf), (fcf !== null && fcf < 0) ? bad : null)}${sxTile('Capex / CA', sxPct(cxr, 1), sxTier('capexRatio', cxr))}${sxTile('Conv. FCF', conv === null ? '—' : (conv <= CONVERSION_NON_SIGNIFICATIVE ? 'n.s.' : (conv < 0 ? neg : sxPct(conv, 0))), sxTier('conversionFcf', conv))}${sxTile('Dette / FCF', sxFr(fmtDetteActif(dette)), sxTier('detteActif', dette))}${sxTile('Dette / actif', dta === null ? '—' : sxPct(dta, 0), sxTier('detteTotalActif', dta))}</div>
     <div class="sx-cap">Solidité et actionnariat</div>
-    <div class="sx-g sx-g3 sx-grow">${sxTile('Trésorerie', money(tre))}${sxTile('Trésorerie / dette', trd === null ? '—' : sxPct(trd, 0), sxTier('tresorerieDette', trd))}${sxTile('Solvabilité', solv === null ? '—' : fmtNum(solv, 0) + '<small>/100</small>', sxTier('scoreSolvabilite', solv))}${sxTile('Flottant', disp === null ? '—' : sxPct(disp, 0))}${sxTile('Initiés', insd === null ? '—' : sxPct(insd, 1))}${sxTile('Institutions', inst === null ? '—' : sxPct(inst, 1))}</div>
+    <div class="sx-g sx-g4 sx-grow">${sxTile('Trésorerie', money(tre))}${sxTile('Trésorerie / dette', trd === null ? '—' : sxPct(trd, 0), sxTier('tresorerieDette', trd))}${sxTile('Solvabilité /100', solv === null ? '—' : fmtNum(solv, 0), sxTier('scoreSolvabilite', solv))}${sxTile('Flottant des actions', disp === null ? '—' : sxPct(disp, 0))}</div>
     ${donuts ? `<div class="sx-dns">${donuts}</div>` : ''}`;
 
   // ----- 3. Croissance (l'« innovation tech » n'est pas reprise : c'est le texte le moins utile en capture) -----
@@ -15014,13 +15044,13 @@ function buildSummaryPages(c){
     const gp = (price / tgtNum - 1) * 100;
     gapTile = sxTile('Écart à la cible', (gp > 0 ? '+' : (gp < 0 ? '−' : '')) + fmtNum(Math.abs(gp), 1) + '&nbsp;%', gp <= 0 ? good : null, gp <= 0 ? 'cours sous la cible' : 'cours au-dessus de la cible');
   }
-  let secTile = sxTile('Objectif analystes', '—');
-  if(ws && ws.target.moy !== null) secTile = sxTile('Objectif analystes', plain(ws.target.moy), ws.pct.moy === null ? null : (ws.pct.moy >= 0 ? good : bad), ws.pct.moy === null ? 'moyenne à 1 an' : (ws.pct.moy >= 0 ? '+' : '−') + fmtNum(Math.abs(ws.pct.moy), 1) + '&nbsp;% à 1 an');
+  let secTile = sxTile('Objectifs des analystes sur 1 an', '—', null, '', 'sx-t-wrap');
+  if(ws && ws.target.moy !== null) secTile = sxTile('Objectifs des analystes sur 1 an', plain(ws.target.moy), ws.pct.moy === null ? null : (ws.pct.moy >= 0 ? good : bad), ws.pct.moy === null ? 'moyenne' : (ws.pct.moy >= 0 ? '+' : '−') + fmtNum(Math.abs(ws.pct.moy), 1) + '&nbsp;%', 'sx-t-wrap');
   const bfList = buffettStates(c).map(s => `<span class="${s.ok ? 'sx-bfy' : 'sx-bfn'}"><i>${s.ok ? '&#10003;' : '&#10005;'}</i>${escapeHtml(s.label)}</span>`).join('');
   const p5 = `<div class="sx-g sx-g2">${decTile}${sxTile("Prix d'achat cible", target)}</div>
     <div class="sx-g sx-g3 sx-compact">${sxTile('Cours actuel', price === null ? '—' : plain(price))}${gapTile}${secTile}</div>
-    <div class="sx-g sx-g2"><div class="sx-t sx-conv"><div class="sx-tl">Conviction</div><div class="sx-stars-row">${starsRowHtml(conv5, 'sx-stars')}<b>${conv5 ? String(conv5).replace('.', LANG === 'fr' ? ',' : '.') + '<small>/5</small>' : '—'}</b></div></div><div class="sx-t sx-bf"><div class="sx-tl">Checklist Buffett</div><div class="sx-tv" style="color:${buffTier ? buffColor : '#fff'}">${buff.checked}<small>/${buff.total}</small></div><div class="sx-segs">${segs}</div></div></div>
-    <div class="sx-bfl">${bfList}</div>
+    <div class="sx-g sx-g2"><div class="sx-t sx-conv"><div class="sx-tl">Conviction</div><div class="sx-stars-row">${starsRowHtml(conv5, 'sx-stars')}<b>${conv5 ? String(conv5).replace('.', LANG === 'fr' ? ',' : '.') + '<small>/5</small>' : '—'}</b></div></div><div class="sx-t sx-bf"><div class="sx-tl">Checklist Buffett</div><div class="sx-tv" style="color:${buffTier ? buffColor : '#fff'}">${buff.checked}<small>/${buff.total}</small></div></div></div>
+    <div class="sx-bfl">${bfList}</div><div class="sx-segs sx-segs-big">${segs}</div>
     <div class="sx-pm">${pmBlock('sx-plus', 'Points forts', pers.pointsForts)}${pmBlock('sx-minus', 'Points faibles', pers.pointsFaibles)}</div>
     ${these ? `<div class="sx-these"><div class="sx-txl">Thèse d'investissement</div><q>${these}</q></div>` : ''}`;
 
@@ -15048,7 +15078,7 @@ function buildSummaryPages(c){
   const skPanel = `<section class="sx-p sx-p-sk" style="--sc:${SECTION_COLORS.financier}"><header class="sx-ph"><span class="sx-pn">2</span><span class="sx-pt">Ventilation des revenus et dépenses</span>${who}</header><div class="sx-pb"><div class="sx-skwrap"><div class="sx-skin sx-sk">${skHtml}</div></div></div></section>`;
   const page = (n, panels) => `<div class="sx-card${n === 1 ? ' sx-on' : ''}" data-sx-page="${n}"><div class="sx-grid">${panels}</div>${foot(n)}</div>`;
   const pagesOut = [
-    page(1, sxPanel(1, 'Identité', SECTION_COLORS.identite, p1, who) + sxPanel(2, 'Financier', SECTION_COLORS.financier, p2, who) + sxPanel(3, 'Croissance', SECTION_COLORS.croissance, p3, who)),
+    page(1, sxPanel(1, 'Identité', SECTION_COLORS.identite, p1, who) + sxPanel(2, 'Financier', SECTION_COLORS.financier, p2, who) + sxPanel(3, 'Croissance future', SECTION_COLORS.croissance, p3, who)),
     page(2, sxPanel(4, 'Valorisation', SECTION_COLORS.valorisation, p4, who) + sxPanel(5, 'Analyse personnelle', SECTION_COLORS.personnelle, p5, who) + sxPanel(6, 'Notation globale', '#c4b5fd', p6, who)),
   ];
   if(hasSk) pagesOut.push(page(3, skPanel));
@@ -15251,7 +15281,7 @@ const SX_ARROW_R = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" 
 // Sans bibliothèque : la carte affichée en plein écran est copiée avec TOUS ses styles calculés en ligne, placée dans un <svg><foreignObject>, dessinée sur un canvas puis
 // exportée en PNG (échelle ×2, net sur un écran dense). Deux choses doivent être intégrées à l'image sinon elles disparaissent : les polices (fichiers du site, en base64, sous-ensemble « latin »
 // seulement) et les logos (convertis en données ; si le serveur du logo refuse, les initiales les remplacent). Nom du fichier : « Entreprise - Section - AAAA-MM-JJ.png ».
-const SX_SECTION_NAMES = ['Identité', 'Financier', 'Croissance', 'Valorisation', 'Analyse personnelle', 'Notation globale'];
+const SX_SECTION_NAMES = ['Identité', 'Financier', 'Croissance future', 'Valorisation', 'Analyse personnelle', 'Notation globale'];
 let sxFontCssCache = null;
 function sxBlobToDataUrl(blob){
   return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); r.readAsDataURL(blob); });
