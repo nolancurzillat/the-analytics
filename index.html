@@ -3256,38 +3256,65 @@ a.btn{ text-decoration:none; }
 /* ----- Téléphone : « Toutes vos analyses » et « Vos positions » en cartes, plus de défilement horizontal (2026-11-03) ----- */
 .tc-l{ display:none; }
 @media (max-width:760px){
-  .tc-l{ display:block; margin:0 0 5px 0; font-size:11.5px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-soft); white-space:normal; }
-  #companiesTableWrap.home-table-wrap, .home-table-wrap.pf-pos-wrap{ overflow:visible; background:none; border:0; box-shadow:none; border-radius:0; }
-  #companiesTableWrap .home-table, .home-table.pf-pos{ display:block; width:100%; white-space:normal; }
-  #companiesTableWrap thead, .home-table.pf-pos thead{ display:block; margin:0 0 12px 0; }
-  #companiesTableWrap thead tr, .home-table.pf-pos thead tr{ display:flex; flex-wrap:wrap; gap:6px; }
-  #companiesTableWrap thead th, .home-table.pf-pos thead th{ display:inline-flex; align-items:center; padding:7px 12px; border:1px solid var(--border); border-radius:99px; background:var(--card); font-size:12px; font-weight:600; letter-spacing:0; text-transform:none; white-space:nowrap; }
-  #companiesTableWrap thead th:not([data-sort-th]){ display:none; }
-  #companiesTableWrap thead th.th-sort-active, .home-table.pf-pos thead th.th-sort-active{ border-color:var(--blue); background:var(--blue-soft); }
-  #companiesTableWrap tbody, .home-table.pf-pos tbody{ display:grid; gap:12px; }
-  #companiesTableWrap td, .home-table.pf-pos td{ display:block; min-width:0; padding:0 !important; border:0 !important; background:none !important; text-align:left; }
-  /* Toutes vos analyses */
-  #companiesTableWrap tbody tr, #companiesTableWrap tbody tr:hover{ display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:13px 8px; align-items:center; padding:14px; background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); }
-  #companiesTableWrap .tc-co{ grid-row:1; grid-column:1 / 4; }
-  #companiesTableWrap .tc-score{ grid-row:1; grid-column:4; justify-self:end; }
-  #companiesTableWrap .tc-peg{ grid-row:2; grid-column:1; }
-  #companiesTableWrap .tc-moat{ grid-row:2; grid-column:2; }
-  #companiesTableWrap .tc-buff{ grid-row:2; grid-column:3; }
-  #companiesTableWrap .tc-axis{ grid-row:2; grid-column:4; }
-  #companiesTableWrap .tc-dec{ grid-row:3; grid-column:1 / 3; }
-  #companiesTableWrap .tc-conv{ grid-row:3; grid-column:3 / 5; justify-self:end; }
-  #companiesTableWrap .tc-prog{ grid-row:4; grid-column:1 / 3; }
-  #companiesTableWrap .tc-cap{ grid-row:4; grid-column:3; }
-  #companiesTableWrap .tc-date{ grid-row:4; grid-column:4; }
-  #companiesTableWrap .ht-co{ min-width:0; }
-  #companiesTableWrap .home-td-name{ flex-wrap:wrap; gap:0 8px; }
-  #companiesTableWrap .home-td-name-txt{ max-width:100%; overflow:visible; white-space:normal; text-overflow:clip; }
-  #companiesTableWrap .home-ticker{ margin-left:0; }
-  #companiesTableWrap .ht-sec{ max-width:none; }
-  #companiesTableWrap .home-td-cap, #companiesTableWrap .home-updated{ font-size:13px; color:var(--ink); }
-  #companiesTableWrap .comp-cell .hbar-track{ width:100%; flex:1 1 auto; min-width:34px; }
-  #companiesTableWrap .comp-cell{ display:flex; width:100%; }
-  /* Vos positions */
+  .home-table.pf-pos .tc-l{ display:block; margin:0 0 5px 0; font-size:11.5px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-soft); white-space:normal; }
+  .home-table-wrap.pf-pos-wrap{ overflow:visible; background:none; border:0; box-shadow:none; border-radius:0; }
+  .home-table.pf-pos{ display:block; width:100%; white-space:normal; }
+  .home-table.pf-pos thead{ display:block; margin:0 0 12px 0; }
+  .home-table.pf-pos thead tr{ display:flex; flex-wrap:wrap; gap:6px; }
+  .home-table.pf-pos thead th{ display:inline-flex; align-items:center; padding:7px 12px; border:1px solid var(--border); border-radius:99px; background:var(--card); font-size:12px; font-weight:600; letter-spacing:0; text-transform:none; white-space:nowrap; }
+  .home-table.pf-pos thead th.th-sort-active{ border-color:var(--blue); background:var(--blue-soft); }
+  .home-table.pf-pos tbody{ display:grid; gap:12px; }
+  .home-table.pf-pos td{ display:block; min-width:0; padding:0 !important; border:0 !important; background:none !important; text-align:left; }
+  /* Toutes vos analyses : un VRAI tableau, toutes les colonnes lisibles sans défilement latéral (2026-11-03, demande de l'auteur).
+     Chaque ligne tient sur deux niveaux alignés sur la même grille de 100 colonnes, en-tête compris :
+     niveau 1 = entreprise, score, PEG, MOAT, Buffett ; niveau 2 = décision, conviction, progrès, capitalisation, date. */
+  #companiesTableWrap.home-table-wrap{ overflow:hidden; }
+  #companiesTableWrap .home-table{ display:block; width:100%; white-space:normal; }
+  #companiesTableWrap thead, #companiesTableWrap tbody{ display:block; }
+  #companiesTableWrap tr{ display:grid; grid-template-columns:repeat(100, minmax(0,1fr)); align-items:center; padding:0 6px; }
+  #companiesTableWrap tbody tr{ border-bottom:1px solid var(--border); padding-top:10px; padding-bottom:10px; row-gap:9px; }
+  #companiesTableWrap tbody tr:last-child{ border-bottom:0; }
+  #companiesTableWrap thead tr{ padding-top:2px; padding-bottom:2px; row-gap:0; border-bottom:1px solid var(--border-strong); }
+  #companiesTableWrap thead th{ display:flex; align-items:center; justify-content:center; gap:1px; min-width:0; padding:7px 0; font-size:10px; letter-spacing:0; text-transform:none; white-space:nowrap; text-align:center; }
+  #companiesTableWrap thead th.tc-co{ justify-content:flex-start; padding-left:2px; }
+  #companiesTableWrap thead th.th-sort-active{ color:var(--blue); }
+  #companiesTableWrap td{ display:flex; align-items:center; justify-content:center; min-width:0; padding:0 !important; border:0 !important; background:none !important; text-align:center; }
+  #companiesTableWrap .tc-l{ display:none; }
+  #companiesTableWrap .tc-co{ grid-row:1; grid-column:1 / span 40; justify-content:flex-start; text-align:left; }
+  #companiesTableWrap .tc-score{ grid-row:1; grid-column:41 / span 13; }
+  #companiesTableWrap .tc-peg{ grid-row:1; grid-column:54 / span 14; }
+  #companiesTableWrap .tc-moat{ grid-row:1; grid-column:68 / span 16; }
+  #companiesTableWrap .tc-buff{ grid-row:1; grid-column:84 / span 17; }
+  #companiesTableWrap .tc-dec{ grid-row:2; grid-column:1 / span 25; justify-content:flex-start; }
+  #companiesTableWrap .tc-conv{ grid-row:2; grid-column:26 / span 19; }
+  #companiesTableWrap .tc-prog{ grid-row:2; grid-column:45 / span 20; }
+  #companiesTableWrap .tc-cap{ grid-row:2; grid-column:65 / span 18; }
+  #companiesTableWrap .tc-date{ grid-row:2; grid-column:83 / span 18; }
+  #companiesTableWrap.has-axis .tc-co{ grid-column:1 / span 30; }
+  #companiesTableWrap.has-axis .tc-axis{ grid-row:1; grid-column:31 / span 12; }
+  #companiesTableWrap.has-axis .tc-score{ grid-column:43 / span 12; }
+  #companiesTableWrap.has-axis .tc-peg{ grid-column:55 / span 12; }
+  #companiesTableWrap.has-axis .tc-moat{ grid-column:67 / span 17; }
+  #companiesTableWrap thead th.tc-dec, #companiesTableWrap thead th.tc-conv, #companiesTableWrap thead th.tc-prog, #companiesTableWrap thead th.tc-cap, #companiesTableWrap thead th.tc-date{ grid-row:2; }
+  #companiesTableWrap thead th.tc-co, #companiesTableWrap thead th.tc-score, #companiesTableWrap thead th.tc-peg, #companiesTableWrap thead th.tc-moat, #companiesTableWrap thead th.tc-buff, #companiesTableWrap thead th.tc-axis{ grid-row:1; }
+  #companiesTableWrap .ht-co{ min-width:0; width:100%; gap:8px; }
+  #companiesTableWrap .mini-av{ width:32px; height:32px; flex:0 0 32px; border-radius:9px; font-size:11px; }
+  #companiesTableWrap .ht-id{ min-width:0; }
+  #companiesTableWrap .home-td-name{ flex-wrap:wrap; gap:0 6px; text-align:left; }
+  #companiesTableWrap .home-td-name-txt{ max-width:100%; overflow:visible; white-space:normal; text-overflow:clip; font-size:13px; line-height:1.25; }
+  #companiesTableWrap .home-ticker{ margin-left:0; font-size:11.5px; }
+  #companiesTableWrap .ht-sec{ max-width:none; text-align:left; font-size:11px; line-height:1.25; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  #companiesTableWrap .vchip{ min-width:0; padding:2px 5px; font-size:12px; border-radius:7px; }
+  #companiesTableWrap .vchip-lg{ min-width:0; padding:3px 7px; font-size:14.5px; border-radius:8px; }
+  #companiesTableWrap .pill{ padding:2px 6px; font-size:10px; white-space:nowrap; }
+  #companiesTableWrap .ct-stars{ gap:0; }
+  #companiesTableWrap .ct-stars .star-slot, #companiesTableWrap .ct-stars .star-empty, #companiesTableWrap .ct-stars .star-fill, #companiesTableWrap .ct-stars .star-empty svg, #companiesTableWrap .ct-stars .star-fill svg{ width:12px; height:12px; }
+  #companiesTableWrap .ct-stars .star-fill{ height:12px; }
+  #companiesTableWrap .comp-cell{ display:flex; align-items:center; gap:4px; width:100%; justify-content:center; }
+  #companiesTableWrap .comp-cell .hbar-track{ width:auto; flex:1 1 0; min-width:12px; max-width:34px; height:6px; }
+  #companiesTableWrap .comp-cell b{ font-size:11px; flex:0 0 auto; }
+  #companiesTableWrap .home-td-cap, #companiesTableWrap .home-updated{ font-size:11.5px; color:var(--ink); }
+  #companiesTableWrap .reportflag, #companiesTableWrap .rpt-flag, #companiesTableWrap .alt-flag{ transform:scale(.85); }  /* Vos positions */
   .home-table.pf-pos tbody tr{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:13px 8px; align-items:start; padding:14px; background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); }
   .home-table.pf-pos tbody tr:hover{ background:var(--card); }
   .home-table.pf-pos .pf-c-co{ grid-row:1; grid-column:1 / 3; }
@@ -11438,14 +11465,14 @@ function buildCompaniesTableRows(){
   }).join('');
   // En-têtes cliquables (demande de l'auteur le 2026-09-29) : `sortByHeader` (écouteur délégué posé une seule fois, voir bindSortMenu)
   // gère le premier clic en décroissant, un reclic sur la même colonne en croissant. `th()` affiche la flèche du sens courant.
-  const th = (key, label, tooltip) => {
+  const th = (key, label, tooltip, cls) => {
     const active = state.settings.tableSortKey === key;
     const arrow = active ? `<span class="th-sort-arrow">${state.settings.tableSortDir === 'desc' ? '&darr;' : '&uarr;'}</span>` : '';
-    return `<th class="th-sort${active ? ' th-sort-active' : ''}" data-sort-th="${key}"${tooltip ? ` data-tooltip="${tooltip}"` : ''}>${label}${arrow}</th>`;
+    return `<th class="th-sort${active ? ' th-sort-active' : ''}${cls ? ' ' + cls : ''}" data-sort-th="${key}"${tooltip ? ` data-tooltip="${tooltip}"` : ''}>${label}${arrow}</th>`;
   };
   const axisInfo = axisCol ? SCORE_AXES.find(a => a.id === axisCol) : null;
-  const head = `<th>Entreprise</th>${axisInfo ? th(axisKey, ({ rentabilite:'Rentab.', croissance:'Croiss.', valorisation:'Valoris.' })[axisInfo.id] || axisInfo.label, `<div class='tt-desc'>Note /100 du critère « ${axisInfo.label} »</div>`) : ''}${th('score', 'Score')}${th('peg', 'PEG')}${th('moat', 'MOAT')}${th('buffett', 'Buffett')}${th('decision', 'Décision')}${th('stars', 'Conv.', "<div class='tt-desc'>Conviction</div>")}${th('progress', 'Progrès', "<div class='tt-desc'>Fiche complétée</div>")}${th('marketCap', 'Cap.', "<div class='tt-desc'>Capitalisation boursière</div>")}${th('updated', 'Date', "<div class='tt-desc'>Dernière mise à jour</div>")}`;
-  return `<div class="home-table-wrap home-table-wrap--tight" id="companiesTableWrap"><table class="home-table home-table--tight"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  const head = `<th class="tc-co">Entreprise</th>${axisInfo ? th(axisKey, ({ rentabilite:'Rentab.', croissance:'Croiss.', valorisation:'Valoris.' })[axisInfo.id] || axisInfo.label, `<div class='tt-desc'>Note /100 du critère « ${axisInfo.label} »</div>`, 'tc-axis') : ''}${th('score', 'Score', '', 'tc-score')}${th('peg', 'PEG', '', 'tc-peg')}${th('moat', 'MOAT', '', 'tc-moat')}${th('buffett', 'Buffett', '', 'tc-buff')}${th('decision', 'Décision', '', 'tc-dec')}${th('stars', 'Conv.', "<div class='tt-desc'>Conviction</div>", 'tc-conv')}${th('progress', 'Progrès', "<div class='tt-desc'>Fiche complétée</div>", 'tc-prog')}${th('marketCap', 'Cap.', "<div class='tt-desc'>Capitalisation boursière</div>", 'tc-cap')}${th('updated', 'Date', "<div class='tt-desc'>Dernière mise à jour</div>", 'tc-date')}`;
+  return `<div class="home-table-wrap home-table-wrap--tight${axisCol ? ' has-axis' : ''}" id="companiesTableWrap"><table class="home-table home-table--tight"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 function buildCompaniesTable(){
   const sortCtrl = `<span class="table-sort-wrap"><button type="button" class="sort-btn" id="tableSortBtn" aria-label="Trier les analyses" aria-haspopup="true" aria-expanded="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20V4M7 4L3.5 7.5M7 4l3.5 3.5"/><path d="M17 4v16M17 20l-3.5-3.5M17 20l3.5-3.5"/></svg></button><div class="sort-menu hidden" id="tableSortMenu" role="menu">${sortMenuHtml(TABLE_MENU_KEYS, state.settings.tableSortKey, state.settings.tableSortDir, true)}</div></span>`;
@@ -14683,7 +14710,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 345;
+const APP_BUILD = 346;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
