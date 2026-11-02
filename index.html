@@ -14679,7 +14679,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 342;
+const APP_BUILD = 343;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -15771,6 +15771,15 @@ async function sxExportSection(c, ov, n){
     const zc = zc0;
     if(zc && zc.parentNode) zc.parentNode.style.visibility = '';   // sinon la copie hérite de visibility:hidden et l'image est vide
     if(!zc) throw new Error('zoom');
+    // Un peu plus HAUTE (2026-11-02, demande de l'auteur) : rapport largeur / hauteur visé 0,68 au lieu de ~0,75. Le surplus (une dizaine de pour cent) est réparti en petits écarts réguliers entre les blocs
+    // de la section (28 px au plus par écart, jamais de grand vide) ; une section déjà plus haute que cela garde sa hauteur naturelle.
+    const wantH = Math.round(zc.offsetWidth / 0.68);
+    if(zc.offsetHeight < wantH){
+      zc.style.minHeight = wantH + 'px';
+      const pn = zc.querySelector('.sx-p'); if(pn) pn.style.flex = '1 1 auto';
+      sxBalance([zc], 28);
+      if(zc.offsetHeight > wantH + 1) zc.querySelectorAll('.sx-pb').forEach(pb => { pb.style.gap = ''; });
+    }
     // Format VERTICAL (2026-11-03, demande de l'auteur : « plus vertical comme avant ») : le cadre prend la proportion de la carte (même largeur de 1080 px, hauteur selon la carte, 2 fois la largeur au plus),
     // au lieu d'un 4:5 fixe qui laissait de grandes marges de chaque côté d'une carte étroite. Les 6 sections ont la même taille puisque leur carte a la même taille.
     const cw = zc.offsetWidth, ch = zc.offsetHeight;
