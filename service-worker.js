@@ -1,4 +1,4 @@
-const CACHE_NAME = 'carnet-analyse-v339';
+const CACHE_NAME = 'carnet-analyse-v340';
 // Version affichee aux utilisateurs (doit etre egale a APP_VERSION de index.html) : 1.0, puis 1.1 pour de nouvelles fonctionnalites, 1.0.1 pour des corrections.
 const APP_VERSION = '1.0';
 const ASSETS = [
@@ -7,6 +7,7 @@ const ASSETS = [
   './icon-192.png?v=3',
   './icon-512.png?v=2',
   './logo-full.png',
+  './exemple-microsoft.json',
   // Polices hébergées sur le site (2026-10-05, plus aucun appel à Google Fonts) : feuille de style + sous-ensembles « latin » et « latin-ext »,
   // les autres (cyrillique, grec, vietnamien) se mettent en cache à la demande par la règle générale ci-dessous.
   './fonts/fonts.css',

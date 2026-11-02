@@ -260,6 +260,8 @@ svg{display:block;}
 .tour-pop h3{ font-family:var(--font-serif); font-size:20px; line-height:1.25; margin:0 0 8px 0; }
 .tour-pop p{ font-size:14.5px; line-height:1.6; margin:0 0 16px 0; color:var(--ink); }
 .tour-actions{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.tour-ex{ display:flex; flex-direction:column; align-items:flex-start; gap:8px; margin:0 0 16px 0; padding:12px 14px; border:1px dashed var(--border-strong); border-radius:12px; font-size:13.5px; line-height:1.5; color:var(--ink-soft); }
+.side-empty .link-btn{ margin-top:6px; display:inline-block; font-size:13px; color:#9db7ff; }
 .tour-btns{ display:flex; gap:8px; }
 /* Liens légaux : uniquement en pied de l'accueil depuis le 2026-09-29 (demande de l'auteur), plus dans la barre latérale */
 .home-legal-links{ display:flex; flex-wrap:wrap; justify-content:center; gap:6px 18px; margin-top:14px; padding-bottom:56px; }
@@ -5435,58 +5437,37 @@ function createAndOpenCompany(name, currency, extra){
   if(currency !== chosenCurrency && ex) showToast(`Devise réglée sur ${currency === '€' ? 'l\'euro' : 'le dollar'} d'après la bourse (${ex.label}). Vous pouvez la changer en haut à droite de la fiche.`);
   return c;
 }
-// ----- Analyse d'exemple (2026-11-03, demande de l'auteur : un visiteur ne doit pas arriver sur une application vide) -----
-// Une entreprise FICTIVE, entièrement renseignée, créée en un clic depuis l'accueil (« Voir un exemple ») : score, radar, graphiques, schéma, résumé, tout s'affiche tout de suite.
-// C'est une analyse normale (elle se renomme, se modifie et se supprime) ; si elle existe déjà (même nom), on se contente de l'ouvrir. Sans ticker : aucune recherche de prix ni de logo.
-const EXAMPLE_NAME = 'Alpha Tech (exemple)';
-function openExampleAnalysis(){
-  let c = state.companies.find(x => x.name === EXAMPLE_NAME);
+// ----- Analyse d'exemple (2026-11-03, demande de l'auteur : proposer aux nouveaux arrivants de voir une analyse complète ; remplacée le même jour par SON analyse Microsoft) -----
+// L'exemple est le fichier `exemple-microsoft.json` (à la racine du site) : une analyse exportée au format de partage (Partager, « Télécharger un fichier », avec les notes). Pour la mettre à jour :
+// exporter l'analyse Microsoft actuelle de cette façon, enregistrer le fichier sous ce nom dans le dossier du projet et publier. Il est lu à chaque clic (jamais copié dans le code), assaini comme une
+// analyse reçue (cleanImportedCompany + sanitizeSharedCompany : jamais de position, d'ordres, d'alertes ni de journal), puis copié comme analyse normale nommée « Microsoft (exemple) » :
+// elle se modifie et se supprime comme les autres. Si une analyse de ce nom existe déjà, on se contente de l'ouvrir. Compte comme « example » dans la mesure de fréquentation.
+const EXAMPLE_NAME = 'Microsoft (exemple)';
+let exampleBusy = false;
+async function openExampleAnalysis(){
+  let c = state.companies.find(x => x.name === EXAMPLE_NAME), info = '';
   if(!c){
-    c = newCompany(EXAMPLE_NAME, '$');
-    const f = c.fields;
-    Object.assign(f.identite, {
-      dateCreation: '2004', secteur: { secteur:'Technologie', industrie:"Logiciels d'entreprise" }, paysSiege: { pays:'États-Unis', siegeSocial:'Austin' },
-      marketCap: '85 Md', nbEmployes: '24 K', dateIPO: { date:'2012', prixInitial:'18' }, ceo: 'Claire Martin', moatNote: '8',
-      activitePrincipale: "Alpha Tech est une entreprise imaginaire qui vend à d'autres entreprises des logiciels de gestion payés par abonnement. Cette fiche est un EXEMPLE : tous les chiffres sont inventés pour montrer comment The Analytics présente une analyse.",
-      autresActivites: "Services de cloud pour héberger les données de ses clients, et un peu de conseil pour les aider à installer ses logiciels.",
-      moatDescription: "Ses clients utilisent ses logiciels tous les jours et y stockent des années de données : changer de fournisseur serait long et coûteux. Plus il y a d'utilisateurs, plus les outils reliés à ses logiciels se multiplient.",
-      clients: ['Grandes entreprises', 'Banques et assurances', 'Administrations', 'PME'],
-      politiqueDividende: { mode:'verse', dividendeAction:'1,2', frequence:'Trimestrielle', croissance:'40', securite:'80', notes:'', notesHidden:'1' },
-    });
-    Object.assign(f.financier, {
-      chiffreAffaires: '28 Md', beneficeNet: '6,2 Md', croissanceCA: { cagr:'14' }, croissanceBenef: { cagr:'18' },
-      margeBrute: '72', margeNette: '22', roe: '24', roic: '21', roa: '12',
-      fcf: '7,1 Md', capex: '1,4 Md', totalActif: '52 Md', detteTotal: '6 Md', detteNette: '1,5 Md', scoreSolvabilite: '82', probaFaillite: '1',
-      nbActions: { freeFloat:'1,6 Md', closelyHeld:'90 M' }, detenuInities: '3', detenuInstitutions: '72',
-      revenuSource: [{ label:'Abonnements logiciels', value:'19 Md' }, { label:'Services cloud', value:'6 Md' }, { label:'Conseil', value:'3 Md' }],
-      revenuPays: [{ label:'États-Unis', value:'17 Md' }, { label:'Europe', value:'7 Md' }, { label:'Reste du monde', value:'4 Md' }],
-      profitBrut: '20,2 Md', operatingIncome: '7,6 Md', impotsResultat: '1,4 Md', chargesVentes: '8,8 Md',
-    });
-    Object.assign(f.croissance, {
-      marcheEnCroissance: "Le marché des logiciels de gestion par abonnement progresse chaque année, porté par la numérisation des entreprises et l'intelligence artificielle.",
-      partMarche: "Environ le troisième acteur de son marché, loin derrière les deux géants mais devant une multitude de petits concurrents.",
-      concurrents: "Deux géants du secteur, plus quelques spécialistes plus petits (noms fictifs).",
-      diversificationSecteur: "Les revenus viennent de trois activités et de trois grandes régions : aucune ne pèse plus des deux tiers du total.",
-      croissanceAttendueCA: { cagr:'12' }, croissanceAttendueBenef: { cagr:'14' },
-      innovationTech: "Assistant intelligent intégré à tous ses logiciels, lancé cette année.",
-      catalyseurs: "Succès de l'assistant intelligent, hausse des prix des abonnements, rachats de petites entreprises.",
-      risque: "Un concurrent plus gros peut baisser ses prix ; une partie des clients peut réduire ses dépenses en cas de ralentissement économique.",
-    });
-    Object.assign(f.valorisation, {
-      prixActuel: '118', epsActuel: '3,9', epsEstime1an: '4,5', peSectoriel: '30', peHistorique: '33', croissanceEstimeeEps: { cagr:'20' },
-      valeurIntrinseque: '150', bearCase: '95', bullCase: '195', beta: '1,15', positionShort: '1,2', ratioVenteADecouvert: '1,8',
-      wallStreet: { max:'190', moy:'140', min:'100', reco:'4', ca5:'48 Md', benef5:'11 Md', unit:'price' },
-      conclusionValorisation: "Exemple fictif : le cours est sous la valeur intrinsèque estimée, avec une marge de sécurité raisonnable. Le PE reste un peu plus bas que sa moyenne des cinq dernières années.",
-    });
-    Object.assign(f.personnelle, {
-      regleBuffett: { longterme: true, comprehension: true },
-      pointsForts: "Forte marge, trésorerie abondante, dette faible, clients fidèles et revenus récurrents.",
-      pointsFaibles: "Valorisation encore exigeante, concurrence de géants, dépendance à la bonne santé des dépenses informatiques des entreprises.",
-      these: "<b>Exemple fictif.</b> Une entreprise rentable et peu endettée, dont les clients restent fidèles. J'achèterais si le cours passait sous 110 $, ce qui laisserait une vraie marge de sécurité.",
-      conviction: 4, decision: 'Surveiller', prixAchatCible: '110',
-    });
-    c.logo = { url:'', src:'file', q: logoQuery(c) };   // pas de logo : les initiales suffisent, et on évite de chercher le logo d'une vraie entreprise du même nom
-    state.companies.push(c);
+    if(exampleBusy) return;
+    exampleBusy = true;
+    try{
+      const r = await fetch('exemple-microsoft.json', { cache:'no-cache' });
+      if(!r.ok) throw new Error('http');
+      const data = await r.json();
+      const src = data && Array.isArray(data.companies) ? data.companies[0] : data;
+      c = cleanImportedCompany(src);
+      if(!c) throw new Error('format');
+      info = c.updatedAt || c.createdAt || '';
+      sanitizeSharedCompany(c, true);
+      const today = new Date().toISOString().slice(0, 10);
+      c.id = 'c' + Date.now() + Math.random().toString(36).slice(2, 7);
+      c.name = EXAMPLE_NAME;
+      c.createdAt = today; c.updatedAt = today; c.updatedTs = Date.now();
+      migrateCompany(c);
+      state.companies.push(c);
+    }catch(e){
+      showToast("L'analyse d'exemple n'a pas pu être chargée. Vérifiez votre connexion et réessayez.");
+      return;
+    }finally{ exampleBusy = false; }
   }
   state.activeId = c.id;
   currentView = 'company';
@@ -5494,6 +5475,7 @@ function openExampleAnalysis(){
   render();
   window.scrollTo(0, 0);
   trackEvent('example');
+  if(info) showToast("Analyse d'exemple : chiffres relevés le " + formatDateFr(info) + ". Ce n'est pas un conseil en investissement.");
 }
 function confirmNewCompany(){
   const input = document.getElementById('newCompanyInput');
@@ -10643,7 +10625,7 @@ function renderTabs(){
   document.getElementById('navLearn').classList.toggle('active', currentView === 'learn');
   document.getElementById('sideCount').textContent = state.companies.length ? String(state.companies.length) : '';
   if(state.companies.length === 0){
-    list.innerHTML = `<div class="side-empty">Aucune analyse pour le moment. Utilisez la recherche en haut pour créer votre première fiche.</div>`;
+    list.innerHTML = `<div class="side-empty">Aucune analyse pour le moment. Utilisez la recherche en haut pour créer votre première fiche.<br><button type="button" class="link-btn" data-example>Voir une analyse d'exemple</button></div>`;
     return;
   }
   sortedForSidebar().forEach(c => {
@@ -13823,6 +13805,7 @@ function startTour(){
       <div class="tour-count" id="tourCount"></div>
       <h3 id="tourTitle"></h3>
       <p id="tourText"></p>
+      <div class="tour-ex" id="tourExRow"><span>Pressé ? Voyez d'abord à quoi ressemble une analyse complète.</span><button type="button" class="btn btn-outline btn-sm" data-example>Voir une analyse d'exemple</button></div>
       <div class="tour-actions"><button type="button" class="link-btn" id="tourSkip">Passer la visite</button><span class="tour-btns"><button type="button" class="btn btn-outline btn-sm" id="tourPrev">Précédent</button><button type="button" class="btn btn-primary btn-sm" id="tourNext">Suivant</button></span></div>
     </div>`;
   document.body.appendChild(layer);
@@ -13838,6 +13821,7 @@ function showTourStep(){
   document.getElementById('tourTitle').textContent = step.title;
   document.getElementById('tourText').textContent = step.text;
   document.getElementById('tourPrev').style.visibility = tour.i === 0 ? 'hidden' : 'visible';
+  document.getElementById('tourExRow').style.display = tour.i === 0 ? '' : 'none';
   document.getElementById('tourNext').textContent = tour.i === 0 ? 'Commencer' : (tour.i === TOUR_STEPS.length - 1 ? 'Terminer' : 'Suivant');
   if(tourMobile()) document.body.classList.toggle('menu-open', !!step.inSidebar);
   // sur mobile le menu glisse pendant ~0,3 s : on mesure une fois qu'il est en place
@@ -13883,7 +13867,8 @@ function endTour(){
   saveState();
 }
 function initTour(){
-  document.addEventListener('click', e => { if(e.target.closest && e.target.closest('[data-start-tour]')){ closeAuth(); startTour(); } });
+  // « Voir une analyse d'exemple » : un seul écouteur pour tous les boutons (accueil, première étape de la visite, barre de gauche vide)
+  document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-example]'); if(!b) return; if(tour.active) endTour(); closeMenu(); openExampleAnalysis(); });  document.addEventListener('click', e => { if(e.target.closest && e.target.closest('[data-start-tour]')){ closeAuth(); startTour(); } });
   document.addEventListener('keydown', e => {
     if(!tour.active) return;
     if(e.key === 'Escape') endTour();
@@ -14210,7 +14195,7 @@ function renderHomeView(){
   const ctaButtons = visitor
     ? `<button class="btn btn-primary" data-auth-open="signup">Créer un compte gratuit</button>
             <button class="btn btn-ghost" data-new-analysis>Essayer sans compte</button>
-            <button class="btn btn-ghost" data-example>Voir un exemple</button>`
+            <button class="btn btn-ghost" data-example>Voir une analyse d'exemple</button>`
     : `<button class="btn btn-primary" data-new-analysis>Commencer une analyse</button>`;
 
   main.innerHTML = `
@@ -14283,7 +14268,7 @@ function renderHomeView(){
         <h2>De la première ligne à la décision, en trois étapes</h2>
       </div>
       <div class="steps">${steps}</div>
-      ${visitor ? `<div class="steps-cta"><button class="btn btn-primary" data-auth-open="signup">Créer un compte gratuit</button><button class="btn btn-outline" data-new-analysis>Essayer sans compte</button><button class="btn btn-outline" data-example>Voir un exemple</button></div>` : ''}
+      ${visitor ? `<div class="steps-cta"><button class="btn btn-primary" data-auth-open="signup">Créer un compte gratuit</button><button class="btn btn-outline" data-new-analysis>Essayer sans compte</button><button class="btn btn-outline" data-example>Voir une analyse d'exemple</button></div>` : ''}
     </section>
 
     <section class="hsec" id="score-limits">
@@ -14320,9 +14305,6 @@ function renderHomeView(){
   });
   main.querySelectorAll('[data-new-analysis]').forEach(el => {
     el.addEventListener('click', openNewCompanyModal);
-  });
-  main.querySelectorAll('[data-example]').forEach(el => {
-    el.addEventListener('click', openExampleAnalysis);
   });
   main.querySelectorAll('[data-go-space]').forEach(el => {
     el.addEventListener('click', goSpace);
@@ -14694,7 +14676,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 339;
+const APP_BUILD = 340;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
