@@ -1080,6 +1080,13 @@ body.sx-lock{ overflow:hidden; }
 .sx-measuring .sx-card{ display:flex !important; position:absolute; left:0; top:0; visibility:hidden; }
 .sx-stacked .sx-card{ display:flex; margin-bottom:16px; }
 .sx-stacked .sx-pages, .sx-stacked .sx-arrow{ display:none; }
+/* ----- Résumé sur téléphone : liste de cartes (2026-11-03) ----- */
+.sx-mlist-on .sx-scale{ display:none; }
+.sx-mlist{ width:100%; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; gap:22px; padding:6px 10px 28px 10px; }
+.sx-mwrap{ width:100%; display:flex; flex-direction:column; align-items:center; gap:9px; }
+.sx-mitem{ position:relative; overflow:hidden; flex:0 0 auto; border-radius:14px; }
+.sx-mdl{ border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.07); color:#fff; font:inherit; font-size:14px; font-weight:600; padding:10px 20px; border-radius:99px; cursor:pointer; }
+.sx-mlist .sx-card.sx-stack{ width:calc(100vw - 20px); }
 .sx-grid{ flex:1; grid-template-columns:repeat(3,minmax(0,1fr)); align-items:stretch; }
 .sx-pb{ justify-content:space-between; gap:10px; }
 .sx-g3{ grid-template-columns:repeat(3,minmax(0,1fr)); }
@@ -1162,7 +1169,7 @@ body.sx-lock{ overflow:hidden; }
 /* ----- Fiche d'accroche du résumé, page 0 (2026-10-31, build 326) ----- */
 .sx-card.sx-cover{ width:1080px; height:1350px; gap:12px; padding:52px 64px 44px 64px; position:relative; overflow:hidden; flex-direction:column; justify-content:space-between; }
 .sx-card.sx-cover.sx-on{ display:flex; }
-.sx-stacked .sx-card.sx-cover{ display:none; }
+.sx-stacked .sx-scale .sx-card.sx-cover{ display:none; }
 .sx-cover > *:not(.sx-cv-glow):not(.sx-cv-bar){ position:relative; z-index:1; }
 .sx-cv-glow{ position:absolute; inset:0; pointer-events:none; background:radial-gradient(640px 480px at 94% 3%, rgba(201,162,74,.20), transparent 70%), radial-gradient(780px 620px at 2% 99%, rgba(42,91,234,.28), transparent 70%); }
 .sx-cv-bar{ position:absolute; left:0; right:0; top:0; height:8px; background:linear-gradient(90deg,#2a5bea,#5b8cf7 45%,#c9a24a); }
@@ -3218,6 +3225,61 @@ a.btn{ text-decoration:none; }
 .pf-ring-none{ color:var(--ink-soft); }
 .home-table.pf-pos tr.pf-total td{ border-top:2px solid var(--border-strong); background:color-mix(in srgb, var(--accent) 7%, var(--paper-line)); padding-top:15px; padding-bottom:15px; }
 .home-table.pf-pos tr.pf-total{ cursor:default; }
+/* ----- Téléphone : « Toutes vos analyses » et « Vos positions » en cartes, plus de défilement horizontal (2026-11-03) ----- */
+.tc-l{ display:none; }
+@media (max-width:760px){
+  .tc-l{ display:block; margin:0 0 5px 0; font-size:11.5px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-soft); white-space:normal; }
+  #companiesTableWrap.home-table-wrap, .home-table-wrap.pf-pos-wrap{ overflow:visible; background:none; border:0; box-shadow:none; border-radius:0; }
+  #companiesTableWrap .home-table, .home-table.pf-pos{ display:block; width:100%; white-space:normal; }
+  #companiesTableWrap thead, .home-table.pf-pos thead{ display:block; margin:0 0 12px 0; }
+  #companiesTableWrap thead tr, .home-table.pf-pos thead tr{ display:flex; flex-wrap:wrap; gap:6px; }
+  #companiesTableWrap thead th, .home-table.pf-pos thead th{ display:inline-flex; align-items:center; padding:7px 12px; border:1px solid var(--border); border-radius:99px; background:var(--card); font-size:12px; font-weight:600; letter-spacing:0; text-transform:none; white-space:nowrap; }
+  #companiesTableWrap thead th:not([data-sort-th]){ display:none; }
+  #companiesTableWrap thead th.th-sort-active, .home-table.pf-pos thead th.th-sort-active{ border-color:var(--blue); background:var(--blue-soft); }
+  #companiesTableWrap tbody, .home-table.pf-pos tbody{ display:grid; gap:12px; }
+  #companiesTableWrap td, .home-table.pf-pos td{ display:block; min-width:0; padding:0 !important; border:0 !important; background:none !important; text-align:left; }
+  /* Toutes vos analyses */
+  #companiesTableWrap tbody tr, #companiesTableWrap tbody tr:hover{ display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:13px 8px; align-items:center; padding:14px; background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); }
+  #companiesTableWrap .tc-co{ grid-row:1; grid-column:1 / 4; }
+  #companiesTableWrap .tc-score{ grid-row:1; grid-column:4; justify-self:end; }
+  #companiesTableWrap .tc-peg{ grid-row:2; grid-column:1; }
+  #companiesTableWrap .tc-moat{ grid-row:2; grid-column:2; }
+  #companiesTableWrap .tc-buff{ grid-row:2; grid-column:3; }
+  #companiesTableWrap .tc-axis{ grid-row:2; grid-column:4; }
+  #companiesTableWrap .tc-dec{ grid-row:3; grid-column:1 / 3; }
+  #companiesTableWrap .tc-conv{ grid-row:3; grid-column:3 / 5; justify-self:end; }
+  #companiesTableWrap .tc-prog{ grid-row:4; grid-column:1 / 3; }
+  #companiesTableWrap .tc-cap{ grid-row:4; grid-column:3; }
+  #companiesTableWrap .tc-date{ grid-row:4; grid-column:4; }
+  #companiesTableWrap .ht-co{ min-width:0; }
+  #companiesTableWrap .home-td-name{ flex-wrap:wrap; gap:0 8px; }
+  #companiesTableWrap .home-td-name-txt{ max-width:100%; overflow:visible; white-space:normal; text-overflow:clip; }
+  #companiesTableWrap .home-ticker{ margin-left:0; }
+  #companiesTableWrap .ht-sec{ max-width:none; }
+  #companiesTableWrap .home-td-cap, #companiesTableWrap .home-updated{ font-size:13px; color:var(--ink); }
+  #companiesTableWrap .comp-cell .hbar-track{ width:100%; flex:1 1 auto; min-width:34px; }
+  #companiesTableWrap .comp-cell{ display:flex; width:100%; }
+  /* Vos positions */
+  .home-table.pf-pos tbody tr{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:13px 8px; align-items:start; padding:14px; background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); }
+  .home-table.pf-pos tbody tr:hover{ background:var(--card); }
+  .home-table.pf-pos .pf-c-co{ grid-row:1; grid-column:1 / 3; }
+  .home-table.pf-pos .pf-c-sc{ grid-row:1; grid-column:3; justify-self:end; }
+  .home-table.pf-pos .pf-c-res{ grid-row:2; grid-column:1; }
+  .home-table.pf-pos .pf-c-val{ grid-row:2; grid-column:2; }
+  .home-table.pf-pos .pf-c-inv{ grid-row:2; grid-column:3; }
+  .home-table.pf-pos .pf-c-qty{ grid-row:3; grid-column:1; }
+  .home-table.pf-pos .pf-c-buy{ grid-row:3; grid-column:2; }
+  .home-table.pf-pos .pf-c-cur{ grid-row:3; grid-column:3; }
+  .home-table.pf-pos .pf-c-w{ grid-row:4; grid-column:1 / 3; }
+  .home-table.pf-pos .pf-c-dec{ grid-row:4; grid-column:3; }
+  .home-table.pf-pos .pf-co-in{ min-width:0; }
+  .home-table.pf-pos .pf-num, .home-table.pf-pos .pf-mid{ text-align:left; }
+  .home-table.pf-pos .pf-w-bar{ width:100%; }
+  .home-table.pf-pos .pf-w{ display:flex; width:100%; }
+  .home-table.pf-pos tbody tr.pf-total{ grid-template-columns:repeat(3, minmax(0,1fr)); background:color-mix(in srgb, var(--accent) 7%, var(--card)); }
+  .home-table.pf-pos tr.pf-total td:nth-child(1){ grid-column:1 / -1; grid-row:auto; }
+  .home-table.pf-pos tr.pf-total td:nth-child(n+5){ display:none; }
+}
 /* Point d'attention sans entreprise précise : point d'exclamation (vigilance) au lieu d'un logo */
 .mini-av-warn{ background:var(--amber-soft); color:var(--amber); font-family:var(--font-ui); font-style:normal; font-weight:800; font-size:20px; border:1px solid color-mix(in srgb, var(--amber) 35%, transparent); }
 
@@ -11243,6 +11305,7 @@ function buildCompaniesTableRows(){
     return `<span class="vchip${o.lg ? ' vchip-lg' : ''}${o.prov ? ' is-prov' : ''}" style="--c:${color}"${o.prov ? ` data-tooltip="<div class='tt-desc'>Note provisoire : moins de ${SCORE_MIN_AXES} axes renseignés</div>"` : ''}>${text}</span>`;
   };
   const axisKey = String(state.settings.tableSortKey || ''), axisCol = axisKey.indexOf('axis_') === 0 ? axisKey.slice(5) : '';   // colonne de la note du critère, seulement quand on trie par critère
+  const axisLbl = axisCol ? ((SCORE_AXES.find(a => a.id === axisCol) || {}).label || '') : '';
   const rows = sortedForTable().map(c => {
     const idn = c.fields.identite || {};
     const ticker = idn.ticker || '';
@@ -11263,20 +11326,20 @@ function buildCompaniesTableRows(){
     // Capitalisation boursière : purement informative, jamais de pastille de couleur (demande de l'auteur le 2026-09-29).
     const mc = parseMoney(idn.marketCap) ?? parseMoney((c.fields.financier || {}).marketCap);
     return `<tr data-open-company="${c.id}">
-      <td><div class="ht-co">${miniAv(c)}<div class="ht-id">
+      <td class="tc-co"><div class="ht-co">${miniAv(c)}<div class="ht-id">
         <div class="home-td-name"><span class="home-td-name-txt">${escapeHtml(c.name || 'Sans nom')}</span>${reportFlagHtml(c)}${alertFlagHtml(c)}${ticker ? `<span class="home-ticker">${escapeHtml(ticker)}</span>` : ''}</div>
         <div class="ht-sec">${sect ? escapeHtml(sect) : 'Secteur non renseigné'}</div>
       </div></div></td>
-      ${axisCol ? (() => { const av = axisScoreOf(c, axisCol); return `<td>${chip(av, av === null ? 'var(--border-strong)' : scoreColor5(av), av === null ? '' : Math.round(av), { lg:true })}</td>`; })() : ''}
-      <td>${chip(gs, gsColor, gs === null ? '' : Math.round(gs), { lg:true, prov:sinfo.provisional })}</td>
-      <td>${chip(peg, pegTier ? TIER_COLORS[pegTier] : 'var(--border-strong)', peg === null ? '' : fmtRatioPos(peg))}</td>
-      <td>${chip(moat, moatTier ? TIER_COLORS[moatTier] : 'var(--border-strong)', moat === null ? '' : escapeHtml(idn.moatNote) + '/10')}</td>
-      <td>${chip(buffPct, buffTier ? TIER_COLORS[buffTier] : 'var(--border-strong)', buffett.checked + '/' + buffett.total)}</td>
-      <td>${decisionPill(decision)}</td>
-      <td>${conviction ? starsRowHtml(conviction, 'ct-stars') : '<span class="ct-empty">—</span>'}</td>
-      <td><span class="comp-cell"><span class="hbar-track"><i style="width:${comp.pct}%;background:${comp.pct >= 100 ? 'var(--green)' : 'var(--accent)'}"></i></span><b>${comp.pct}&nbsp;%</b></span></td>
-      <td class="home-td-cap">${mc === null ? '<span class="ct-empty">—</span>' : compactMoney(mc, c.currency)}</td>
-      <td class="home-updated">${formatDateFrShort(c.updatedAt || c.createdAt)}</td>
+      ${axisCol ? (() => { const av = axisScoreOf(c, axisCol); return `<td class="tc-axis"><small class="tc-l">${escapeHtml(axisLbl)}</small>${chip(av, av === null ? 'var(--border-strong)' : scoreColor5(av), av === null ? '' : Math.round(av), { lg:true })}</td>`; })() : ''}
+      <td class="tc-score">${chip(gs, gsColor, gs === null ? '' : Math.round(gs), { lg:true, prov:sinfo.provisional })}</td>
+      <td class="tc-peg"><small class="tc-l">PEG</small>${chip(peg, pegTier ? TIER_COLORS[pegTier] : 'var(--border-strong)', peg === null ? '' : fmtRatioPos(peg))}</td>
+      <td class="tc-moat"><small class="tc-l">MOAT</small>${chip(moat, moatTier ? TIER_COLORS[moatTier] : 'var(--border-strong)', moat === null ? '' : escapeHtml(idn.moatNote) + '/10')}</td>
+      <td class="tc-buff"><small class="tc-l">Buffett</small>${chip(buffPct, buffTier ? TIER_COLORS[buffTier] : 'var(--border-strong)', buffett.checked + '/' + buffett.total)}</td>
+      <td class="tc-dec">${decisionPill(decision)}</td>
+      <td class="tc-conv">${conviction ? starsRowHtml(conviction, 'ct-stars') : '<span class="ct-empty">—</span>'}</td>
+      <td class="tc-prog"><small class="tc-l">Progrès</small><span class="comp-cell"><span class="hbar-track"><i style="width:${comp.pct}%;background:${comp.pct >= 100 ? 'var(--green)' : 'var(--accent)'}"></i></span><b>${comp.pct}&nbsp;%</b></span></td>
+      <td class="home-td-cap tc-cap"><small class="tc-l">Cap.</small>${mc === null ? '<span class="ct-empty">—</span>' : compactMoney(mc, c.currency)}</td>
+      <td class="home-updated tc-date"><small class="tc-l">Date</small>${formatDateFrShort(c.updatedAt || c.createdAt)}</td>
     </tr>`;
   }).join('');
   // En-têtes cliquables (demande de l'auteur le 2026-09-29) : `sortByHeader` (écouteur délégué posé une seule fois, voir bindSortMenu)
@@ -12936,22 +12999,22 @@ function pfTableForDev(pf, d){
     const dec = info.decision ? `<span class="pill ${PF_DECISION_PILL[info.decision] || 'pill-none'}">${escapeHtml(info.decision)}</span>` : '<span style="color:var(--ink-soft)">—</span>';
     const sinfo = computeScoreInfo(c);
     return `<tr data-open-company="${c.id}">
-      <td><div class="pf-co-in">${miniAv(c)}<div class="pf-co-t"><span class="pf-co-name">${escapeHtml(c.name || 'Sans nom')}${reportFlagHtml(c)}${alertFlagHtml(c)}</span>${info.ticker ? `<span class="pf-co-tk">${escapeHtml(info.ticker)}</span>` : ''}</div></div></td>
-      <td class="pf-num">${m.qty === null ? '—' : fmtNum(m.qty, 4)}</td>
-      <td class="pf-num">${m.buy === null ? '—' : fmtMoney(m.buy, m.devise)}</td>
-      <td class="pf-num">${m.cur === null ? '—' : fmtMoney(m.cur, m.devise)}</td>
-      <td class="pf-num">${m.invested === null ? '—' : fmtMoney(m.invested, m.devise)}</td>
-      <td class="pf-num">${m.value === null ? '—' : fmtMoney(m.value, m.devise)}</td>
-      <td class="pf-num">${res}</td>
-      <td class="pf-num">${w}</td>
-      <td>${dec}</td>
-      <td class="pf-mid">${scoreRingHtml(sinfo.score, sinfo.provisional)}</td>
+      <td class="pf-c-co"><div class="pf-co-in">${miniAv(c)}<div class="pf-co-t"><span class="pf-co-name">${escapeHtml(c.name || 'Sans nom')}${reportFlagHtml(c)}${alertFlagHtml(c)}</span>${info.ticker ? `<span class="pf-co-tk">${escapeHtml(info.ticker)}</span>` : ''}</div></div></td>
+      <td class="pf-num pf-c-qty"><small class="tc-l">Quantité</small>${m.qty === null ? '—' : fmtNum(m.qty, 4)}</td>
+      <td class="pf-num pf-c-buy"><small class="tc-l">Prix d'achat</small>${m.buy === null ? '—' : fmtMoney(m.buy, m.devise)}</td>
+      <td class="pf-num pf-c-cur"><small class="tc-l">Cours</small>${m.cur === null ? '—' : fmtMoney(m.cur, m.devise)}</td>
+      <td class="pf-num pf-c-inv"><small class="tc-l">Investi</small>${m.invested === null ? '—' : fmtMoney(m.invested, m.devise)}</td>
+      <td class="pf-num pf-c-val"><small class="tc-l">Valeur</small>${m.value === null ? '—' : fmtMoney(m.value, m.devise)}</td>
+      <td class="pf-num pf-c-res"><small class="tc-l">Résultat</small>${res}</td>
+      <td class="pf-num pf-c-w"><small class="tc-l">Poids</small>${w}</td>
+      <td class="pf-c-dec"><small class="tc-l">Décision</small>${dec}</td>
+      <td class="pf-mid pf-c-sc">${scoreRingHtml(sinfo.score, sinfo.provisional)}</td>
     </tr>`;
   }).join('');
   const x = pf.byDev[d];
   const base = x.value - x.gain;
   const totRes = x.nGain ? `<span class="pf-resbox" style="--rc:${pfColor(x.gain)}"><span class="pf-res">${pfSigned(x.gain, d)}</span>${base > 0 ? `<span class="pf-res-s">${pfPct(x.gain / base * 100)}</span>` : ''}</span>` : '—';
-  const foot = `<tr class="pf-total"><td colspan="4"><strong>Total</strong></td><td class="pf-num"><strong>${fmtMoney(x.invested, d)}</strong></td><td class="pf-num"><strong>${x.nGain ? fmtMoney(x.value, d) : '—'}</strong></td><td class="pf-num">${totRes}</td><td class="pf-num"><strong>100&nbsp;%</strong></td><td></td><td></td></tr>`;
+  const foot = `<tr class="pf-total"><td colspan="4"><strong>Total</strong></td><td class="pf-num"><small class="tc-l">Investi</small><strong>${fmtMoney(x.invested, d)}</strong></td><td class="pf-num"><small class="tc-l">Valeur</small><strong>${x.nGain ? fmtMoney(x.value, d) : '—'}</strong></td><td class="pf-num"><small class="tc-l">Résultat</small>${totRes}</td><td class="pf-num"><strong>100&nbsp;%</strong></td><td></td><td></td></tr>`;
   return `<div class="home-table-wrap pf-pos-wrap"><table class="home-table pf-pos"><thead><tr>${head}</tr></thead><tbody>${body}${foot}</tbody></table></div>`;
 }
 function pfTable(pf){
@@ -14521,7 +14584,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 332;
+const APP_BUILD = 334;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -15330,6 +15393,7 @@ function sxFit(){
   const vw = document.documentElement.clientWidth, vh = window.innerHeight;
   const stack = vw < 1000;
   ov.classList.toggle('sx-stacked', stack);
+  if(!stack){ ov.classList.remove('sx-mlist-on'); const oml = ov.querySelector('.sx-mlist'); if(oml) oml.remove(); }
   cards.forEach(cd => cd.classList.toggle('sx-stack', stack));
   const availW = vw - 104, availH = vh - (bar ? bar.offsetHeight : 52) - 24;   // 104 : place pour les deux flèches de chaque côté
   if(card === cover && !stack){
@@ -15342,6 +15406,11 @@ function sxFit(){
   if(stack){
     cards.forEach(cd => { cd.style.transform = ''; cd.style.minHeight = ''; cd.style.width = Math.min(vw - 20, 620) + 'px'; sxSizeSk(cd); });
     wrap.style.width = ''; wrap.style.height = '';
+    // Téléphone (2026-11-03) : le résumé est une LISTE des cartes (accroche, sections 1 à 6, schéma), chacune identique à la section agrandie et réduite à la largeur de l'écran
+    const listOn = sxZoomN === 0 && ov.dataset.mode !== 'cmp';
+    ov.classList.toggle('sx-mlist-on', listOn);
+    const oldL = ov.querySelector('.sx-mlist'); if(oldL && !listOn) oldL.remove();
+    if(listOn) sxBuildMobileList(ov);
     if(sxZoomN > 0) sxBuildZoom(ov, availW, availH, true);
     return;
   }
@@ -15457,7 +15526,7 @@ function sxZoomTo(n){
   if(!ov) return;
   if(ov.dataset.mode === 'cmp') return;
   n = Math.max(0, Math.min(6, parseInt(n, 10) || 0));
-  if(n === 0){ sxShow(sxPage); return; }
+  if(n === 0){ ov._backTo = sxZoomN; sxShow(sxPage); return; }
   sxZoomN = n;
   ov.classList.add('sx-zoomed');
   ov.querySelectorAll('.sx-pgb[data-sx-go]').forEach(b => b.classList.remove('on'));
@@ -15565,14 +15634,18 @@ async function sxPngFrame(c, src, cw, ch, F, hidePg){
   return new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error('blob')), 'image/png'));
 }
 async function sxExportSection(c, ov, n){
-  const F = SX_EXP.sec, keep = sxZoomN;
+  const F0 = SX_EXP.sec, keep = sxZoomN;
   sxZoomN = n;
   ov.classList.add('sx-zoomed');
   try{
-    sxBuildZoom(ov, F.w - 2 * F.m, F.h - 2 * F.m, false);
-    const zc = ov.querySelector('.sx-zoomcard');
+    sxBuildZoom(ov, F0.w - 2 * F0.m, F0.w * 2 - 2 * F0.m, false);   // boîte très haute : la carte retenue est la plus étroite (700 px), donc la même image verticale sur téléphone et sur ordinateur
+    const zc = ov.querySelector('.sx-zoomhost .sx-zoomcard');   // et non la première .sx-zoomcard : la liste du téléphone en contient aussi
     if(!zc) throw new Error('zoom');
-    return await sxPngFrame(c, zc, zc.offsetWidth, zc.offsetHeight, F, false);
+    // Format VERTICAL (2026-11-03, demande de l'auteur : « plus vertical comme avant ») : le cadre prend la proportion de la carte (même largeur de 1080 px, hauteur selon la carte, 2 fois la largeur au plus),
+    // au lieu d'un 4:5 fixe qui laissait de grandes marges de chaque côté d'une carte étroite. Les 6 sections ont la même taille puisque leur carte a la même taille.
+    const cw = zc.offsetWidth, ch = zc.offsetHeight;
+    const F = { w:F0.w, m:F0.m, k:F0.k, h:Math.round(Math.min(F0.w * 2, (F0.w - 2 * F0.m) * ch / cw + 2 * F0.m)) };
+    return await sxPngFrame(c, zc, cw, ch, F, false);
   }finally{ sxZoomN = keep; }
 }
 async function sxExportPage3(c, ov){
@@ -15667,6 +15740,56 @@ async function sxDownloadCompare(){
     if(btn){ btn.disabled = false; btn.innerHTML = label; }
   }
 }
+// Téléphone (2026-11-03, demande de l'auteur : « les fiches résumé s'affichent en une fois, tout est lisible ») : chaque carte est dessinée à 700 px de large (la plus étroite sans texte coupé)
+// puis réduite à la largeur de l'écran, comme la section agrandie ; la fiche d'accroche (1080 x 1350) et le schéma suivent. Un bouton sous chaque section télécharge son image.
+function sxBuildMobileList(ov){
+  const old = ov.querySelector('.sx-mlist'); if(old) old.remove();
+  const list = document.createElement('div'); list.className = 'sx-mlist';
+  ov.appendChild(list);
+  const wP = document.documentElement.clientWidth - 20;
+  const put = (node, cw, sec, dl) => {
+    const wrap = document.createElement('div'); wrap.className = 'sx-mwrap'; wrap.dataset.sec = String(sec);
+    const host = document.createElement('div'); host.className = 'sx-mitem'; host.style.width = wP + 'px';
+    const s = wP / cw;
+    node.style.width = cw + 'px'; node.style.margin = '0'; node.style.transformOrigin = 'top left'; node.style.transform = 'scale(' + s.toFixed(4) + ')';
+    host.appendChild(node); wrap.appendChild(host);
+    if(dl){ const b = document.createElement('button'); b.type = 'button'; b.className = 'sx-mdl'; b.dataset.sxMdl = String(sec); b.textContent = "Télécharger l'image"; wrap.appendChild(b); }
+    list.appendChild(wrap);
+    return { host, node, s };
+  };
+  const fixH = (r, h) => { r.host.style.height = ((h || r.node.offsetHeight) * r.s).toFixed(1) + 'px'; };
+  const cover = ov.querySelector('.sx-scale .sx-card[data-sx-page="0"]');
+  if(cover){
+    const cl = cover.cloneNode(true); cl.classList.add('sx-on'); cl.style.height = SX_COVER.h + 'px'; cl.style.minHeight = ''; cl.style.display = 'flex';
+    fixH(put(cl, SX_COVER.w, 0, false), SX_COVER.h);
+  }
+  const srcs = [...ov.querySelectorAll('.sx-scale .sx-p')].filter(x => x.dataset.sxSec).sort((a, b) => (+a.dataset.sxSec) - (+b.dataset.sxSec));
+  srcs.forEach(src => {
+    const zc = document.createElement('div'); zc.className = 'sx-card sx-on sx-zoomcard';
+    const cl = src.cloneNode(true); const zb = cl.querySelector('.sx-zb'); if(zb) zb.remove();
+    cl.querySelectorAll('.sx-pb').forEach(pb => { pb.style.gap = ''; }); cl.style.height = ''; cl.style.minHeight = '';
+    const f = src.closest('.sx-card').querySelector('.sx-foot').cloneNode(true); const pg = f.querySelector('.sx-pg'); if(pg) pg.textContent = 'Section ' + src.dataset.sxSec + ' sur 6';
+    zc.appendChild(cl); zc.appendChild(f);
+    fixH(put(zc, 700, src.dataset.sxSec, true));
+  });
+  const sk = ov.querySelector('.sx-scale .sx-card[data-sx-page="3"]');
+  if(sk){
+    const cl = sk.cloneNode(true); cl.classList.add('sx-on', 'sx-stack'); cl.style.cssText = 'width:' + wP + 'px; margin:0; display:flex;';
+    const wrap = document.createElement('div'); wrap.className = 'sx-mwrap'; wrap.dataset.sec = '7'; wrap.appendChild(cl); list.appendChild(wrap);
+    sxSizeSk(cl);
+  }
+  if(ov._backTo){   // retour de la section agrandie : on revient à sa place dans la liste
+    const t = list.querySelector('.sx-mwrap[data-sec="' + ov._backTo + '"]'); ov._backTo = 0;
+    if(t) ov.scrollTop = Math.max(0, t.offsetTop - 60);
+  }
+}
+// Télécharge l'image d'UNE section depuis la liste du téléphone : on l'affiche en plein écran le temps de l'export, puis on revient à la liste
+async function sxMobileDl(n){
+  if(!(n >= 1 && n <= 6)) return;
+  sxZoomTo(n);
+  try{ await sxDownload(false); }catch(e){}
+  sxZoomTo(0);
+}
 function sxStep(d){
   const ovm = document.getElementById('sxOverlay');
   if(!ovm || ovm.dataset.mode === 'cmp') return;
@@ -15701,6 +15824,8 @@ function initSummary(){
     if(e.target.closest && e.target.closest('[data-cmp-card-open]')){ cmpCardOpen(); return; }
     const ov = document.getElementById('sxOverlay');
     if(!ov) return;
+    const mdl = e.target.closest && e.target.closest('[data-sx-mdl]');
+    if(mdl){ sxMobileDl(parseInt(mdl.dataset.sxMdl, 10)); return; }
     if(e.target.closest && e.target.closest('[data-sx-download-cmp]')){ sxDownloadCompare(); return; }
     if(e.target.closest && e.target.closest('[data-sx-downloadall]')){ sxDownload(true); return; }
     if(e.target.closest && e.target.closest('[data-sx-download]')){ sxDownload(false); return; }
