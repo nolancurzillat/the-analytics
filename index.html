@@ -1150,6 +1150,13 @@ body.sx-lock{ overflow:hidden; }
 .sx-cv-foot b{ font-family:var(--font-serif); font-size:24px; color:#fff; }
 .sx-cv-foot b span{ color:#c9a24a; }
 .sx-overlay[data-cur="0"] .sx-dl{ display:inline-flex; align-items:center; background:var(--accent); border-color:transparent; color:#fff; }
+/* ----- Section agrandie sur téléphone (build 328) : mêmes boutons de retour, de téléchargement et de navigation ----- */
+.sx-stacked.sx-zoomed .sx-bar{ flex-wrap:wrap; gap:8px; padding:8px 12px; }
+.sx-stacked.sx-zoomed .sx-bar-t{ display:none; }
+.sx-stacked.sx-zoomed .sx-pages{ display:flex; flex-wrap:wrap; gap:8px; flex:1; }
+.sx-stacked.sx-zoomed .sx-pages .sx-pgb[data-sx-go], .sx-stacked.sx-zoomed .sx-pages .sx-dlall{ display:none; }
+.sx-stacked.sx-zoomed .sx-pgb{ font-size:13px; padding:6px 12px; }
+.sx-stacked.sx-zoomed .sx-arrow{ display:flex; top:auto; bottom:16px; transform:none; background:rgba(10,19,40,.85); }
 /* ----- Résumé : retouches du build 327 ----- */
 .sx-p[data-sx-sec="6"] .sx-pn{ color:#0a1328; font-weight:800; }
 .sx-p[data-sx-sec="4"] .sx-g4 .sx-tl{ font-size:15px; }
@@ -14314,7 +14321,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 327;
+const APP_BUILD = 328;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -15166,12 +15173,15 @@ function sxBuildZoom(ov, availW, availH, stack){
   if(!src) return;
   const mkClone = el => { const cl = el.cloneNode(true); const zb = cl.querySelector('.sx-zb'); if(zb) zb.remove(); cl.querySelectorAll('.sx-pb').forEach(pb => { pb.style.gap = ''; }); cl.style.height = ''; cl.style.minHeight = ''; return cl; };
   const mkFoot = el => { const f = el.closest('.sx-card').querySelector('.sx-foot').cloneNode(true); const pg = f.querySelector('.sx-pg'); if(pg) pg.textContent = 'Section ' + el.dataset.sxSec + ' sur 6'; return f; };
-  const zc = document.createElement('div'); zc.className = 'sx-card sx-on sx-zoomcard' + (stack ? ' sx-stack' : '');
+  const zc = document.createElement('div'); zc.className = 'sx-card sx-on sx-zoomcard';
   const host = document.createElement('div'); host.className = 'sx-zoomhost'; host.appendChild(zc);
   if(stack){
     zc.appendChild(mkClone(src)); zc.appendChild(mkFoot(src));
     ov.appendChild(host);
-    zc.style.width = Math.min(document.documentElement.clientWidth - 20, 620) + 'px';
+    // Téléphone (2026-11-02, demande de l'auteur) : la MÊME carte que sur ordinateur (même mise en page, dessinée à 700 px de large, la plus étroite sans texte coupé), simplement réduite à la largeur de l'écran ; sa hauteur reste naturelle, la fenêtre défile
+    const cwP = 700, wP = document.documentElement.clientWidth - 20, sP = wP / cwP;
+    zc.style.width = cwP + 'px'; zc.style.margin = '0'; zc.style.transformOrigin = 'top left'; zc.style.transform = 'scale(' + sP.toFixed(4) + ')';
+    host.style.width = wP + 'px'; host.style.height = (zc.offsetHeight * sP).toFixed(1) + 'px';
     return;
   }
   host.style.visibility = 'hidden';
