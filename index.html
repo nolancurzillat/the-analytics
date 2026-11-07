@@ -3922,12 +3922,6 @@ const FIELD_DESCRIPTIONS = {
   detenuInstitutions: "La part du capital détenue par des investisseurs institutionnels (fonds, assurances, banques...), en %. Beaucoup d'institutions : un titre suivi et liquide, mais aussi plus nerveux si elles vendent en même temps. Sur Yahoo Finance : onglet Statistiques, ligne « % Held by Institutions ».",
   peHistorique: "Le PE moyen de l'entreprise sur ses 5 dernières années (un seul chiffre). À calculer à partir des 5 PE annuels de stockanalysis.com : page de l'action, Financials, Ratios, ligne « PE Ratio ».",
   peRelatifHisto: "Le PE actuel comparé à son propre PE moyen sur 5 ans : en dessous de 1, l'entreprise est moins chère qu'à son habitude ; au-dessus, plus chère. Calculé automatiquement.",
-  dcfCroissance: "La croissance annuelle du Free Cash Flow sur les 5 prochaines années, pour le calcul du DCF (les années 6 à 10 comptent la moitié). Laissée vide, on reprend la croissance estimée de l'EPS de la fiche, sinon 8 %.",
-  dcfTaux: "Le taux d'actualisation du DCF : le rendement annuel que vous exigez pour investir. Plus il est haut, plus la valeur calculée est basse. Laissé vide : 9 %.",
-  dcfActions: "Le nombre d'actions (de préférence diluées) qui sert à passer de la valeur de l'entreprise à une valeur par action. Laissé vide, on reprend le total du bloc « Nb d'actions ».",
-  dcfPess: "La valeur par action du DCF dans un scénario prudent : croissance × 0,6 et taux d'actualisation + 1 point. Dessous, l'écart avec le cours actuel.",
-  dcfCentral: "La valeur par action du DCF avec vos hypothèses : le Free Cash Flow est projeté sur 10 ans, ramené à sa valeur d'aujourd'hui et complété d'une valeur terminale (croissance perpétuelle de 2,5 %), puis on retire la dette nette et on divise par le nombre d'actions. Dessous, l'écart avec le cours actuel. Très sensible aux hypothèses : un repère seulement, sans effet sur le score.",
-  dcfOpt: "La valeur par action du DCF dans un scénario favorable : croissance × 1,4 et taux d'actualisation − 1 point. Dessous, l'écart avec le cours actuel.",
   priceSales: "La capitalisation boursière divisée par le chiffre d'affaires : combien vous payez pour 1 € (ou 1 $) de ventes. Utile quand l'entreprise n'a pas (encore) de bénéfice. Calculé automatiquement, sans couleur : la norme dépend beaucoup du secteur.",
   innovationTech: "Les innovations technologiques qui soutiennent la croissance future.",
   croissanceAttendueCA: "La croissance du chiffre d'affaires anticipée par les analystes sur 3 ans.",
@@ -3946,9 +3940,9 @@ const FIELD_DESCRIPTIONS = {
   croissanceEstimeeEps: "Le taux de croissance annuel moyen (CAGR) du bénéfice par action attendu par les analystes sur 3 ans, que vous saisissez. La croissance totale sur 3 ans est calculée automatiquement. Le PEG utilise le CAGR.",
   peg: "Le PE ajusté de la croissance : sous 1, le titre est plutôt bon marché vu sa croissance.",
   rendementFcf: "Le cash réellement dégagé chaque année (FCF) rapporté au prix de toute l'entreprise en Bourse (capitalisation) : plus il est haut, plus vous payez le cash à bon prix. Calculé automatiquement.",
-  valeurIntrinseque: "L'estimation de la vraie valeur de l'entreprise (scénario central). L'application ne la calcule pas : relevez-la sur Alpha Spread (« Intrinsic Value »), ou saisissez votre propre estimation.",
-  bearCase: "La valeur estimée dans un scénario pessimiste (Bear case) : si les choses tournent mal (croissance plus faible, marges qui se dégradent, concurrence...). Alpha Spread propose en général un scénario pessimiste que vous pouvez reprendre.",
-  bullCase: "La valeur estimée dans un scénario optimiste (Bull case) : si les choses se passent bien (croissance plus forte que prévu, gain de parts de marché...). Alpha Spread propose en général un scénario optimiste que vous pouvez reprendre.",
+  valeurIntrinseque: "La valeur d'une action calculée automatiquement à partir des données de l'entreprise, par la méthode DCF (flux de trésorerie actualisés) : son Free Cash Flow est projeté sur 10 ans, ramené à sa valeur d'aujourd'hui et complété d'une valeur finale, puis on retire la dette nette et on divise par le nombre d'actions. Dessous, la marge de sécurité par rapport au cours. Aucune saisie : tout vient de la fiche.",
+  bearCase: "La même valeur calculée dans un scénario prudent : croissance × 0,6 et taux d'actualisation + 1 point. Elle donne une idée du risque de baisse.",
+  bullCase: "La même valeur calculée dans un scénario favorable : croissance × 1,4 et taux d'actualisation − 1 point. Elle donne une idée du potentiel de hausse.",
   beta: "La volatilité du titre par rapport au marché : au-dessus de 1, il bouge plus fort que le marché.",
   positionShort: "La part du flottant vendue à découvert par les investisseurs qui parient sur une baisse. À relever sur Yahoo Finance, onglet Statistiques (« Short % of Float »).",
   ratioVenteADecouvert: "Le nombre de jours de volume moyen pour que les vendeurs à découvert rachètent leurs positions. À relever sur Yahoo Finance, onglet Statistiques (« Short Ratio »).",
@@ -4195,16 +4189,9 @@ const SECTIONS = [
       {key:'croissanceEstimeeEps', label:'Croissance estimée EPS (3 ans)', type:'growthDuo', years:3, span:6},
       {key:'priceSales', label:'Price / Sales', type:'computed-price-sales', span:6},
       {key:'peVisuel', label:'Où se situe le PE ?', type:'computed-pe-visual', span:12, group:"En un coup d'œil"},
-      {key:'valeurIntrinseque', label:'Valeur intrinsèque', type:'number-ecart', money:true, span:6, group:'Valeur estimée'},
-      {key:'bearCase', label:'Bear case (pessimiste)', type:'number-ecart', money:true, span:3},
-      {key:'bullCase', label:'Bull case (optimiste)', type:'number-ecart', money:true, span:3},
-      {key:'dcfCroissance', label:'DCF : croissance du FCF', type:'number', percent:true, optionalFill:true, span:4, group:'Valeur intrinsèque par DCF'},
-      {key:'dcfTaux', label:"DCF : taux d'actualisation", type:'number', percent:true, optionalFill:true, span:4},
-      {key:'dcfActions', label:"DCF : nombre d'actions", type:'text', compact:true, optionalFill:true, span:4},
-      {key:'dcfPess', label:'DCF pessimiste', type:'computed-dcf', scenario:'pess', span:4},
-      {key:'dcfCentral', label:'DCF central', type:'computed-dcf', scenario:'central', span:4},
-      {key:'dcfOpt', label:'DCF optimiste', type:'computed-dcf', scenario:'opt', span:4},
-      {key:'beta', label:'Beta', type:'number', suffix:'β', group:'Risque de marché'},
+      {key:'valeurIntrinseque', label:'Valeur intrinsèque', type:'computed-dcf', span:4, group:'Valeur estimée'},
+      {key:'bearCase', label:'Bear case (pessimiste)', type:'computed-dcf', span:4},
+      {key:'bullCase', label:'Bull case (optimiste)', type:'computed-dcf', span:4},      {key:'beta', label:'Beta', type:'number', suffix:'β', group:'Risque de marché'},
       {key:'positionShort', label:'Position short', type:'text', percent:true},
       {key:'ratioVenteADecouvert', label:'Ratio de vente à découvert', type:'text'},
       {key:'wallStreet', label:'Wall Street Analyse (1 an)', type:'wallStreetTrio', group:'Prévisions des analystes'},
@@ -6595,7 +6582,7 @@ function tipTresorerie(c){
 }
 function tipEcart(c, targetKey, label){
   const e = computeEcart(c, targetKey);
-  const prix = n(raw(c.fields.valorisation.prixActuel)), val = n(raw(c.fields.valorisation[targetKey]));
+  const prix = n(raw(c.fields.valorisation.prixActuel)), val = DCF_KIND[targetKey] ? fmtNum(dcfTarget(c, targetKey) || 0, 2) : n(raw(c.fields.valorisation[targetKey]));
   const lab = escapeHtml(label);
   if(e !== null && e > 0.05){
     return `<div class='tt-formula'>(Prix actuel ${prix} − ${lab} ${val}) ÷ Prix actuel ${prix}</div>${tipRes('= +' + fmtNum(e, 1) + ' %')}<div class='tt-desc'>Surévaluation : le cours devrait baisser de ${fmtNum(e, 1)} % pour rejoindre la valeur.</div>`;
@@ -6852,14 +6839,7 @@ function refreshAllComputed(){
   setText('computed-valorisation-priceSales', psv === null ? '—' : fmtNum(psv, 2), tipPriceSales(c));
   const rdtFcf = computeRendementFcf(c);
   setText('computed-valorisation-rendementFcf', fmtRendementFcf(rdtFcf), tipRendementFcf(c));
-  // Valeur intrinsèque + fourchette Bear/Bull (2026-09-27, remplace la Valorisation DCF, retirée car trop sensible aux hypothèses) :
-  // même mécanique `number-ecart` générique pour les trois, un seul écart par rapport au cours actuel.
-  [['valeurIntrinseque', 'Valeur intrinsèque'], ['bearCase', 'Bear case'], ['bullCase', 'Bull case']].forEach(([k, label]) => {
-    const e = computeEcart(c, k);
-    const slot = document.getElementById('ecart-valorisation-' + k);
-    if(slot){ slot.innerHTML = ecartMarkup(e); slot.dataset.tooltip = tipEcart(c, k, label); }
-  });
-  const tres = computeTresorerie(c);
+  // Valeur intrinsèque + Bear / Bull case : calculées par DCF (refreshDcf, appelée plus haut), plus de saisie\r\n  const tres = computeTresorerie(c);
   setText('computed-financier-tresorerie', formatMoneyDisplay(tres, c.currency), tipTresorerie(c));
   const dette = computeDetteActif(c);
   setText('computed-financier-detteActif', fmtDetteActif(dette), tipDetteActif(c));
@@ -7561,18 +7541,20 @@ function peVisualHtml(c){
 // alors que le cours n'a besoin de baisser que de 50 % pour la rejoindre.
 function computeEcart(c, targetKey){
   const prix = num(c.fields.valorisation.prixActuel);
-  const target = num(c.fields.valorisation[targetKey]);
+  const target = DCF_KIND[targetKey] ? dcfTarget(c, targetKey) : num(c.fields.valorisation[targetKey]);   // valeur intrinsèque, Bear et Bull : calculées par DCF
   if(prix === null || target === null || target <= 0 || prix < 0) return null;
   const diff = prix - target;
   if(diff > 0) return prix > 0 ? diff / prix * 100 : null;
   return diff / target * 100;
 }
-// ---------- Valeur intrinsèque par DCF, version simple (2026-11-07, demande de l'auteur : « bien plus simplifié, peu de nouvelles valeurs, comme le reste de la fiche ») ----------
-// Trois cases à renseigner (croissance du FCF, taux d'actualisation, nombre d'actions) et trois résultats (pessimiste, central, optimiste) qui se présentent comme la
-// « Valeur intrinsèque » et ses Bear / Bull case : une case calculée et l'écart avec le cours dessous. Tout le reste est fixé : FCF, dette nette et prix sont lus dans la fiche,
-// la croissance des années 6 à 10 vaut la moitié de la première, la croissance perpétuelle 2,5 %. C'est un simple repère : il n'entre pas dans le score.
+// ---------- Valeur intrinsèque calculée par DCF (2026-11-07, demande de l'auteur : « remplacer la case que je remplis avec Alpha Spread, ne plus dépendre d'un autre site ») ----------
+// La « Valeur intrinsèque » et ses Bear / Bull case ne sont plus saisies : elles sont CALCULÉES par la méthode des flux de trésorerie actualisés (DCF) à partir de la fiche
+// (Free Cash Flow et dette nette de Financier, nombre d'actions = Free Float + Closely Held, croissance estimée de l'EPS), puis comparées au cours (marge de sécurité, score, alertes...).
+// AUCUNE saisie : les hypothèses sont fixes (croissance plafonnée à 20 %, la moitié pour les années 6 à 10, taux 9 %, croissance perpétuelle 2,5 %).
 // La logique de calcul (`dcfCompute`, `dcfScenarioParams`, `dcfScenarios`) est PURE : elle reçoit des nombres (taux en DÉCIMALES, 0,10 = 10 %) et ne lit ni la fiche ni la page.
-const DCF_G1_DEFAULT = 8, DCF_RATE_DEFAULT = 9, DCF_PERP = 2.5;   // en %
+const DCF_KIND = { valeurIntrinseque:'central', bearCase:'pess', bullCase:'opt' };   // case de la fiche -> scénario
+const DCF_LABELS = { valeurIntrinseque:'Valeur intrinsèque', bearCase:'Bear case', bullCase:'Bull case' };
+const DCF_G1_DEFAULT = 8, DCF_G1_MAX = 20, DCF_RATE = 9, DCF_PERP = 2.5;   // en %
 function dcfCompute(p){
   const fin = v => typeof v === 'number' && Number.isFinite(v);
   if(!p || !fin(p.fcf) || !fin(p.g1) || !fin(p.g2) || !fin(p.rate) || !fin(p.perp) || !fin(p.netDebt) || !fin(p.shares)) return { ok:false, code:'missing' };
@@ -7601,62 +7583,61 @@ function dcfScenarioParams(p, kind){
 function dcfScenarios(p){
   return ['pess', 'central', 'opt'].map(kind => { const params = dcfScenarioParams(p, kind); return { kind, params, result:dcfCompute(params) }; });
 }
-// Écart du cours avec une valeur, même convention que computeEcart (négatif = sous-évaluation, marge de sécurité = (valeur − prix) ÷ valeur)
-function dcfEcart(price, value){
-  if(price === null || price <= 0 || value === null || value <= 0) return null;
-  const diff = price - value;
-  return diff > 0 ? diff / price * 100 : diff / value * 100;
-}
-// Lecture de la fiche : une case vide des trois réglages = valeur par défaut (affichée en gris dans la case)
+// Lecture de la fiche. Croissance : la première trouvée parmi la croissance estimée de l'EPS (Valorisation), la croissance attendue du bénéfice net (Croissance future)
+// et la croissance passée du bénéfice net sur 5 ans (Financier), sinon 8 %, dans tous les cas plafonnée à 20 %.
 function dcfInputs(c){
   const val = c.fields.valorisation || {}, fin = c.fields.financier || {}, cro = c.fields.croissance || {};
-  const est = num(val.croissanceEstimeeEps && val.croissanceEstimeeEps.cagr);
-  const est2 = num(cro.croissanceAttendueBenef && cro.croissanceAttendueBenef.cagr);
-  const g1Def = est !== null ? est : (est2 !== null ? est2 : DCF_G1_DEFAULT);
-  const gt = num(val.dcfCroissance), rt = num(val.dcfTaux);
+  const cagr = o => num(o && o.cagr);
+  const found = [cagr(val.croissanceEstimeeEps), cagr(cro.croissanceAttendueBenef), cagr(fin.croissanceBenef)].find(v => v !== null);
+  const g1 = Math.min(found !== undefined ? found : DCF_G1_DEFAULT, DCF_G1_MAX);
   const nb = fin.nbActions || {};
   const ff = parseMoney(nb.freeFloat), ch = parseMoney(nb.closelyHeld);
-  const sharesAuto = (ff !== null && ch !== null && ff + ch > 0) ? ff + ch : null;   // repli : total des actions du bloc « Nb d'actions »
-  const st = parseMoney(val.dcfActions);
-  const fcf = parseMoney(fin.fcf), netDebt = parseMoney(fin.detteNette), price = num(val.prixActuel);
-  const shares = (st !== null && st > 0) ? st : sharesAuto;
+  const shares = (ff !== null && ch !== null && ff + ch > 0) ? ff + ch : null;   // total des actions du bloc « Nb d'actions »
+  const fcf = parseMoney(fin.fcf), netDebt = parseMoney(fin.detteNette);
   const missing = [];
   if(fcf === null) missing.push('Free Cash Flow');
   if(netDebt === null) missing.push('Dette nette');
-  if(shares === null) missing.push("Nombre d'actions diluées");
-  if(price === null || price <= 0) missing.push('Prix actuel');
-  const g1 = gt !== null ? gt : g1Def;
-  return { fcf, netDebt, shares, price, g1, rate:rt !== null ? rt : DCF_RATE_DEFAULT, missing, ph:{ dcfCroissance:fmtNum(g1Def, 2), dcfTaux:fmtNum(DCF_RATE_DEFAULT, 2), dcfActions:sharesAuto !== null ? compactShares(sharesAuto) : '' } };
+  if(shares === null) missing.push("Nombre d'actions (Free Float + Closely Held)");
+  return { fcf, netDebt, shares, g1, missing };
 }
-// Contenu d'une case résultat : { text, slot (écart sous la case), tip (infobulle) }
-function dcfCell(c, kind){
+// Résultat d'un scénario pour une des trois cases (`key` = valeurIntrinseque, bearCase ou bullCase) : { ok, value (arrondie au centième), params } ou { ok:false, reason }
+function dcfResult(c, key){
   const D = dcfInputs(c);
-  const none = (short, tip) => ({ text:'—', slot:`<span class="ecart-text ecart-empty">${short}</span>`, tip });
-  if(D.missing.length) return none('Données manquantes', `<div class='tt-desc'>Données manquantes :</div>${D.missing.map(m => `<div class='tt-desc'>${m}</div>`).join('')}`);
-  if(D.fcf <= 0) return none('DCF inadapté', `<div class='tt-desc'>Le Free Cash Flow est négatif ou nul : le DCF n'est pas adapté à cette entreprise.</div>`);
-  const base = { fcf:D.fcf, netDebt:D.netDebt, shares:D.shares, price:D.price, g1:D.g1 / 100, g2:D.g1 / 200, rate:D.rate / 100, perp:DCF_PERP / 100 };
-  const p = dcfScenarioParams(base, kind), r = dcfCompute(p);
-  if(!r.ok) return none('Taux trop bas', `<div class='tt-desc'>Le taux d'actualisation doit rester supérieur à la croissance perpétuelle.</div>`);
-  const pct = v => fmtNum(v * 100, 1) + ' %';
-  const tip = `<div class='tt-desc'>Croissance du FCF, années 1 à 5 : ${pct(p.g1)}</div><div class='tt-desc'>Croissance du FCF, années 6 à 10 : ${pct(p.g2)}</div><div class='tt-desc'>Taux d'actualisation : ${pct(p.rate)}</div><div class='tt-desc'>Croissance perpétuelle : ${pct(p.perp)}</div>${tipRes('= ' + fmtMoney(r.perShare, c.currency))}`;
-  return { text:fmtMoney(r.perShare, c.currency), slot:ecartMarkup(dcfEcart(D.price, r.perShare)), tip };
+  if(D.missing.length) return { ok:false, reason:'missing', missing:D.missing };
+  if(D.fcf <= 0) return { ok:false, reason:'fcf' };
+  const base = { fcf:D.fcf, netDebt:D.netDebt, shares:D.shares, g1:D.g1 / 100, g2:D.g1 / 200, rate:DCF_RATE / 100, perp:DCF_PERP / 100 };
+  const p = dcfScenarioParams(base, DCF_KIND[key]), r = dcfCompute(p);
+  if(!r.ok) return { ok:false, reason:r.code };
+  return { ok:true, value:Math.round(r.perShare * 100) / 100, params:p };
 }
-// Recalcul : seules les trois cases résultat (et les valeurs par défaut en gris des trois réglages) sont mises à jour, jamais les cases saisies (le curseur ne bouge pas).
+// Valeur par action utilisable pour comparer au cours (écart, score, alertes...) : null si non calculable ou négative
+function dcfTarget(c, key){
+  const r = dcfResult(c, key);
+  return (r.ok && r.value > 0) ? r.value : null;
+}
+// Contenu d'une case : { text (valeur), slot (écart avec le cours, dessous), tip (infobulle de la valeur), slotTip (infobulle de l'écart) }
+function dcfCell(c, key){
+  const r = dcfResult(c, key);
+  if(!r.ok){
+    const short = r.reason === 'missing' ? 'Données manquantes' : 'DCF inadapté';
+    const tip = r.reason === 'missing' ? `<div class='tt-desc'>Données manquantes :</div>${r.missing.map(m => `<div class='tt-desc'>${m}</div>`).join('')}` : `<div class='tt-desc'>Le Free Cash Flow est négatif ou nul : le DCF n'est pas adapté à cette entreprise.</div>`;
+    return { text:'—', slot:`<span class="ecart-text ecart-empty">${short}</span>`, tip, slotTip:tip };
+  }
+  const p = r.params, pct = v => fmtNum(v * 100, 1) + ' %';
+  const tip = `<div class='tt-desc'>Croissance du FCF, années 1 à 5 : ${pct(p.g1)}</div><div class='tt-desc'>Croissance du FCF, années 6 à 10 : ${pct(p.g2)}</div><div class='tt-desc'>Taux d'actualisation : ${pct(p.rate)}</div><div class='tt-desc'>Croissance perpétuelle : ${pct(p.perp)}</div>${tipRes('= ' + fmtMoney(r.value, c.currency))}`;
+  return { text:fmtMoney(r.value, c.currency), slot:ecartMarkup(computeEcart(c, key)), tip, slotTip:tipEcart(c, key, DCF_LABELS[key]) };
+}
+// Recalcul des trois cases (aucune case saisie à ménager : le curseur n'est jamais concerné)
 function refreshDcf(c){
   if(!c) return;
-  [['dcfPess', 'pess'], ['dcfCentral', 'central'], ['dcfOpt', 'opt']].forEach(([key, kind]) => {
+  Object.keys(DCF_KIND).forEach(key => {
     const el = document.getElementById('computed-valorisation-' + key);
     if(!el) return;
-    const cell = dcfCell(c, kind);
+    const cell = dcfCell(c, key);
     el.textContent = cell.text;
     el.dataset.tooltip = cell.tip;
-    const slot = document.getElementById('dcf-slot-' + key);
-    if(slot) slot.innerHTML = cell.slot;
-  });
-  const D = dcfInputs(c);
-  Object.keys(D.ph).forEach(k => {
-    const inp = document.querySelector(`input[data-section="valorisation"][data-field="${k}"]`);
-    if(inp && inp.placeholder !== D.ph[k]) inp.placeholder = D.ph[k];
+    const slot = document.getElementById('ecart-valorisation-' + key);
+    if(slot){ slot.innerHTML = cell.slot; slot.dataset.tooltip = cell.slotTip; }
   });
 }
 
@@ -8349,9 +8330,9 @@ function computeGlobalScoreFromAxesLocal(axes){
 function buildValuationLine(c){
   const cur = c.currency;
   const prix = num(c.fields.valorisation.prixActuel);
-  const bear = num(c.fields.valorisation.bearCase);
-  const intrinsic = num(c.fields.valorisation.valeurIntrinseque);
-  const bull = num(c.fields.valorisation.bullCase);
+  const bear = dcfTarget(c, 'bearCase');
+  const intrinsic = dcfTarget(c, 'valeurIntrinseque');
+  const bull = dcfTarget(c, 'bullCase');
   const points = [];
   if(bear !== null) points.push({ label:'Bear case', val:bear, cls:'val-ref val-bear' });
   if(intrinsic !== null) points.push({ label:'Valeur intrinsèque', val:intrinsic, cls:'val-ref' });
@@ -9882,9 +9863,6 @@ const UPDATE_ITEMS = [
   { key:'valorisation.epsEstime1an', label:'EPS estimé (12 mois)', g:'Valorisation et prévisions' },
   { key:'valorisation.croissanceEstimeeEps', label:'Croissance estimée EPS (3 ans)', g:'Valorisation et prévisions' },
   { key:'valorisation.wallStreet', label:'Wall Street Analyse (1 an)', g:'Valorisation et prévisions' },
-  { key:'valorisation.valeurIntrinseque', label:'Valeur intrinsèque', g:'Valorisation et prévisions' },
-  { key:'valorisation.bearCase', label:'Bear case (pessimiste)', g:'Valorisation et prévisions' },
-  { key:'valorisation.bullCase', label:'Bull case (optimiste)', g:'Valorisation et prévisions' },
   { key:'valorisation.positionShort', label:'Position short', g:'Valorisation et prévisions' },
   { key:'croissance.croissanceAttendueCA', label:'Croissance attendue du CA (3 ans)', g:'Valorisation et prévisions' },
   { key:'croissance.croissanceAttendueBenef', label:'Croissance attendue du bénéfice net (3 ans)', g:'Valorisation et prévisions' }
@@ -10454,7 +10432,7 @@ function alertNow(c, a){
   switch(a.type){
     case 'priceBelow': case 'priceAbove': return cur === null ? 'Cours actuel non renseigné' : `Cours actuel : ${fmtNum(cur, 2)} ${c.currency}`;
     case 'target': { const t = num(c.fields.personnelle.prixAchatCible); return t === null ? "Renseignez le prix d'achat cible (section Décision)" : `Cours actuel : ${cur === null ? '—' : fmtNum(cur, 2) + ' ' + c.currency} · cible : ${fmtNum(t, 2)} ${c.currency}`; }
-    case 'safety': { const e = computeEcart(c, 'valeurIntrinseque'); return e === null ? 'Renseignez le prix actuel et la valeur intrinsèque' : `Marge de sécurité actuelle : ${fmtNum(-e, 1)} %`; }
+    case 'safety': { const e = computeEcart(c, 'valeurIntrinseque'); return e === null ? "Renseignez le prix actuel et les données du DCF (Free Cash Flow, dette nette, nombre d'actions)" : `Marge de sécurité actuelle : ${fmtNum(-e, 1)} %`; }
     case 'scoreAbove': { const s = computeGlobalScore(c); return s === null ? 'Score pas encore calculable' : `Score actuel : ${fmtNum(s, 0)}/100`; }
     default: { const m = positionMetrics(c); return (m && m.gainPct !== null && m.gainPct !== undefined) ? `Résultat actuel : ${m.gainPct >= 0 ? '+' : ''}${fmtNum(m.gainPct, 1)} %` : "Aucune position avec cours et prix d'achat"; }
   }
@@ -10897,7 +10875,7 @@ function buildCompanyKpis(c){
   const e = computeEcart(c, 'valeurIntrinseque');
   const pct1 = x => fmtNum(Math.abs(x), 1) + ' %';
   let priceSub, priceColor = 'var(--accent)';
-  if(e === null) priceSub = '<span>Valeur intrinsèque à saisir</span>';
+  if(e === null) priceSub = '<span>Valeur intrinsèque non calculable</span>';
   else if(e > 0.05){ priceColor = 'var(--red)'; priceSub = `<b style="color:var(--red)">Surévaluation de ${pct1(e)}</b><br>par rapport à la valeur intrinsèque`; }
   else if(e < -0.05){ priceColor = 'var(--green)'; priceSub = `<b style="color:var(--green)">Sous-évaluation de ${pct1(e)}</b><br>par rapport à la valeur intrinsèque`; }
   else priceSub = `<b>Prix proche de la valeur</b><br>intrinsèque`;
@@ -12353,7 +12331,7 @@ function compareTableHtml(list, opts){
   };
   const row = (label, cells, best, cls, col) => `<tr class="${(cls || '') + hid()}"${dcs()} style="--sec-c:${col || curCol}"><th scope="row">${label}</th>${cells.map((h, i) => `<td${i === best ? ' class="cmp-best"' : ''}>${h}</td>`).join('')}</tr>`;
   const cmpCols = cmpCompanyColors(cs.length);
-  const money = (c, v) => (v === undefined || v === null || String(v).trim() === '') ? '—' : `${escapeHtml(String(v))} ${c.currency}`;
+  const money = (c, v) => (v === undefined || v === null || String(v).trim() === '') ? '—' : `${escapeHtml(typeof v === 'number' ? fmtNum(v, 2) : String(v))} ${c.currency}`;
   const num1 = (v, d) => v === null || v === undefined ? '—' : fmtNum(v, d);
   const textRow = (label, getter) => {
     const cells = cs.map(c => { const h = getter(c); return richToPlain(h) ? `<div class="cmp-rich">${sanitizeRichHtml(h)}</div>` : '—'; });
@@ -12388,15 +12366,15 @@ function compareTableHtml(list, opts){
   body += row('PE forward', pesF.map(v => (v !== null && v <= 0) ? 'n.s.' : num1(v, 1)), bestIdx(lowPe(pesF)));
   body += row('Price / Sales', cs.map(c => { const v = computePriceSales(c); return v === null ? '—' : fmtNum(v, 2); }), -1);
   // Le PEG n'est plus ici : il figure dans le « Score détaillé » (axe Valorisation), avec tous les autres indicateurs qui entrent dans la note
-  body += row('Valeur intrinsèque', cs.map(c => money(c, c.fields.valorisation.valeurIntrinseque)), -1);
+  body += row('Valeur intrinsèque', cs.map(c => money(c, dcfTarget(c, 'valeurIntrinseque'))), -1);
   // Bear / Bull : valeur saisie suivie de l'écart estimé par rapport au prix actuel (vert si au-dessus du cours, rouge si en dessous)
   const bbCell = (c, label, v) => {
     if(v === undefined || v === null || String(v).trim() === '') return `<div class="cmp-bb"><span class="cmp-bb-l">${label}</span> —</div>`;
-    const price = num(c.fields.valorisation.prixActuel), val = num(v);
+    const price = num(c.fields.valorisation.prixActuel), val = typeof v === 'number' ? v : num(v);
     const pct = (price && price > 0 && val !== null) ? (val / price - 1) * 100 : null;
-    return `<div class="cmp-bb"><span class="cmp-bb-l">${label}</span> ${escapeHtml(String(v))} ${c.currency}${pct === null ? '' : ` <span class="cmp-pct" style="color:${pct >= 0 ? 'var(--green)' : 'var(--red)'}">${pct >= 0 ? '+' : ''}${fmtNum(pct, 1)} %</span>`}</div>`;
+    return `<div class="cmp-bb"><span class="cmp-bb-l">${label}</span> ${escapeHtml(typeof v === 'number' ? fmtNum(v, 2) : String(v))} ${c.currency}${pct === null ? '' : ` <span class="cmp-pct" style="color:${pct >= 0 ? 'var(--green)' : 'var(--red)'}">${pct >= 0 ? '+' : ''}${fmtNum(pct, 1)} %</span>`}</div>`;
   };
-  body += row('Bear / Bull case', cs.map(c => bbCell(c, 'Bear', c.fields.valorisation.bearCase) + bbCell(c, 'Bull', c.fields.valorisation.bullCase)), -1);
+  body += row('Bear / Bull case', cs.map(c => bbCell(c, 'Bear', dcfTarget(c, 'bearCase')) + bbCell(c, 'Bull', dcfTarget(c, 'bullCase'))), -1);
   // L'objectif Wall Street (moyen) n'est plus ici : il figure dans le « Score détaillé » (axe Valorisation, « Potentiel Wall Street »)
   body += row('Rendement du dividende', cs.map(c => { const y = computeDividendYield(c); return y === null ? '—' : `${fmtNum(y, 2)} %`; }), -1);
   if(cs.some(c => positionMetrics(c))){
@@ -12812,7 +12790,7 @@ const LEARN_CHAPTERS = [
       LUL([
         `<strong>Le site web de l'entreprise elle-même</strong> : prenez toujours le temps de le visiter, on y trouve souvent des informations très pertinentes. Sa rubrique « Investisseurs » (ou « Relations investisseurs ») regroupe les rapports annuels et trimestriels, les présentations aux actionnaires, le calendrier des résultats et des explications claires sur l'activité. Le rapport annuel est la source la plus fiable (« 10-K » pour les sociétés américaines, « document d'enregistrement universel » en France).`,
         `<strong>TradingView</strong> (<a href="https://www.tradingview.com" target="_blank" rel="noopener noreferrer">tradingview.com</a>) : graphiques de cours et nombreuses données financières (résultats, bilan, flux de trésorerie, ratios). Sa version gratuite est déjà assez complète.`,
-        `<strong>Alpha Spread</strong> (<a href="https://www.alphaspread.com" target="_blank" rel="noopener noreferrer">alphaspread.com</a>) : données financières et estimations de valorisation. C'est là que l'on relève la <strong>valeur intrinsèque</strong> d'une entreprise (l'application ne la calcule pas). Sa version gratuite est elle aussi assez complète.`,
+        `<strong>Alpha Spread</strong> (<a href="https://www.alphaspread.com" target="_blank" rel="noopener noreferrer">alphaspread.com</a>) : données financières et estimations de valorisation. Utile pour recouper la <strong>valeur intrinsèque</strong> calculée par l'application. Sa version gratuite est elle aussi assez complète.`,
       `<strong>Yahoo Finance</strong> (<a href="https://finance.yahoo.com" target="_blank" rel="noopener noreferrer">finance.yahoo.com</a>) : gratuit et très complet (résultats, bilan, flux de trésorerie, ratios). C'est aussi l'endroit où trouver la <strong>position short</strong> et le <strong>ratio de vente à découvert</strong>, souvent absents de TradingView et d'Alpha Spread : ouvrez la page de l'action, puis l'onglet « Statistiques » (Statistics), rubrique « Informations sur les actions » (Share Statistics), et relevez « Short % of Float » (position short) et « Short Ratio » (ratio de vente à découvert).`,
         `<strong>Les communiqués de résultats trimestriels</strong>, publiés sur le site de l'entreprise, pour les chiffres les plus récents.`,
       ]),
@@ -12857,8 +12835,8 @@ const LEARN_CHAPTERS = [
       LP(`<strong>Objectif</strong> : juger si l'entreprise peut encore grandir. Décrivez la croissance de son marché, sa part de marché, son paysage concurrentiel, ses innovations, sa diversification, ses catalyseurs (événements qui pourraient faire monter l'action) et ses risques. Chiffrez enfin la croissance attendue du chiffre d'affaires sur 3 ans.`),
       LTIP('astuce', `Une bonne croissance passée n'est pas une garantie : demandez-vous toujours ce qui pourrait la freiner.`),
       LH(`Section 4, Valorisation`),
-      LP(`<strong>Objectif</strong> : savoir si le prix demandé est justifié. Renseignez le cours (automatique si possible), le bénéfice par action actuel et estimé, le PE du secteur et la croissance estimée du bénéfice. L'application en déduit le PE, le PEG et l'écart avec les estimations de valeur que vous saisissez (valeur intrinsèque, avec un Bear case et un Bull case si vous le souhaitez). Les prévisions des analystes de Wall Street s'affichent dans un graphique en éventail.`),
-      LTIP('astuce', `L'application ne calcule pas la valeur intrinsèque : elle dépend d'hypothèses sur l'avenir qui changent beaucoup le résultat. Relevez-la sur <a href="https://www.alphaspread.com" target="_blank" rel="noopener noreferrer">Alpha Spread</a> (page de l'entreprise, valeur intrinsèque ou « Intrinsic Value »), ou saisissez votre propre estimation. Alpha Spread propose en général aussi un scénario pessimiste et un scénario optimiste, que vous pouvez reprendre dans Bear case et Bull case.`),
+      LP(`<strong>Objectif</strong> : savoir si le prix demandé est justifié. Renseignez le cours (automatique si possible), le bénéfice par action actuel et estimé, le PE du secteur et la croissance estimée du bénéfice. L'application en déduit le PE et le PEG, et calcule elle-même une valeur intrinsèque (méthode DCF, avec un scénario pessimiste et un scénario optimiste) pour la comparer au cours. Les prévisions des analystes de Wall Street s'affichent dans un graphique en éventail.`),
+      LTIP('astuce', `La valeur intrinsèque est calculée par l'application avec la méthode DCF : elle n'a besoin que du Free Cash Flow, de la dette nette et du nombre d'actions (Free Float + Closely Held), déjà dans la fiche, et ses hypothèses (croissance de l'EPS, taux de 9 %) sont fixes et expliquées dans l'infobulle. Pour recouper, vous pouvez la comparer à celle d'un site comme Alpha Spread.`),
       LTIP('astuce', `Le PE sectoriel n'est pas toujours facile à trouver directement. Deux pistes : <a href="https://stockanalysis.com" target="_blank" rel="noopener noreferrer">stockanalysis.com</a> propose des pages par industrie avec une moyenne déjà calculée ; le tableau sectoriel de <a href="https://pages.stern.nyu.edu/~adamodar/" target="_blank" rel="noopener noreferrer">Damodaran (NYU Stern)</a> est la référence académique, en anglais.`),
       LH(`Section 5, Décision`),
       LP(`<strong>Objectif</strong> : trancher, par écrit. Cochez la checklist, listez points forts et points faibles, rédigez votre thèse d'investissement (les raisons pour lesquelles vous investissez et ce qui vous ferait changer d'avis), notez votre conviction et fixez un prix d'achat cible.`),
@@ -13050,15 +13028,14 @@ const LEARN_INDICATORS = {
   peSectoriel: { how:`Le PE moyen du secteur, à saisir pour comparer l'entreprise à ses concurrentes.`, warn:`Pas toujours facile à trouver directement. Deux pistes : <a href="https://stockanalysis.com" target="_blank" rel="noopener noreferrer">stockanalysis.com</a>, qui propose des pages par industrie avec une moyenne déjà calculée, ou le tableau sectoriel de <a href="https://pages.stern.nyu.edu/~adamodar/" target="_blank" rel="noopener noreferrer">Damodaran (NYU Stern)</a>, la référence académique, mise à jour régulièrement mais en anglais.` },
   peRelatifSecteur: { how:`PE de l'entreprise ÷ PE du secteur. Inférieur à 1, elle est moins chère que son secteur ; supérieur à 1, plus chère.`, ex:`PE de 25 et PE sectoriel de 20 : 1,25, soit 25 % plus cher que le secteur.` },
   peHistorique: { how:`Le PE moyen de l'entreprise sur ses 5 dernières années. Il sert de repère : une entreprise se négocie souvent autour du même PE au fil du temps. Saisissez un seul chiffre : la moyenne des 5 PE annuels.`, ex:`PE annuels de 20,7 / 36,3 / 37,7 / 35 / 26,4 : leur moyenne est de 31,2, saisissez 31,2.`, warn:`Où le trouver (gratuit) : sur stockanalysis.com, ouvrez la page de l'action, puis « Financials », « Ratios » (en annuel, « Annual »). La ligne « PE Ratio » donne un PE par année : additionnez les 5 dernières colonnes (sans « Current ») et divisez par 5. Une moyenne n'a de sens que si l'entreprise a un bénéfice positif depuis 5 ans.` },
-  dcfCentral: { how:`On part du Free Cash Flow actuel et on le fait croître sur 10 ans : un premier taux pour les années 1 à 5, la moitié pour les années 6 à 10. Chaque année est ramenée à sa valeur d'aujourd'hui avec le taux d'actualisation, on ajoute une valeur terminale (croissance perpétuelle de 2,5 %), on retire la dette nette et on divise par le nombre d'actions. Les scénarios pessimiste (croissance × 0,6, taux + 1 point) et optimiste (croissance × 1,4, taux − 1 point) encadrent le central.`, ex:`FCF de 10 Md, croissance de 10 % puis 5 %, taux de 9 %, croissance perpétuelle de 2,5 %, dette nette de 20 Md et 1 Md d'actions : environ 215 par action.`, warn:`Très sensible aux hypothèses : un taux plus bas ou une croissance plus forte font monter la valeur très vite. Ne convient pas à une entreprise dont le FCF est négatif ou nul, ni aux banques, assureurs et holdings : privilégiez alors les multiples (PE, cours / valeur comptable). C'est un repère : il n'entre pas dans le score, et la valeur intrinsèque saisie plus haut reste la référence.` },
   peRelatifHisto: { how:`Le PE actuel divisé par le PE moyen des 5 dernières années. Inférieur à 1, l'entreprise est moins chère qu'à son habitude ; supérieur à 1, plus chère.`, ex:`PE actuel de 25 et PE moyen sur 5 ans de 31 : 0,81, soit 19 % moins cher que d'habitude.`, warn:`Affichage seulement, il n'entre pas dans le score. Un PE historique élevé peut venir d'années de très forte croissance qui ne se reproduiront pas : « moins cher que d'habitude » ne veut pas dire « bon marché ».` },
   priceSales: { how:`La capitalisation boursière divisée par le chiffre d'affaires : combien vous payez pour 1 € (ou 1 $) de ventes. Calculé automatiquement à partir du Market Cap et du chiffre d'affaires déjà saisis.`, ex:`Market Cap de 300 Md$ et chiffre d'affaires de 60 Md$ : 5, vous payez 5 $ pour 1 $ de ventes.`, warn:`Pas de couleur ni de score : la norme dépend du secteur (un logiciel à 10 est courant, un distributeur à 10 serait très cher). Utile surtout pour les entreprises sans bénéfice, où le PE ne sert à rien. Ne le comparez qu'à des entreprises du même secteur.` },
   croissanceEstimeeEps: { how:`Le rythme de croissance annuel (CAGR) attendu du bénéfice par action sur 3 ans. Vous saisissez ce taux annuel, la croissance totale sur 3 ans se calcule toute seule. Le PEG est le PE divisé par ce CAGR.`, ex:`Un bénéfice par action attendu en hausse de 50 % au total sur 3 ans correspond à un CAGR d'environ 14,5 % par an : c'est 14,5 que vous saisissez, pas 50.` },
   rendementFcf: { how:`Le cash réel (FCF) que l'entreprise dégage en un an, divisé par sa capitalisation boursière : combien de cash vous rapporterait chaque année l'entreprise entière si vous l'achetiez au prix du marché. Calculé automatiquement à partir du FCF et du Market Cap déjà saisis.`, ex:`FCF de 5 Md pour une capitalisation de 100 Md : rendement du FCF de 5 %.`, warn:`Une entreprise en forte croissance qui réinvestit beaucoup affiche un rendement faible sans que ce soit mauvais : il avantage surtout les entreprises matures. Un FCF exceptionnel (ou très bas) sur une seule année fausse aussi le chiffre. Gardez la même période (TTM) pour le FCF et les autres chiffres.` },
   peg: { how:`Le PE divisé par la croissance des bénéfices (en %). Il permet de savoir si l'on paie cher ou non la croissance.`, ex:`PE de 20 et croissance de 15 % : PEG de 1,33.`, warn:`Le PEG dépend d'une prévision de croissance : plus elle est incertaine, moins le PEG est fiable.` },
-  bearCase: { how:`Une deuxième estimation, plus prudente que la valeur intrinsèque : ce que vaudrait l'entreprise si les choses tournaient mal. Elle donne une idée du risque de baisse. Alpha Spread propose en général un scénario pessimiste que vous pouvez reprendre ici.`, ex:`Valeur intrinsèque de 125 $, Bear case de 90 $ : si les hypothèses optimistes ne se réalisent pas, la valeur pourrait être bien plus basse.`, warn:`Ce n'est pas une prévision de krach, juste un scénario prudent parmi d'autres.` },
-  bullCase: { how:`Une troisième estimation, plus optimiste que la valeur intrinsèque : ce que vaudrait l'entreprise si tout se passait bien. Elle donne une idée du potentiel de hausse. Alpha Spread propose en général un scénario optimiste que vous pouvez reprendre ici.`, ex:`Valeur intrinsèque de 125 $, Bull case de 170 $ : c'est le potentiel si la croissance dépasse vos attentes.`, warn:`À utiliser avec prudence : un écart trop grand entre Bear et Bull signale une entreprise difficile à évaluer.` },
-  valeurIntrinseque: { how:`L'estimation de ce que vaut réellement une action, indépendamment du cours du jour. Elle sert de référence pour la marge de sécurité. L'application ne la calcule pas : la valeur se relève sur <a href="https://www.alphaspread.com" target="_blank" rel="noopener noreferrer">Alpha Spread</a> (page de l'entreprise, valeur intrinsèque ou « Intrinsic Value »), ou vous saisissez votre propre estimation.`, ex:`Valeur estimée de 125 $ pour un cours de 100 $ : sous-évaluation de 20 % ((125 − 100) ÷ 125). Valeur de 100 $ pour un cours de 150 $ : surévaluation de 33,3 % ((150 − 100) ÷ 150), le cours devrait baisser d'un tiers pour rejoindre la valeur.`, warn:`Pourquoi l'application ne la calcule pas : une valeur intrinsèque dépend d'hypothèses (croissance future, rentabilité, taux d'actualisation) qui font beaucoup varier le résultat, et une formule simple donnerait une fausse précision. Gardez le même site d'une analyse à l'autre pour pouvoir comparer, et rappelez-vous que ce n'est qu'une estimation.` },
+  bearCase: { how:`La même valeur calculée dans un scénario prudent (croissance × 0,6, taux d'actualisation + 1 point) : ce que vaudrait l'entreprise si les choses tournaient moins bien. Elle donne une idée du risque de baisse.`, ex:`Valeur intrinsèque de 215 $, Bear case de 141 $ : si la croissance déçoit, la valeur serait plus basse.`, warn:`Ce n'est pas une prévision de krach, juste un scénario prudent parmi d'autres.` },
+  bullCase: { how:`La même valeur calculée dans un scénario favorable (croissance × 1,4, taux d'actualisation − 1 point) : ce que vaudrait l'entreprise si tout se passait bien. Elle donne une idée du potentiel de hausse.`, ex:`Valeur intrinsèque de 215 $, Bull case de 336 $ : c'est le potentiel si la croissance dépasse les attentes.`, warn:`À utiliser avec prudence : un grand écart entre Bear et Bull signale une entreprise difficile à évaluer.` },
+  valeurIntrinseque: { how:`La valeur d'une action d'après ce que l'entreprise gagne réellement, calculée par l'application avec la méthode DCF. On part du Free Cash Flow (le cash dégagé chaque année) et on imagine comment il évolue sur 10 ans : il croît de la croissance estimée de l'EPS de la fiche (plafonnée à 20 %, ou 8 % si rien n'est renseigné) pendant 5 ans, puis de moitié moins pendant 5 ans. Chaque année est ramenée à sa valeur d'aujourd'hui avec un taux de 9 % (le rendement annuel exigé : un euro reçu dans un an vaut moins qu'un euro aujourd'hui). On ajoute ce que vaut l'entreprise après 10 ans (croissance de 2,5 % par an pour toujours), on retire la dette nette et on divise par le nombre d'actions (Free Float + Closely Held). Aucune saisie : tout vient de la fiche.`, ex:`FCF de 10 Md, croissance de 10 % puis 5 %, taux de 9 %, croissance perpétuelle de 2,5 %, dette nette de 20 Md et 1 Md d'actions : environ 215 par action. Cours de 150 : sous-évaluation de 30 % ((215 − 150) ÷ 215).`, warn:`Très sensible aux hypothèses : une croissance plus forte ou un taux plus bas font monter la valeur très vite. Elle n'apparaît pas si le FCF est négatif ou nul, ni si le FCF, la dette nette ou les actions manquent. Ne convient pas aux banques, assureurs et holdings. Une estimation, pas une certitude : comparez-la aux multiples (PE, PEG) et à votre jugement.` },
   beta: { how:`La sensibilité de l'action aux mouvements du marché. 1 : évolue comme le marché ; plus de 1 : plus volatile ; moins de 1 : plus stable.`, ex:`Avec un bêta de 1,3, si le marché baisse de 10 %, l'action baisse en moyenne de 13 %.` },
   positionShort: { how:`La part des actions vendues à découvert (pari à la baisse). Un pourcentage élevé signifie que beaucoup d'investisseurs parient contre l'entreprise.`, warn:`Introuvable sur TradingView et Alpha Spread : utilisez <a href="https://finance.yahoo.com" target="_blank" rel="noopener noreferrer">Yahoo Finance</a>. Ouvrez la page de l'action, onglet « Statistiques » (Statistics), rubrique « Informations sur les actions » (Share Statistics) : c'est la ligne « Short % of Float ».` },
   ratioVenteADecouvert: { how:`Le nombre de jours de volume normal nécessaires pour racheter toutes les actions vendues à découvert.`, warn:`Introuvable sur TradingView et Alpha Spread : utilisez <a href="https://finance.yahoo.com" target="_blank" rel="noopener noreferrer">Yahoo Finance</a>. Ouvrez la page de l'action, onglet « Statistiques » (Statistics), rubrique « Informations sur les actions » (Share Statistics) : c'est la ligne « Short Ratio ».` },
@@ -14820,7 +14797,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 348;
+const APP_BUILD = 349;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -15325,7 +15302,7 @@ function buildCoverCard(c){
   const name = String(c.name || 'Sans nom');
   const nfs = name.length <= 12 ? 96 : (name.length <= 20 ? 80 : (name.length <= 30 ? 64 : (name.length <= 40 ? 52 : 42)));
   const sect = idn.secteur && idn.secteur.secteur, pays = idn.paysSiege && idn.paysSiege.pays;
-  const price = parseMoney(val.prixActuel), iv = parseMoney(val.valeurIntrinseque);
+  const price = parseMoney(val.prixActuel), iv = dcfTarget(c, 'valeurIntrinseque');
   const plain = v => v === null ? '—' : fmtMoney(v, cur);
   const chips = `${idn.ticker ? `<span class="sx-chip sx-mono">${escapeHtml(idn.ticker)}</span>` : ''}${idn.cotation ? `<span class="sx-chip">${escapeHtml(idn.cotation)}</span>` : ''}${pays ? `<span class="sx-chip">${flagIcon(pays)} ${escapeHtml(pays)}</span>` : ''}${sect ? `<span class="sx-chip">${escapeHtml(sect)}</span>` : ''}`;
   // Anneau de la note
@@ -15455,7 +15432,7 @@ function buildSummaryPages(c){
 
   // ----- 4. Valorisation -----
   const pe = computePeActuel(c), peF = computePeForward(c), peg = computePeg(c), peRel = computePeRelatif(c), rFcf = computeRendementFcf(c), beta = num(val.beta), pshort = num(val.positionShort);
-  const bear = parseMoney(val.bearCase), bull = parseMoney(val.bullCase), iv = parseMoney(val.valeurIntrinseque), peSect = num(val.peSectoriel);
+  const bear = dcfTarget(c, 'bearCase'), bull = dcfTarget(c, 'bullCase'), iv = dcfTarget(c, 'valeurIntrinseque'), peSect = num(val.peSectoriel);
   const vsPrice = v => price === null || price <= 0 || v === null ? '' : (v / price - 1 >= 0 ? '+' : '−') + fmtNum(Math.abs(v / price - 1) * 100, 0) + '&nbsp;%';
   const vsColor = v => price === null || price <= 0 || v === null ? '#c3cee5' : (v >= price ? good : bad);
   const ws = computeWallStreetTargets(c);
@@ -16270,12 +16247,11 @@ function renderInner(){
         return;
       }
       if(field.type === 'computed-dcf'){
-        const cell = dcfCell(c, field.scenario);
+        const cell = dcfCell(c, field.key);
         html += `<div class="field-row"><div class="field-label" data-tooltip="${fieldDescTooltip(field.key)}">${field.label}</div>
-          <div class="field-value"><div class="value-with-ecart"><span class="computed" id="computed-${section.key}-${field.key}" data-tooltip="${cell.tip}">${escapeHtml(cell.text)}</span><span class="ecart-slot" id="dcf-slot-${field.key}">${cell.slot}</span></div></div></div>`;
+          <div class="field-value"><div class="value-with-ecart"><span class="computed" id="computed-${section.key}-${field.key}" data-tooltip="${cell.tip}">${escapeHtml(cell.text)}</span><span class="ecart-slot" id="ecart-${section.key}-${field.key}" data-tooltip="${cell.slotTip}">${cell.slot}</span></div></div></div>`;
         return;
-      }
-      if(field.type === 'computed-pe-visual'){
+      }      if(field.type === 'computed-pe-visual'){
         html += `<div class="field-row"><div class="pev" id="peVisual">${peVisualHtml(c)}</div></div>`;
         return;
       }
@@ -16710,7 +16686,6 @@ function renderInner(){
   bindReportDone(document.getElementById('reportNote'));
   bindAlertsBlock();
   bindReportHistory();
-  refreshDcf(getActive());
   bindReportDone(document.getElementById('company-meta'));
   refreshUpdatePanel();
 
