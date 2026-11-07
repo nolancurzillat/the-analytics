@@ -2864,6 +2864,45 @@ tr:hover .ct-del-btn, .ct-del-btn:focus-visible{ opacity:1; }
 .pev-down b{ color:var(--green); }
 .pev-flat b{ color:var(--ink); }
 .pev-leg{ margin-top:12px; font-size:12.5px; color:var(--ink-soft); }
+/* Valeur intrinsèque par DCF (2026-11-07) : hypothèses modifiables, trois scénarios côte à côte */
+.dcf-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:14px 16px; margin-top:16px; }
+.dcf-f{ display:flex; flex-direction:column; gap:6px; min-width:0; }
+.dcf-fl{ font-size:13.5px; font-weight:600; color:var(--ink); line-height:1.3; }
+.dcf-fi{ display:flex; align-items:center; gap:6px; }
+.dcf-fi input{ width:100%; min-width:0; padding:9px 12px; font-family:var(--font-ui); font-size:var(--fs-value); line-height:1.4; background:var(--field); border:1px solid var(--border); border-radius:9px; color:var(--ink); }
+.dcf-fi input:hover{ border-color:var(--border-strong); }
+.dcf-fi input:focus{ outline:none; border-color:var(--blue); box-shadow:0 0 0 3px var(--ring); }
+.dcf-fi input.bad{ border-color:var(--red); }
+.dcf-fi input::placeholder{ color:var(--ink-soft); opacity:.7; }
+.dcf-chk{ display:flex; align-items:center; gap:9px; margin-top:14px; font-size:14px; color:var(--ink); cursor:pointer; width:fit-content; }
+.dcf-chk input{ width:17px; height:17px; margin:0; accent-color:var(--accent); cursor:pointer; }
+.dcf-hint{ margin-top:10px; }
+#dcfOut{ margin-top:16px; }
+.dcf-scs{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:14px; }
+.dcf-card{ --tone:var(--border-strong); display:flex; flex-direction:column; gap:6px; min-width:0; padding:16px 18px 14px; border:1px solid var(--border); border-top:3px solid var(--tone); border-radius:12px; background:var(--card); }
+.dcf-card.dcf-up{ --tone:var(--green); }
+.dcf-card.dcf-down{ --tone:var(--red); }
+.dcf-cn{ font-size:13px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-soft); }
+.dcf-vl{ font-size:13px; color:var(--ink-soft); }
+.dcf-val{ font-family:var(--font-serif); font-size:30px; font-weight:700; line-height:1.15; font-variant-numeric:tabular-nums; color:var(--tone); }
+.dcf-val.dcf-na{ color:var(--ink-soft); }
+.dcf-nat{ font-size:13px; line-height:1.4; color:var(--ink-soft); }
+.dcf-mgr{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; font-size:14px; color:var(--ink-soft); }
+.dcf-mg{ font-size:18px; font-variant-numeric:tabular-nums; color:var(--tone); }
+.dcf-hyp{ display:grid; grid-template-columns:1fr auto; gap:4px 12px; margin-top:8px; padding-top:10px; border-top:1px solid var(--border); font-size:13px; color:var(--ink-soft); }
+.dcf-hyp b{ font-weight:600; color:var(--ink); font-variant-numeric:tabular-nums; text-align:right; }
+.dcf-src{ display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 8px; margin-top:14px; font-size:13.5px; color:var(--ink-soft); }
+.dcf-src b{ margin-right:14px; font-weight:600; color:var(--ink); font-variant-numeric:tabular-nums; }
+.dcf-det{ margin-top:4px; }
+.dcf-msg{ padding:14px 16px; border:1px solid var(--border); border-radius:12px; background:var(--card); font-size:14px; line-height:1.55; color:var(--ink-soft); }
+.dcf-msg b{ color:var(--ink); }
+.dcf-msg.dcf-warn{ border-color:color-mix(in srgb, var(--red) 45%, var(--border)); }
+.dcf-msg ul{ margin:8px 0 0 0; padding-left:20px; }
+@media (max-width:760px){
+  .dcf-scs{ grid-template-columns:1fr; }
+  .dcf-val{ font-size:26px; }
+}
+
 @media (max-width:760px){ .field-row .pev{ padding:16px 14px; } .pev-r{ grid-template-columns:minmax(0,1fr) auto; gap:4px 10px; } .pev-bt{ grid-column:1 / -1; order:3; } .pev-rd{ grid-column:1 / -1; order:4; } }.shares-row{ display:flex; align-items:center; gap:24px 44px; flex-wrap:wrap; margin-top:16px; }
 .shares-viz{ flex:0 1 auto; min-width:0; }
 .sh-owners{ flex:0 0 auto; display:flex; flex-direction:column; gap:16px; margin-left:auto; padding-left:36px; border-left:1px solid var(--border); }
@@ -3922,6 +3961,7 @@ const FIELD_DESCRIPTIONS = {
   detenuInstitutions: "La part du capital détenue par des investisseurs institutionnels (fonds, assurances, banques...), en %. Beaucoup d'institutions : un titre suivi et liquide, mais aussi plus nerveux si elles vendent en même temps. Sur Yahoo Finance : onglet Statistiques, ligne « % Held by Institutions ».",
   peHistorique: "Le PE moyen de l'entreprise sur ses 5 dernières années (un seul chiffre). À calculer à partir des 5 PE annuels de stockanalysis.com : page de l'action, Financials, Ratios, ligne « PE Ratio ».",
   peRelatifHisto: "Le PE actuel comparé à son propre PE moyen sur 5 ans : en dessous de 1, l'entreprise est moins chère qu'à son habitude ; au-dessus, plus chère. Calculé automatiquement.",
+  dcf: "Une estimation de ce que vaut l'entreprise d'après le cash qu'elle devrait générer : son Free Cash Flow est projeté sur 10 ans, ramené à sa valeur d'aujourd'hui avec le taux d'actualisation, complété d'une valeur terminale, puis on retire la dette nette et on divise par le nombre d'actions. Trois scénarios (pessimiste, central, optimiste) sont calculés. Très sensible aux hypothèses : un repère seulement, sans effet sur le score.",
   priceSales: "La capitalisation boursière divisée par le chiffre d'affaires : combien vous payez pour 1 € (ou 1 $) de ventes. Utile quand l'entreprise n'a pas (encore) de bénéfice. Calculé automatiquement, sans couleur : la norme dépend beaucoup du secteur.",
   innovationTech: "Les innovations technologiques qui soutiennent la croissance future.",
   croissanceAttendueCA: "La croissance du chiffre d'affaires anticipée par les analystes sur 3 ans.",
@@ -4192,6 +4232,7 @@ const SECTIONS = [
       {key:'valeurIntrinseque', label:'Valeur intrinsèque', type:'number-ecart', money:true, span:6, group:'Valeur estimée'},
       {key:'bearCase', label:'Bear case (pessimiste)', type:'number-ecart', money:true, span:3},
       {key:'bullCase', label:'Bull case (optimiste)', type:'number-ecart', money:true, span:3},
+      {key:'dcf', label:'Valeur intrinsèque par DCF', type:'computed-dcf', span:12},
       {key:'beta', label:'Beta', type:'number', suffix:'β', group:'Risque de marché'},
       {key:'positionShort', label:'Position short', type:'text', percent:true},
       {key:'ratioVenteADecouvert', label:'Ratio de vente à découvert', type:'text'},
@@ -5236,6 +5277,8 @@ function migrateCompany(c){
   // Garantit un tableau de champs personnalisés par section (manquant dans certaines très anciennes sauvegardes)
   if(!c.customFields || typeof c.customFields !== 'object') c.customFields = {};
   SECTIONS.forEach(s => { if(!Array.isArray(c.customFields[s.key])) c.customFields[s.key] = []; });
+  // Hypothèses du DCF (valorisation.dcf) : un objet ou rien ; toute autre forme est ignorée (absent = valeurs par défaut)
+  if(c.fields.valorisation && c.fields.valorisation.dcf !== undefined && (!c.fields.valorisation.dcf || typeof c.fields.valorisation.dcf !== 'object' || Array.isArray(c.fields.valorisation.dcf))) delete c.fields.valorisation.dcf;
   const idn = c.fields.identite || (c.fields.identite = {});
   if(idn.moat !== undefined && idn.moatDescription === undefined){
     idn.moatDescription = idn.moat;
@@ -6831,6 +6874,7 @@ function refreshAllComputed(){
   setText('computed-valorisation-peRelatifHisto', fmtRatioPos(computePeRelatifHisto(c)), tipPeRelatifHisto(c));
   const peVis = document.getElementById('peVisual');
   if(peVis) peVis.innerHTML = peVisualHtml(c);
+  refreshDcf(c);
   const skVis = document.getElementById('sankeyVisual');
   if(skVis) skVis.innerHTML = sankeyHtml(c);
   const shViz = document.getElementById('sharesViz');
@@ -7554,6 +7598,148 @@ function computeEcart(c, targetKey){
   if(diff > 0) return prix > 0 ? diff / prix * 100 : null;
   return diff / target * 100;
 }
+// ---------- Valeur intrinsèque par DCF (2026-11-07, demande de l'auteur) ----------
+// Calcul des flux de trésorerie actualisés. La logique de calcul (`dcfCompute`, `dcfScenarioParams`, `dcfScenarios`) est PURE : elle ne lit ni la fiche ni la page, elle reçoit
+// des nombres et rend un résultat, donc elle se teste et se réutilise seule. Les taux sont des DÉCIMALES (0,10 = 10 %). `dcfData` lit la fiche, `dcfOutHtml` dessine le résultat.
+// Ce n'est qu'un repère : il n'entre PAS dans le score, et la « Valeur intrinsèque » saisie à la main reste la référence de la marge de sécurité, des alertes et du Portefeuille.
+const DCF_DEFAULT_G1 = 8, DCF_DEFAULT_RATE = 9, DCF_DEFAULT_PERP = 2.5;   // en %, valeurs par défaut des hypothèses
+function dcfCompute(p){
+  const fin = v => typeof v === 'number' && Number.isFinite(v);
+  if(!p || !fin(p.fcf) || !fin(p.g1) || !fin(p.g2) || !fin(p.rate) || !fin(p.perp) || !fin(p.netDebt) || !fin(p.shares)) return { ok:false, code:'missing' };
+  if(p.fcf <= 0) return { ok:false, code:'fcf' };
+  if(p.shares <= 0) return { ok:false, code:'shares' };
+  if(p.rate <= p.perp) return { ok:false, code:'rate' };
+  const flows = [];
+  let f = p.fcf, sum = 0;
+  for(let n = 1; n <= 10; n++){
+    f = f * (1 + (n <= 5 ? p.g1 : p.g2));                  // années 1 à 5 : première croissance, années 6 à 10 : seconde
+    const pv = f / Math.pow(1 + p.rate, n);                 // FCF de l'année n ramené à aujourd'hui
+    flows.push({ n, fcf:f, pv });
+    sum += pv;
+  }
+  const terminal = f * (1 + p.perp) / (p.rate - p.perp);    // valeur terminale, à la fin de l'année 10
+  const pvTerminal = terminal / Math.pow(1 + p.rate, 10);
+  const enterpriseValue = sum + pvTerminal;
+  const equity = enterpriseValue - p.netDebt;               // valeur des fonds propres
+  const perShare = equity / p.shares;
+  const price = (fin(p.price) && p.price > 0) ? p.price : null;
+  return {
+    ok:true, flows, sumPv:sum, terminal, pvTerminal, enterpriseValue, equity, perShare, price,
+    margin: (price !== null && perShare > 0) ? (perShare - price) / perShare * 100 : null,   // marge de sécurité : (valeur − prix) ÷ valeur, en %
+    terminalShare: enterpriseValue > 0 ? pvTerminal / enterpriseValue * 100 : null,
+  };
+}
+// Pessimiste : croissance × 0,6 et taux + 1 point. Optimiste : croissance × 1,4 et taux − 1 point. Une croissance NÉGATIVE inverse les deux coefficients
+// (× 0,6 la rendrait moins négative, donc plus favorable : le scénario pessimiste doit rester le plus sévère).
+function dcfScenarioParams(p, kind){
+  if(kind === 'central') return Object.assign({}, p);
+  const pess = kind === 'pess';
+  const scale = g => (pess === (g >= 0)) ? g * 0.6 : g * 1.4;
+  return Object.assign({}, p, { g1:scale(p.g1), g2:scale(p.g2), rate:p.rate + (pess ? 0.01 : -0.01) });
+}
+function dcfScenarios(p){
+  return ['pess', 'central', 'opt'].map(kind => { const params = dcfScenarioParams(p, kind); return { kind, params, result:dcfCompute(params) }; });
+}
+// Lecture de la fiche : données de base (FCF et dette nette de Financier, prix actuel de Valorisation, nombre d'actions diluées saisi ici) et hypothèses
+// (`valorisation.dcf`, chaînes comme les autres champs ; une case vide = valeur par défaut). Les pourcentages sont rendus en % (8 = 8 %).
+function dcfData(c){
+  const val = c.fields.valorisation || {}, fin = c.fields.financier || {}, cro = c.fields.croissance || {};
+  const d = (val.dcf && typeof val.dcf === 'object' && !Array.isArray(val.dcf)) ? val.dcf : {};
+  const typed = k => { const raw = String(d[k] === undefined || d[k] === null ? '' : d[k]).trim(); if(raw === '') return { v:null, bad:false }; const n = num(raw); return { v:n, bad:n === null }; };
+  const est = num(val.croissanceEstimeeEps && val.croissanceEstimeeEps.cagr);
+  const est2 = num(cro.croissanceAttendueBenef && cro.croissanceAttendueBenef.cagr);
+  const g1Def = est !== null ? est : (est2 !== null ? est2 : DCF_DEFAULT_G1);
+  const g1t = typed('g1'), g2t = typed('g2'), rt = typed('taux'), pt = typed('perp');
+  const g1 = g1t.v !== null ? g1t.v : g1Def;
+  const g2 = g2t.v !== null ? g2t.v : g1 / 2;
+  const rate = rt.v !== null ? rt.v : DCF_DEFAULT_RATE;
+  const perp = pt.v !== null ? pt.v : DCF_DEFAULT_PERP;
+  const nb = fin.nbActions || {};
+  const ff = parseMoney(nb.freeFloat), ch = parseMoney(nb.closelyHeld);
+  const sharesAuto = (ff !== null && ch !== null && ff + ch > 0) ? ff + ch : null;   // repli : total des actions du bloc « Nb d'actions »
+  const rawShares = String(d.actions === undefined || d.actions === null ? '' : d.actions).trim();
+  const sharesTyped = rawShares === '' ? null : parseMoney(rawShares);
+  const sharesBad = rawShares !== '' && (sharesTyped === null || sharesTyped <= 0);
+  const shares = (sharesTyped !== null && sharesTyped > 0) ? sharesTyped : sharesAuto;
+  const fcf = parseMoney(fin.fcf), netDebt = parseMoney(fin.detteNette), price = num(val.prixActuel);
+  const missing = [];
+  if(fcf === null) missing.push({ label:'Free Cash Flow', where:'(section Financier)' });
+  if(netDebt === null) missing.push({ label:'Dette nette', where:'(section Financier, peut être négative)' });
+  if(shares === null) missing.push({ label:"Nombre d'actions diluées", where:'(à saisir ci-dessus)' });
+  if(price === null || price <= 0) missing.push({ label:'Prix actuel', where:'(section Valorisation)' });
+  return {
+    financial: d.financiere === true,
+    fcf, netDebt, shares, sharesAuto, price, g1, g2, rate, perp, missing,
+    ph: { g1:fmtNum(g1Def, 2), g2:fmtNum(g1 / 2, 2), taux:fmtNum(DCF_DEFAULT_RATE, 2), perp:fmtNum(DCF_DEFAULT_PERP, 2), actions: sharesAuto !== null ? compactShares(sharesAuto) : 'ex. 1 Md' },
+    bad: { g1:g1t.bad, g2:g2t.bad, taux:rt.bad, perp:pt.bad, actions:sharesBad },
+  };
+}
+function dcfOutHtml(c){
+  const D = dcfData(c), cur = c.currency;
+  const msg = (cls, inner) => `<div class="dcf-msg ${cls}">${inner}</div>`;
+  if(D.financial) return msg('', `<b>Le DCF est désactivé pour cette entreprise.</b> <span>Pour une banque, un assureur ou une holding, les flux de trésorerie ne se lisent pas comme ceux d'une entreprise ordinaire. Privilégiez les multiples : PER, cours / valeur comptable.</span>`);
+  if(D.missing.length) return msg('', `<b>Données manquantes pour calculer le DCF :</b><ul>${D.missing.map(m => `<li><b>${escapeHtml(m.label)}</b> <span>${escapeHtml(m.where)}</span></li>`).join('')}</ul>`);
+  if(D.fcf <= 0) return msg('dcf-warn', `<b>Le DCF n'est pas adapté à cette entreprise.</b> <span>Son Free Cash Flow est négatif ou nul : il n'y a pas de flux positif à projeter.</span>`);
+  if(D.rate <= D.perp) return msg('dcf-warn', `<b>Hypothèses incohérentes.</b> <span>Le taux d'actualisation doit être supérieur à la croissance perpétuelle : sinon la valeur terminale n'a pas de sens.</span>`);
+  const base = { fcf:D.fcf, netDebt:D.netDebt, shares:D.shares, price:D.price, g1:D.g1 / 100, g2:D.g2 / 100, rate:D.rate / 100, perp:D.perp / 100 };
+  const names = { pess:'Pessimiste', central:'Central', opt:'Optimiste' };
+  const pct = v => fmtNum(v * 100, 1) + ' %';
+  const cards = dcfScenarios(base).map(s => {
+    const r = s.result, pr = s.params;
+    const hyp = `<div class="dcf-hyp"><span>Croissance années 1 à 5</span><b>${pct(pr.g1)}</b><span>Croissance années 6 à 10</span><b>${pct(pr.g2)}</b><span>Taux d'actualisation</span><b>${pct(pr.rate)}</b></div>`;
+    if(!r.ok) return `<div class="dcf-card dcf-sc-${s.kind}"><div class="dcf-cn">${names[s.kind]}</div><div class="dcf-val dcf-na">—</div><div class="dcf-nat">Calcul impossible : le taux d'actualisation doit rester supérieur à la croissance perpétuelle.</div>${hyp}</div>`;
+    const up = r.price !== null && r.perShare > r.price;          // vert si le prix est sous la valeur intrinsèque, rouge sinon
+    const tone = up ? 'dcf-up' : 'dcf-down';
+    const mg = r.margin === null ? '—' : (r.margin > 0 ? '+' : '−') + fmtNum(Math.abs(r.margin), 1) + ' %';
+    return `<div class="dcf-card dcf-sc-${s.kind} ${tone}"><div class="dcf-cn">${names[s.kind]}</div><div class="dcf-vl">Valeur intrinsèque par action</div><div class="dcf-val">${escapeHtml(fmtMoney(r.perShare, cur))}</div><div class="dcf-mgr"><span>Marge de sécurité</span><b class="dcf-mg">${mg}</b></div>${hyp}</div>`;
+  }).join('');
+  const cen = dcfCompute(base);
+  const src = `<div class="dcf-src"><span>Free Cash Flow</span><b>${escapeHtml(compactMoney(D.fcf, cur))}</b><span>Dette nette</span><b>${escapeHtml(compactMoney(D.netDebt, cur))}</b><span>Actions diluées</span><b>${escapeHtml(compactShares(D.shares))}</b><span>Prix actuel</span><b>${escapeHtml(fmtMoney(D.price, cur))}</b></div>`;
+  const det = cen.ok ? `<div class="dcf-src dcf-det"><span>Valeur d'entreprise</span><b>${escapeHtml(compactMoney(cen.enterpriseValue, cur))}</b><span>Valeur des fonds propres</span><b>${escapeHtml(compactMoney(cen.equity, cur))}</b><span>Part de la valeur terminale</span><b>${cen.terminalShare === null ? '—' : fmtNum(cen.terminalShare, 0) + ' %'}</b></div>` : '';
+  return `<div class="dcf-scs">${cards}</div>${src}${det}<div class="pev-leg">Un DCF dépend fortement de ses hypothèses : c'est un repère, pas une prévision, et il n'entre pas dans le score. La marge de sécurité est (valeur − prix) ÷ valeur : positive quand le cours est sous la valeur.</div>`;
+}
+function dcfBoxHtml(c){
+  const val = c.fields.valorisation || {};
+  const d = (val.dcf && typeof val.dcf === 'object' && !Array.isArray(val.dcf)) ? val.dcf : {};
+  const D = dcfData(c);
+  const inp = (k, label, suffix) => `<label class="dcf-f"><span class="dcf-fl">${label}</span><span class="dcf-fi"><input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-dcf="${k}" value="${escapeHtml(String(d[k] === undefined || d[k] === null ? '' : d[k]))}" placeholder="${escapeHtml(D.ph[k])}" aria-label="${escapeHtml(label)}"${D.bad[k] ? ' class="bad"' : ''}>${suffix ? `<i class="value-suffix">${suffix}</i>` : ''}</span></label>`;
+  return `<div class="pev-h">Valeur intrinsèque par DCF</div>
+    <div class="pev-sub">Projection des flux de trésorerie (FCF) sur 10 ans, ramenés à leur valeur d'aujourd'hui. Modifiez les hypothèses : le calcul se met à jour tout de suite.</div>
+    <div class="dcf-grid">${inp('g1', 'Croissance du FCF, années 1 à 5', '%')}${inp('g2', 'Croissance du FCF, années 6 à 10', '%')}${inp('taux', "Taux d'actualisation", '%')}${inp('perp', 'Croissance perpétuelle', '%')}${inp('actions', "Nombre d'actions diluées", '')}</div>
+    <label class="dcf-chk"><input type="checkbox" data-dcf="financiere" aria-label="Entreprise financière (banque, assureur, holding)"${d.financiere === true ? ' checked' : ''}><span>Entreprise financière (banque, assureur, holding)</span></label>
+    <div class="pev-sub dcf-hint">Une case vide utilise la valeur par défaut, affichée en gris : la croissance estimée de l'EPS de la fiche (sinon 8 %) pour les années 1 à 5, la moitié pour les années 6 à 10, un taux de 9 % et une croissance perpétuelle de 2,5 %. Sans nombre d'actions saisi, le total du bloc « Nb d'actions » est utilisé.</div>
+    <div id="dcfOut">${dcfOutHtml(c)}</div>`;
+}
+// Recalcul instantané : seul le résultat (#dcfOut) et les valeurs par défaut des cases (placeholder) sont refaits, jamais les cases elles-mêmes (le focus resterait perdu).
+function refreshDcf(c){
+  const out = document.getElementById('dcfOut');
+  if(!out) return;
+  out.innerHTML = dcfOutHtml(c);
+  const D = dcfData(c);
+  document.querySelectorAll('#dcfBox input[data-dcf]').forEach(el => {
+    const k = el.dataset.dcf;
+    if(el.type === 'checkbox') return;
+    if(el.placeholder !== D.ph[k]) el.placeholder = D.ph[k];
+    el.classList.toggle('bad', !!D.bad[k]);
+  });
+}
+// Enregistrement silencieux (aucun message) avec le reste des données de l'analyse.
+function bindDcf(){
+  const box = document.getElementById('dcfBox'), c = getActive();
+  if(!box || !c) return;
+  box.querySelectorAll('input[data-dcf]').forEach(el => {
+    el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', () => {
+      const val = c.fields.valorisation;
+      if(!val.dcf || typeof val.dcf !== 'object' || Array.isArray(val.dcf)) val.dcf = {};
+      if(el.type === 'checkbox') val.dcf.financiere = el.checked;
+      else val.dcf[el.dataset.dcf] = el.value;
+      touchUpdated(c);
+      saveState();
+      refreshDcf(c);
+    });
+  });
+}
+
 function ecartMarkup(e){
   if(e === null) return `<span class="ecart-text ecart-empty">—</span>`;
   const pct = Math.abs(e).toFixed(1);
@@ -11570,6 +11756,15 @@ function cleanImportedCompany(raw){
   if(!c.customFields || typeof c.customFields !== 'object') c.customFields = {};
   SECTIONS.forEach(s => { if(!Array.isArray(c.customFields[s.key])) c.customFields[s.key] = []; });
   const val = c.fields.valorisation, pers = c.fields.personnelle;
+  // Hypothèses du DCF importées (NON fiables) : cinq textes courts et une case à cocher, rien d'autre
+  if(val.dcf !== undefined){
+    if(val.dcf && typeof val.dcf === 'object' && !Array.isArray(val.dcf)){
+      const o = {};
+      ['g1', 'g2', 'taux', 'perp', 'actions'].forEach(k => { const x = val.dcf[k]; if(typeof x === 'string') o[k] = x.slice(0, 30); else if(typeof x === 'number' && Number.isFinite(x)) o[k] = String(x); });
+      if(val.dcf.financiere === true) o.financiere = true;
+      val.dcf = o;
+    }else delete val.dcf;
+  }
   if(val.graphique && !/^data:image\/(png|jpeg|jpg|gif|webp);base64,[A-Za-z0-9+/=]+$/.test(String(val.graphique))) val.graphique = '';
   pers.conviction = parseFloat(pers.conviction) || 0;
   ['prixAchatCible'].forEach(k => { if(pers[k] !== undefined) pers[k] = String(pers[k]); });
@@ -12944,6 +13139,7 @@ const LEARN_INDICATORS = {
   peSectoriel: { how:`Le PE moyen du secteur, à saisir pour comparer l'entreprise à ses concurrentes.`, warn:`Pas toujours facile à trouver directement. Deux pistes : <a href="https://stockanalysis.com" target="_blank" rel="noopener noreferrer">stockanalysis.com</a>, qui propose des pages par industrie avec une moyenne déjà calculée, ou le tableau sectoriel de <a href="https://pages.stern.nyu.edu/~adamodar/" target="_blank" rel="noopener noreferrer">Damodaran (NYU Stern)</a>, la référence académique, mise à jour régulièrement mais en anglais.` },
   peRelatifSecteur: { how:`PE de l'entreprise ÷ PE du secteur. Inférieur à 1, elle est moins chère que son secteur ; supérieur à 1, plus chère.`, ex:`PE de 25 et PE sectoriel de 20 : 1,25, soit 25 % plus cher que le secteur.` },
   peHistorique: { how:`Le PE moyen de l'entreprise sur ses 5 dernières années. Il sert de repère : une entreprise se négocie souvent autour du même PE au fil du temps. Saisissez un seul chiffre : la moyenne des 5 PE annuels.`, ex:`PE annuels de 20,7 / 36,3 / 37,7 / 35 / 26,4 : leur moyenne est de 31,2, saisissez 31,2.`, warn:`Où le trouver (gratuit) : sur stockanalysis.com, ouvrez la page de l'action, puis « Financials », « Ratios » (en annuel, « Annual »). La ligne « PE Ratio » donne un PE par année : additionnez les 5 dernières colonnes (sans « Current ») et divisez par 5. Une moyenne n'a de sens que si l'entreprise a un bénéfice positif depuis 5 ans.` },
+  dcf: { how:`On part du Free Cash Flow actuel (12 derniers mois) et on le fait croître sur 10 ans : un premier taux pour les années 1 à 5, un second (par défaut la moitié du premier) pour les années 6 à 10. Chaque année est ramenée à sa valeur d'aujourd'hui avec le taux d'actualisation. On ajoute une valeur terminale (le FCF de l'année 10 qui continue de croître à l'infini au taux de croissance perpétuelle), on retire la dette nette, et on divise par le nombre d'actions diluées. Trois scénarios sont calculés : pessimiste (croissance × 0,6, taux + 1 point), central (vos hypothèses) et optimiste (croissance × 1,4, taux − 1 point).`, ex:`FCF de 10 Md, croissance de 10 % puis 5 %, taux de 9 %, croissance perpétuelle de 2,5 %, dette nette de 20 Md et 1 Md d'actions : environ 215 par action (valeur d'entreprise d'environ 235 Md, dont 58 % viennent de la valeur terminale).`, warn:`Très sensible aux hypothèses : un taux d'actualisation plus bas ou une croissance plus forte font monter la valeur très vite, surtout à travers la valeur terminale. Ne convient pas à une entreprise dont le FCF est négatif ou nul, ni aux banques, assureurs et holdings (cochez la case prévue : le calcul est alors désactivé). C'est un repère : il n'entre pas dans le score, et la valeur intrinsèque saisie plus haut reste la référence de la marge de sécurité.` },
   peRelatifHisto: { how:`Le PE actuel divisé par le PE moyen des 5 dernières années. Inférieur à 1, l'entreprise est moins chère qu'à son habitude ; supérieur à 1, plus chère.`, ex:`PE actuel de 25 et PE moyen sur 5 ans de 31 : 0,81, soit 19 % moins cher que d'habitude.`, warn:`Affichage seulement, il n'entre pas dans le score. Un PE historique élevé peut venir d'années de très forte croissance qui ne se reproduiront pas : « moins cher que d'habitude » ne veut pas dire « bon marché ».` },
   priceSales: { how:`La capitalisation boursière divisée par le chiffre d'affaires : combien vous payez pour 1 € (ou 1 $) de ventes. Calculé automatiquement à partir du Market Cap et du chiffre d'affaires déjà saisis.`, ex:`Market Cap de 300 Md$ et chiffre d'affaires de 60 Md$ : 5, vous payez 5 $ pour 1 $ de ventes.`, warn:`Pas de couleur ni de score : la norme dépend du secteur (un logiciel à 10 est courant, un distributeur à 10 serait très cher). Utile surtout pour les entreprises sans bénéfice, où le PE ne sert à rien. Ne le comparez qu'à des entreprises du même secteur.` },
   croissanceEstimeeEps: { how:`Le rythme de croissance annuel (CAGR) attendu du bénéfice par action sur 3 ans. Vous saisissez ce taux annuel, la croissance totale sur 3 ans se calcule toute seule. Le PEG est le PE divisé par ce CAGR.`, ex:`Un bénéfice par action attendu en hausse de 50 % au total sur 3 ans correspond à un CAGR d'environ 14,5 % par an : c'est 14,5 que vous saisissez, pas 50.` },
@@ -14713,7 +14909,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 347;
+const APP_BUILD = 348;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -16162,6 +16358,10 @@ function renderInner(){
         html += `<div class="field-row"><div class="pev skv-card" id="sankeyVisual">${sankeyHtml(c)}</div></div>`;
         return;
       }
+      if(field.type === 'computed-dcf'){
+        html += `<div class="field-row"><div class="pev dcf-box" id="dcfBox">${dcfBoxHtml(c)}</div></div>`;
+        return;
+      }
       if(field.type === 'computed-pe-visual'){
         html += `<div class="field-row"><div class="pev" id="peVisual">${peVisualHtml(c)}</div></div>`;
         return;
@@ -16597,6 +16797,7 @@ function renderInner(){
   bindReportDone(document.getElementById('reportNote'));
   bindAlertsBlock();
   bindReportHistory();
+  bindDcf();
   bindReportDone(document.getElementById('company-meta'));
   refreshUpdatePanel();
 
