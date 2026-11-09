@@ -1554,9 +1554,31 @@ body.sx-lock{ overflow:hidden; }
 .sx-dleg{ font-size:14px; gap:5px; }
 .sx-foot{ margin-top:12px; padding-top:10px; }
 /* 2026-10-17 : données centrées dans les cases, chiffres plus grands sans agrandir les cases, 3 cases d'objectifs, secteur et clients plus lisibles */
-.sector-select-wrap{ display:inline-flex; }
-.sector-select{ font:inherit; font-size:14px; font-weight:600; color:var(--ink); background:var(--field); border:1px solid var(--border-strong); border-radius:9px; padding:7px 30px 7px 12px; min-width:220px; max-width:100%; cursor:pointer; }
-.sector-select:focus{ outline:2px solid var(--blue, #2a5bea); outline-offset:1px; }
+/* Menu de choix du secteur (2026-11-09) */
+.sp{ position:relative; display:inline-block; }
+.sp .sp-native{ position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
+.sp-btn{ display:inline-flex; align-items:center; gap:10px; min-width:260px; max-width:100%; padding:8px 12px; border:1px solid var(--border-strong); border-radius:11px; background:var(--field); color:var(--ink); font:inherit; font-size:14px; font-weight:600; cursor:pointer; text-align:left; transition:border-color .12s ease, box-shadow .12s ease; }
+.sp-btn:hover{ border-color:var(--blue); }
+.sp-btn:focus-visible, .sp-btn[aria-expanded="true"]{ outline:none; border-color:var(--blue); box-shadow:0 0 0 3px var(--ring); }
+.sp-ico{ flex:0 0 auto; color:var(--accent); }
+.sp-face-name{ flex:1 1 auto; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sp-count{ flex:0 0 auto; min-width:26px; padding:2px 9px; border-radius:999px; background:color-mix(in srgb, var(--accent) 16%, transparent); color:var(--ink); font-size:12.5px; font-weight:700; text-align:center; font-variant-numeric:tabular-nums; }
+.sp-chev{ flex:0 0 auto; color:var(--ink-soft); transition:transform .15s ease; }
+.sp-btn[aria-expanded="true"] .sp-chev{ transform:rotate(180deg); }
+.sp-list{ position:absolute; z-index:40; left:0; top:calc(100% + 6px); min-width:100%; width:max-content; max-width:min(380px, 92vw); max-height:360px; overflow:auto; padding:6px; border:1px solid var(--border-strong); border-radius:14px; background:var(--card); box-shadow:0 16px 38px rgba(0,0,0,.28); }
+.sp-list.hidden{ display:none; }
+.sp-opt{ width:100%; display:flex; align-items:center; gap:12px; padding:9px 12px; border:none; border-radius:9px; background:transparent; color:var(--ink); font:inherit; font-size:14.5px; text-align:left; cursor:pointer; }
+.sp-opt:hover, .sp-opt:focus-visible{ outline:none; background:color-mix(in srgb, var(--ink) 8%, transparent); }
+.sp-opt.on{ font-weight:700; background:color-mix(in srgb, var(--accent) 11%, transparent); }
+.sp-all .sp-name{ flex:1 1 auto; }
+.sp-main{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:5px; }
+.sp-name{ min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sp-bar{ display:block; height:4px; border-radius:3px; background:color-mix(in srgb, var(--ink) 9%, transparent); overflow:hidden; }
+.sp-bar i{ display:block; height:100%; border-radius:3px; background:var(--accent); opacity:.8; }
+.sp-check{ flex:0 0 16px; width:16px; text-align:center; color:var(--accent); font-weight:700; }
+.sp-sep{ height:1px; margin:5px 4px; background:var(--border); }
+.sp-note{ padding:8px 12px 4px; font-size:12px; line-height:1.4; color:var(--ink-soft); }
+@media (max-width:640px){ .sp{ display:block; width:100%; } .sp-btn{ width:100%; min-width:0; } .sp-list{ width:100%; max-width:none; } }
 .sx-t,.sx-g4 .sx-t, .sx-compact .sx-t, .sx-pb > .sx-grow .sx-t{ display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:8px 8px 9px 8px; }
 .sx-tl{ line-height:1.15; max-width:100%; }
 .sx-tv{ font-size:27px; line-height:1.05; margin-top:2px; max-width:100%; }
@@ -10711,6 +10733,64 @@ function topBySector(sector){
   const sc = c => { const v = computeGlobalScore(c); return v === null || v === undefined ? -1 : v; };
   return state.companies.filter(c => companySector(c) === sector).sort((a, b) => sc(b) - sc(a)).slice(0, COMPARE_MAX);
 }
+// Menu de choix du secteur (2026-11-09, demande de l'auteur : « afficher le nombre de secteurs à côté de Tous les secteurs, au lieu du nombre d'entreprises, et un menu plus beau »).
+// Même principe que le sélecteur de décision : un <select> caché (data-sector-select, il porte les écouteurs `change` de Mon espace et du Comparateur) + un bouton et une liste personnalisés.
+// À côté de « Tous les secteurs » : le NOMBRE DE SECTEURS ; à côté de chaque secteur : son nombre d'analyses (avec une petite barre proportionnelle).
+function sectorPickerHtml(sc){
+  const fr = LANG === 'fr';
+  const allTxt = fr ? 'Tous les secteurs' : 'All sectors';
+  const cur = sectorFilter ? sc.find(x => x.sector === sectorFilter) : null;
+  const maxN = Math.max.apply(null, sc.map(x => x.n));
+  const check = '&#10003;';
+  const native = `<option value="">${allTxt}</option>` + sc.map(x => `<option value="${escapeHtml(x.sector)}"${x.sector === sectorFilter ? ' selected' : ''}>${escapeHtml(x.sector)}</option>`).join('');
+  const rows = `<button type="button" class="sp-opt sp-all${cur ? '' : ' on'}" role="option" aria-selected="${!cur}" data-sp-value=""><span class="sp-name">${allTxt}</span><span class="sp-count">${sc.length}</span><span class="sp-check">${cur ? '' : check}</span></button><div class="sp-sep"></div>`
+    + sc.map(x => `<button type="button" class="sp-opt${x.sector === sectorFilter ? ' on' : ''}" role="option" aria-selected="${x.sector === sectorFilter}" data-sp-value="${escapeHtml(x.sector)}"><span class="sp-main"><span class="sp-name">${escapeHtml(x.sector)}</span><span class="sp-bar"><i style="width:${Math.max(6, Math.round(x.n / maxN * 100))}%"></i></span></span><span class="sp-count">${x.n}</span><span class="sp-check">${x.sector === sectorFilter ? check : ''}</span></button>`).join('');
+  const face = cur ? `<span class="sp-face-name">${escapeHtml(cur.sector)}</span><span class="sp-count">${cur.n}</span>` : `<span class="sp-face-name">${allTxt}</span><span class="sp-count">${sc.length}</span>`;
+  const note = fr ? 'Le chiffre indique le nombre d’analyses par secteur.' : 'The number shows how many analyses each sector has.';
+  return `<div class="sp" data-sector-picker data-i18n="off">
+    <select class="sp-native" tabindex="-1" aria-hidden="true" id="sectorSelect" data-sector-select>${native}</select>
+    <button type="button" class="sp-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="${fr ? 'Filtrer par secteur' : 'Filter by sector'}"><svg class="sp-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="1.8"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8"/></svg>${face}<svg class="sp-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="sp-list hidden" role="listbox">${rows}<div class="sp-note">${note}</div></div>
+  </div>`;
+}
+function closeSectorPickers(except){
+  document.querySelectorAll('[data-sector-picker]').forEach(p => {
+    if(p === except) return;
+    p.querySelector('.sp-list').classList.add('hidden');
+    p.querySelector('.sp-btn').setAttribute('aria-expanded', 'false');
+  });
+}
+function initSectorPicker(){
+  document.addEventListener('click', e => {
+    const picker = e.target.closest && e.target.closest('[data-sector-picker]');
+    if(!picker){ closeSectorPickers(); return; }
+    const btn = e.target.closest('.sp-btn'), opt = e.target.closest('.sp-opt');
+    const list = picker.querySelector('.sp-list');
+    if(btn){
+      const open = list.classList.contains('hidden');
+      closeSectorPickers(picker);
+      list.classList.toggle('hidden', !open);
+      btn.setAttribute('aria-expanded', String(open));
+    }else if(opt){
+      const sel = picker.querySelector('.sp-native');
+      const v = opt.dataset.spValue;
+      closeSectorPickers();
+      if(sel.value !== v){ sel.value = v; sel.dispatchEvent(new Event('change', { bubbles:true })); }   // la vue est redessinée par l'écouteur existant
+    }
+  });
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape'){ closeSectorPickers(); return; }
+    const picker = e.target.closest && e.target.closest('[data-sector-picker]');
+    if(!picker || (e.key !== 'ArrowDown' && e.key !== 'ArrowUp')) return;
+    e.preventDefault();
+    const list = picker.querySelector('.sp-list');
+    if(list.classList.contains('hidden')){ closeSectorPickers(picker); list.classList.remove('hidden'); picker.querySelector('.sp-btn').setAttribute('aria-expanded', 'true'); }
+    const opts = [...list.querySelectorAll('.sp-opt')];
+    const i = opts.indexOf(document.activeElement);
+    const next = opts[(i + (e.key === 'ArrowDown' ? 1 : -1) + opts.length) % opts.length];
+    if(next) next.focus();
+  });
+}
 function sectorFilterChipsHtml(withCompare){
   const sc = sectorCounts();
   if(sc.length < 2) return '';
@@ -10719,8 +10799,7 @@ function sectorFilterChipsHtml(withCompare){
   const cmp = withCompare && inSec >= 2
     ? `<button type="button" class="btn btn-outline btn-sm" data-sector-compare>${inSec > COMPARE_MAX ? `Comparer les ${COMPARE_MAX} mieux notées` : `Comparer ces ${inSec} entreprises`}</button>` : '';
   // Menu déroulant (demande de l'auteur, 2026-10-17) : plus de pastilles quand il y a beaucoup de secteurs
-  const total = state.companies.length;
-  return `<div class="pf-chips sector-pick" style="margin-bottom:12px"><label class="pf-chips-l" for="sectorSelect">Secteur :</label><span class="sector-select-wrap"><select id="sectorSelect" class="sector-select" data-sector-select data-i18n="off"><option value="">${LANG === 'fr' ? 'Tous les secteurs' : 'All sectors'} (${total})</option>${sc.map(x => `<option value="${escapeHtml(x.sector)}"${x.sector === sectorFilter ? ' selected' : ''}>${escapeHtml(x.sector)} (${x.n})</option>`).join('')}</select></span>${cmp}</div>`;
+  return `<div class="pf-chips sector-pick" style="margin-bottom:12px"><span class="pf-chips-l">Secteur :</span>${sectorPickerHtml(sc)}${cmp}</div>`;
 }
 
 // Liste « Analyses reçues » de la barre latérale : seulement s'il y en a, à part de « Mes analyses » (pastille « nouveau » tant qu'elle n'a pas été ouverte)
@@ -14804,7 +14883,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 351;
+const APP_BUILD = 352;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -17040,6 +17119,7 @@ initSideResizer();
 initInstall();
 paintInstallButtons();
 initDecisionPicker();
+initSectorPicker();
 bindReadOnlyGuard();
 handleShareLink();
 initTour();
