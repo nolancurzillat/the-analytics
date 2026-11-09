@@ -14884,7 +14884,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 353;
+const APP_BUILD = 354;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
@@ -15389,20 +15389,24 @@ function buildCoverCard(c){
   const name = String(c.name || 'Sans nom');
   const nfs = name.length <= 12 ? 96 : (name.length <= 20 ? 80 : (name.length <= 30 ? 64 : (name.length <= 40 ? 52 : 42)));
   const sect = idn.secteur && idn.secteur.secteur, pays = idn.paysSiege && idn.paysSiege.pays;
-  const price = parseMoney(val.prixActuel), iv = dcfTarget(c, 'valeurIntrinseque');
+  const price = parseMoney(val.prixActuel);
   const plain = v => v === null ? '—' : fmtMoney(v, cur);
   const chips = `${idn.ticker ? `<span class="sx-chip sx-mono">${escapeHtml(idn.ticker)}</span>` : ''}${idn.cotation ? `<span class="sx-chip">${escapeHtml(idn.cotation)}</span>` : ''}${pays ? `<span class="sx-chip">${flagIcon(pays)} ${escapeHtml(pays)}</span>` : ''}${sect ? `<span class="sx-chip">${escapeHtml(sect)}</span>` : ''}`;
   // Anneau de la note
   const R = 52, circ = 2 * Math.PI * R;
   const ring = `<div class="sx-cv-ring"><svg viewBox="0 0 128 128" aria-hidden="true"><circle cx="64" cy="64" r="${R}" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="12"/><circle cx="64" cy="64" r="${R}" fill="none" stroke="${col}" stroke-width="12" stroke-linecap="round" stroke-dasharray="${gs === null ? 0 : (gs / 100 * circ).toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 64 64)"/></svg><div class="sx-cv-rv" style="color:${col}"><b>${gs === null ? '—' : Math.round(gs)}</b>${sinfo.provisional ? '<small>provisoire</small>' : ''}</div></div>`;
   const t5 = scoreTier5(gs);
-  // Verdict de valorisation : le cours face à la valeur intrinsèque
-  const e = computeEcart(c, 'valeurIntrinseque');
+  // Information de valorisation (2026-11-09, demande de l'auteur : la valeur intrinsèque n'est plus sur l'accroche, jugée peu fiable) :
+  // le POTENTIEL jusqu'à l'objectif moyen des analystes à 1 an ; à défaut, le consensus des analystes ; à défaut, le cours seul.
+  const wst = computeWallStreetTargets(c), wsPct = wst && wst.pct.moy !== null ? wst.pct.moy : null, wsReco = wsRecoValue(c);
   let valHtml = '';
-  if(e !== null){
-    const under = e < -0.05, over = e > 0.05, vc = under ? good : (over ? bad : '#c3cee5');
-    const big = under ? 'Sous-évaluation de ' + fmtNum(Math.abs(e), 0) + '&nbsp;%' : (over ? 'Surévaluation de ' + fmtNum(e, 0) + '&nbsp;%' : 'Au juste prix');
-    valHtml = `<div class="sx-cv-val" style="--c:${vc}"><b>${big}</b><span>${under || over ? 'par rapport à la valeur intrinsèque' : 'proche de la valeur intrinsèque'}</span><em>Cours ${plain(price)} · Valeur intrinsèque ${plain(iv)}</em></div>`;
+  if(wsPct !== null){
+    const wc = TOOLTIP_TIER_COLORS[wallStreetTier(wsPct)] || '#c3cee5';
+    const big = (wsPct >= 0 ? '+' : '−') + fmtNum(Math.abs(wsPct), 0) + '&nbsp;%';
+    valHtml = `<div class="sx-cv-val" style="--c:${wc}"><b>${big}</b><span>jusqu'à l'objectif moyen des analystes à 1 an</span><em>Cours ${plain(price)} · Objectif moyen ${plain(wst.target.moy)}</em></div>`;
+  }else if(wsReco !== null){
+    const rs = WS_RECO[wsRecoIndex(wsReco)];
+    valHtml = `<div class="sx-cv-val" style="--c:${rs.color}"><b>${rs.label}</b><span>consensus des analystes</span>${price !== null ? `<em>Cours ${plain(price)}</em>` : ''}</div>`;
   }else if(price !== null){
     valHtml = `<div class="sx-cv-val" style="--c:#5b8cf7"><b>${plain(price)}</b><span>cours actuel</span></div>`;
   }
