@@ -4191,7 +4191,8 @@ const SECTIONS = [
       {key:'peVisuel', label:'Où se situe le PE ?', type:'computed-pe-visual', span:12, group:"En un coup d'œil"},
       {key:'valeurIntrinseque', label:'Valeur intrinsèque', type:'computed-dcf', span:4, group:'Valeur estimée'},
       {key:'bearCase', label:'Bear case (pessimiste)', type:'computed-dcf', span:4},
-      {key:'bullCase', label:'Bull case (optimiste)', type:'computed-dcf', span:4},      {key:'beta', label:'Beta', type:'number', suffix:'β', group:'Risque de marché'},
+      {key:'bullCase', label:'Bull case (optimiste)', type:'computed-dcf', span:4},
+      {key:'beta', label:'Beta', type:'number', suffix:'β', group:'Risque de marché'},
       {key:'positionShort', label:'Position short', type:'text', percent:true},
       {key:'ratioVenteADecouvert', label:'Ratio de vente à découvert', type:'text'},
       {key:'wallStreet', label:'Wall Street Analyse (1 an)', type:'wallStreetTrio', group:'Prévisions des analystes'},
@@ -6839,7 +6840,8 @@ function refreshAllComputed(){
   setText('computed-valorisation-priceSales', psv === null ? '—' : fmtNum(psv, 2), tipPriceSales(c));
   const rdtFcf = computeRendementFcf(c);
   setText('computed-valorisation-rendementFcf', fmtRendementFcf(rdtFcf), tipRendementFcf(c));
-  // Valeur intrinsèque + Bear / Bull case : calculées par DCF (refreshDcf, appelée plus haut), plus de saisie\r\n  const tres = computeTresorerie(c);
+  // Valeur intrinsèque + Bear / Bull case : calculées par DCF (refreshDcf, appelée plus haut), plus de saisie
+  const tres = computeTresorerie(c);
   setText('computed-financier-tresorerie', formatMoneyDisplay(tres, c.currency), tipTresorerie(c));
   const dette = computeDetteActif(c);
   setText('computed-financier-detteActif', fmtDetteActif(dette), tipDetteActif(c));
@@ -14797,7 +14799,7 @@ function renderReceivedView(){
 // publié sur le site (lu dans service-worker.js, jamais mis en cache) au démarrage, au retour sur l'onglet et toutes les 30 minutes. Plus récent =
 // bandeau « Nouvelle version disponible » et ligne dans Préférences ; « Mettre à jour » vide le cache de l'application (jamais les données) et recharge.
 // ============================================================
-const APP_BUILD = 349;
+const APP_BUILD = 350;
 // Numéro de version AFFICHÉ aux utilisateurs (2026-10-04, demande de l'auteur : « afficher 1.0 et après on suit cette logique ») : 1.0 maintenant ;
 // nouvelles fonctionnalités = 1.1, 1.2... ; corrections seules = 1.0.1... ; refonte majeure = 2.0. Il doit toujours être égal à APP_VERSION de service-worker.js.
 // APP_BUILD reste le numéro technique, incrémenté à CHAQUE livraison : c'est lui qui déclenche la détection d'une mise à jour.
